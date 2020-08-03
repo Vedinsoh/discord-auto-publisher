@@ -1,9 +1,7 @@
 require('dotenv').config();
+const fetch = require("node-fetch");
 const Discord = require("discord.js");
 const bot = new Discord.Client();
-
-const fetch = require("node-fetch");
-const config = require("./config.json");
 
 bot.on("ready", async () => {
   bot.user
