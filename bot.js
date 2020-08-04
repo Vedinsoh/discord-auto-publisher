@@ -22,7 +22,7 @@ bot.on('ready', async () => {
 });
 
 bot.on('message', async (message) => {
-  if (message.channel.type === "news") {
+  if (message.channel.type === 'news') {
     await fetch(
       `https://discord.com/api/v6/channels/${message.channel.id}/messages/${message.id}/crosspost`,
       {
