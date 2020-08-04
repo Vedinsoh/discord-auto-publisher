@@ -15,8 +15,12 @@ Bot features no commands because the setup is really easy!
 3. Repeat step 2. for every channel where you want auto-publishing
 4. Done!
 
-## Keep in mind!
+### Keep in mind!
 * Bot can only publish 10 messages per hour (just as users), this is rate limited by Discord!
 * If you want to stop the bot from publishing messages in any of your announcement channels, just remove it's permissions in channel settings.
 
 **Need help? Don't hesitate to message me on Discord (Forcellrus#5555).**
+
+## Self-hosting
+Bot's code here is provided primarily for transparency reasons and to help other developers implement the same functionality to their bots.
+You're free to host this bot on your own server if you know how to set it up, however, I will not be providing any support in that regard, so do it at your own risk. Please keep in mind that if you're directly hosting this bot, you might not monetize it in any way! Bot's primary goal is to help everyone, free of any charge.
