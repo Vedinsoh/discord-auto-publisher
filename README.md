@@ -1,6 +1,6 @@
 ![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png)
 # Discord Auto Publisher
-Automatically publish messages in your announcement channels!
+Automatically publish messages or news in your announcement channels!
 
 A lightweight bot that will automatically publish every new message in your announcement/news channels to other servers who follow it. An excellent solution for servers who rely on bots (such as RSS feeds) to publish their news, allowing your moderators to get some rest from manual publishing.
 
