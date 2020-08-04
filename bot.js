@@ -4,25 +4,20 @@ const Discord = require('discord.js');
 const bot = new Discord.Client();
 
 bot.on('ready', async () => {
-  bot.user
-    .setPresence({
-      activity: {
-        name: `channels in ${bot.guilds.cache.size} servers`,
-        type: 'WATCHING',
-      },
-      status: "online",
-    })
-    .catch((err) => bot.logger.log(err, "error"));
+  function presence() {
+    bot.user
+      .setPresence({
+        activity: {
+          name: `channels in ${bot.guilds.cache.size} servers`,
+          type: 'WATCHING',
+        },
+        status: 'online',
+      })
+      .catch((err) => bot.logger.log(err, 'error'));
+  }
   
-  setInterval(() => {
-    bot.user.setPresence({
-      activity: {
-        name: `channels in ${bot.guilds.cache.size} servers`,
-        type: "WATCHING",
-      },
-      status: "online",
-    });
-  }, 1 * 60 * 60 * 1000); // hour * minutes * seconds * milliseconds
+  presence();
+  setInterval(() => { presence() }, 1 * 60 * 60 * 1000); // hour * minutes * seconds * milliseconds
   console.log(`Connected! Discord.js ${Discord.version}, monitoring ${bot.guilds.cache.size} servers.`);
 });
 
