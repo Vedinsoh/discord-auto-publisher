@@ -1,3 +1,4 @@
+![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png)
 # Discord Auto Publisher
 Automatically publish messages in announcement channels.
 
