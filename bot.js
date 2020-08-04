@@ -1,14 +1,14 @@
 require('dotenv').config();
-const fetch = require("node-fetch");
-const Discord = require("discord.js");
+const fetch = require('node-fetch');
+const Discord = require('discord.js');
 const bot = new Discord.Client();
 
-bot.on("ready", async () => {
+bot.on('ready', async () => {
   bot.user
     .setPresence({
       activity: {
         name: `channels in ${bot.guilds.cache.size} servers`,
-        type: "WATCHING",
+        type: 'WATCHING',
       },
       status: "online",
     })
@@ -26,12 +26,12 @@ bot.on("ready", async () => {
   console.log(`Connected! Discord.js ${Discord.version}, monitoring ${bot.guilds.cache.size} servers.`);
 });
 
-bot.on("message", async (message) => {
+bot.on('message', async (message) => {
   if (message.channel.type === "news") {
     await fetch(
       `https://discord.com/api/v6/channels/${message.channel.id}/messages/${message.id}/crosspost`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bot ${process.env.TOKEN}`,
         },
