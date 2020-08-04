@@ -22,7 +22,6 @@ bot.on("ready", async () => {
       },
       status: "online",
     });
-    console.log(bot.guilds.cache.size);
   }, 1 * 60 * 60 * 1000); // hour * minutes * seconds * milliseconds
   console.log(`Connected! Discord.js ${Discord.version}, monitoring ${bot.guilds.cache.size} servers.`);
 });
