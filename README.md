@@ -19,4 +19,4 @@ Bot features no commands because the setup is really easy!
 * Bot can only publish 10 messages per hour (just as users), this is rate limited by Discord!
 * If you want to stop the bot from publishing messages in any of your announcement channels, just remove it's permissions in channel settings.
 
-Need help? Don't hesitate to message me on Discord (Forcellrus#5555).
+**Need help? Don't hesitate to message me on Discord (Forcellrus#5555).**
