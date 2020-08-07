@@ -32,6 +32,8 @@ bot.on('message', async (message) => {
         },
       }
     )
+    .then(res => res.json())
+    .then(json => console.log(json));
   }
 });
 
