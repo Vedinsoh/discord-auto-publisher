@@ -1,4 +1,5 @@
-![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png "Auto Publisher")
+[![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png)](https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot "Auto Publisher bot")
+[![Bastion Logo](https://nexus.traction.one/images/bastion/logos/logotype.svg)](https://bastion.traction.one 'The Bastion Bot')
 # Discord Auto Publisher
 **Automatically publish messages or news in your announcement channels!**
 
