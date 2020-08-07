@@ -11,7 +11,7 @@ Bot features no commands because the setup is really easy!
 
 ## How to set up?
 1. Invite the bot to your server: https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot
-2. Navigate to your announcement channel's settings and give bot the following permissions: Read Messages, Send Messages, Manage Messages
+2. Navigate to your announcement channel's settings and give bot the following permissions: `Read Messages`, `Send Messages`, `Manage Messages`
 3. Repeat step 2. for every channel where you want auto-publishing
 4. Done!
 
