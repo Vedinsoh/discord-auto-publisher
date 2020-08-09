@@ -5,6 +5,7 @@ const fs = require('fs');
 
 bot.config = require('./config.json');
 bot.logger = require('./modules/logger.js');
+const { logger } = bot;
 
 // Load events
 fs.readdir('./events/', (err, files) => {
@@ -16,6 +17,11 @@ fs.readdir('./events/', (err, files) => {
 		bot.on(eventName, event.bind(null, bot));
 		delete require.cache[require.resolve(`./events/${file}`)];
 	});
+});
+
+
+process.on('unhandledRejection', (error) => {
+	logger.log(`Unhandled promise rejection: \n${error.message}`, 'error');
 });
 
 bot.login(process.env.TOKEN);
