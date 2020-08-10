@@ -1,6 +1,6 @@
 {
     "logging": "",
-    "presenceInterval": 0.5,
+    "presenceInterval": 30,
     "serversBlacklist": [
         ""
     ]
