@@ -4,14 +4,17 @@ const rateLimitedChannels = new Set();
 
 module.exports = async (bot, message) => {
 	if (message.channel.type === 'news') {
-		const { logger } = bot;
+		const { config, logger } = bot;
 		const { channel, guild, author } = message;
 
-		const consoleWarn = (event) => {
+		const consoleWarn = async (event) => {
 			let entry = '';
+
+			const owner = await bot.users.fetch(message.guild.ownerID);
+
 			const logAssets = {
 				channel: `Channel: #${channel.name} (${channel.id})`,
-				server: `Server: "${guild.name}" (${guild.id}), owner: ${guild.ownerID}`,
+				server: `Server: "${guild.name}" (${guild.id}), owner: ${owner.username}#${owner.discriminator} (${owner.id})`,
 				author: `Author: ${author.username}#${author.discriminator} (${author.id})`,
 				message: `Message content: ${message.embeds[0] !== undefined ? `${message.content}\n* Embed:\n${JSON.stringify(message.embeds[0], (key, value) => { if (value !== null) return value; }, 2)}` : message.content}`,
 			};
@@ -63,6 +66,9 @@ module.exports = async (bot, message) => {
 					}, json.retry_after);
 
 					consoleWarn('rateLimited');
+				}
+				else if (config.logging == 'debug') {
+					logger.log(`Published ${message.id} in #${channel.name} (${channel.id}) - "${guild.name}" (${guild.id})`, 'debug');
 				}
 			});
 	}

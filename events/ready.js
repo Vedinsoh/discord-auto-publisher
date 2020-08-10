@@ -18,15 +18,20 @@ module.exports = async bot => {
 	presence();
 	setInterval(() => {
 		presence();
-	}, config.presenceInterval * 60 * 60 * 1000);
-	logger.log(`Connected! Servers: ${bot.guilds.cache.size}`, 'ready');
+	}, config.presenceInterval * 60 * 1000);
+
+	let totalMembers = 0;
 
 	logger.log('Checking for blacklisted guilds...', 'log');
 	bot.guilds.cache.forEach(guild => {
-		const { name, id } = guild;
+		const { name, id, memberCount: members } = guild;
 		if (config.serversBlacklist.includes(id)) {
 			logger.log(`Blacklisted guild: "${name}" (${id}). Leaving...`, 'log');
 			guild.leave();
 		}
+		else {
+			totalMembers += members;
+		}
 	});
+	logger.log(`Connected! Publishing on ${bot.guilds.cache.size} servers with ${totalMembers.toLocaleString('de-DE')} total members.`, 'ready');
 };

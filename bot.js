@@ -19,9 +19,8 @@ fs.readdir('./events/', (err, files) => {
 	});
 });
 
-
 process.on('unhandledRejection', (error) => {
-	logger.log(`Unhandled promise rejection: \n${error.message}`, 'error');
+	logger.log(error.message, 'error');
 });
 
 bot.login(process.env.TOKEN);
