@@ -11,7 +11,7 @@ A lightweight bot that will automatically publish every new message in your [ann
 
 ## How to set up?
 1. Invite the bot to your server: https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot
-2. Navigate to your announcement channel's settings and give bot the following permissions: `Read Messages`, `Send Messages`, `Manage Messages`
+2. Navigate to your announcement channel's settings and give bot the following permissions: `Read Messages`, `Send Messages`, `Manage Messages`, `Read Message History`
 3. Repeat step 2. for every channel where you want auto-publishing
 4. Done!
 
