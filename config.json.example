@@ -1,5 +1,10 @@
 {
-    "logging": "",
+    "log": {
+        "loggingLevel": "log",
+        "timeFormat": "D.M.YYYY. H:mm:ss.SSS",
+        "locale": "de-DE"
+    },
+    "apiVersion": "7",
     "presenceInterval": 30,
     "serversBlacklist": [
         ""

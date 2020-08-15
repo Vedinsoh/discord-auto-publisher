@@ -1,17 +1,26 @@
 const chalk = require('chalk');
 const moment = require('moment');
+const { log } = require('../config.json');
 
 exports.log = (content, type = 'log') => {
+
+	const levels = ['info', 'log', 'debug'];
+
+	if (!levels.includes(log.loggingLevel)) throw new TypeError(`Valid logging levels: ${levels.join(', ')}`);
+	if (levels.includes(type)) {
+		if (levels.indexOf(type) > levels.indexOf(log.loggingLevel)) return;
+	}
+
 	const types = {
 		log: ['bgBlue'],
-		warn: ['bgYellow', 'black'],
-		error: ['bgRed'],
+		info: ['bgMagenta', 'black'],
 		debug: ['bgBlack', 'green'],
 		ready: ['bgGreen', 'black'],
-		info: ['bgMagenta', 'black'],
+		warn: ['bgYellow', 'black'],
+		error: ['bgRed'],
 	};
 
-	const timestamp = `[${moment().format('DD.MM.YYYY. HH:mm:ss.SSS')}]`;
+	const timestamp = `[${moment().format(log.timeFormat)}]`;
 
 	function logType(label, bgColor, textColor = 'white') {
 		return console.log(`${timestamp} ${chalk[textColor][bgColor](label.toUpperCase())} ${content} `);

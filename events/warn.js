@@ -1,4 +1,4 @@
 module.exports = async (bot, info) => {
 	const { logger } = bot;
-	logger.log(info, 'debug');
+	logger.log(JSON.stringify(info), 'warn');
 };

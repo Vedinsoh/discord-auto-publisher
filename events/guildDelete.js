@@ -1,7 +1,9 @@
 module.exports = async (bot, guild) => {
 	const { config, logger } = bot;
-	const { name, id, memberCount: members } = guild;
+	const { name, id, memberCount } = guild;
+
+	const members = memberCount.toLocaleString(config.log.locale);
 
 	if (config.serversBlacklist.includes(id)) return;
-	logger.log(`Left "${name}" (${id}) with ${members.toLocaleString('de-DE')} members. Servers: ${bot.guilds.cache.size}`, 'log');
+	logger.log(`Left "${name}" (${id}) with ${members} members. Servers: ${bot.guilds.cache.size}`, 'log');
 };

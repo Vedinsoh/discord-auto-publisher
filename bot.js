@@ -23,4 +23,4 @@ process.on('unhandledRejection', (error) => {
 	logger.log(error.message, 'error');
 });
 
-bot.login(process.env.TOKEN);
+bot.login(process.env.BOT_TOKEN);

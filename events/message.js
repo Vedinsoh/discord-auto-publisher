@@ -9,13 +9,12 @@ module.exports = async (bot, message) => {
 
 		const consoleWarn = async (event) => {
 			let entry = '';
-
 			const owner = await bot.users.fetch(message.guild.ownerID);
 
 			const logAssets = {
 				channel: `Channel: #${channel.name} (${channel.id})`,
 				server: `Server: "${guild.name}" (${guild.id}), owner: ${owner.username}#${owner.discriminator} (${owner.id})`,
-				author: `Author: ${author.username}#${author.discriminator} (${author.id})`,
+				author: `Author: ${author.username}#${author.discriminator} (${author.id}) ${message.webhookID ? '- Webhook' : ''}`,
 				message: `Message content: ${message.embeds[0] !== undefined ? `${message.content}\n* Embed:\n${JSON.stringify(message.embeds[0], (key, value) => { if (value !== null) return value; }, 2)}` : message.content}`,
 			};
 
@@ -45,11 +44,11 @@ module.exports = async (bot, message) => {
 		}
 
 		await fetch(
-			`https://discord.com/api/v6/channels/${message.channel.id}/messages/${message.id}/crosspost`,
+			`https://discord.com/api/v${config.apiVersion}/channels/${channel.id}/messages/${message.id}/crosspost`,
 			{
 				method: 'POST',
 				headers: {
-					Authorization: `Bot ${process.env.TOKEN}`,
+					Authorization: `Bot ${process.env.BOT_TOKEN}`,
 				},
 			},
 		)
@@ -67,8 +66,8 @@ module.exports = async (bot, message) => {
 
 					consoleWarn('rateLimited');
 				}
-				else if (config.logging == 'debug') {
-					logger.log(`Published ${message.id} in #${channel.name} (${channel.id}) - "${guild.name}" (${guild.id})`, 'debug');
+				else {
+					logger.log(`Published ${message.id} in #${channel.name} (${channel.id}) - "${guild.name}" (${guild.id})`);
 				}
 			});
 	}
