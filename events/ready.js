@@ -2,7 +2,6 @@ module.exports = async bot => {
 	const { config, logger } = bot;
 
 	logger.log('Connected!', 'ready');
-	logger.log('Caching guilds.', 'debug');
 
 	function presence() {
 		const servers = bot.guilds.cache.size.toLocaleString(config.log.locale);

@@ -1,10 +1,11 @@
 const fetch = require('node-fetch');
 
-const rateLimitedChannels = new Set();
+const rateLimits = new Map();
+const reportedChannels = new Set();
 
 module.exports = async (bot, message) => {
 	if (message.channel.type === 'news') {
-		const { config, logger } = bot;
+		const { config, logger, options: { http }, rest } = bot;
 		const { channel, guild, author } = message;
 
 		const consoleWarn = async (event) => {
@@ -26,29 +27,47 @@ module.exports = async (bot, message) => {
 
 			switch (event) {
 			case 'rateLimited':
-				entry += 'Channel is being rate limited!';
+				entry += `Channel is being rate limited! Count: ${rateLimits.get(channel.id).count}, threshold: ${config.spamThreshold}`;
 				addAsset('channel', 'server', 'author', 'message');
 				break;
 			case 'missingPerms':
 				entry += 'Missing permissions!';
 				addAsset('channel', 'server');
 				break;
+			default:
+				logger.log('Invalid consoleWarn() instance!', 'error');
+				return;
 			}
 
 			logger.log(entry, 'warn');
 		};
 
-		if (rateLimitedChannels.has(channel.id)) {
+		// Reports a rate limited channel in console, sends a DM to the bot owner if spam is above the threshold
+		if (rateLimits.has(channel.id)) {
+			rateLimits.get(channel.id).count++;
+
+			if ((rateLimits.get(channel.id).count >= config.spamThreshold) && !reportedChannels.has(channel.id)) {
+				const owner = await bot.users.fetch(message.guild.ownerID);
+				await bot.users.fetch(config.botOwner)
+					.then((user) => {
+						user.send(`**Spam channel report**\n\nChannel: #${channel.name} (${channel.id})\nServer: "${guild.name}" (${guild.id}), owner: ${owner.username}#${owner.discriminator} (${owner.id})`);
+					})
+					.catch((error) => logger.log(error, 'error'));
+
+				reportedChannels.add(channel.id);
+			}
+
 			consoleWarn('rateLimited');
 			return;
 		}
 
+		// Publish the message and check if the channel is being rate limited or missing permissions
 		await fetch(
-			`https://discord.com/api/v${config.apiVersion}/channels/${channel.id}/messages/${message.id}/crosspost`,
+			`${http.api}/v${http.version}/channels/${channel.id}/messages/${message.id}/crosspost`,
 			{
 				method: 'POST',
 				headers: {
-					Authorization: `Bot ${process.env.BOT_TOKEN}`,
+					'Authorization': `${rest.tokenPrefix} ${process.env.BOT_TOKEN}`,
 				},
 			},
 		)
@@ -58,10 +77,11 @@ module.exports = async (bot, message) => {
 					consoleWarn('missingPerms');
 				}
 				else if (json.retry_after !== undefined) {
-					rateLimitedChannels.add(channel.id);
+					rateLimits.set(channel.id, { count: 1 });
 
 					setTimeout(() => {
-						rateLimitedChannels.delete(channel.id);
+						rateLimits.delete(channel.id);
+						logger.log(`Rate limit counter reset for ${channel.id}`, 'debug');
 					}, json.retry_after);
 
 					consoleWarn('rateLimited');

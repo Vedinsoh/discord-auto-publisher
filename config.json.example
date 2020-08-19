@@ -4,8 +4,9 @@
         "timeFormat": "D.M.YYYY. H:mm:ss.SSS",
         "locale": "de-DE"
     },
-    "apiVersion": "7",
+    "botOwner": "ID HERE",
     "presenceInterval": 30,
+    "spamThreshold": 15,
     "serversBlacklist": [
         ""
     ]
