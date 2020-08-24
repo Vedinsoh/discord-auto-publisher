@@ -73,7 +73,7 @@ module.exports = async (bot, message) => {
 		)
 			.then((res) => res.json())
 			.then((json) => {
-				if (json.code == 50001) {
+				if (json.code == 50001 || json.code == 50013) {
 					consoleWarn('missingPerms');
 				}
 				else if (json.retry_after !== undefined) {
