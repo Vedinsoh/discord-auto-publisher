@@ -8,7 +8,7 @@ module.exports = async (bot, message) => {
 		const { config, logger, options: { http }, rest } = bot;
 		const { channel, guild, author } = message;
 
-		const consoleWarn = async (event) => {
+		const consoleWarn = async (reason) => {
 			let entry = '';
 			const owner = await bot.users.fetch(message.guild.ownerID);
 
@@ -25,18 +25,13 @@ module.exports = async (bot, message) => {
 				});
 			};
 
-			switch (event) {
-			case 'rateLimited':
+			if (reason == 'rateLimited') {
 				entry += `Channel is being rate limited! Count: ${rateLimits.get(channel.id).count}, threshold: ${config.spamThreshold}`;
 				addAsset('channel', 'server', 'author', 'message');
-				break;
-			case 'missingPerms':
-				entry += 'Missing permissions!';
+			}
+			else {
+				entry += reason;
 				addAsset('channel', 'server');
-				break;
-			default:
-				logger.log('Invalid consoleWarn() instance!', 'error');
-				return;
 			}
 
 			logger.log(entry, 'warn');
@@ -73,8 +68,8 @@ module.exports = async (bot, message) => {
 		)
 			.then((res) => res.json())
 			.then((json) => {
-				if (json.code == 50001 || json.code == 50013) {
-					consoleWarn('missingPerms');
+				if (json.code !== undefined) {
+					consoleWarn(`${json.message} (Code: ${json.code})`);
 				}
 				else if (json.retry_after !== undefined) {
 					rateLimits.set(channel.id, { count: 1 });
