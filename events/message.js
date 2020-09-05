@@ -1,19 +1,32 @@
 const fetch = require('node-fetch');
 
+const config = require('../config.json');
+const logger = require('../modules/logger.js');
+
+const cache = new Map();
 const rateLimits = new Map();
 const reportedChannels = new Set();
 
 module.exports = async (bot, message) => {
-	if (message.channel.type === 'news') {
-		const { config, logger, options: { http }, rest } = bot;
-		const { channel, guild, author } = message;
+
+	if (!cache.has(message.channel.id)) {
+		const fetched = await bot.channels.fetch(message.channel.id, false);
+		cache.set(fetched.id, [fetched.type, fetched.name, new Date()]);
+		console.log(cache);
+	}
+
+	const channelCache = cache.get(message.channel.id);
+
+	if (channelCache[0] === 'news') {
+		const { options: { http }, rest } = bot;
+		const { guild, channel, author } = message;
 
 		const consoleWarn = async (reason) => {
 			let entry = '';
 			const owner = await bot.users.fetch(message.guild.ownerID);
 
 			const logAssets = {
-				channel: `Channel: #${channel.name} (${channel.id})`,
+				channel: `Channel: #${channelCache[1]} (${channel.id})`,
 				server: `Server: "${guild.name}" (${guild.id}), owner: ${owner.username}#${owner.discriminator} (${owner.id})`,
 				author: `Author: ${author.username}#${author.discriminator} (${author.id}) ${message.webhookID ? '- Webhook' : ''}`,
 				message: `Message content: ${message.embeds[0] !== undefined ? `${message.content}\n* Embed:\n${JSON.stringify(message.embeds[0], (key, value) => { if (value !== null) return value; }, 2)}` : message.content}`,
@@ -45,7 +58,7 @@ module.exports = async (bot, message) => {
 				const owner = await bot.users.fetch(message.guild.ownerID);
 				await bot.users.fetch(config.botOwner)
 					.then((user) => {
-						user.send(`**Spam channel report**\n\nChannel: #${channel.name} (${channel.id})\nServer: "${guild.name}" (${guild.id}), owner: ${owner.username}#${owner.discriminator} (${owner.id})`);
+						user.send(`**Spam channel report**\n\nChannel: #${channelCache[1]} (${channel.id})\nServer: "${guild.name}" (${guild.id}), owner: ${owner.username}#${owner.discriminator} (${owner.id})`);
 					})
 					.catch((error) => logger.log(error, 'error'));
 
@@ -82,8 +95,25 @@ module.exports = async (bot, message) => {
 					consoleWarn('rateLimited');
 				}
 				else {
-					logger.log(`Published ${message.id} in #${channel.name} (${channel.id}) - "${guild.name}" (${guild.id})`);
+					logger.log(`Published ${message.id} in #${channelCache[1]} (${channel.id}) - "${guild.name}" (${guild.id})`);
 				}
 			});
 	}
 };
+
+const cacheInterval = config.cacheInterval * 60 * 60 * 1000;
+setInterval(() => {
+	logger.log('Starting the channel cache clearing interval.', 'debug');
+
+	let count = 0;
+	const now = new Date();
+
+	cache.forEach((props, id) => {
+		if ((now - props[2]) >= cacheInterval) {
+			cache.delete(id);
+			count++;
+		}
+	});
+
+	logger.log(`Cleared ${count} channel${count == 1 ? '' : 's'} from cache.`, 'debug');
+}, cacheInterval);

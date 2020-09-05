@@ -1,6 +1,13 @@
 require('dotenv').config();
-const Discord = require('discord.js');
-const bot = new Discord.Client();
+const Discord = require('discord.js-light');
+const bot = new Discord.Client({
+	cacheGuilds: true,
+	cacheChannels: false,
+	cacheOverwrites: false,
+	cacheRoles: false,
+	cacheEmojis: false,
+	cachePresences: false,
+});
 const fs = require('fs');
 
 bot.config = require('./config.json');
