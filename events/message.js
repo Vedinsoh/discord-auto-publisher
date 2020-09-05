@@ -12,7 +12,6 @@ module.exports = async (bot, message) => {
 	if (!cache.has(message.channel.id)) {
 		const fetched = await bot.channels.fetch(message.channel.id, false);
 		cache.set(fetched.id, [fetched.type, fetched.name, new Date()]);
-		console.log(cache);
 	}
 
 	const channelCache = cache.get(message.channel.id);
