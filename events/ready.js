@@ -35,9 +35,7 @@ module.exports = async bot => {
 			const guild = bot.guilds.cache.get(id);
 			if (guild) {
 				guild.leave()
-					.then(() => {
-						logger.log(`Blacklisted guild: "${guild.name}" (${guild.id}). Leaving.`);
-					})
+					.then(() => logger.log(`Blacklisted guild: "${guild.name}" (${guild.id}). Leaving.`))
 					.catch(error => logger.log(error, 'error'));
 			}
 		}
