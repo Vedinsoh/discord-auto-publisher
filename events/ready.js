@@ -31,16 +31,15 @@ module.exports = async bot => {
 	(async function() {
 		logger.log('Checking for blacklisted guilds.', 'debug');
 
-		for (const guild of config.serversBlacklist) {
-			await bot.guilds.fetch(guild)
-				.then(server => {
-					if (server.name) {
-						logger.log(`Blacklisted guild: "${server.name}" (${server.id}). Leaving.`);
-						server.leave();
-					}
-				})
-			// eslint-disable-next-line no-unused-vars, no-empty-function
-				.catch(e => {});
+		for (const id of config.serversBlacklist) {
+			const guild = bot.guilds.cache.get(id);
+			if (guild) {
+				guild.leave()
+					.then(() => {
+						logger.log(`Blacklisted guild: "${guild.name}" (${guild.id}). Leaving.`);
+					})
+					.catch(error => logger.log(error, 'error'));
+			}
 		}
 	})();
 
