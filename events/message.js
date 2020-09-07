@@ -114,5 +114,5 @@ setInterval(() => {
 		}
 	});
 
-	logger.log(`Cleared ${count} channel${count == 1 ? '' : 's'} from cache.`, 'debug');
+	logger.log(`Cleared ${count.toLocaleString(config.log.locale)} channel${count == 1 ? '' : 's'} from cache.`, 'debug');
 }, cacheInterval);
