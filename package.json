@@ -12,7 +12,7 @@
     "discord.js-light": "^3.2.8",
     "dotenv": "^8.2.0",
     "moment": "^2.27.0",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "eslint": "^7.7.0"
