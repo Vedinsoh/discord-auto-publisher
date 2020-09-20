@@ -23,7 +23,7 @@ A lightweight bot that will automatically publish every new message in your [ann
 **Need help? Don't hesitate to message me on Discord: `Forcellrus#5555`**  
 
 ---
-Did the bot help you or do you simply want to support my work?
+Did the bot help you or do you simply want to support my work? ❤️
 
 <a href="https://www.buymeacoffee.com/Forcellrus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" width="160" height="44" alt="Buy Me A Coffee"></a>
 
