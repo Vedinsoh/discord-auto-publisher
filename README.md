@@ -20,7 +20,12 @@ A lightweight bot that will automatically publish every new message in your [ann
 * If you want to temporarily stop the bot from publishing messages in any of your announcement channels, just remove its' `Read Messages` permission in a desired channel.
 * **If one of your announcement channels is very spammy, your server will get blacklisted from using the bot!** Please be sensible when using the bot and don't make your moderation log channels or general chat into an announcement channel.
 
-**Need help? Don't hesitate to message me on Discord: `Forcellrus#5555`**
+**Need help? Don't hesitate to message me on Discord: `Forcellrus#5555`**  
+
+---
+Did the bot help you or do you simply want to support my work?
+
+<a href="https://www.buymeacoffee.com/Forcellrus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/arial-yellow.png" width="160" height="44" alt="Buy Me A Coffee"></a>
 
 ## Self-hosting
 Bot's code provided here is primarily for the transparency reasons and to help other developers implement the same functionality to their bots. 
