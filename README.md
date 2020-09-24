@@ -16,7 +16,7 @@ A lightweight bot that will automatically publish every new message in your [ann
 4. Done!
 
 ### Keep in mind!
-* Bot can only publish 10 messages per hour (just as users), this is rate limited by Discord!
+* Bot can only publish 10 messages per hour per channel (just as users), this is rate limited by Discord!
 * If you want to temporarily stop the bot from publishing messages in any of your announcement channels, just remove its' `Read Messages` permission in a desired channel.
 * **If one of your announcement channels is very spammy, your server will get blacklisted from using the bot!** Please be sensible when using the bot and don't make your moderation log channels or general chat into an announcement channel.
 
