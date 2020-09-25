@@ -3,7 +3,6 @@ const moment = require('moment');
 const { log } = require('../config.json');
 
 exports.log = (content, type = 'log') => {
-
 	const levels = ['info', 'log', 'debug'];
 
 	if (!levels.includes(log.loggingLevel)) throw new TypeError(`Valid logging levels: ${levels.join(', ')}`);
@@ -23,7 +22,7 @@ exports.log = (content, type = 'log') => {
 	const timestamp = `[${moment().format(log.timeFormat)}]`;
 
 	function logType(label, bgColor, textColor = 'white') {
-		return console.log(`${timestamp} ${chalk[textColor][bgColor](label.toUpperCase())} ${content} `);
+		return console.log(`${timestamp} ${chalk[textColor][bgColor](label.toUpperCase())} ${content}`);
 	}
 
 	if (Object.keys(types).includes(type)) {

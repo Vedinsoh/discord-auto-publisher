@@ -104,5 +104,6 @@ dist
 .tern-port
 
 # Custom
-.eslintrc.json
 config.json
+serversBlacklist.json
+.vscode

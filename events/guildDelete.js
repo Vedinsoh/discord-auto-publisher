@@ -1,9 +1,12 @@
-module.exports = async (bot, guild) => {
-	const { config, logger } = bot;
-	const { name, id, memberCount } = guild;
+const bot = require('../bot.js').bot;
+const config = require('../config.json');
+const logger = require('../modules/logger.js');
+const str = require('../modules/stringificator.js');
+const blacklist = require('../modules/blacklistManager.js');
 
-	const members = memberCount.toLocaleString(config.log.locale);
+module.exports = async guild => {
+	if (blacklist.check(guild)) return;
 
-	if (config.serversBlacklist.includes(id)) return;
-	logger.log(`Left "${name}" (${id}) with ${members} members. Servers: ${bot.guilds.cache.size}`, 'log');
+	const members = guild.memberCount.toLocaleString(config.log.locale);
+	logger.log(`Left ${str.stringifyGuild(guild)} with ${members} members. Servers: ${bot.guilds.cache.size}`);
 };

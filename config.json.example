@@ -7,8 +7,5 @@
     "botOwner": "ID HERE",
     "cacheInterval": 12,
     "presenceInterval": 30,
-    "spamThreshold": 15,
-    "serversBlacklist": [
-        ""
-    ]
+    "spamThreshold": 15
 }
