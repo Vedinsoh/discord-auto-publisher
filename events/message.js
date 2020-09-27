@@ -31,7 +31,6 @@ module.exports = async message => {
 				}
 				else if (json.retry_after !== undefined) {
 					cache.addSpamChannel(message, json.retry_after);
-
 				}
 				else {
 					fn.publishConfirm(message);
@@ -41,7 +40,7 @@ module.exports = async message => {
 	}
 
 	// DM commands handler for the bot owner
-	if (message.channel.type === 'dm' && message.author.id === config.botOwner) {
+	if (channel.type === 'dm' && message.author.id === config.botOwner) {
 		const [command, argument] = message.content.toLowerCase().split(/ +/g).splice(0, 2);
 
 		const cmd = bot.commands.get(command);

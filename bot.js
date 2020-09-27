@@ -8,6 +8,7 @@ const bot = new Discord.Client({
 	cacheRoles: false,
 	cacheEmojis: false,
 	cachePresences: false,
+	messageCacheMaxSize: 50,
 });
 
 require('./modules/initialization.js')(bot);
