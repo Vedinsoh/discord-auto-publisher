@@ -12,7 +12,7 @@ exports.consoleWarn = async (message, reason, count) => {
 	const logAssets = {
 		server: `Server: ${str.stringifyGuild(guild)}, owner: ${str.stringifyUsers(owner)[0]}`,
 		channel: `Channel: ${str.stringifyChannel(channel)}`,
-		author: `Author: ${str.stringifyUsers(author)[0]} ${message.webhookID ? '- Webhook' : ''}`,
+		author: `Author: ${str.stringifyUsers(author)[0]}${message.webhookID ? ' - Webhook' : ''}`,
 		message: `Message content: ${message.embeds[0] !== undefined ? `${message.content}\n* Embed:\n${JSON.stringify(message.embeds[0], (key, value) => { if (value !== null) return value; }, 2)}` : message.content}`,
 	};
 
