@@ -24,8 +24,8 @@ module.exports = async message => {
 				},
 			},
 		)
-			.then((res) => res.json())
-			.then((json) => {
+			.then(res => res.json())
+			.then(json => {
 				if (json.code !== undefined) {
 					fn.consoleWarn(message, `${json.message} (Code: ${json.code})`);
 				}
@@ -41,7 +41,10 @@ module.exports = async message => {
 
 	// DM commands handler for the bot owner
 	if (channel.type === 'dm' && message.author.id === config.botOwner) {
-		const [command, argument] = message.content.toLowerCase().split(/ +/g).splice(0, 2);
+		const [command, argument] = message.content
+			.toLowerCase()
+			.split(/ +/g)
+			.splice(0, 2);
 
 		const cmd = bot.commands.get(command);
 		if (!cmd) return;

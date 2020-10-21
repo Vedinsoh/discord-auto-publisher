@@ -26,4 +26,6 @@ module.exports = (bot) => {
 			bot.commands.set(file.split('.')[0], functions);
 		});
 	});
+
+	bot.login(process.env.BOT_TOKEN);
 };

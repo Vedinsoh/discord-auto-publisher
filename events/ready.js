@@ -2,7 +2,6 @@ const bot = require('../bot.js').bot;
 const config = require('../config.json');
 const logger = require('../modules/logger.js');
 const blacklist = require('../modules/blacklistManager.js');
-// const cache = require('../modules/cacheManager.js');
 
 module.exports = async () => {
 	logger.log('Connected!', 'ready');

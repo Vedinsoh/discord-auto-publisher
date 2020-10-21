@@ -20,7 +20,4 @@ process.on('unhandledRejection', (error) => {
 	logger.log(JSON.stringify(error, null, 4), 'error');
 });
 
-// Login to Discord
-bot.login(process.env.BOT_TOKEN);
-
 module.exports = { bot };
