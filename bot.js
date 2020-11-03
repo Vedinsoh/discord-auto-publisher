@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const Discord = require('discord.js-light');
 const bot = new Discord.Client({
+	shards: 'auto',
 	cacheGuilds: true,
 	cacheChannels: true,
 	cacheOverwrites: false,

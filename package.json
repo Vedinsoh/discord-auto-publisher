@@ -1,6 +1,6 @@
 {
   "name": "discord-auto-publisher",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Automatically publish messages or news in your announcement channels!",
   "author": "Forcellrus",
   "license": "MIT",
@@ -10,14 +10,14 @@
   "dependencies": {
     "bufferutil": "^4.0.1",
     "chalk": "^4.1.0",
-    "discord.js-light": "^3.2.11",
+    "discord.js-light": "^3.3.0",
     "dotenv": "^8.2.0",
     "moment": "^2.29.1",
     "node-fetch": "^2.6.1",
     "utf-8-validate": "^5.0.2"
   },
   "devDependencies": {
-    "eslint": "^7.11.0"
+    "eslint": "^7.12.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

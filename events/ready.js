@@ -7,7 +7,7 @@ module.exports = async () => {
 	logger.log('Connected!', 'ready');
 
 	function presence() {
-		const servers = bot.guilds.cache.size.toLocaleString(config.log.locale);
+		const servers = bot.guilds.cache.size;
 		logger.log(`Updating presence. Servers: ${servers}`, 'debug');
 
 		bot.user.setPresence({
