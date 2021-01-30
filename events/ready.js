@@ -1,5 +1,3 @@
-const { scheduleJob } = require('node-schedule');
-
 const bot = require('../bot.js');
 const { intervals } = require('../config.json');
 const logger = require('../modules/Logger.js');
@@ -16,17 +14,6 @@ module.exports = async () => {
 
 	// Checks for blacklisted guilds and leaves them
 	Spam.startupCheck();
-
-	// Start the daily restart scheduler
-	if (intervals.dailyAutoRestart.enabled) {
-		scheduleJob({
-			hour: intervals.dailyAutoRestart.hour,
-			minute: intervals.dailyAutoRestart.minute,
-		}, () => {
-			logger.log('Running the scheduled auto-restart...');
-			shutdown.run();
-		});
-	}
 
 	// Start the hourly spam cache audit & memory check interval
 	setInterval(() => {
