@@ -1,9 +1,7 @@
-const bot = require('../../bot.js').bot;
+const bot = require('../../bot.js');
 
 exports.run = async message => {
-	message.channel.send('Shutting down...')
-		.then (() => {
-			bot.destroy();
-			process.exit(0);
-		});
+	if (message) await message.channel.send('Shutting down...');
+	bot.destroy();
+	process.exit(0);
 };

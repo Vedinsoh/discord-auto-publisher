@@ -1,6 +1,5 @@
-const logger = require('../modules/logger.js');
+const logger = require('../modules/Logger.js');
 
 module.exports = async info => {
-	if (info.toLowerCase().includes('heartbeat')) return;
-	logger.log(info, 'debug');
+	if (!info.match(/heartbeat/gi)) logger.debug(info);
 };

@@ -5,7 +5,9 @@ const { log } = require('../config.json');
 exports.log = (content, type = 'log') => {
 	const levels = ['info', 'log', 'debug'];
 
-	if (!levels.includes(log.loggingLevel)) throw new TypeError(`Valid logging levels: ${levels.join(', ')}`);
+	if (!levels.includes(log.loggingLevel)) {
+		throw new TypeError(`Valid logging levels: ${levels.join(', ')}`);
+	}
 	if (levels.includes(type)) {
 		if (levels.indexOf(type) > levels.indexOf(log.loggingLevel)) return;
 	}

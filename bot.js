@@ -1,7 +1,7 @@
 require('dotenv').config();
 
-const Discord = require('discord.js-light');
-const bot = new Discord.Client({
+const { Client } = require('discord.js-light');
+const bot = new Client({
 	shards: 'auto',
 	cacheGuilds: true,
 	cacheChannels: true,
@@ -9,16 +9,12 @@ const bot = new Discord.Client({
 	cacheRoles: false,
 	cacheEmojis: false,
 	cachePresences: false,
-	messageCacheMaxSize: 50,
+	messageCacheMaxSize: 0,
 });
 
-require('./modules/initialization.js')(bot);
+require('./modules/Initialization.js')(bot);
 
 // Promise rejection handler
-const logger = require('./modules/logger.js');
+process.on('unhandledRejection', error => console.error(error));
 
-process.on('unhandledRejection', (error) => {
-	logger.log(JSON.stringify(error, null, 4), 'error');
-});
-
-module.exports = { bot };
+module.exports = bot;

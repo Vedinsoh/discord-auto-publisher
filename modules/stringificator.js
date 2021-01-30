@@ -1,15 +1,19 @@
-exports.stringifyGuild = (guild) => {
-	return `"${guild.name}" (${guild.id})`;
-};
-
-exports.stringifyChannel = (channel) => {
-	return `#${channel.name} (${channel.id})`;
-};
-
-exports.stringifyUsers = (...users) => {
-	const usersArray = [];
-	for (const user of users) {
-		usersArray.push(`${user.username}#${user.discriminator} (${user.id})`);
+class Stringificator {
+	constructor() {
+		throw new Error(`The ${this.constructor.name} class may not be instantiated.`);
 	}
-	return usersArray;
-};
+
+	static guild(guild) {
+		return `"${guild.name}" (${guild.id})`;
+	}
+	static channel(channel) {
+		return `#${channel.name} (${channel.id})`;
+	}
+	static users(...users) {
+		const usersArray = [];
+		for (const user of users) usersArray.push(`${user.username}#${user.discriminator} (${user.id})`);
+		return usersArray;
+	}
+}
+
+module.exports = Stringificator;

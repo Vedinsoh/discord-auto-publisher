@@ -1,9 +1,11 @@
-const fs = require('fs');
+const FS = require('fs');
 
-module.exports = (bot) => {
+module.exports = bot => {
+	bot.startedAt = Date.now();
+
 	// Load events
 	const eventsDir = './events/';
-	fs.readdir(eventsDir, (error, files) => {
+	FS.readdir(eventsDir, (error, files) => {
 		if (error) return console.error(error);
 
 		files.forEach((file) => {
@@ -17,7 +19,7 @@ module.exports = (bot) => {
 	// Load bot owner commands
 	bot.commands = new Map();
 	const commandsDir = '/owner_commands/';
-	fs.readdir(`./modules${commandsDir}`, (error, files) => {
+	FS.readdir(`./modules${commandsDir}`, (error, files) => {
 		if (error) return console.error(error);
 
 		files.forEach(file => {
@@ -27,5 +29,6 @@ module.exports = (bot) => {
 		});
 	});
 
+	// Connect to Discord
 	bot.login(process.env.BOT_TOKEN);
 };

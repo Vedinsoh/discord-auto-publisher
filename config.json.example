@@ -1,11 +1,23 @@
 {
+    "botOwner": "ID HERE",
     "log": {
-        "loggingLevel": "log",
+        "loggingLevel": "info",
         "timeFormat": "D.M.YYYY. H:mm:ss.SSS",
         "locale": "de-DE"
     },
-    "botOwner": "ID HERE",
-    "cacheInterval": 12,
-    "presenceInterval": 30,
-    "spamThreshold": 15
+    "intervals": {
+        "presence": 15,
+        "dailyAutoRestart": {
+            "enabled": false,
+            "hour": 3,
+            "minute": 0
+        }
+    },
+    "spam": {
+        "monitoringEnabled": false,
+        "autoLeave": false,
+        "messagesHourlyLimit": 40,
+        "spamChannelsThreshold": 4,
+        "cacheExpirationHours": 12
+    }
 }

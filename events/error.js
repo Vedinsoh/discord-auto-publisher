@@ -1,5 +1,3 @@
-const logger = require('../modules/logger.js');
+const logger = require('../modules/Logger.js');
 
-module.exports = async error => {
-	logger.log(JSON.stringify(error, null, 4), 'error');
-};
+module.exports = async error => logger.error(JSON.stringify(error, null, 4));

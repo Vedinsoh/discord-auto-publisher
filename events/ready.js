@@ -1,38 +1,43 @@
-const bot = require('../bot.js').bot;
-const config = require('../config.json');
-const logger = require('../modules/logger.js');
-const blacklist = require('../modules/blacklistManager.js');
+const { scheduleJob } = require('node-schedule');
+
+const bot = require('../bot.js');
+const { intervals } = require('../config.json');
+const logger = require('../modules/Logger.js');
+const shutdown = require('../modules/owner_commands/shutdown.js');
+const Util = require('../modules/UtilFunctions.js');
+const Spam = require('../modules/SpamManager.js');
 
 module.exports = async () => {
 	logger.log('Connected!', 'ready');
 
-	function presence() {
-		const servers = bot.guilds.cache.size;
-		logger.log(`Updating presence. Servers: ${servers}`, 'debug');
-
-		bot.user.setPresence({
-			activity: {
-				name: `${servers} server${bot.guilds.cache.size > 1 ? 's' : ''}`,
-				type: 'WATCHING',
-			},
-		})
-			.catch((error) => logger.log(error, 'error'));
-	}
-
-	presence();
-	setInterval(() => { presence(); }, config.presenceInterval * 60 * 1000);
+	// Set the presence and start the update interval
+	Util.presence();
+	setInterval(() => Util.presence(), intervals.presence * 60 * 1000);
 
 	// Checks for blacklisted guilds and leaves them
-	logger.log('Checking for blacklisted guilds.', 'debug');
-	blacklist.startupCheck();
+	Spam.startupCheck();
 
-	// Calculates all members across all guilds
-	logger.log('Calculating total members across all servers.', 'debug');
+	// Start the daily restart scheduler
+	if (intervals.dailyAutoRestart.enabled) {
+		scheduleJob({
+			hour: intervals.dailyAutoRestart.hour,
+			minute: intervals.dailyAutoRestart.minute,
+		}, () => {
+			logger.log('Running the scheduled auto-restart...');
+			shutdown.run();
+		});
+	}
 
-	let totalMembers = 0;
-	bot.guilds.cache.forEach(guild => {
-		if (!blacklist.check(guild)) totalMembers += guild.memberCount;
-	});
+	// Start the hourly spam cache audit & memory check interval
+	setInterval(() => {
+		Spam.cacheAudit();
+		if (bot.guilds.cache.size >= 250 &&
+		(((process.memoryUsage().rss / (1024 ** 2)) * 1.2) >= bot.guilds.cache.size)) {
+			logger.log('Memory threshold reached, restarting.');
+			shutdown.run();
+		}
+	}, 1000 * 60 * 60);
 
-	logger.log(`Publishing on ${bot.guilds.cache.size} servers with ${totalMembers.toLocaleString(config.log.locale)} total members.`, 'info');
+	logger.log(`Startup time: ${((Date.now() - bot.startedAt) / 1000).toFixed(2)}s`);
+	delete bot.startedAt;
 };

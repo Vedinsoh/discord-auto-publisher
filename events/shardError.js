@@ -1,5 +1,5 @@
-const logger = require('../modules/logger.js');
+const logger = require('../modules/Logger.js');
 
 module.exports = async (error, shardID) => {
-	logger.log(`Shard (ID: ${shardID}) error:\n${JSON.stringify(error, null, 4)}`, 'error');
+	logger.error(`Shard (ID: ${shardID}) error:\n${JSON.stringify(error, null, 4)}`);
 };

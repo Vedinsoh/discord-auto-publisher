@@ -1,5 +1,5 @@
-const blacklist = require('../blacklistManager.js');
+const Spam = require('../SpamManager.js');
 
 exports.run = async (message, guildID) => {
-	message.channel.send(`The server is ${blacklist.check(guildID) ? '' : 'not '}blacklisted.`);
+	message.channel.send(`Server is ${Spam.blacklistCheck(guildID) ? '' : 'not '}blacklisted.`);
 };
