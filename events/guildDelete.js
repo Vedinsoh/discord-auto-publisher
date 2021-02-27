@@ -8,6 +8,6 @@ const
 module.exports = async guild => {
 	if (Spam.blacklistCheck(guild)) return;
 
-	const members = guild.memberCount.toLocaleString(config.log.locale);
+	const members = guild.memberCount.toLocaleString(config.log.locale) || 'unknown';
 	logger.log(`Left ${String.guild(guild)} with ${members} members. Servers: ${bot.guilds.cache.size}`);
 };
