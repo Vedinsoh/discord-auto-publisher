@@ -1,12 +1,13 @@
-const fetch = require('node-fetch');
+const
+	fetch = require('node-fetch'),
+	urlRegex = require('url-regex-safe'),
+	Spam = require('./SpamManager.js'),
+	Util = require('./UtilFunctions.js'),
+	String = require('./Stringificator.js'),
+	logger = require('./Logger.js'),
+	bot = require('../bot.js');
 
-const bot = require('../bot.js');
-const logger = require('./Logger.js');
-const String = require('./Stringificator.js');
-const Spam = require('./SpamManager.js');
-const Util = require('./UtilFunctions.js');
-
-module.exports = async message => {
+async function crosspost(message) {
 	const { channel } = message;
 
 	if (Spam.rateLimitCheck(channel)) return;
@@ -34,4 +35,30 @@ module.exports = async message => {
 				return;
 			}
 		});
+}
+
+const pending = new Set();
+
+module.exports = async (message, update = false) => {
+	const pendingCrosspost = () => {
+		if (pending.has(message.id)) {
+			crosspost(message);
+			pending.delete(message.id);
+		}
+	};
+
+	if (update) {
+		pendingCrosspost();
+		return;
+	}
+
+	if (urlRegex({ strict: true, localhost: false }).test(message.content) && !message.embeds.length) {
+		pending.add(message.id);
+		setTimeout(() => {
+			pendingCrosspost();
+		}, 7 * 1000);
+	}
+	else {
+		crosspost(message);
+	}
 };

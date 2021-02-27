@@ -1,7 +1,8 @@
-const bot = require('../bot.js');
-const config = require('../config.json');
-const logger = require('./Logger.js');
-const String = require('./Stringificator.js');
+const
+	String = require('./Stringificator.js'),
+	logger = require('./Logger.js'),
+	bot = require('../bot.js'),
+	config = require('../config.json');
 
 class UtilFunctions {
 	constructor() {

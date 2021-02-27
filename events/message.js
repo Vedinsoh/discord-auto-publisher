@@ -1,6 +1,7 @@
-const { commands } = require('../bot.js');
-const { botOwner } = require('../config.json');
-const crosspost = require('../modules/Crosspost.js');
+const
+	crosspost = require('../modules/Crosspost.js'),
+	{ commands } = require('../bot.js'),
+	{ botOwner } = require('../config.json');
 
 module.exports = async message => {
 	// Publish (crosspost) the message

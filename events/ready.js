@@ -1,9 +1,10 @@
-const bot = require('../bot.js');
-const { intervals } = require('../config.json');
-const logger = require('../modules/Logger.js');
-const shutdown = require('../modules/owner_commands/shutdown.js');
-const Util = require('../modules/UtilFunctions.js');
-const Spam = require('../modules/SpamManager.js');
+const
+	Spam = require('../modules/SpamManager.js'),
+	Util = require('../modules/UtilFunctions.js'),
+	logger = require('../modules/Logger.js'),
+	bot = require('../bot.js'),
+	{ intervals } = require('../config.json'),
+	shutdown = require('../modules/owner_commands/shutdown.js');
 
 module.exports = async () => {
 	logger.log('Connected!', 'ready');

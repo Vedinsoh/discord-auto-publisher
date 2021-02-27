@@ -1,13 +1,14 @@
-const FS = require('fs');
-const { default: PQueue } = require('p-queue');
+const
+	FS = require('fs'),
+	{ default: PQueue } = require('p-queue'),
+	Util = require('./UtilFunctions.js'),
+	String = require('./Stringificator.js'),
+	logger = require('./Logger.js'),
+	bot = require('../bot.js'),
+	{ spam } = require('../config.json');
 
-const bot = require('../bot.js');
-const { spam } = require('../config.json');
-const logger = require('./Logger.js');
-const Util = require('./UtilFunctions.js');
-const String = require('./Stringificator.js');
-
-const blacklistFile = './serversBlacklist.json',
+const
+	blacklistFile = './serversBlacklist.json',
 	blacklist = require(`.${blacklistFile}`),
 	blacklistQueue = new PQueue({ concurrency: 1 }),
 	spamReportedGuilds = new Map(),

@@ -1,8 +1,9 @@
-const bot = require('../bot.js');
-const config = require('../config.json');
-const logger = require('../modules/Logger.js');
-const String = require('../modules/Stringificator.js');
-const Spam = require('../modules/SpamManager.js');
+const
+	Spam = require('../modules/SpamManager.js'),
+	String = require('../modules/Stringificator.js'),
+	logger = require('../modules/Logger.js'),
+	bot = require('../bot.js'),
+	config = require('../config.json');
 
 module.exports = async guild => {
 	if (Spam.blacklistCheck(guild)) return;
