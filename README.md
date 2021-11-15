@@ -33,3 +33,5 @@ Bot's code provided here is primarily for the transparency reasons and to help o
 Given the bot's simple nature, using the publicly-hosted version will be enough for most people, so it is highly recommended to use that version, unless you have a specific reason not to do so (such as experimenting with the code). 
 
 You're free to host this bot on your own server (if you know how to set it up), however I will not be providing any support in that regard, do it at your own risk. Please keep in mind that if you're directly hosting this bot, you might not monetize it in any way! Bot's primary goal is to help everyone and be free of any charge.
+
+## NOTICE FOR DEVS: Bot will be reworked to discord.js v13 and TypeScript in the near future 🙂
