@@ -52,15 +52,18 @@
   },
   "imports": {
     "#config": "./dist/config.json",
+    "#cluster": "./dist/index.js",
     "#client": "./dist/AutoPublisher.js",
     "#modules/*": "./dist/modules/*.js",
     "#functions/*": "./dist/functions/*.js",
     "#structures/*": "./dist/structures/*.js",
     "#types/*": "./dist/types/*.js",
-    "#util/*": "./dist/util/*.js"
+    "#util/*": "./dist/util/*.js",
+    "#blacklist": "./dist/serversBlacklist.json"
   },
   "engines": {
-    "node": ">=16.6.0",
-    "npm": ">=7.0.0"
+    "node": "^16.6.0",
+    "npm": "^7.0.0",
+    "yarn": "^1.0.0"
   }
 }

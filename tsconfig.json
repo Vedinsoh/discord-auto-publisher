@@ -20,12 +20,14 @@
     "baseUrl": "src",
     "paths": {
       "#config": ["config.json"],
+      "#cluster": ["index"],
       "#client": ["AutoPublisher"],
       "#modules/*": ["modules/*"],
       "#functions/*": ["functions/*"],
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
       "#util/*": ["util/*"],
+      "#blacklist": ["serversBlacklist.json"],
     }
   },
   "include": ["src"],

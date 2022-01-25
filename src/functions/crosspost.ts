@@ -6,9 +6,8 @@ import client from '#client';
 import Spam from '#modules/SpamManager';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
-import { CrosspostErrorType } from '#types/CrosspostErrorType';
 import { intervals } from '#config';
-// import debugLog from './debugLog';
+import errorHandler from '#functions/errorHandler';
 
 const crosspostsQueue = new PQueue({ concurrency: 50 });
 const delayedCrossposts = new Set();
@@ -28,17 +27,7 @@ const crosspostRequest = async (message: Message) => {
         },
       })
       .then(() => logger.debug(`Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild)}`))
-      .catch((error: AxiosError) => {
-        const data = error?.response?.data as CrosspostErrorType;
-        logger.debug(data);
-  
-        if (data.retry_after) {
-          if (!Spam.rateLimitCheck(channel)) {
-            return Spam.addSpamChannel(channel, data.retry_after);
-          }
-        }
-        logger.error(error.stack);
-      });
+      .catch((error: AxiosError) => errorHandler(channel, error));
   });
 };
 

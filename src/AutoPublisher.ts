@@ -1,9 +1,9 @@
 import Cluster from 'discord-hybrid-sharding';
 import { Options, Intents } from 'discord.js-light';
-import { AutoPublisher } from '#structures/Client';
+import { AutoPublisherClient } from '#structures/Client';
 
 const { FLAGS } = Intents;
-const client = new AutoPublisher({
+const client = new AutoPublisherClient({
   makeCache: Options.cacheWithLimits({
     ApplicationCommandManager: 0,
     BaseGuildEmojiManager: 0,

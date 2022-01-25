@@ -1,19 +1,18 @@
-import fs from 'fs';
-// import PQueue from 'p-queue';
 import { Guild, GuildChannel } from 'discord.js-light';
+import PQueue from 'p-queue';
 import client from '#client';
-import { spam } from '#config';
+import getGuild from '#functions/getGuild';
 import { channelToString, guildToString } from '#util/stringFormatters';
+import { hourToMs } from '#util/timeConverters';
 import logger from '#util/logger';
-// import debugLog from '../functions/debugLog';
-import { BlacklistActions } from '#types/BlacklistTypes';
-import blacklist from '../serversBlacklist.json';
+import { BlacklistActions, SpamChannelsMap, SpamGuildsMap } from '#types/BlacklistTypes';
+import { spam } from '#config';
+import blacklistFile from '#blacklist';
 
-const blacklistFile = './serversBlacklist.json',
-  // blacklist = require(`.${blacklistFile}`),
-  // blacklistQueue = new PQueue({ concurrency: 1 }),
-  spamReportedGuilds = new Map(),
-  hourlySpamLimit = new Map();
+const writeQueue = new PQueue({ concurrency: 1 });
+const blacklist = blacklistFile as string[];
+const spamChannels: SpamChannelsMap = new Map();
+const spamGuilds: SpamGuildsMap = new Map();
 
 export default class SpamManager {
   constructor() {
@@ -22,27 +21,26 @@ export default class SpamManager {
 
   static startupCheck() {
     logger.debug('Checking for blacklisted guilds.');
-    for (const id of blacklist) {
-      const guild = client.guilds.cache.get(id);
+    blacklist.forEach(async (guildId) => {
+      const guild = await getGuild(guildId);
       if (guild) this.leaveGuild(guild);
-    }
+    });
   }
 
   // TODO
-  static blacklistCheck(guild: Guild, options = { leave: false }): boolean {
-    /*
-    if (!guild) return false;
-    if (blacklist.includes(guild.id)) {
-      if (options.leave) this.leaveGuild(guild);
-      return true;
-    }
-    if (blacklist.includes(typeof guild === 'object' ? guild.id :
-      guild.match(/^\d{18}$/) ? guild : '')) {
-      if (options.leave) this.leaveGuild(guild);
-      return true;
-    }
-    */
-    return false;
+  static cacheAudit() {
+    logger.debug('Auditing spam channels in cache.');
+    spamGuilds.forEach((value, key) => {
+      if (Date.now() - value.reportTimestamp >= hourToMs(spam.cacheExpirationHours)) {
+        spamGuilds.delete(key);
+      }
+    });
+  }
+
+  static isBlacklisted(guild: Guild, options = { leave: false }): boolean {
+    if (!blacklist.includes(guild.id)) return false;
+    if (options.leave) this.leaveGuild(guild);
+    return true;
   }
 
   static leaveGuild(guild: Guild) {
@@ -52,41 +50,33 @@ export default class SpamManager {
       .catch((error) => logger.error(error));
   }
 
-  static cacheAudit() {
-    logger.debug('Auditing the spam channels in cache.');
-    spamReportedGuilds.forEach((value, key) => {
-      if (Date.now() - value.reportTime >= 1000 * 60 * 60 * spam.cacheExpirationHours) {
-        spamReportedGuilds.delete(key);
-      }
-    });
+  static registerSpamChannel(channel: GuildChannel, timeout: number) {
+    const spamChannel = spamChannels.get(channel.id);
+    if (spamChannel) return spamChannel.count++;
+
+    spamChannels.set(channel.id, { count: 1, remaining: timeout });
+    logger.info(
+      `Channel ${channelToString(channel)} is being rate limited: 11/${
+        spam.messagesHourlyLimit
+      }`
+    );
+
+    setTimeout(() => {
+      spamChannels.delete(channel.id);
+      logger.debug(`Rate limit counter reset for ${channelToString(channel)}`);
+    }, timeout);
   }
 
-  static addSpamChannel(channel: GuildChannel, timeout: number) {
-    const channelId = channel.id;
-
-    if (!hourlySpamLimit.has(channelId)) {
-      hourlySpamLimit.set(channelId, { count: 1, remaining: timeout });
-
-      // debugLog(channel, 'rateLimited', spam.monitoringEnabled ? hourlySpamLimit.get(channelId).count : false);
-
-      setTimeout(() => {
-        hourlySpamLimit.delete(channelId);
-        logger.debug(`Rate limit counter reset for ${channelToString(channel)}`);
-      }, timeout);
-    } else {
-      hourlySpamLimit.get(channelId).count++;
-    }
-  }
-
+  // TODO
   static rateLimitCheck(channel: GuildChannel) {
     const channelId = channel.id;
     const guildId = channel.guild.id;
     const now = Date.now();
 
-    if (hourlySpamLimit.has(channelId)) {
+    if (spamChannels.has(channelId)) {
       if (!spam.monitoringEnabled) return true;
 
-      const spamChannel = hourlySpamLimit.get(channelId);
+      const spamChannel = spamChannels.get(channelId);
       spamChannel.count++;
 
       if (spamChannel.count >= spam.messagesHourlyLimit - 10) {
@@ -96,24 +86,24 @@ export default class SpamManager {
           }).`
         );
         // this.blacklistUpdate('add', guildId); TODO
-        hourlySpamLimit.delete(channelId);
-        if (spamReportedGuilds.has(guildId)) spamReportedGuilds.delete(guildId);
+        spamChannels.delete(channelId);
+        if (spamGuilds.has(guildId)) spamGuilds.delete(guildId);
         return true;
       }
 
-      // Util.debugLog(channel, 'rateLimited', spamChannel.count);
+      // Util.errorHandler(channel, 'rateLimited', spamChannel.count);
 
       const flagged = () => {
         logger.info(
           `${guildToString(channel.guild)} spam flag in ${channelToString(channel)} (${
-            spamReportedGuilds.get(guildId).channels.size
+            spamGuilds.get(guildId).channels.size
           }/${spam.spamChannelsThreshold}).`
         );
       };
 
       if (spamChannel.count >= Math.floor((spam.messagesHourlyLimit - 10) * (2 / 3))) {
-        if (spamReportedGuilds.has(guildId)) {
-          const spamGuild = spamReportedGuilds.get(guildId);
+        if (spamGuilds.has(guildId)) {
+          const spamGuild = spamGuilds.get(guildId);
 
           if (spamGuild.channels.has(channelId)) {
             if (now - spamGuild.channels.get(channelId) >= spamChannel.remaining) {
@@ -132,13 +122,13 @@ export default class SpamManager {
               `${guildToString(channel.guild)} hit the channels spam threshold (${spam.spamChannelsThreshold}).`
             );
             // this.blacklistUpdate('add', guildId); TODO
-            spamReportedGuilds.delete(guildId);
+            spamGuilds.delete(guildId);
           }
         } else {
-          spamReportedGuilds.set(guildId, {
+          spamGuilds.set(guildId, {
             count: 1,
             channels: new Map([[channelId, now]]),
-            reportTime: now,
+            reportTimestamp: now,
           });
           flagged();
         }
@@ -151,10 +141,11 @@ export default class SpamManager {
 
   /*
   static async blacklistUpdate(action: BlacklistActions, guildId: string): Promise<string> {
-    return await blacklistQueue.add(() => this.blacklistUpdateJSON(action, guildId));
+    return await writeQueue.add(() => this.blacklistUpdateJSON(action, guildId));
   }
 
   static async blacklistUpdateJSON(action: BlacklistActions, guildId: string): Promise<string> {
+    const blacklistFile = './serversBlacklist.json';
     return new Promise(reply => {
       if (guildId !== undefined &&
 				!guildId.match(/^\d{18}$/)) {

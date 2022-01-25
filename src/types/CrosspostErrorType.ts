@@ -1,5 +1,6 @@
 export type CrosspostErrorType = {
-  global: boolean;
   message: string;
-  retry_after: number;
+  code?: number;
+  global?: boolean;
+  retry_after?: number;
 };

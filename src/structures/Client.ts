@@ -1,18 +1,16 @@
 import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
 import Cluster from 'discord-hybrid-sharding';
-import glob from 'glob';
-import { promisify } from 'util';
-import logger from '#util/logger';
 import { Event } from '#structures/Event';
 import { Command } from '#structures/Command';
-import { CommandType } from '#types/CommandType';
-import { intervals } from '#config';
+import getFiles from '#functions/getFiles';
+import importFile from '#functions/importFile';
+import { CommandsCollection } from '#types/CommandTypes';
+// import logger from '#util/logger';
+// import { intervals } from '#config';
 
-const getFiles = promisify(glob);
-
-export class AutoPublisher extends Client {
+export class AutoPublisherClient extends Client {
   cluster: Cluster.Client = new Cluster.Client(this);
-  commands: Collection<string, CommandType> = new Collection();
+  commands: CommandsCollection = new Collection();
   startedAt: number = Date.now();
 
   constructor(options: ClientOptions) {
@@ -23,31 +21,27 @@ export class AutoPublisher extends Client {
     this.registerEvents();
     this.registerCommands();
     this.login(process.env.BOT_TOKEN);
-    setInterval(() => this.updatePresence(), intervals.presence * 60 * 1000);
-  }
-
-  async importFile(filePath: string) {
-    return (await import(filePath))?.default;
   }
 
   async registerEvents() {
-    const filePaths: string[] = await getFiles(`${__dirname}/../events/*{.ts,.js}`);
+    const filePaths: string[] = getFiles('../listeners/**/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const event: Event<keyof ClientEvents> = await this.importFile(filePath);
+      const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);
     });
   }
 
   async registerCommands() {
-    const filePaths: string[] = await getFiles(`${__dirname}/../modules/owner_commands/*{.ts,.js}`);
+    const filePaths: string[] = getFiles('../modules/owner_commands/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const command: Command = await this.importFile(filePath);
+      const command: Command = await importFile(filePath);
       if (!command.name) return;
       this.commands.set(command.name, command.run);
     });
   }
 
   // TODO
+  /*
   async updatePresence() {
     if (Cluster.data.TOTAL_SHARDS - 1 !== this.cluster.id) return;
 
@@ -67,6 +61,5 @@ export class AutoPublisher extends Client {
       });
     });
   }
+  */
 }
-
-process.on('unhandledRejection', (error: Error) => logger.error(error.stack));
