@@ -1,5 +1,6 @@
 const
 	fetch = require('node-fetch'),
+	{ default: PQueue } = require('p-queue'),
 	urlRegex = require('url-regex-safe'),
 	Spam = require('./SpamManager.js'),
 	Util = require('./UtilFunctions.js'),
@@ -7,34 +8,38 @@ const
 	logger = require('./Logger.js'),
 	bot = require('../bot.js');
 
+const crosspostQueue = new PQueue({ concurrency: 50 });
+
 async function crosspost(message) {
 	const { channel } = message;
-
 	if (Spam.rateLimitCheck(channel)) return;
-	await fetch(
-		`${bot.options.http.api}/v${bot.options.http.version}/channels/${channel.id}/messages/${message.id}/crosspost`,
-		{
-			method: 'POST',
-			headers: {
-				'Authorization': `${bot.rest.tokenPrefix} ${process.env.BOT_TOKEN}`,
+
+	crosspostQueue.add(async () => {
+		await fetch(
+			`${bot.options.http.api}/v${bot.options.http.version}/channels/${channel.id}/messages/${message.id}/crosspost`,
+			{
+				method: 'POST',
+				headers: {
+					'Authorization': `${bot.rest.tokenPrefix} ${process.env.BOT_TOKEN}`,
+				},
 			},
-		},
-	)
-		.then(res => res.json())
-		.then(json => {
-			if (json.code) {
-				Util.debugLog(channel, `${json.message} (Code: ${json.code})`);
-			}
-			else if (json.retry_after) {
-				// Double check in case of high flow spam (since it's an async function)
-				if (Spam.rateLimitCheck(channel)) return;
-				Spam.addSpamChannel(channel, json.retry_after);
-			}
-			else {
-				logger.debug(`Published ${message.id} in ${String.channel(channel)} - ${String.guild(message.guild)}`);
-				return;
-			}
-		});
+		)
+			.then(res => res.json())
+			.then(json => {
+				if (json.code) {
+					Util.debugLog(channel, `${json.message} (Code: ${json.code})`);
+				}
+				else if (json.retry_after) {
+					// Double check in case of high flow spam (since it's an async function)
+					if (Spam.rateLimitCheck(channel)) return;
+					Spam.addSpamChannel(channel, json.retry_after);
+				}
+				else {
+					logger.debug(`Published ${message.id} in ${String.channel(channel)} - ${String.guild(message.guild)}`);
+					return;
+				}
+			});
+	});
 }
 
 const pending = new Set();
