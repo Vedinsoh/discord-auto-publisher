@@ -16,7 +16,7 @@ export default (channel: GuildChannel, error: AxiosError) => {
 
   if (data.retry_after) {
     // Double rate limit check due to asnyc functions
-    if (Spam.rateLimitCheck(channel)) return;
+    if (Spam.isSpamRegistered(channel)) return;
     return Spam.registerSpamChannel(channel, secToMs(data.retry_after));
   }
 

@@ -12,7 +12,6 @@
         "monitoringEnabled": false,
         "autoLeave": false,
         "messagesHourlyLimit": 40,
-        "spamChannelsThreshold": 4,
         "cacheExpirationHours": 12
     }
 }

@@ -15,11 +15,13 @@ export default new Event('ready', () => {
   // TODO Check for blacklisted guilds and leave them
   Spam.startupCheck();
 
-  // Start the hourly spam cache audit & memory check interval
+  // Start the hourly memory check interval
+  // TODO
+  /*
   setInterval(() => {
-    Spam.cacheAudit();
     memoryThresholdCheck(client.guilds.cache.size); // TODO
   }, hourToMs(1));
+  */
 
   logger.info(`Startup time: ${((Date.now() - client.startedAt) / 1000).toFixed(2)}s`);
 });

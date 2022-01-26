@@ -13,13 +13,12 @@ const crosspostsQueue = new PQueue({ concurrency: 50 });
 const delayedCrossposts = new Set();
 
 const crosspostRequest = async (message: Message) => {
+  const channel = message.channel as GuildChannel;
+  const { http } = client.options;
+
+  if (Spam.isSpamRegistered(channel) || !http) return;
+
   crosspostsQueue.add(() => {
-    const channel = message.channel as GuildChannel;
-    if (Spam.rateLimitCheck(channel)) return;
-  
-    const { http } = client.options;
-    if (!http) return;
-  
     axios.post(
       `${http.api}/v${http.version}/channels/${channel.id}/messages/${message.id}/crosspost`, {}, {
         headers: {
