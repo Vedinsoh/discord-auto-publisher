@@ -6,7 +6,4 @@ const manager = new AutoPublisher({
   // totalShards: 'auto',
   token: process.env.BOT_TOKEN,
 });
-
 manager.start();
-
-export default manager;

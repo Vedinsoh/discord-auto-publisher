@@ -3,10 +3,4 @@ export enum BlacklistActions {
   REMOVE = 'remove',
 }
 
-export type SpamChannelsMap = Map<
-  string,
-  {
-    count: number;
-    remaining: number;
-  }
->;
+export type SpamChannelsMap = Map<string, { count: number }>;

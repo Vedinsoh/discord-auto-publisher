@@ -52,7 +52,6 @@
   },
   "imports": {
     "#config": "./dist/config.json",
-    "#cluster": "./dist/index.js",
     "#client": "./dist/AutoPublisher.js",
     "#modules/*": "./dist/modules/*.js",
     "#functions/*": "./dist/functions/*.js",

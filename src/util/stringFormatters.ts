@@ -1,8 +1,7 @@
 import { Channel, DMChannel, Guild, PartialDMChannel, TextBasedChannel, User } from 'discord.js-light';
 
-export const guildToString = (guild: Guild | null): string => {
-  if (!guild) return 'unknown guild';
-  return `"${guild.name}" (${guild.id})`;
+export const guildToString = (guild: Guild): string => {
+  return `"${guild.name ?? 'unknown guild'}" (${guild.id})`;
 };
 
 export const channelToString = (channel: Channel): string => {

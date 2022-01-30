@@ -9,3 +9,7 @@ export const minToMs = (minute: number): number => {
 export const secToMs = (second: number): number => {
   return second * 1000;
 };
+
+export const msToSec = (ms: number): number => {
+  return ms / 1000;
+};

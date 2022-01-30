@@ -1,5 +1,5 @@
 import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
-import Cluster from 'discord-hybrid-sharding';
+import { AutoPublisherCluster } from '#structures/Cluster';
 import { Event } from '#structures/Event';
 import { Command } from '#structures/Command';
 import getFiles from '#functions/getFiles';
@@ -9,9 +9,9 @@ import { CommandsCollection } from '#types/CommandTypes';
 // import { intervals } from '#config';
 
 export class AutoPublisherClient extends Client {
-  cluster: Cluster.Client = new Cluster.Client(this);
+  cluster = new AutoPublisherCluster(this);
   commands: CommandsCollection = new Collection();
-  startedAt: number = Date.now();
+  startedAt = Date.now();
 
   constructor(options: ClientOptions) {
     super(options);
