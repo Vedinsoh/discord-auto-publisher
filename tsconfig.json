@@ -26,7 +26,6 @@
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
       "#util/*": ["util/*"],
-      "#blacklist": ["serversBlacklist.json"],
     }
   },
   "include": ["src"],

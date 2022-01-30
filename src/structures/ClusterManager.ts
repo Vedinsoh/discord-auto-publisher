@@ -1,5 +1,5 @@
 import { ClusterManagerMode, keepAliveOptions, Manager } from 'discord-hybrid-sharding';
-import getFiles from '#functions/getFiles';
+import { getFiles } from '#util/fileUtils';
 import logger from '#util/logger';
 
 export class AutoPublisher extends Manager {

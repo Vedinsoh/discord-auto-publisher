@@ -1,4 +1,4 @@
-import Cluster from 'discord-hybrid-sharding';
+import { data } from 'discord-hybrid-sharding';
 import { Options, Intents } from 'discord.js-light';
 import { AutoPublisherClient } from '#structures/Client';
 
@@ -30,8 +30,8 @@ const client = new AutoPublisherClient({
     FLAGS.GUILD_MESSAGES,
     FLAGS.DIRECT_MESSAGES,
   ],
-  shards: Cluster.data.SHARD_LIST,
-  shardCount: Cluster.data.TOTAL_SHARDS,
+  shards: data.SHARD_LIST,
+  shardCount: data.TOTAL_SHARDS,
 });
 
 client.start();

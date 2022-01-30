@@ -2,9 +2,8 @@ import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-ligh
 import { AutoPublisherCluster } from '#structures/Cluster';
 import { Event } from '#structures/Event';
 import { Command } from '#structures/Command';
-import getFiles from '#functions/getFiles';
-import importFile from '#functions/importFile';
 import { CommandsCollection } from '#types/CommandTypes';
+import { getFiles, importFile } from '#util/fileUtils';
 // import logger from '#util/logger';
 // import { intervals } from '#config';
 

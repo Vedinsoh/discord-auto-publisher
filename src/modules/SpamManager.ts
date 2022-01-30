@@ -1,7 +1,7 @@
 import { GuildChannel } from 'discord.js-light';
 import client from '#client';
-import { channelToString, guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
+import { channelToString, guildToString } from '#util/stringFormatters';
 import { spam } from '#config';
 
 export default class SpamManager {
@@ -12,7 +12,7 @@ export default class SpamManager {
   }
 
   logRateLimited(channel: GuildChannel, count: number) {
-    logger.info(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesHourlyLimit}`);
+    logger.info(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
   }
 
   addChannel(channel: GuildChannel, timeout: number) {
@@ -30,13 +30,13 @@ export default class SpamManager {
 
   isSpamming(channel: GuildChannel): boolean | void {
     const spamChannel = this.spamChannels.get(channel.id);
-    if (!spamChannel || !spam.monitoringEnabled) return false;
+    if (!spamChannel || !spam.enabled) return false;
 
     spamChannel.count++;
-    if (spamChannel.count >= spam.messagesHourlyLimit - 10) {
+    if (spamChannel.count >= spam.messagesThreshold - 10) {
       logger.info(
         `${channelToString(channel)} in ${guildToString(channel.guild)} hit the hourly spam limit (${
-          spam.messagesHourlyLimit
+          spam.messagesThreshold
         }).`
       );
       const { guild } = channel;

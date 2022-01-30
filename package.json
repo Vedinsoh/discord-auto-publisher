@@ -59,8 +59,7 @@
     "#functions/*": "./dist/functions/*.js",
     "#structures/*": "./dist/structures/*.js",
     "#types/*": "./dist/types/*.js",
-    "#util/*": "./dist/util/*.js",
-    "#blacklist": "./dist/serversBlacklist.json"
+    "#util/*": "./dist/util/*.js"
   },
   "engines": {
     "node": "^16.6.0",

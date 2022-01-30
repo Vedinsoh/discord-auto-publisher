@@ -1,6 +1,6 @@
+import shutdown from '#functions/shutdown';
 import logger from '#util/logger';
-import shutdown from '#util/shutdown';
-import { log } from '#config';
+import { stringLocale } from '#config';
 
 const getUsageMB = (): number => process.memoryUsage().rss / 1024 ** 2;
 
@@ -12,5 +12,5 @@ export const memoryThresholdCheck = (guilds: number) => {
 };
 
 export const getMemoryUsage = () => {
-  return getUsageMB().toLocaleString(log.locale, { maximumFractionDigits: 2 });
+  return getUsageMB().toLocaleString(stringLocale, { maximumFractionDigits: 2 });
 };

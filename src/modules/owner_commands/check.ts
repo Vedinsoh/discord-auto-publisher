@@ -6,6 +6,6 @@ import client from '#client';
 export default new Command('check', async ({ channel }: Message, guildId: string) => {
   const guild = await getGuild(guildId);
 
-  if (!guild) return channel.send('Unknown guild.');
+  if (!guild) return channel.send('Unknown server.');
   channel.send(`Server is ${!await client.cluster.blacklist.isBlacklisted(guild) ? 'not ' : ''}blacklisted.`);
 });

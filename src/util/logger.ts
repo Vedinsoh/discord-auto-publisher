@@ -1,8 +1,8 @@
 import createLogger from 'pino';
-import { log } from '#config';
+import { loggingLevel } from '#config';
 
 export default createLogger({
-  level: log.loggingLevel ?? 'info',
+  level: loggingLevel ?? 'info',
   transport: {
     target: 'pino-pretty',
     options: {
