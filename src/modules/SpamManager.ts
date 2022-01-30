@@ -2,11 +2,14 @@ import { GuildChannel } from 'discord.js-light';
 import client from '#client';
 import { channelToString, guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
-import { BlacklistActions, SpamChannelsMap } from '#types/BlacklistTypes';
 import { spam } from '#config';
 
 export default class SpamManager {
-  spamChannels: SpamChannelsMap = new Map();
+  spamChannels: Map<string, { count: number }> = new Map();
+
+  constructor() {
+    // setInterval(() => console.log('test'), 5000);
+  }
 
   logRateLimited(channel: GuildChannel, count: number) {
     logger.info(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesHourlyLimit}`);
@@ -38,7 +41,7 @@ export default class SpamManager {
       );
       const { guild } = channel;
       this.spamChannels.delete(channel.id);
-      client.cluster.blacklist.update(BlacklistActions.ADD, guild.id);
+      client.cluster.blacklist.add(guild.id);
       return true;
     }
 

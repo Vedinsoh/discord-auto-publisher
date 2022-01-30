@@ -5,8 +5,7 @@ import { guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
 
 export default new Event('guildDelete', async (guild: Guild) => {
-  if (client.cluster.blacklist.isBlacklisted(guild)) return;
-  // if (Spam.isBlacklisted(guild)) return;
+  if (await client.cluster.blacklist.isBlacklisted(guild)) return;
 
   const members = guild.memberCount || 'unknown';
   logger.debug(`Left ${guildToString(guild)} with ${members} members.`);

@@ -36,4 +36,4 @@ You're free to host this bot on your own server (if you know how to set it up), 
 
 Requirements:
 * Node >=16.6
-* Yarn or NPM
+* Package manager such as Yarn or NPM
