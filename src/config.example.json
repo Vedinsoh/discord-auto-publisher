@@ -1,16 +1,14 @@
 {
   "botAdmin": "ID HERE",
-  "log": {
-    "loggingLevel": "info",
-    "locale": "de-DE"
-  },
-  "intervals": {
-    "urlDetection": true,
-    "urlDelay": 5,
-    "presence": 15
+  "loggingLevel": "info",
+  "stringLocale": "de-DE",
+  "presenceInterval": 15,
+  "urlDetection": {
+    "enabled": true,
+    "publishDelay": 5
   },
   "spam": {
-    "monitoringEnabled": false,
+    "enabled": false,
     "autoLeave": false,
     "messagesThreshold": 40
   }

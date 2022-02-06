@@ -8,6 +8,9 @@
     "lib": ["ESNext"],
     "module": "CommonJS",
     "moduleResolution": "Node",
+
+    "noImplicitAny": false,
+
     "removeComments": true,
     "resolveJsonModule": true,
     "skipDefaultLibCheck": true,

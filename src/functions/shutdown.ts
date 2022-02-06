@@ -1,6 +1,6 @@
 import client from '#client';
 
 export default () => {
-  client.destroy();
-  process.exit(0);
+  client.cluster.broadcastEval(cluster => cluster.client.destroy());
+  process.exit(0); // TODO
 };

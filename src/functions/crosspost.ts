@@ -1,17 +1,16 @@
 import axios, { AxiosError } from 'axios';
 import urlRegex from 'url-regex-safe';
-import PQueue from 'p-queue';
 import { GuildChannel, Message, PartialMessage } from 'discord.js-light';
 import client from '#client';
-// import Spam from '#modules/SpamManager';
+import { CrosspostsQueue } from '#structures/CrosspostsQueue';
 import errorHandler from '#functions/errorHandler';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 import { secToMs } from '#util/timeConverters';
 import { urlDetection } from '#config';
 
-const crosspostsQueue = new PQueue({ concurrency: 50 });
 const delayedCrossposts = new Set();
+const queue = new CrosspostsQueue();
 
 const crosspostRequest = async (message: Message | PartialMessage) => {
   const channel = message.channel as GuildChannel;
@@ -19,7 +18,7 @@ const crosspostRequest = async (message: Message | PartialMessage) => {
 
   if (client.cluster.spam.isSpamming(channel) || !http) return;
 
-  crosspostsQueue.add(() => {
+  queue.add(() => {
     axios.post(
       `${http.api}/v${http.version}/channels/${channel.id}/messages/${message.id}/crosspost`, {}, {
         headers: {

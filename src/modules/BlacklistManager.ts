@@ -1,54 +1,59 @@
 import Josh from '@joshdb/core';
-import provider from '@joshdb/json'; // TODO
+import provider from '@joshdb/json'; // TODO remove noImplicitAny from tsconfig
 import { Guild } from 'discord.js-light';
 import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
+import { spam } from '#config';
+
+const blacklist = new Josh({
+  name: 'blacklist',
+  provider,
+  providerOptions: {
+    dataDir: './data',
+  },
+});
 
 const isValidGuild = async (guildId: string): Promise<boolean> => !!(await getGuild(guildId));
 
 export default class BlacklistManager {
-  blacklist = new Josh({
-    name: 'blacklist',
-    provider,
-    providerOptions: {
-      dataDir: './data',
-    },
-  });
+  constructor() {
+    throw new Error(`The ${this.constructor.name} class may not be instantiated.`);
+  }
 
-  async startupCheck() {
+  static async startupCheck() {
     logger.debug('Checking for blacklisted guilds.');
-    (await this.blacklist.keys).forEach(async (guildId) => {
-      const guild = await getGuild(guildId);
-      if (guild) this.leaveGuild(guild);
+    (await blacklist.keys).forEach(async (guildId) => {
+      const guild = await getGuild(guildId); // TODO get per shard rather than all
+      if (guild && spam.autoLeave) this.leaveGuild(guild);
     });
   }
 
-  async isBlacklisted(guild: Guild, options = { leave: false }): Promise<boolean> {
-    if (await this.blacklist.has(guild.id)) {
+  static async isBlacklisted(guild: Guild, options = { leave: false }): Promise<boolean> {
+    if (await blacklist.has(guild.id)) {
       if (options.leave) this.leaveGuild(guild);
       return true;
     }
     return false;
   }
 
-  async add(guildId: string): Promise<string> {
+  static async add(guildId: string): Promise<string> {
     if (!isValidGuild) return 'Invalid server ID provided.';
-    if (await this.blacklist.has(guildId)) return `${guildId} is already blacklisted.`;
+    if (await blacklist.has(guildId)) return `${guildId} is already blacklisted.`;
 
-    await this.blacklist.set(guildId, true);
+    await blacklist.set(guildId, true);
     return `Added ${guildId} to the blacklist.`;
   }
 
-  async remove(guildId: string): Promise<string> {
+  static async remove(guildId: string): Promise<string> {
     if (!isValidGuild) return 'Invalid server ID provided.';
-    if (!(await this.blacklist.has(guildId))) return `${guildId} is not blacklisted.`;
+    if (!(await blacklist.has(guildId))) return `${guildId} is not blacklisted.`;
 
-    await this.blacklist.delete(guildId);
+    await blacklist.delete(guildId);
     return `Removed ${guildId} from the blacklist.`;
   }
 
-  leaveGuild(guild: Guild) {
+  static leaveGuild(guild: Guild) {
     guild
       .leave()
       .then(() => logger.info(`Left blacklisted guild ${guildToString(guild)}`))

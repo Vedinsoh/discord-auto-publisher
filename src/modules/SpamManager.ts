@@ -1,5 +1,5 @@
 import { GuildChannel } from 'discord.js-light';
-import client from '#client';
+import Blacklist from '#modules/BlacklistManager';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 import { spam } from '#config';
@@ -20,7 +20,7 @@ export default class SpamManager {
     if (spamChannel) return spamChannel.count++;
 
     this.spamChannels.set(channel.id, { count: 1 });
-    this.logRateLimited(channel, 11);
+    this.logRateLimited(channel, 1);
 
     setTimeout(() => {
       this.spamChannels.delete(channel.id);
@@ -41,7 +41,7 @@ export default class SpamManager {
       );
       const { guild } = channel;
       this.spamChannels.delete(channel.id);
-      client.cluster.blacklist.add(guild.id);
+      Blacklist.add(guild.id);
       return true;
     }
 

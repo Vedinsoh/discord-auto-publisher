@@ -5,9 +5,7 @@ import client from '#client';
 import { botAdmin } from '#config';
 
 export default new Event('messageCreate', async (message: Message) => {
-  if (message.channel.type === 'GUILD_NEWS') crosspost(message);
-
-  console.log(client.cluster.spam.spamChannels); // TODO
+  if (message.channel.type === 'GUILD_NEWS') return crosspost(message);
 
   // Bot owner commands handler
   if (message.channel.type === 'DM' && message.author.id === botAdmin) {

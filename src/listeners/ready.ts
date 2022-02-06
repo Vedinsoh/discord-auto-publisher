@@ -1,27 +1,16 @@
 import client from '#client';
 import { Event } from '#structures/Event';
+import Blacklist from '#modules/BlacklistManager';
 import logger from '#util/logger';
-import { memoryThresholdCheck } from '#util/memory';
-import { minToMs, hourToMs, msToSec } from '#util/timeConverters';
+import { minToMs, msToSec, secToMs } from '#util/timeConverters';
+import { presenceInterval } from '#config';
 
 export default new Event('ready', () => {
-  // TODO Set the presence and start the update interval
-  /*
-  client.updatePresence();
-  setInterval(() => client.updatePresence(), minToMs(intervals.presence));
-  */
+  // Set presence and start the update interval
+  setTimeout(() => client.updatePresence(), secToMs(60));
+  setInterval(() => client.updatePresence(), minToMs(presenceInterval));
 
-  // TODO Check for blacklisted guilds and leave them
-  // Spam.startupCheck();
-  client.cluster.blacklist.startupCheck();
-
-  // Start the hourly memory check interval
-  // TODO
-  /*
-  setInterval(() => {
-    memoryThresholdCheck(client.guilds.cache.size); // TODO
-  }, hourToMs(1));
-  */
+  Blacklist.startupCheck();
 
   logger.info(`Startup time: ${msToSec(Date.now() - client.startedAt).toFixed(2)}s`);
 });
