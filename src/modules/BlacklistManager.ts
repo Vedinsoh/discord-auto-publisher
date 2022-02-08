@@ -23,7 +23,7 @@ export default class BlacklistManager {
   }
 
   static async startupCheck() {
-    logger.debug('Checking for blacklisted guilds.');
+    logger.debug('Checking for blacklisted guilds...');
     (await blacklist.keys).forEach(async (guildId) => {
       const guild = client.guilds.cache.get(guildId);
       if (guild && spam.autoLeave) this.leaveGuild(guild);

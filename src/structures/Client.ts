@@ -5,7 +5,8 @@ import { Command } from '#structures/Command';
 import { CommandsCollection } from '#types/CommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
 import logger from '#util/logger';
-// import { intervals } from '#config';
+import { minToMs } from '#util/timeConverters';
+import { presenceInterval } from '#config';
 
 export class AutoPublisherClient extends Client {
   cluster = new AutoPublisherCluster(this);
@@ -38,9 +39,13 @@ export class AutoPublisherClient extends Client {
     });
   }
 
-  // TODO
+  async startPresenceInterval() {
+    setInterval(() => this.updatePresence(), minToMs(presenceInterval));
+  }
+
   async updatePresence() {
     const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')).reduce((p: number, n: number) => p + n);
+    logger.debug(`[Cluster #${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
       activities: [
@@ -50,7 +55,5 @@ export class AutoPublisherClient extends Client {
         },
       ],
     });
-
-    logger.debug(`Updating presence. Guilds: ${guilds}`);
   }
 }

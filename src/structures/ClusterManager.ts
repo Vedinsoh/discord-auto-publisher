@@ -1,9 +1,12 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import { ClusterManagerMode, keepAliveOptions, Manager } from 'discord-hybrid-sharding';
 import { getFiles } from '#util/fileUtils';
+import { secToMs } from '#util/timeConverters';
 import logger from '#util/logger';
 
 export class AutoPublisher extends Manager {
-  // Copied options from discord-hybrid-sharding's Manager constructor
+  // Inferred options from discord-hybrid-sharding's Manager constructor
   constructor(options?: {
     totalShards?: number | 'auto';
     totalClusters?: number | 'auto';
@@ -21,11 +24,18 @@ export class AutoPublisher extends Manager {
 
   start() {
     this.registerEvents();
-    this.spawn({ timeout: -1 });
+    this.spawn().then(() => {
+      setTimeout(() => {
+        this.broadcastEval((client) => {
+          client.updatePresence();
+          client.startPresenceInterval();
+        });
+      }, secToMs(30));
+    });
   }
 
   async registerEvents() {
-    this.on('clusterCreate', ({ id }) => logger.info(`Created cluster #${id}`));
+    this.on('clusterCreate', ({ id }) => logger.debug(`[Cluster #${id}] Created`));
     this.on('debug', (value) => logger.debug(value));
   }
 }
