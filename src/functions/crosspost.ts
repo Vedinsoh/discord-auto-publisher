@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import urlRegex from 'url-regex-safe';
+import { RouteBases, Routes } from 'discord-api-types/rest/v9';
 import { GuildChannel, Message, PartialMessage } from 'discord.js-light';
 import client from '#client';
 import { CrosspostsQueue } from '#structures/CrosspostsQueue';
@@ -14,13 +15,12 @@ const queue = new CrosspostsQueue();
 
 const crosspostRequest = async (message: Message | PartialMessage) => {
   const channel = message.channel as GuildChannel;
-  const { http } = client.options;
 
-  if (client.cluster.spam.isSpamming(channel) || !http) return;
+  if (client.cluster.spam.isSpamming(channel)) return;
 
   queue.add(() => {
     axios.post(
-      `${http.api}/v${http.version}/channels/${channel.id}/messages/${message.id}/crosspost`, {}, {
+      `${RouteBases.api}${Routes.channelMessageCrosspost(channel.id, message.id)}`, {}, {
         headers: {
           Authorization: `Bot ${process.env.BOT_TOKEN}`,
         },
