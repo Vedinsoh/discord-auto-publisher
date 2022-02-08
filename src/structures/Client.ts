@@ -38,6 +38,7 @@ export class AutoPublisherClient extends Client {
     });
   }
 
+  // TODO
   async updatePresence() {
     const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')).reduce((p: number, n: number) => p + n);
 

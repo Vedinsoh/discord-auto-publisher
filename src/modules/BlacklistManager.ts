@@ -5,6 +5,7 @@ import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
 import { spam } from '#config';
+import client from '#client';
 
 const blacklist = new Josh({
   name: 'blacklist',
@@ -24,17 +25,19 @@ export default class BlacklistManager {
   static async startupCheck() {
     logger.debug('Checking for blacklisted guilds.');
     (await blacklist.keys).forEach(async (guildId) => {
-      const guild = await getGuild(guildId); // TODO get per shard rather than all
+      const guild = client.guilds.cache.get(guildId);
       if (guild && spam.autoLeave) this.leaveGuild(guild);
     });
   }
 
-  static async isBlacklisted(guild: Guild, options = { leave: false }): Promise<boolean> {
-    if (await blacklist.has(guild.id)) {
-      if (options.leave) this.leaveGuild(guild);
-      return true;
+  static async isBlacklisted(guildId: string, options = { leave: false }): Promise<boolean> {
+    if (!(await blacklist.has(guildId))) return false;
+
+    if (options.leave) {
+      const guild = await getGuild(guildId);
+      if (guild) this.leaveGuild(guild);
     }
-    return false;
+    return true;
   }
 
   static async add(guildId: string): Promise<string> {
@@ -46,7 +49,6 @@ export default class BlacklistManager {
   }
 
   static async remove(guildId: string): Promise<string> {
-    if (!isValidGuild) return 'Invalid server ID provided.';
     if (!(await blacklist.has(guildId))) return `${guildId} is not blacklisted.`;
 
     await blacklist.delete(guildId);

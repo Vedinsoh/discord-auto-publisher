@@ -5,7 +5,7 @@ import { guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
 
 export default new Event('guildDelete', async (guild: Guild) => {
-  if (await Blacklist.isBlacklisted(guild)) return;
+  if (await Blacklist.isBlacklisted(guild.id)) return;
 
   const members = guild.memberCount || 'unknown';
   logger.debug(`Left ${guildToString(guild)} with ${members} members.`);

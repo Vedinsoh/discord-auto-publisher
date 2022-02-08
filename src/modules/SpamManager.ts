@@ -7,10 +7,6 @@ import { spam } from '#config';
 export default class SpamManager {
   spamChannels: Map<string, { count: number }> = new Map();
 
-  constructor() {
-    // setInterval(() => console.log('test'), 5000);
-  }
-
   logRateLimited(channel: GuildChannel, count: number) {
     logger.info(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
   }

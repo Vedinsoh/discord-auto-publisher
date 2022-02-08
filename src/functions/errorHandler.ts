@@ -15,8 +15,6 @@ export default (channel: GuildChannel, error: AxiosError) => {
   }
 
   if (data.retry_after) {
-    console.log(data.retry_after);
-
     // Double rate limit check due to asnyc functions
     if (client.cluster.spam.isSpamming(channel)) return;
     return client.cluster.spam.addChannel(channel, secToMs(data.retry_after));

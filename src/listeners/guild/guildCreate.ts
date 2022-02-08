@@ -6,7 +6,7 @@ import logger from '#util/logger';
 import { spam } from '#config';
 
 export default new Event('guildCreate', async (guild: Guild) => {
-  if (await Blacklist.isBlacklisted(guild, { leave: spam.autoLeave })) return;
+  if (await Blacklist.isBlacklisted(guild.id, { leave: spam.autoLeave })) return;
 
   const members = guild.memberCount || 'unknown';
   logger.debug(`Joined ${guildToString(guild)} with ${members} members.`);

@@ -12,7 +12,6 @@ export default new Event('messageCreate', async (message: Message) => {
     const [commandName, argument] = message.content.toLowerCase().split(/ +/g).splice(0, 2);
 
     const command = client.commands.get(commandName);
-    if (!command) return;
-    command(message, argument);
+    if (command) command(message, argument);
   }
 });
