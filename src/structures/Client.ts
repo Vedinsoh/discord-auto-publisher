@@ -4,8 +4,8 @@ import { Event } from '#structures/Event';
 import { Command } from '#structures/Command';
 import { CommandsCollection } from '#types/CommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
-import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
+import logger from '#util/logger';
 import { presenceInterval } from '#config';
 
 export class AutoPublisherClient extends Client {
@@ -55,5 +55,9 @@ export class AutoPublisherClient extends Client {
         },
       ],
     });
+  }
+
+  setLoggerLevel(level: string) {
+    logger.level = level;
   }
 }

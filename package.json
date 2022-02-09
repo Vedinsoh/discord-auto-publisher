@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "start": "rm -rf dist && yarn run build && yarn run start:prod",
-    "start:dev": "nodemon src/index.ts",
+    "start:dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "start:prod": "node -r tsconfig-paths/register dist/index.js",
     "build": "tsc",
     "build:watch": "tsc -w",
