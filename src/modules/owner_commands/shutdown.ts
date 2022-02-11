@@ -4,5 +4,5 @@ import { Command } from '#structures/Command';
 
 export default new Command('shutdown', async ({ channel }: Message) => {
   await channel.send('Shutting down...');
-  shutdown();
+  await shutdown();
 });

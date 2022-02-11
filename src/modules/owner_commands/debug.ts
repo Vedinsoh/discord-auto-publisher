@@ -3,6 +3,7 @@ import client from '#client';
 import { AutoPublisherClient } from '#structures/Client';
 import { Command } from '#structures/Command';
 import { loggingLevel } from '#config';
+import logger from '#util/logger';
 
 const enable = ['1', 'true', 'enable', 'accept', 'on', 'yes'];
 const disable = ['0', 'false', 'disable', 'deny', 'off', 'no'];
@@ -14,7 +15,7 @@ const setLevel = async (level: string) => {
     // @ts-ignore
     (c: AutoPublisherClient, { level }) => c.setLoggerLevel(level),
     { context: { level } }
-  );
+  ).catch(logger.error);
 };
 
 export default new Command('debug', async ({ channel }: Message, value: string) => {

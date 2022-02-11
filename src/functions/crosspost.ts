@@ -6,8 +6,8 @@ import client from '#client';
 import { CrosspostsQueue } from '#structures/CrosspostsQueue';
 import errorHandler from '#functions/errorHandler';
 import logger from '#util/logger';
-import { channelToString, guildToString } from '#util/stringFormatters';
 import { secToMs } from '#util/timeConverters';
+import { channelToString, guildToString } from '#util/stringFormatters';
 import { urlDetection } from '#config';
 
 const delayedCrossposts = new Set();

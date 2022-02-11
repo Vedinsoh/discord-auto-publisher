@@ -24,6 +24,7 @@ export class AutoPublisher extends Manager {
   start() {
     this.registerEvents();
     this.spawn().then(() => {
+      logger.info('Clustering complete!');
       setTimeout(() => {
         // TODO This is a bug with type definitions in discord-hybrid-sharding library
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -42,4 +43,4 @@ export class AutoPublisher extends Manager {
   }
 }
 
-process.on('unhandledRejection', (error: Error) => logger.error(error.stack));
+process.on('unhandledRejection', ({ stack }: Error) => logger.error(stack));

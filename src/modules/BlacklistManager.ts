@@ -59,6 +59,6 @@ export default class BlacklistManager {
     guild
       .leave()
       .then(() => logger.info(`Left blacklisted guild ${guildToString(guild)}`))
-      .catch((error) => logger.error(error));
+      .catch(logger.error);
   }
 }
