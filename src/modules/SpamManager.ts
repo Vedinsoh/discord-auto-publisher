@@ -8,7 +8,7 @@ export default class SpamManager {
   spamChannels: Map<string, { count: number }> = new Map();
 
   logRateLimited(channel: GuildChannel, count: number) {
-    logger.info(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
+    logger.debug(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
   }
 
   addChannel(channel: GuildChannel, timeout: number) {
