@@ -30,8 +30,10 @@ Did the bot help you or do you simply want to support my work? ❤️
 ## Self-hosting
 Bot's code provided here is primarily for the transparency reasons and to help other developers implement the same functionality to their bots. 
 
-Given the bot's simple nature, using the publicly-hosted version will be enough for most people, so it is highly recommended to use that version, unless you have a specific reason not to do so (such as experimenting with the code). 
+Given the bot's simple nature, using the publicly-hosted version will be enough for most people, so it is highly recommended to use that version, unless you have a specific reason not to do so (such as experimenting with the code).
 
 You're free to host this bot on your own server (if you know how to set it up), however I will not be providing any support in that regard, do it at your own risk. Please keep in mind that if you're directly hosting this bot, you might not monetize it in any way! Bot's primary goal is to help everyone and be free of any charge.
 
-## NOTICE FOR DEVS: Bot is currently being reworked to discord.js v13 and TypeScript 🙂
+Requirements:
+* Node >=16.6
+* Package manager such as Yarn or NPM
