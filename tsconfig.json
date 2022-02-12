@@ -29,7 +29,7 @@
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
       "#util/*": ["util/*"],
-    }
+    },
   },
   "include": ["src"],
   "exclude": ["node_modules"],

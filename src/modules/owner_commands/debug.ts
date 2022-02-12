@@ -10,9 +10,6 @@ const disable = ['0', 'false', 'disable', 'deny', 'off', 'no'];
 
 const setLevel = async (level: string) => {
   await client.cluster.broadcastEval(
-    // TODO This is a bug with type definitions in discord-hybrid-sharding library
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     (c: AutoPublisherClient, { level }) => c.setLoggerLevel(level),
     { context: { level } }
   ).catch(logger.error);
