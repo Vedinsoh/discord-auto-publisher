@@ -1,6 +1,6 @@
 {
   "name": "discord-auto-publisher",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Automatically publish messages or news in your announcement channels!",
   "author": "Forcellrus",
   "license": "GPL-3.0-or-later",
