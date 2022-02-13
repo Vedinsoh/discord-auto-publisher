@@ -1,11 +1,12 @@
 import Josh from '@joshdb/core';
 import provider from '@joshdb/json'; // TODO remove noImplicitAny from tsconfig
 import { Guild } from 'discord.js-light';
+import { Snowflake } from 'discord-api-types';
+import client from '#client';
 import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
 import { spam } from '#config';
-import client from '#client';
 
 const blacklist = new Josh({
   name: 'blacklist',
@@ -15,7 +16,7 @@ const blacklist = new Josh({
   },
 });
 
-const isValidGuild = async (guildId: string): Promise<boolean> => !!(await getGuild(guildId));
+const isValidGuild = async (guildId: Snowflake): Promise<boolean> => !!(await getGuild(guildId));
 
 export default class BlacklistManager {
   constructor() {
@@ -30,7 +31,7 @@ export default class BlacklistManager {
     });
   }
 
-  static async isBlacklisted(guildId: string, options = { leave: false }): Promise<boolean> {
+  static async isBlacklisted(guildId: Snowflake, options = { leave: false }): Promise<boolean> {
     if (!(await blacklist.has(guildId))) return false;
 
     if (options.leave) {
@@ -40,7 +41,7 @@ export default class BlacklistManager {
     return true;
   }
 
-  static async add(guildId: string): Promise<string> {
+  static async add(guildId: Snowflake): Promise<string> {
     if (!isValidGuild) return 'Invalid server ID provided.';
     if (await blacklist.has(guildId)) return `${guildId} is already blacklisted.`;
 
@@ -48,7 +49,7 @@ export default class BlacklistManager {
     return `Added ${guildId} to the blacklist.`;
   }
 
-  static async remove(guildId: string): Promise<string> {
+  static async remove(guildId: Snowflake): Promise<string> {
     if (!(await blacklist.has(guildId))) return `${guildId} is not blacklisted.`;
 
     await blacklist.delete(guildId);
