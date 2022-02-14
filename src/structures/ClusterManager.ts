@@ -1,7 +1,7 @@
 import { ClusterManagerMode, keepAliveOptions, Manager } from 'discord-hybrid-sharding';
 import { AutoPublisherClient } from '#structures/Client';
 import { getFiles } from '#util/fileUtils';
-import { secToMs } from '#util/timeConverters';
+import { minToMs } from '#util/timeConverters';
 import logger from '#util/logger';
 
 export class AutoPublisher extends Manager {
@@ -30,7 +30,7 @@ export class AutoPublisher extends Manager {
           client.updatePresence();
           client.startPresenceInterval();
         });
-      }, secToMs(30));
+      }, minToMs(1));
     });
   }
 
