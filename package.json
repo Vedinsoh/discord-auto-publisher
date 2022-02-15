@@ -19,11 +19,11 @@
     "publisher"
   ],
   "scripts": {
-    "start": "rm -rf dist && yarn run build && yarn run start:prod",
+    "start": "yarn run build && yarn run start:prod",
     "start:dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "start:prod": "node -r tsconfig-paths/register dist/index.js",
-    "build": "tsc",
-    "build:watch": "tsc -w",
+    "build": "rm -rf dist && tsc",
+    "build:watch": "rm -rf dist && tsc -w",
     "reinstall": "rm -rf node_modules && yarn install",
     "lint": "eslint src --ext .ts"
   },
