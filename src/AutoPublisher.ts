@@ -7,7 +7,8 @@ const client = new AutoPublisherClient({
   makeCache: Options.cacheWithLimits({
     ApplicationCommandManager: 0,
     BaseGuildEmojiManager: 0,
-    GuildChannelManager: 0,
+    ChannelManager: 0,
+    GuildChannelManager: Infinity,
     GuildBanManager: 0,
     GuildInviteManager: 0,
     GuildManager: Infinity,
