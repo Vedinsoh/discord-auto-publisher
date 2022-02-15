@@ -1,4 +1,5 @@
 import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
+import { Level as LoggerLevel } from 'pino';
 import { AutoPublisherCluster } from '#structures/Cluster';
 import { Event } from '#structures/Event';
 import { Command } from '#structures/Command';
@@ -57,7 +58,7 @@ export class AutoPublisherClient extends Client {
     });
   }
 
-  setLoggerLevel(level: string) {
+  setLoggerLevel(level: LoggerLevel) {
     logger.level = level;
   }
 }
