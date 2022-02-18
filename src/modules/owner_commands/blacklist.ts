@@ -1,5 +1,4 @@
-import { Message } from 'discord.js-light';
-import { Snowflake } from 'discord-api-types';
+import { Message, Snowflake } from 'discord.js-light';
 import { Command } from '#structures/Command';
 import Blacklist from '#modules/BlacklistManager';
 
