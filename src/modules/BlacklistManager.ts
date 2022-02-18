@@ -25,7 +25,7 @@ export default class BlacklistManager {
   static async startupCheck() {
     logger.debug('Checking for blacklisted guilds...');
     (await blacklist.keys).forEach(async (guildId) => {
-      if (spam.autoLeave) this.leaveGuild(guildId);
+      if (client.guilds.cache.get(guildId) && spam.autoLeave) this.leaveGuild(guildId);
     });
   }
 
@@ -40,7 +40,7 @@ export default class BlacklistManager {
     if (await blacklist.has(guildId)) return `${guildId} is already blacklisted.`;
 
     await blacklist.set(guildId, true);
-    this.leaveGuild(guildId, true);
+    this.leaveGuild(guildId, { force: true });
     return `Added ${guildId} to the blacklist.`;
   }
 
@@ -51,8 +51,8 @@ export default class BlacklistManager {
     return `Removed ${guildId} from the blacklist.`;
   }
 
-  static async leaveGuild(guildId: Snowflake, force = false) {
-    const guild = force ? await getGuild(guildId) : client.guilds.cache.get(guildId);
+  static async leaveGuild(guildId: Snowflake, options = { force: false }) {
+    const guild = options.force ? await getGuild(guildId) : client.guilds.cache.get(guildId);
     if (!guild) return logger.warn(`Failed to fetch guild ${guildId} to leave.`);
 
     guild
