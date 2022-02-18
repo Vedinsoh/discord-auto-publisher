@@ -34,6 +34,7 @@ const client = new AutoPublisherClient({
   ],
   shards: data.SHARD_LIST,
   shardCount: data.TOTAL_SHARDS,
+  restGlobalRateLimit: 50,
   rejectOnRateLimit: crosspostQueueFilter,
 });
 
