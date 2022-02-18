@@ -1,6 +1,7 @@
+import { data } from 'discord-hybrid-sharding';
 import Josh from '@joshdb/core';
 import provider from '@joshdb/json'; // TODO remove noImplicitAny from tsconfig
-import { Snowflake } from 'discord.js-light';
+import { ShardClientUtil, Snowflake } from 'discord.js-light';
 import client from '#client';
 import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
@@ -40,7 +41,7 @@ export default class BlacklistManager {
     if (await blacklist.has(guildId)) return `${guildId} is already blacklisted.`;
 
     await blacklist.set(guildId, true);
-    this.leaveGuild(guildId, { force: true });
+    this.leaveGuild(guildId);
     return `Added ${guildId} to the blacklist.`;
   }
 
@@ -51,13 +52,24 @@ export default class BlacklistManager {
     return `Removed ${guildId} from the blacklist.`;
   }
 
-  static async leaveGuild(guildId: Snowflake, options = { force: false }) {
-    const guild = options.force ? await getGuild(guildId) : client.guilds.cache.get(guildId);
-    if (!guild) return logger.warn(`Failed to fetch guild ${guildId} to leave.`);
+  static async leaveGuild(guildId: Snowflake) {
+    const guild = client.guilds.cache.get(guildId);
+    if (guild) {
+      guild
+        .leave()
+        .then(() => logger.info(`Left blacklisted guild ${guildToString(guild)}`))
+        .catch(logger.error);
+      return;
+    }
 
-    guild
-      .leave()
-      .then(() => logger.info(`Left blacklisted guild ${guildToString(guild)}`))
+    // In case the guild is not on the same shard
+    const shardId = ShardClientUtil.shardIdForGuildId(guildId, data.TOTAL_SHARDS);
+    client.cluster
+      .broadcastEval((c, { guildId }) => c.guilds.cache.get(guildId).leave(), {
+        cluster: shardId,
+        context: { guildId },
+      })
+      .then(() => logger.info(`Left blacklisted guild ${guildId}`))
       .catch(logger.error);
   }
 }
