@@ -1,7 +1,7 @@
 import { data } from 'discord-hybrid-sharding';
+import { ShardClientUtil, Snowflake } from 'discord.js-light';
 import Josh from '@joshdb/core';
 import provider from '@joshdb/json'; // TODO remove noImplicitAny from tsconfig
-import { ShardClientUtil, Snowflake } from 'discord.js-light';
 import client from '#client';
 import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
