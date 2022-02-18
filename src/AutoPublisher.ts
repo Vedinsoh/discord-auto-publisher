@@ -1,6 +1,7 @@
 import { data } from 'discord-hybrid-sharding';
 import { Options, Intents } from 'discord.js-light';
 import { AutoPublisherClient } from '#structures/Client';
+import crosspostQueueFilter from '#functions/crosspostQueueFilter';
 
 const { FLAGS } = Intents;
 const client = new AutoPublisherClient({
@@ -13,6 +14,7 @@ const client = new AutoPublisherClient({
     GuildManager: Infinity,
     GuildMemberManager: 0,
     GuildStickerManager: 0,
+    GuildScheduledEventManager: 0,
     MessageManager: 0,
     PermissionOverwriteManager: 0,
     PresenceManager: 0,
@@ -32,6 +34,8 @@ const client = new AutoPublisherClient({
   ],
   shards: data.SHARD_LIST,
   shardCount: data.TOTAL_SHARDS,
+  restGlobalRateLimit: 50,
+  rejectOnRateLimit: crosspostQueueFilter,
 });
 
 client.start();

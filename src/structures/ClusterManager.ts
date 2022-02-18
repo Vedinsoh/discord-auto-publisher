@@ -23,7 +23,7 @@ export class AutoPublisher extends Manager {
 
   start() {
     this.registerEvents();
-    this.spawn().then(() => {
+    this.spawn({ timeout: -1 }).then(() => {
       logger.info('Clustering complete!');
       setTimeout(() => {
         this.broadcastEval((client: AutoPublisherClient) => {

@@ -1,6 +1,7 @@
 import { GuildChannel } from 'discord.js-light';
 import Blacklist from '#modules/BlacklistManager';
 import logger from '#util/logger';
+import { minToMs } from '#util/timeConverters';
 import { channelToString, guildToString } from '#util/stringFormatters';
 import { spam } from '#config';
 
@@ -11,7 +12,7 @@ export default class SpamManager {
     logger.debug(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
   }
 
-  addChannel(channel: GuildChannel, timeout: number) {
+  add(channel: GuildChannel, timeout: number) {
     const spamChannel = this.spamChannels.get(channel.id);
     if (spamChannel) return spamChannel.count++;
 
@@ -24,7 +25,7 @@ export default class SpamManager {
     }, timeout);
   }
 
-  isSpamming(channel: GuildChannel): boolean | void {
+  isSpamming(channel: GuildChannel): boolean {
     const spamChannel = this.spamChannels.get(channel.id);
     if (!spamChannel || !spam.enabled) return false;
 
@@ -43,5 +44,11 @@ export default class SpamManager {
 
     this.logRateLimited(channel, spamChannel.count);
     return true;
+  }
+  
+  check(channel: GuildChannel): void {
+    if (this.isSpamming(channel)) return;
+    this.add(channel, minToMs(60));
+    return;
   }
 }
