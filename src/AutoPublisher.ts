@@ -14,6 +14,7 @@ const client = new AutoPublisherClient({
     GuildManager: Infinity,
     GuildMemberManager: 0,
     GuildStickerManager: 0,
+    GuildScheduledEventManager: 0,
     MessageManager: 0,
     PermissionOverwriteManager: 0,
     PresenceManager: 0,
