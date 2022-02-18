@@ -7,21 +7,20 @@ import logger from '#util/logger';
 import { urlDetection } from '#config';
 
 const { spam: spamChannels } = client.cluster;
-const delayedCrossposts = new Set();
-
 const rateLimitedChannels = new Map<string, number>();
+const deferredMessages = new Set();
+
 // Sweep interval for rateLimitedChannels
 setInterval(() => {
+  const now = Date.now();
   rateLimitedChannels.forEach((timestamp, id) => {
-    if (Date.now() > timestamp + minToMs(5)) rateLimitedChannels.delete(id);
+    if (now > timestamp + minToMs(5)) rateLimitedChannels.delete(id);
   });
 }, minToMs(5));
 
-const crosspostRequest = async (message: Message | PartialMessage) => {
+const crosspost = async (message: Message | PartialMessage) => {
   const channel = message.channel as GuildChannel;
-
   if (rateLimitedChannels.has(channel.id)) return spamChannels.check(channel);
-
   message
     .crosspost()
     .then(() => {
@@ -34,24 +33,22 @@ const crosspostRequest = async (message: Message | PartialMessage) => {
     });
 };
 
+const deferCheck = (message: Message | PartialMessage) => {
+  if (deferredMessages.has(message.id)) {
+    crosspost(message);
+    deferredMessages.delete(message.id);
+  }
+};
+
+// Checks if crospost request should be sent in the first place
 export default async (message: Message | PartialMessage, options = { isUpdate: false }) => {
-  if (!urlDetection.enabled) return crosspostRequest(message);
-
-  const delayCrosspost = () => {
-    if (delayedCrossposts.has(message.id)) {
-      crosspostRequest(message);
-      delayedCrossposts.delete(message.id);
-    }
-  };
-
-  if (options.isUpdate) return delayCrosspost();
-
-  if (message.content) {
+  if (options.isUpdate) return deferCheck(message);
+  if (urlDetection.enabled && message.content) {
     if (urlRegex({ strict: true, localhost: false }).test(message.content) && !message.embeds.length) {
-      delayedCrossposts.add(message.id);
-      setTimeout(() => delayCrosspost(), secToMs(urlDetection.publishDelay));
+      deferredMessages.add(message.id);
+      setTimeout(() => deferCheck(message), secToMs(urlDetection.publishDelay));
       return;
     }
   }
-  crosspostRequest(message);
+  crosspost(message);
 };
