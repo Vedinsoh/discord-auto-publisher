@@ -1,34 +1,37 @@
-import axios, { AxiosError } from 'axios';
-import urlRegex from 'url-regex-safe';
-import { RouteBases, Routes } from 'discord-api-types/rest/v9';
 import { GuildChannel, Message, PartialMessage } from 'discord.js-light';
+import urlRegex from 'url-regex-safe';
 import client from '#client';
-import { CrosspostsQueue } from '#structures/CrosspostsQueue';
-import errorHandler from '#functions/errorHandler';
-import logger from '#util/logger';
-import { secToMs } from '#util/timeConverters';
+import { minToMs, secToMs } from '#util/timeConverters';
 import { channelToString, guildToString } from '#util/stringFormatters';
+import logger from '#util/logger';
 import { urlDetection } from '#config';
 
+const { spam: spamChannels } = client.cluster;
 const delayedCrossposts = new Set();
-const queue = new CrosspostsQueue();
+
+const rateLimitedChannels = new Map<string, number>();
+// Sweep interval for rateLimitedChannels
+setInterval(() => {
+  rateLimitedChannels.forEach((timestamp, id) => {
+    if (Date.now() > timestamp + minToMs(5)) rateLimitedChannels.delete(id);
+  });
+}, minToMs(5));
 
 const crosspostRequest = async (message: Message | PartialMessage) => {
   const channel = message.channel as GuildChannel;
 
-  if (client.cluster.spam.isSpamming(channel)) return;
+  if (rateLimitedChannels.has(channel.id)) return spamChannels.check(channel);
 
-  queue.add(() => {
-    axios.post(
-      `${RouteBases.api}${Routes.channelMessageCrosspost(channel.id, message.id)}`, {}, {
-        headers: {
-          Authorization: `Bot ${process.env.BOT_TOKEN}`,
-        },
-      })
+  message
+    .crosspost()
+    .then(() => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      .then(() => logger.debug(`Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild!)}`))
-      .catch((error: AxiosError) => errorHandler(channel, error));
-  });
+      logger.debug(`Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild!)}`);
+    })
+    .catch(() => {
+      spamChannels.check(channel);
+      rateLimitedChannels.set(channel.id, Date.now());
+    });
 };
 
 export default async (message: Message | PartialMessage, options = { isUpdate: false }) => {

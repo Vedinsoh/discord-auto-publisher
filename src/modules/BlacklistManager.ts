@@ -1,7 +1,6 @@
 import Josh from '@joshdb/core';
 import provider from '@joshdb/json'; // TODO remove noImplicitAny from tsconfig
-import { Guild } from 'discord.js-light';
-import { Snowflake } from 'discord-api-types';
+import { Snowflake } from 'discord.js-light';
 import client from '#client';
 import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
@@ -26,18 +25,13 @@ export default class BlacklistManager {
   static async startupCheck() {
     logger.debug('Checking for blacklisted guilds...');
     (await blacklist.keys).forEach(async (guildId) => {
-      const guild = client.guilds.cache.get(guildId);
-      if (guild && spam.autoLeave) this.leaveGuild(guild);
+      if (spam.autoLeave) this.leaveGuild(guildId);
     });
   }
 
   static async isBlacklisted(guildId: Snowflake, options = { leave: false }): Promise<boolean> {
     if (!(await blacklist.has(guildId))) return false;
-
-    if (options.leave) {
-      const guild = await getGuild(guildId);
-      if (guild) this.leaveGuild(guild);
-    }
+    if (options.leave) this.leaveGuild(guildId);
     return true;
   }
 
@@ -46,6 +40,7 @@ export default class BlacklistManager {
     if (await blacklist.has(guildId)) return `${guildId} is already blacklisted.`;
 
     await blacklist.set(guildId, true);
+    this.leaveGuild(guildId, true);
     return `Added ${guildId} to the blacklist.`;
   }
 
@@ -56,7 +51,10 @@ export default class BlacklistManager {
     return `Removed ${guildId} from the blacklist.`;
   }
 
-  static leaveGuild(guild: Guild) {
+  static async leaveGuild(guildId: Snowflake, force = false) {
+    const guild = force ? await getGuild(guildId) : client.guilds.cache.get(guildId);
+    if (!guild) return logger.warn(`Failed to fetch guild ${guildId} to leave.`);
+
     guild
       .leave()
       .then(() => logger.info(`Left blacklisted guild ${guildToString(guild)}`))
