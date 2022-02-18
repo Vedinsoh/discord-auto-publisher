@@ -46,7 +46,7 @@ export default async (message: Message | PartialMessage, options = { isUpdate: f
   if (urlDetection.enabled && message.content) {
     if (urlRegex({ strict: true, localhost: false }).test(message.content) && !message.embeds.length) {
       deferredMessages.add(message.id);
-      setTimeout(() => deferCheck(message), secToMs(urlDetection.publishDelay));
+      setTimeout(() => deferCheck(message), secToMs(urlDetection.deferTimeout));
       return;
     }
   }

@@ -5,7 +5,7 @@
   "presenceInterval": 15,
   "urlDetection": {
     "enabled": true,
-    "publishDelay": 5
+    "deferTimeout": 5
   },
   "spam": {
     "enabled": false,
