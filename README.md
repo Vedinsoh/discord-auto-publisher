@@ -18,8 +18,8 @@ A lightweight command-less bot that will automatically publish every new message
 * If you want to temporarily stop the bot from publishing messages in any of your announcement channels, just disable its' `View Channel` permission in a desired channel and enable it back when you're ready.
 * **IMPORTANT:** If one of your announcement channels is very spammy, your server will get blacklisted from using the bot! Please be sensible when using the bot and don't make your moderation log channels or general chat into an announcement channel. If your chanel has a high message flow, it shouldn't be an announcement channel.
 
-### Need help?
-Message me on Discord: `Forcellrus#5555`
+### Need help? Message me on Discord:
+<a href="https://discord.com/users/150701861626839041" target="_blank">`Forcellrus#5555`</a>
 
 ---
 Did the bot help you or do you simply want to support my work? ❤️
