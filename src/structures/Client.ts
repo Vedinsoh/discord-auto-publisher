@@ -25,7 +25,7 @@ export class AutoPublisherClient extends Client {
   }
 
   async registerEvents() {
-    const filePaths: string[] = getFiles('../listeners/**/*{.ts,.js}');
+    const filePaths = getFiles('../listeners/**/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
       const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);
@@ -33,7 +33,7 @@ export class AutoPublisherClient extends Client {
   }
 
   async registerCommands() {
-    const filePaths: string[] = getFiles('../modules/owner_commands/*{.ts,.js}');
+    const filePaths = getFiles('../modules/owner_commands/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
       const command: Command = await importFile(filePath);
       this.commands.set(command.name, command.run);
