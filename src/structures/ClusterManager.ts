@@ -6,17 +6,21 @@ import logger from '#util/logger';
 
 export class AutoPublisher extends Manager {
   // Inferred options from discord-hybrid-sharding's Manager constructor
+  /* eslint-disable @typescript-eslint/ban-types */
   constructor(options?: {
     totalShards?: number | 'auto';
     totalClusters?: number | 'auto';
     shardsPerClusters?: number;
-    shardList?: 'auto' | number[];
+    shardList?: 'auto' | number[][];
     mode?: ClusterManagerMode;
     respawn?: boolean;
     shardArgs?: string[];
     token?: string;
     execArgv?: string[];
     keepAlive?: keepAliveOptions;
+    queue?: { auto?: boolean };
+    clusterData?: Object;
+    clusterOptions?: Object;
   }) {
     super(getFiles('../AutoPublisher{.ts,.js}')[0], options);
   }
@@ -26,7 +30,7 @@ export class AutoPublisher extends Manager {
     this.spawn({ timeout: -1 }).then(() => {
       logger.info('Clustering complete!');
       setTimeout(() => {
-        this.broadcastEval((client: AutoPublisherClient) => {
+        this.broadcastEval((client) => {
           client.updatePresence();
           client.startPresenceInterval();
         });
