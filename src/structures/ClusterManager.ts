@@ -1,5 +1,4 @@
 import { ClusterManagerMode, keepAliveOptions, Manager } from 'discord-hybrid-sharding';
-import { AutoPublisherClient } from '#structures/Client';
 import { getFiles } from '#util/fileUtils';
 import { minToMs } from '#util/timeConverters';
 import logger from '#util/logger';
