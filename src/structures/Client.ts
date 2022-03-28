@@ -10,9 +10,9 @@ import logger from '#util/logger';
 import { presenceInterval } from '#config';
 
 export class AutoPublisherClient extends Client {
-  cluster = new AutoPublisherCluster(this);
-  commands: CommandsCollection = new Collection();
-  startedAt = Date.now();
+  public cluster = new AutoPublisherCluster(this);
+  public commands: CommandsCollection = new Collection();
+  public startedAt = Date.now();
 
   constructor(options: ClientOptions) {
     super(options);
