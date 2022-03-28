@@ -29,9 +29,12 @@ export class AutoPublisher extends Manager {
     this.spawn({ timeout: -1 }).then(() => {
       logger.info('Clustering complete!');
       setTimeout(() => {
-        this.broadcastEval((client) => {
-          client.updatePresence();
-          client.startPresenceInterval();
+        this.broadcastEval((c) => {
+          /* eslint-disable @typescript-eslint/ban-ts-comment */
+          // @ts-ignore
+          c.updatePresence();
+          // @ts-ignore
+          c.startPresenceInterval();
         });
       }, minToMs(1));
     });

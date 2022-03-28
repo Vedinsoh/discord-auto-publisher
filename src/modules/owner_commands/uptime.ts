@@ -1,10 +1,9 @@
 import { Message } from 'discord.js-light';
 import client from '#client';
-import { AutoPublisherClient } from '#structures/Client';
 import { Command } from '#structures/Command';
 
 export default new Command('uptime', async ({ channel }: Message) => {
-  const uptimes = await client.cluster.broadcastEval((c: AutoPublisherClient) => c.uptime);
+  const uptimes = await client.cluster.broadcastEval((c) => c.uptime);
 
   const formattedUptimes = uptimes.map(
     (uptime, index) => `#${index + 1}: ${uptime ? new Date(Date.now() - uptime).toISOString() : 'unknown'}`
