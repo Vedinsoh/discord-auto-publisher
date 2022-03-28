@@ -5,7 +5,8 @@ const getUsageMB = async (): Promise<number[]> => {
   return await client.cluster.evalOnManager('process.memoryUsage().rss / 1024 ** 2');
 };
 
-const getMemString = (usage: number) => usage.toLocaleString(stringLocale, { maximumFractionDigits: 2 });
+const getMemString = (usage: number) =>
+  usage.toLocaleString(stringLocale, { maximumFractionDigits: 2 });
 
 export const getMemoryUsage = async () => {
   const usage = await getUsageMB();

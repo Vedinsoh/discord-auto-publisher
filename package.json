@@ -25,7 +25,8 @@
     "build": "rm -rf dist && tsc",
     "build:watch": "rm -rf dist && tsc -w",
     "reinstall": "rm -rf node_modules && yarn install",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "prettier": "yarn prettier --write src"
   },
   "dependencies": {
     "@joshdb/core": "^1.2.7",
