@@ -38,6 +38,7 @@ jspm_packages/
 .env
 .env.test
 .env.development
+.env.production
 
 # Custom
 .vscode
