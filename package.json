@@ -19,9 +19,9 @@
     "publisher"
   ],
   "scripts": {
-    "start": "NODE_ENV=production yarn run build && yarn run start:prod",
-    "start:prod": "NODE_ENV=production node dist/index.js",
-    "start:dev": "NODE_ENV=development nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
+    "start": "yarn run build && yarn run start:prod",
+    "start:prod": "node dist/index.js",
+    "start:dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "build": "rm -rf dist && tsc",
     "build:watch": "rm -rf dist && tsc -w",
     "reinstall": "rm -rf node_modules && yarn install",
