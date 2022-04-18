@@ -1,5 +1,8 @@
 import { sync } from 'glob';
 
-export const getFiles = (pattern: string) => sync(`${__dirname}/${pattern}`);
+// Normalized dirname
+const dirname = __dirname.replace(/\\/g, '/');
+
+export const getFiles = (pattern: string) => sync(`${dirname}/${pattern}`);
 
 export const importFile = async (filePath: string) => (await import(filePath))?.default;
