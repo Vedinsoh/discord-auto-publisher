@@ -5,6 +5,7 @@ import client from '#client';
 import { botAdmin } from '#config';
 
 export default new Event('messageCreate', async (message: Message) => {
+  if (message.channel.partial) await message.channel.fetch();
   if (message.channel.type === 'GUILD_NEWS') return crosspost(message);
 
   // Bot owner commands handler
