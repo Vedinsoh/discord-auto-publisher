@@ -68,7 +68,8 @@
     "#util/*": "./dist/util/*.js"
   },
   "engines": {
-    "node": "^16.6.0",
-    "yarn": "^1.12.0"
+    "node": ">=16.6.0",
+    "yarn": ">=1.12.0",
+    "npm": "please-use-yarn"
   }
 }
