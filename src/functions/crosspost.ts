@@ -29,7 +29,7 @@ const crosspost = async (message: Message | PartialMessage) => {
       logger.debug(`Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild!)}`);
     })
     .catch((error) => {
-      if (Object.hasOwn(error, 'code')) {
+      if (Object.prototype.hasOwnProperty.call(error, 'code')) {
         if (error.code === MISSING_PERMISSIONS_CODE) return;
       }
       spamChannels.check(channel);
