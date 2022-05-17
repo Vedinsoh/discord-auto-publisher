@@ -33,7 +33,7 @@
     "@joshdb/json": "^1.0.5",
     "bufferutil": "^4.0.3",
     "discord-hybrid-sharding": "^1.5.3",
-    "discord.js-light": "^4.6.5",
+    "discord.js-light": "^4.7.0",
     "dotenv": "^16.0.0",
     "glob": "^8.0.1",
     "pino": "^7.10.0",
