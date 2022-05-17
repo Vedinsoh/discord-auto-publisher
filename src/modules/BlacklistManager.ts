@@ -19,9 +19,6 @@ const blacklist = new Josh({
 const isValidGuild = async (guildId: Snowflake): Promise<boolean> => !!(await getGuild(guildId));
 
 export default class BlacklistManager {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  private constructor() {}
-
   static async startupCheck() {
     logger.debug('Checking for blacklisted guilds...');
     (await blacklist.keys).forEach(async (guildId) => {

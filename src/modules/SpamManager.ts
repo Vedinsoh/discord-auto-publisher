@@ -45,7 +45,7 @@ export default class SpamManager {
     this.logRateLimited(channel, spamChannel.count);
     return true;
   }
-  
+
   check(channel: GuildChannel): void {
     if (this.isSpamming(channel)) return;
     this.add(channel, minToMs(60));
