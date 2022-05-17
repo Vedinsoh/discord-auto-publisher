@@ -9,6 +9,7 @@ import { urlDetection } from '#config';
 const { spam: spamChannels } = client.cluster;
 const rateLimitedChannels = new Map<string, number>();
 const deferredMessages = new Set();
+const MISSING_PERMISSIONS_CODE = 50013;
 
 // Sweep interval for rateLimitedChannels
 setInterval(() => {
@@ -27,7 +28,10 @@ const crosspost = async (message: Message | PartialMessage) => {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       logger.debug(`Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild!)}`);
     })
-    .catch(() => {
+    .catch((error) => {
+      if (Object.hasOwn(error, 'code')) {
+        if (error.code === MISSING_PERMISSIONS_CODE) return;
+      }
       spamChannels.check(channel);
       rateLimitedChannels.set(channel.id, Date.now());
     });
