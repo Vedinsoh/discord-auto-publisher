@@ -7,7 +7,14 @@ import { botAdmin } from '#config';
 export default new Event('messageCreate', async (message: Message) => {
   const { channel } = message;
 
-  if (channel.partial) await message.channel.fetch();
+  if (channel.partial) {
+    if (channel.type === 'DM') {
+      await message.author.createDM();
+    } else {
+      await message.channel.fetch();
+    }
+  }
+
   if (channel.type === 'GUILD_NEWS') return crosspost(message);
 
   // Bot owner commands handler

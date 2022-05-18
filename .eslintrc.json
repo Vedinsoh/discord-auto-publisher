@@ -11,7 +11,7 @@
 	],
 	"env": {
 		"node": true,
-		"es6": true
+		"es2022": true
 	},
 	"rules": {
 		"prettier/prettier": ["warn", {
