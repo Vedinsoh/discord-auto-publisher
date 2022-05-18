@@ -34,5 +34,5 @@ Given the bot's simple nature, using the publicly-hosted version will be enough 
 You're free to host this bot on your own machine, but please keep in mind I will not be providing any support in that regard (do it on your own risk). If you're directly hosting this bot, you should not monetize it in any way; the bot's goal is to help everyone and be free of any charge.
 
 Requirements:
-* Node >=16.6.0
+* Node >=16.9.0
 * Yarn >=1.22.0

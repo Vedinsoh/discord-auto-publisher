@@ -28,6 +28,7 @@ const client = new AutoPublisherClient({
     VoiceStateManager: 0,
   }),
   intents: [FLAGS.GUILDS, FLAGS.GUILD_MESSAGES, FLAGS.DIRECT_MESSAGES],
+  partials: ['CHANNEL'],
   shards: data.SHARD_LIST,
   shardCount: data.TOTAL_SHARDS,
   restGlobalRateLimit: 50,
