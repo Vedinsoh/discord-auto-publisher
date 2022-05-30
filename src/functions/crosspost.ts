@@ -3,13 +3,13 @@ import urlRegex from 'url-regex-safe';
 import client from '#client';
 import { minToMs, secToMs } from '#util/timeConverters';
 import { channelToString, guildToString } from '#util/stringFormatters';
+import errorCodes from '#util/errorCodes';
 import logger from '#util/logger';
 import { urlDetection } from '#config';
 
 const { spam: spamChannels } = client.cluster;
 const rateLimitedChannels = new Map<string, number>();
 const deferredMessages = new Set();
-const MISSING_PERMISSIONS_CODE = 50013;
 
 // Sweep interval for rateLimitedChannels
 setInterval(() => {
@@ -30,7 +30,7 @@ const crosspost = async (message: Message | PartialMessage) => {
     })
     .catch((error) => {
       if (Object.prototype.hasOwnProperty.call(error, 'code')) {
-        if (error.code === MISSING_PERMISSIONS_CODE) return;
+        if (errorCodes.includes(error.code)) return;
       }
       spamChannels.check(channel);
       rateLimitedChannels.set(channel.id, Date.now());
@@ -44,7 +44,7 @@ const deferCheck = (message: Message | PartialMessage) => {
   }
 };
 
-// Checks if crospost request should be sent in the first place
+// Checks if crosspost request should be sent in the first place
 export default async (message: Message | PartialMessage, options = { isUpdate: false }) => {
   if (options.isUpdate) return deferCheck(message);
   if (urlDetection.enabled && message.content) {
