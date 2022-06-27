@@ -6,7 +6,9 @@ import { botAdmin } from '#config';
 
 export default new Event('messageCreate', async (message: Message) => {
   const { channel } = message;
+
   if (channel.partial) await message.channel.fetch();
+  if (!channel) return;
 
   if (channel.type === 'GUILD_NEWS') return crosspost(message);
 
