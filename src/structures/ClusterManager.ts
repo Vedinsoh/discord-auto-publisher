@@ -5,7 +5,8 @@ import logger from '#util/logger';
 
 export class AutoPublisher extends Manager {
   constructor(options?: ManagerOptions) {
-    super(getFiles('../AutoPublisher{.ts,.js}')[0], options);
+    const clientFile = getFiles('../AutoPublisher{.ts,.js}')[0];
+    super(clientFile, options);
   }
 
   start() {
@@ -13,8 +14,8 @@ export class AutoPublisher extends Manager {
     this.spawn({ timeout: -1 }).then(() => {
       logger.info('Clustering complete!');
       setTimeout(() => {
+        /* eslint-disable @typescript-eslint/ban-ts-comment */
         this.broadcastEval((c) => {
-          /* eslint-disable @typescript-eslint/ban-ts-comment */
           // @ts-ignore
           c.updatePresence();
           // @ts-ignore

@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "start": "yarn run build && yarn run start:prod",
-    "start:prod": "node dist/index.js",
+    "start:prod": "node dist/src/index.js",
     "start:dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "build": "rm -rf dist && tsc",
     "build:watch": "rm -rf dist && tsc -w",
@@ -60,12 +60,12 @@
   },
   "imports": {
     "#config": "./dist/config.json",
-    "#client": "./dist/AutoPublisher.js",
-    "#modules/*": "./dist/modules/*.js",
-    "#functions/*": "./dist/functions/*.js",
-    "#structures/*": "./dist/structures/*.js",
-    "#types/*": "./dist/types/*.js",
-    "#util/*": "./dist/util/*.js"
+    "#client": "./dist/src/AutoPublisher.js",
+    "#modules/*": "./dist/src/modules/*.js",
+    "#functions/*": "./dist/src/functions/*.js",
+    "#structures/*": "./dist/src/structures/*.js",
+    "#types/*": "./dist/src/types/*.js",
+    "#util/*": "./dist/src/util/*.js"
   },
   "engines": {
     "node": ">=16.9.0",

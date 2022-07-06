@@ -18,19 +18,19 @@
     "sourceMap": false,
     "strict": true,
     "target": "ESNext",
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist",
     "baseUrl": "src",
     "paths": {
-      "#config": ["config.json"],
+      "#config": ["../config.json"],
       "#client": ["AutoPublisher"],
       "#modules/*": ["modules/*"],
       "#functions/*": ["functions/*"],
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
-      "#util/*": ["util/*"],
-    },
+      "#util/*": ["util/*"]
+    }
   },
   "include": ["src"],
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules"]
 }
