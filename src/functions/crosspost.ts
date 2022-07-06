@@ -7,7 +7,7 @@ import errorCodes from '#util/errorCodes';
 import logger from '#util/logger';
 import { urlDetection } from '#config';
 
-const { spam: spamChannels } = client.cluster;
+const { spamChannels } = client.cluster;
 const rateLimitedChannels = new Map<string, number>();
 const deferredMessages = new Set();
 

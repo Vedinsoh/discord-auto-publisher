@@ -19,9 +19,7 @@ const setLevel = async (level: LoggerLevel) =>
 
 export default new Command('debug', async ({ channel }: Message, value: string) => {
   if (![...enable, ...disable].includes(value)) {
-    return channel.send(
-      `Please provide a valid argument:\n\`${enable.join(', ')}\`\nor\n\`${disable.join(', ')}\``
-    );
+    return channel.send(`Please provide a valid argument:\n\`${enable.join(', ')}\`\nor\n\`${disable.join(', ')}\``);
   }
 
   if (enable.includes(value)) {
