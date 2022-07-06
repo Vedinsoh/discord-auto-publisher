@@ -1,0 +1,10 @@
+{
+  "apps": [
+    {
+      "name": "auto-publisher",
+      "script": "yarn",
+      "args": "-- run start:prod -- --time",
+      "max_memory_restart": "1G"
+    }
+  ]
+}
