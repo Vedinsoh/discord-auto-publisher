@@ -1,5 +1,7 @@
 import client from '#client';
-import { stringLocale } from '#config';
+import config from '#config';
+
+const { stringLocale } = config;
 
 const getUsageMB = async (): Promise<number[]> => {
   return await client.cluster.evalOnManager('process.memoryUsage().rss / 1024 ** 2');

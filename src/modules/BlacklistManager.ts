@@ -6,8 +6,9 @@ import client from '#client';
 import getGuild from '#functions/getGuild';
 import { guildToString } from '#util/stringFormatters';
 import logger from '#util/logger';
-import { spam } from '#config';
+import config from '#config';
 
+const { spam } = config;
 const blacklist = new Josh({
   name: 'blacklist',
   provider,

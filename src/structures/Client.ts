@@ -7,8 +7,9 @@ import { CommandsCollection } from '#types/CommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
 import { minToMs } from '#util/timeConverters';
 import logger from '#util/logger';
-import { presenceInterval } from '#config';
+import config from '#config';
 
+const { presenceInterval } = config;
 export class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();

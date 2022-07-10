@@ -1,6 +1,7 @@
 import createLogger, { levels } from 'pino';
-import { loggingLevel } from '#config';
+import config from '#config';
 
+const { loggingLevel } = config;
 const pinoLevels = Object.values(levels.labels);
 if (!pinoLevels.includes(loggingLevel)) {
   throw new Error(`Invalid logging level in config. Valid levels: ${pinoLevels.join(', ')}`);

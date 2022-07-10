@@ -18,11 +18,11 @@
     "sourceMap": false,
     "strict": true,
     "target": "ESNext",
-    "rootDir": ".",
+    "rootDir": "src",
     "outDir": "dist",
     "baseUrl": "src",
     "paths": {
-      "#config": ["../config.json"],
+      "#config": ["config"],
       "#client": ["AutoPublisher"],
       "#modules/*": ["modules/*"],
       "#functions/*": ["functions/*"],

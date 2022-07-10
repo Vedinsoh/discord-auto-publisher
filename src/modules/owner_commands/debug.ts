@@ -2,8 +2,10 @@ import { Message } from 'discord.js-light';
 import { Level as LoggerLevel } from 'pino';
 import client from '#client';
 import { Command } from '#structures/Command';
-import { loggingLevel } from '#config';
 import logger from '#util/logger';
+import config from '#config';
+
+const { loggingLevel } = config;
 
 const enable = ['1', 'true', 'enable', 'accept', 'on', 'yes'];
 const disable = ['0', 'false', 'disable', 'deny', 'off', 'no'];

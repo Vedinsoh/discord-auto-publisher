@@ -3,7 +3,9 @@ import Blacklist from '#modules/BlacklistManager';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 import { channelToString, guildToString } from '#util/stringFormatters';
-import { spam } from '#config';
+import config from '#config';
+
+const { spam } = config;
 
 export default class SpamManager {
   spamChannels: Map<string, { count: number }> = new Map();

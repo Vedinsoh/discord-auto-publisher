@@ -5,7 +5,9 @@ import { minToMs, secToMs } from '#util/timeConverters';
 import { channelToString, guildToString } from '#util/stringFormatters';
 import errorCodes from '#util/errorCodes';
 import logger from '#util/logger';
-import { urlDetection } from '#config';
+import config from '#config';
+
+const { urlDetection } = config;
 
 const { spamChannels } = client.cluster;
 const rateLimitedChannels = new Map<string, number>();

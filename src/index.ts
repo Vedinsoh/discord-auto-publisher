@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import '#config';
 import { AutoPublisher } from '#structures/ClusterManager';
 
 const manager = new AutoPublisher({

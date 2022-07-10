@@ -2,7 +2,9 @@ import { Message } from 'discord.js-light';
 import { Event } from '#structures/Event';
 import crosspost from '#functions/crosspost';
 import client from '#client';
-import { botAdmin } from '#config';
+import config from '#config';
+
+const { botAdmin } = config;
 
 export default new Event('messageCreate', async (message: Message) => {
   const { channel } = message;
