@@ -1,4 +1,4 @@
-import { Message } from 'discord.js-light';
+import { Constants, Message } from 'discord.js-light';
 import { Event } from '#structures/Event';
 import crosspost from '#functions/crosspost';
 import client from '#client';
@@ -6,7 +6,7 @@ import config from '#config';
 
 const { botAdmin } = config;
 
-export default new Event('messageCreate', async (message: Message) => {
+export default new Event(Constants.Events.MESSAGE_CREATE, async (message: Message) => {
   const { channel } = message;
 
   if (channel.partial) await message.channel.fetch();

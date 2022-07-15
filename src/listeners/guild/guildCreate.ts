@@ -1,4 +1,4 @@
-import { Guild } from 'discord.js-light';
+import { Constants, Guild } from 'discord.js-light';
 import { Event } from '#structures/Event';
 import Blacklist from '#modules/BlacklistManager';
 import { guildToString } from '#util/stringFormatters';
@@ -7,7 +7,7 @@ import config from '#config';
 
 const { spam } = config;
 
-export default new Event('guildCreate', async (guild: Guild) => {
+export default new Event(Constants.Events.GUILD_CREATE, async (guild: Guild) => {
   if (await Blacklist.isBlacklisted(guild.id, { leave: spam.autoLeave })) return;
 
   const members = guild.memberCount || 'unknown';
