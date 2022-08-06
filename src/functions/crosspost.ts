@@ -1,4 +1,4 @@
-import { GuildChannel, Message, PartialMessage } from 'discord.js-light';
+import { GuildChannel, Message, PartialMessage, Snowflake } from 'discord.js-light';
 import urlRegex from 'url-regex-safe';
 import client from '#client';
 import { minToMs, secToMs } from '#util/timeConverters';
@@ -10,8 +10,8 @@ import config from '#config';
 const { urlDetection } = config;
 
 const { spamChannels } = client.cluster;
-const rateLimitedChannels = new Map<string, number>();
-const deferredMessages = new Set();
+const rateLimitedChannels = new Map<Snowflake, number>();
+const deferredMessages = new Set<Snowflake>();
 
 // Sweep interval for rateLimitedChannels
 setInterval(() => {
