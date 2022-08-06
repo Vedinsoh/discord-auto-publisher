@@ -32,6 +32,7 @@
   "dependencies": {
     "@joshdb/core": "^1.2.7",
     "@joshdb/json": "^1.0.5",
+    "@trivago/prettier-plugin-sort-imports": "^3.3.0",
     "bufferutil": "^4.0.3",
     "discord-hybrid-sharding": "^1.6.4",
     "discord.js-light": "^4.8.1",

@@ -5,5 +5,7 @@
   "trailingComma": "es5",
   "bracketSpacing": true,
   "arrowParens": "always",
-  "printWidth": 120
+  "printWidth": 120,
+  "importOrder": ["^dotenv*", "^node:*", "discord.js", "^[./]", "#client", "config", "<THIRD_PARTY_MODULES>"],
+  "importOrderSortSpecifiers": true
 }
