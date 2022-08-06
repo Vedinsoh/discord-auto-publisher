@@ -2,7 +2,7 @@ import { Client as ClusterClient, client as DiscordClient } from 'discord-hybrid
 import SpamManager from '#modules/SpamManager';
 
 export class AutoPublisherCluster extends ClusterClient {
-  spamChannels = new SpamManager();
+  public spamChannels = new SpamManager();
 
   constructor(options: DiscordClient) {
     super(options);

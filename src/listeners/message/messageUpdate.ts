@@ -1,10 +1,7 @@
-import { Constants, Message, PartialMessage } from 'discord.js-light';
-import { Event } from '#structures/Event';
+import { Constants } from 'discord.js-light';
 import crosspost from '#functions/crosspost';
+import { Event } from '#structures/Event';
 
-export default new Event(
-  Constants.Events.MESSAGE_UPDATE,
-  async (_original: Message | PartialMessage, updated: Message | PartialMessage) => {
-    if (!updated.flags.bitfield) crosspost(updated, { isUpdate: true });
-  }
-);
+export default new Event(Constants.Events.MESSAGE_UPDATE, async (_original, updated) => {
+  if (!updated.flags.bitfield) crosspost(updated, { isUpdate: true });
+});
