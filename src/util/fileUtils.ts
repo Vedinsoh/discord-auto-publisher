@@ -1,8 +1,11 @@
 import { sync } from 'glob';
 
 // Normalized dirname
-const dirname = __dirname.replace(/\\/g, '/');
+const normalizePath = (route: string) => route.replace(/[\\/]+/g, '/');
 
-export const getFiles = (pattern: string) => sync(`${dirname}/${pattern}`);
+export const getFiles = (route: string) => {
+  return sync(normalizePath(`${process.env.PWD}/${process.env.BASE_DIR}/${route}`));
+};
 
-export const importFile = async (filePath: string) => (await import(filePath))?.default;
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+export const importFile = (filePath: string) => require(filePath)?.default;

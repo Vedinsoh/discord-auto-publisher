@@ -1,13 +1,13 @@
 import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
-import { Level as LoggerLevel } from 'pino';
+import config from '#config';
 import { AutoPublisherCluster } from '#structures/Cluster';
-import { Event } from '#structures/Event';
 import { Command } from '#structures/Command';
+import { Event } from '#structures/Event';
 import { CommandsCollection } from '#types/CommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
-import { minToMs } from '#util/timeConverters';
 import logger from '#util/logger';
-import config from '#config';
+import { minToMs } from '#util/timeConverters';
+import { Level as LoggerLevel } from 'pino';
 
 const { presenceInterval } = config;
 export class AutoPublisherClient extends Client {
@@ -26,17 +26,17 @@ export class AutoPublisherClient extends Client {
   }
 
   async registerEvents() {
-    const filePaths = getFiles('../listeners/**/*{.ts,.js}');
+    const filePaths = getFiles('listeners/**/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const event: Event<keyof ClientEvents> = await importFile(filePath);
+      const event: Event<keyof ClientEvents> = importFile(filePath);
       this.on(event.name, event.run);
     });
   }
 
   async registerCommands() {
-    const filePaths = getFiles('../modules/owner_commands/*{.ts,.js}');
+    const filePaths = getFiles('modules/owner_commands/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const command: Command = await importFile(filePath);
+      const command: Command = importFile(filePath);
       this.commands.set(command.name, command.run);
     });
   }

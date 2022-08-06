@@ -1,11 +1,11 @@
 import { GuildChannel, Message, PartialMessage, Snowflake } from 'discord.js-light';
-import urlRegex from 'url-regex-safe';
 import client from '#client';
-import { minToMs, secToMs } from '#util/timeConverters';
-import { channelToString, guildToString } from '#util/stringFormatters';
+import config from '#config';
 import errorCodes from '#util/errorCodes';
 import logger from '#util/logger';
-import config from '#config';
+import { channelToString, guildToString } from '#util/stringFormatters';
+import { minToMs, secToMs } from '#util/timeConverters';
+import urlRegex from 'url-regex-safe';
 
 const { urlDetection } = config;
 

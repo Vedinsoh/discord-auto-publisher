@@ -1,9 +1,10 @@
-import { data } from 'discord-hybrid-sharding';
-import { Options, Intents } from 'discord.js-light';
-import { AutoPublisherClient } from '#structures/Client';
+import Cluster from 'discord-hybrid-sharding';
+import { Intents, Options } from 'discord.js-light';
 import crosspostQueueFilter from '#functions/crosspostQueueFilter';
+import { AutoPublisherClient } from '#structures/Client';
 
 const { FLAGS } = Intents;
+const shardData = Cluster.Client.getInfo();
 const client = new AutoPublisherClient({
   makeCache: Options.cacheWithLimits({
     ApplicationCommandManager: 0,
@@ -29,8 +30,8 @@ const client = new AutoPublisherClient({
   }),
   intents: [FLAGS.GUILDS, FLAGS.GUILD_MESSAGES, FLAGS.DIRECT_MESSAGES],
   partials: ['CHANNEL'],
-  shards: data.SHARD_LIST,
-  shardCount: data.TOTAL_SHARDS,
+  shards: shardData.SHARD_LIST,
+  shardCount: shardData.TOTAL_SHARDS,
   restGlobalRateLimit: 50,
   rejectOnRateLimit: crosspostQueueFilter,
 });

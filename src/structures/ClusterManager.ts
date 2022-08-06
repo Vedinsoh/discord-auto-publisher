@@ -1,11 +1,11 @@
-import { Manager, ManagerOptions } from 'discord-hybrid-sharding';
 import { getFiles } from '#util/fileUtils';
-import { minToMs } from '#util/timeConverters';
 import logger from '#util/logger';
+import { minToMs } from '#util/timeConverters';
+import { Manager, ManagerOptions } from 'discord-hybrid-sharding';
 
 export class AutoPublisher extends Manager {
   constructor(options?: ManagerOptions) {
-    const clientFile = getFiles('../AutoPublisher{.ts,.js}')[0];
+    const clientFile = getFiles('AutoPublisher{.ts,.js}')[0];
     super(clientFile, options);
   }
 

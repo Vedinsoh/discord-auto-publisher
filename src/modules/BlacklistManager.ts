@@ -1,12 +1,13 @@
-import { data } from 'discord-hybrid-sharding';
+import Cluster from 'discord-hybrid-sharding';
 import { ShardClientUtil, Snowflake } from 'discord.js-light';
-import Josh from '@joshdb/core';
-import provider from '@joshdb/json'; // TODO remove noImplicitAny from tsconfig
+// TODO remove noImplicitAny from tsconfig
 import client from '#client';
-import getGuild from '#functions/getGuild';
-import { guildToString } from '#util/stringFormatters';
-import logger from '#util/logger';
 import config from '#config';
+import getGuild from '#functions/getGuild';
+import logger from '#util/logger';
+import { guildToString } from '#util/stringFormatters';
+import Josh from '@joshdb/core';
+import provider from '@joshdb/json';
 
 const { spam } = config;
 const blacklist = new Josh({
@@ -60,7 +61,8 @@ export default class BlacklistManager {
     }
 
     // In case the guild is not on the same shard
-    const shardId = ShardClientUtil.shardIdForGuildId(guildId, data.TOTAL_SHARDS);
+    const shardData = Cluster.Client.getInfo();
+    const shardId = ShardClientUtil.shardIdForGuildId(guildId, shardData.TOTAL_SHARDS);
     client.cluster
       .broadcastEval((c, { guildId }) => c.guilds.cache.get(guildId).leave(), {
         cluster: shardId,
