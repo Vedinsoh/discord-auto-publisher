@@ -1,8 +1,8 @@
-import { Message } from 'discord.js-light';
 import { Level as LoggerLevel } from 'pino';
 import client from '#client';
 import config from '#config';
-import { Command } from '#structures/Command';
+import AdminCommand from '#structures/AdminCommand';
+import { CommandNames } from '#types/CommandTypes';
 import logger from '#util/logger';
 
 const { loggingLevel } = config;
@@ -19,7 +19,7 @@ const setLevel = async (level: LoggerLevel) =>
     })
     .catch(logger.error);
 
-export default new Command('debug', async ({ channel }: Message, value: string) => {
+export default new AdminCommand(CommandNames.DEBUG, async ({ channel }, value) => {
   if (![...enable, ...disable].includes(value)) {
     return channel.send(`Please provide a valid argument:\n\`${enable.join(', ')}\`\nor\n\`${disable.join(', ')}\``);
   }

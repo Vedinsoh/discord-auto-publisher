@@ -3,6 +3,7 @@ import client from '#client';
 import config from '#config';
 import crosspost from '#functions/crosspost';
 import { Event } from '#structures/Event';
+import { CommandNames } from '#types/CommandTypes';
 
 const { botAdmin } = config;
 
@@ -18,7 +19,7 @@ export default new Event(Constants.Events.MESSAGE_CREATE, async (message) => {
   if (channel.type === 'DM' && message.author.id === botAdmin) {
     const [commandName, argument] = message.content.toLowerCase().split(/ +/g).splice(0, 2);
 
-    const command = client.commands.get(commandName);
+    const command = client.commands.get(commandName as CommandNames);
     if (command) command(message, argument);
   }
 });

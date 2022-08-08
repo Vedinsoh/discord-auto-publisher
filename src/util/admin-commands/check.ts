@@ -1,8 +1,8 @@
-import { Message, Snowflake } from 'discord.js-light';
 import client from '#client';
-import { Command } from '#structures/Command';
+import AdminCommand from '#structures/AdminCommand';
+import { CommandNames } from '#types/CommandTypes';
 
-export default new Command('check', async ({ channel }: Message, guildId?: Snowflake) => {
+export default new AdminCommand(CommandNames.CHECK, async ({ channel }, guildId) => {
   if (!guildId) return channel.send('Please provide server ID.');
   channel.send(`Server is ${!(await client.blacklist.has(guildId)) ? 'not ' : ''}blacklisted.`);
 });

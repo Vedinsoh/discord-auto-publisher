@@ -1,9 +1,9 @@
-import { Message, Snowflake } from 'discord.js-light';
 import client from '#client';
-import { Command } from '#structures/Command';
+import AdminCommand from '#structures/AdminCommand';
+import { CommandNames } from '#types/CommandTypes';
 import logger from '#util/logger';
 
-export default new Command('unblacklist', async ({ channel }: Message, guildId?: Snowflake) => {
+export default new AdminCommand(CommandNames.UNBLACKLIST, async ({ channel }, guildId) => {
   if (!guildId) return channel.send('Please provide server ID.');
   await client.blacklist.remove(guildId).then((response) => {
     channel.send(response);

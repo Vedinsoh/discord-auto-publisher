@@ -1,8 +1,8 @@
-import { Message } from 'discord.js-light';
 import client from '#client';
-import { Command } from '#structures/Command';
+import AdminCommand from '#structures/AdminCommand';
+import { CommandNames } from '#types/CommandTypes';
 
-export default new Command('uptime', async ({ channel }: Message) => {
+export default new AdminCommand(CommandNames.UPTIME, async ({ channel }) => {
   const uptimes = await client.cluster.broadcastEval((c) => c.uptime);
 
   const formattedUptimes = uptimes.map(

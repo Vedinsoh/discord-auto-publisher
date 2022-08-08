@@ -1,8 +1,8 @@
-import { Message } from 'discord.js-light';
 import respawnClusters from '#functions/respawnClusters';
-import { Command } from '#structures/Command';
+import AdminCommand from '#structures/AdminCommand';
+import { CommandNames } from '#types/CommandTypes';
 
-export default new Command('respawn', async ({ channel }: Message) => {
+export default new AdminCommand(CommandNames.RESPAWN, async ({ channel }) => {
   channel.send('Respawning all clusters...');
   respawnClusters();
 });

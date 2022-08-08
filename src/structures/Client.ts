@@ -5,7 +5,6 @@ import BlacklistManager from '#managers/BlacklistManager';
 import RateLimitsManager from '#managers/RateLimitsManager';
 import SpamManager from '#managers/SpamManager';
 import { AutoPublisherCluster } from '#structures/Cluster';
-import { Command } from '#structures/Command';
 import { Event } from '#structures/Event';
 import { CommandsCollection } from '#types/CommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
@@ -53,7 +52,7 @@ export class AutoPublisherClient extends Client {
   async registerCommands() {
     const filePaths = getFiles('util/admin-commands/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const command: Command = importFile(filePath);
+      const command = importFile(filePath);
       this.commands.set(command.name, command.run);
     });
   }
