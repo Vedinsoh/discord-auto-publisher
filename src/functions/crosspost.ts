@@ -42,14 +42,17 @@ const crosspost = async (message: MessageType) => {
 // Checks if crosspost request should be sent in the first place
 export default async (message: MessageType, options = { isUpdate: false }) => {
   if (options.isUpdate) return deferCheck(message);
+
   if (urlDetection.enabled && message.content) {
     const hasUrl = urlRegex({ strict: true, localhost: false }).test(message.content);
     const hasEmbeds = message.embeds.length;
+
     if (hasUrl && !hasEmbeds) {
       deferredMessages.add(message.id);
       setTimeout(() => deferCheck(message), secToMs(urlDetection.deferTimeout));
       return;
     }
   }
+
   crosspost(message);
 };
