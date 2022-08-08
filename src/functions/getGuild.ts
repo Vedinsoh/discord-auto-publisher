@@ -1,5 +1,5 @@
-import client from '#client';
 import { Guild, Snowflake } from 'discord.js-light';
+import client from '#client';
 
 export default async (guildId: Snowflake): Promise<Guild | undefined> => {
   const evalResult = (await client.cluster.broadcastEval((c, { guildId }) => c.guilds.cache.get(guildId), {

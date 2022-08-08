@@ -1,7 +1,7 @@
+import { Manager, ManagerOptions } from 'discord-hybrid-sharding';
 import { getFiles } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
-import { Manager, ManagerOptions } from 'discord-hybrid-sharding';
 
 export class AutoPublisher extends Manager {
   constructor(options?: ManagerOptions) {

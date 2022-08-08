@@ -1,5 +1,5 @@
-import config from '#config';
 import createLogger, { levels } from 'pino';
+import config from '#config';
 
 const { loggingLevel } = config;
 const pinoLevels = Object.values(levels.labels);

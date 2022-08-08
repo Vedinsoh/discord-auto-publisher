@@ -1,9 +1,9 @@
 import { Message } from 'discord.js-light';
+import { Level as LoggerLevel } from 'pino';
 import client from '#client';
 import config from '#config';
 import { Command } from '#structures/Command';
 import logger from '#util/logger';
-import { Level as LoggerLevel } from 'pino';
 
 const { loggingLevel } = config;
 
