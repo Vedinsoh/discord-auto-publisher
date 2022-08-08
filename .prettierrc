@@ -6,6 +6,6 @@
   "bracketSpacing": true,
   "arrowParens": "always",
   "printWidth": 120,
-  "importOrder": ["dotenv*", "node:*", "discord*", "^[./]", "#client", "config", "<THIRD_PARTY_MODULES>"],
+  "importOrder": ["^[a-z]", "^[./]", "^#", "<THIRD_PARTY_MODULES>"],
   "importOrderSortSpecifiers": true
 }

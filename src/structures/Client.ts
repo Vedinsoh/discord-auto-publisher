@@ -1,5 +1,9 @@
 import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
+import { Level as LoggerLevel } from 'pino';
 import config from '#config';
+import BlacklistManager from '#managers/BlacklistManager';
+import RateLimitsManager from '#managers/RateLimitsManager';
+import SpamManager from '#managers/SpamManager';
 import { AutoPublisherCluster } from '#structures/Cluster';
 import { Command } from '#structures/Command';
 import { Event } from '#structures/Event';
@@ -7,11 +11,14 @@ import { CommandsCollection } from '#types/CommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
-import { Level as LoggerLevel } from 'pino';
 
 const { presenceInterval } = config;
 export class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
+  public blacklist = new BlacklistManager();
+  public rateLimits = new RateLimitsManager();
+  public spam = new SpamManager();
+
   public commands: CommandsCollection = new Collection();
   public startedAt = Date.now();
 
@@ -19,10 +26,20 @@ export class AutoPublisherClient extends Client {
     super(options);
   }
 
-  start() {
-    this.registerEvents();
-    this.registerCommands();
-    this.login(process.env.BOT_TOKEN);
+  async start() {
+    await Promise.all([
+      this.blacklist.start(),
+      this.rateLimits.start(),
+      this.spam.start(),
+
+      this.registerEvents(),
+      this.registerCommands(),
+      this.login(process.env.BOT_TOKEN),
+    ]).catch((error) => {
+      logger.error(error);
+      new Error('Failed to start the client. Please ensure your Redis server is running.');
+      process.exit(1);
+    });
   }
 
   async registerEvents() {

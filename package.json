@@ -19,19 +19,15 @@
     "publisher"
   ],
   "scripts": {
-    "start": "yarn run build && yarn run start:prod",
-    "start:prod": "cross-env TS_NODE_BASEURL=dist NODE_ENV=production node -r tsconfig-paths/register dist/index.js",
-    "start:dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
     "build": "rm -rf dist && tsc",
-    "build:watch": "rm -rf dist && tsc -w",
+    "start": "cross-env TS_NODE_BASEURL=dist NODE_ENV=production node -r tsconfig-paths/register dist/index.js",
+    "start:dev": "cross-env NODE_ENV=development ts-node-dev -r tsconfig-paths/register src/index.ts",
     "reinstall": "rm -rf node_modules && yarn install",
     "update": "yarn upgrade-interactive --latest",
     "lint": "eslint src --ext .ts",
     "prettier": "prettier --write src"
   },
   "dependencies": {
-    "@joshdb/core": "^1.2.7",
-    "@joshdb/json": "^1.0.5",
     "bufferutil": "^4.0.3",
     "cross-env": "^7.0.3",
     "discord-hybrid-sharding": "^1.7.1",
@@ -41,6 +37,7 @@
     "pino": "^8.4.0",
     "pino-pretty": "^8.1.0",
     "re2": "^1.17.7",
+    "redis": "^4.2.0",
     "tsconfig-paths": "^4.0.0",
     "url-regex-safe": "^3.0.0",
     "utf-8-validate": "^5.0.9"
@@ -55,17 +52,17 @@
     "eslint": "^8.21.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "nodemon": "^2.0.19",
     "prettier": "^2.7.1",
-    "ts-node": "^10.9.1",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^4.7.4"
   },
   "imports": {
     "#config": "./dist/config.js",
     "#client": "./dist/AutoPublisher.js",
-    "#modules/*": "./dist/modules/*.js",
+    "#constants/*": "./dist/constants/*.js",
     "#functions/*": "./dist/functions/*.js",
+    "#handlers": "./dist/handlers/*.js",
+    "#managers/*": "./dist/managers/*.js",
+    "#modules/*": "./dist/modules/*.js",
     "#structures/*": "./dist/structures/*.js",
     "#types/*": "./dist/types/*.js",
     "#util/*": "./dist/util/*.js"

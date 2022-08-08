@@ -8,9 +8,6 @@
     "lib": ["ESNext"],
     "module": "CommonJS",
     "moduleResolution": "Node",
-
-    "noImplicitAny": false,
-
     "removeComments": true,
     "resolveJsonModule": true,
     "skipDefaultLibCheck": true,
@@ -24,8 +21,11 @@
     "paths": {
       "#config": ["config"],
       "#client": ["AutoPublisher"],
-      "#modules/*": ["modules/*"],
+      "#constants/*": ["constants/*"],
       "#functions/*": ["functions/*"],
+      "#handlers/*": ["handlers/*"],
+      "#managers/*": ["managers/*"],
+      "#modules/*": ["modules/*"],
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
       "#util/*": ["util/*"]
