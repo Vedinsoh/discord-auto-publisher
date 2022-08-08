@@ -38,7 +38,7 @@
     "pino-pretty": "^8.1.0",
     "re2": "^1.17.7",
     "redis": "^4.2.0",
-    "tsconfig-paths": "^4.0.0",
+    "tsconfig-paths": "^4.1.0",
     "url-regex-safe": "^3.0.0",
     "utf-8-validate": "^5.0.9"
   },
