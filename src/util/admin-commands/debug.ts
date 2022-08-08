@@ -2,7 +2,7 @@ import { Level as LoggerLevel } from 'pino';
 import client from '#client';
 import config from '#config';
 import AdminCommand from '#structures/AdminCommand';
-import { CommandNames } from '#types/CommandTypes';
+import { CommandNames } from '#types/AdminCommandTypes';
 import logger from '#util/logger';
 
 const { loggingLevel } = config;

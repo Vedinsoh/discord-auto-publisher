@@ -1,6 +1,6 @@
 import client from '#client';
 import AdminCommand from '#structures/AdminCommand';
-import { CommandNames } from '#types/CommandTypes';
+import { CommandNames } from '#types/AdminCommandTypes';
 import logger from '#util/logger';
 
 export default new AdminCommand(CommandNames.BLACKLIST, async ({ channel }, guildId) => {

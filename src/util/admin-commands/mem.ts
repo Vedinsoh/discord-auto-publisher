@@ -1,5 +1,5 @@
 import AdminCommand from '#structures/AdminCommand';
-import { CommandNames } from '#types/CommandTypes';
+import { CommandNames } from '#types/AdminCommandTypes';
 import { getMemoryUsage } from '#util/memory';
 
 export default new AdminCommand(CommandNames.MEM, async ({ channel }) => {

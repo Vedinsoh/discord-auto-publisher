@@ -13,7 +13,7 @@ export enum CommandNames {
   UPTIME = 'uptime',
 }
 
-export interface AdminCommands {
+export interface Commands {
   [CommandNames.BLACKLIST]: [guildId?: Snowflake];
   [CommandNames.CHECK]: [guildId?: Snowflake];
   [CommandNames.DEBUG]: [value: string];

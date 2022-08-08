@@ -1,6 +1,6 @@
 import { Message } from 'discord.js-light';
-import { AdminCommands } from '#types/CommandTypes';
+import { Commands } from '#types/AdminCommandTypes';
 
-export default class AdminCommand<Key extends keyof AdminCommands> {
-  constructor(public name: Key, public run: (message: Message, ...args: AdminCommands[Key]) => void) {}
+export default class AdminCommand<Key extends keyof Commands> {
+  constructor(public name: Key, public run: (message: Message, ...args: Commands[Key]) => void) {}
 }
