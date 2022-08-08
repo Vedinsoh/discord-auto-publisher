@@ -51,7 +51,7 @@ export class AutoPublisherClient extends Client {
   }
 
   async registerCommands() {
-    const filePaths = getFiles('modules/owner_commands/*{.ts,.js}');
+    const filePaths = getFiles('util/admin-commands/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
       const command: Command = importFile(filePath);
       this.commands.set(command.name, command.run);

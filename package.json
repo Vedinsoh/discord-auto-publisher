@@ -62,7 +62,6 @@
     "#functions/*": "./dist/functions/*.js",
     "#handlers": "./dist/handlers/*.js",
     "#managers/*": "./dist/managers/*.js",
-    "#modules/*": "./dist/modules/*.js",
     "#structures/*": "./dist/structures/*.js",
     "#types/*": "./dist/types/*.js",
     "#util/*": "./dist/util/*.js"
