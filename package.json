@@ -19,9 +19,9 @@
     "publisher"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc",
+    "build": "tsc",
     "start": "cross-env TS_NODE_BASEURL=dist NODE_ENV=production node -r tsconfig-paths/register dist/index.js",
-    "start:dev": "cross-env NODE_ENV=development ts-node-dev -r tsconfig-paths/register src/index.ts",
+    "start:dev": "tsc-watch --noClear --onSuccess \"yarn run start\"",
     "reinstall": "rm -rf node_modules && yarn install",
     "update": "yarn upgrade-interactive --latest",
     "lint": "eslint src --ext .ts",
@@ -53,6 +53,7 @@
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.7.1",
+    "tsc-watch": "^5.0.3",
     "typescript": "^4.7.4"
   },
   "imports": {
