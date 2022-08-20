@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import fs from 'node:fs';
-import ConfigType from '#types/ConfigType';
+import z from 'zod';
+import { ConfigSchema } from '#schemas/ConfigSchema';
+import validateConfig from '#util/validateConfig';
 
 process.env.BASE_DIR = (() => {
   switch (process.env.NODE_ENV) {
@@ -14,6 +16,8 @@ process.env.BASE_DIR = (() => {
 })();
 
 const configFile = fs.readFileSync('./config.json', 'utf8');
-const config = JSON.parse(configFile) as ConfigType;
+const config = JSON.parse(configFile) as z.infer<typeof ConfigSchema>;
+
+validateConfig(config);
 
 export default config;

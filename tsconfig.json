@@ -25,6 +25,7 @@
       "#functions/*": ["functions/*"],
       "#handlers/*": ["handlers/*"],
       "#managers/*": ["managers/*"],
+      "#schemas/*": ["schemas/*"],
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
       "#util/*": ["util/*"]

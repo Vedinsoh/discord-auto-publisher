@@ -1,14 +1,8 @@
-import createLogger, { levels } from 'pino';
+import createLogger from 'pino';
 import config from '#config';
 
-const { loggingLevel } = config;
-const pinoLevels = Object.values(levels.labels);
-if (!pinoLevels.includes(loggingLevel)) {
-  throw new Error(`Invalid logging level in config. Valid levels: ${pinoLevels.join(', ')}`);
-}
-
 export default createLogger({
-  level: loggingLevel ?? 'info',
+  level: config.loggingLevel ?? 'info',
   transport: {
     target: 'pino-pretty',
     options: {
