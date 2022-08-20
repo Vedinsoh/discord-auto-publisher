@@ -31,8 +31,10 @@ jspm_packages/
 # Output of 'npm pack'
 *.tgz
 
-# Yarn Integrity file
+# Yarn
 .yarn-integrity
+.yarn/install-state.gz
+.yarn/build-state.gz
 
 # dotenv environment variables file
 .env

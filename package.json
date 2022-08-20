@@ -23,7 +23,7 @@
     "start": "cross-env TS_NODE_BASEURL=dist NODE_ENV=production node -r tsconfig-paths/register dist/index.js",
     "start:dev": "tsc-watch --noClear --onSuccess \"yarn run start\"",
     "reinstall": "rm -rf node_modules && yarn install",
-    "update": "yarn upgrade-interactive --latest",
+    "update": "yarn upgrade-interactive",
     "lint": "eslint src --ext .ts",
     "prettier": "prettier --write src"
   },
@@ -69,7 +69,7 @@
   },
   "engines": {
     "node": ">=16.9.0",
-    "yarn": ">=1.12.0",
     "npm": "please-use-yarn"
-  }
+  },
+  "packageManager": "yarn@3.2.2"
 }
