@@ -1,4 +1,4 @@
-import { createClient } from 'redis';
+import type { createClient } from 'redis';
 import RedisClient from '#structures/RedisClient';
 
 export default class RedisBaseManager {

@@ -4,7 +4,11 @@ import { CommandNames } from '#types/AdminCommandTypes';
 import logger from '#util/logger';
 
 export default new AdminCommand(CommandNames.UNBLACKLIST, async ({ channel }, guildId) => {
-  if (!guildId) return channel.send('Please provide server ID.');
+  if (!guildId) {
+    channel.send('Please provide server ID.');
+    return;
+  }
+
   await client.blacklist.remove(guildId).then((response) => {
     channel.send(response);
     logger.info(response);

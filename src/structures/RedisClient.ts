@@ -5,7 +5,7 @@ export default class RedisClient {
   constructor(private databaseId: number) {
     this.client = createClient({
       socket: {
-        port: process.env.REDIS_PORT ?? 6379,
+        port: parseInt(process.env.REDIS_PORT) ?? 6379,
       },
     });
   }

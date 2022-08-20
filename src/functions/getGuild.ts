@@ -1,4 +1,4 @@
-import { Guild, Snowflake } from 'discord.js-light';
+import type { Guild, Snowflake } from 'discord.js-light';
 import client from '#client';
 
 export default async (guildId: Snowflake): Promise<Guild | undefined> => {

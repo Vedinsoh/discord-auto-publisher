@@ -1,4 +1,4 @@
-import { Level as LoggerLevel } from 'pino';
+import type { Level as LoggerLevel } from 'pino';
 import client from '#client';
 import config from '#config';
 import AdminCommand from '#structures/AdminCommand';
@@ -21,7 +21,8 @@ const setLevel = async (level: LoggerLevel) =>
 
 export default new AdminCommand(CommandNames.DEBUG, async ({ channel }, value) => {
   if (![...enable, ...disable].includes(value)) {
-    return channel.send(`Please provide a valid argument:\n\`${enable.join(', ')}\`\nor\n\`${disable.join(', ')}\``);
+    channel.send(`Please provide a valid argument:\n\`${enable.join(', ')}\`\nor\n\`${disable.join(', ')}\``);
+    return;
   }
 
   if (enable.includes(value)) {

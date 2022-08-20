@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import fs from 'node:fs';
-import z from 'zod';
-import { ConfigSchema } from '#schemas/ConfigSchema';
+import type z from 'zod';
+import type { ConfigSchema } from '#schemas/ConfigSchema';
 import validateConfig from '#util/validateConfig';
 
 process.env.BASE_DIR = (() => {

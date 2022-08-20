@@ -1,12 +1,12 @@
 import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
-import { Level as LoggerLevel } from 'pino';
+import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
 import RateLimitsManager from '#managers/RateLimitsManager';
 import SpamManager from '#managers/SpamManager';
 import { AutoPublisherCluster } from '#structures/Cluster';
-import { Event } from '#structures/Event';
-import { CommandsCollection } from '#types/AdminCommandTypes';
+import type { Event } from '#structures/Event';
+import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';

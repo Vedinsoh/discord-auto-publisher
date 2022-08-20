@@ -3,7 +3,7 @@ import client from '#client';
 import config from '#config';
 import crosspost from '#functions/crosspost';
 import { Event } from '#structures/Event';
-import { CommandNames } from '#types/AdminCommandTypes';
+import type { CommandNames } from '#types/AdminCommandTypes';
 
 const { botAdmin } = config;
 

@@ -1,4 +1,4 @@
-import { Guild, GuildChannel } from 'discord.js-light';
+import type { Guild, GuildChannel } from 'discord.js-light';
 
 export const guildToString = (guild: Guild): string => {
   return `"${guild.name ?? 'unknown guild'}" (${guild.id})`;

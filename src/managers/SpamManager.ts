@@ -1,4 +1,4 @@
-import { GuildChannel, Snowflake } from 'discord.js-light';
+import type { GuildChannel, Snowflake } from 'discord.js-light';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
@@ -27,7 +27,8 @@ export default class SpamManager extends RedisBaseManager {
 
     if (spamChannel) {
       const currentCount = parseInt(spamChannel);
-      return await this.redisClient.setEx(KEY, EXPIRATION, String(currentCount + 1));
+      await this.redisClient.setEx(KEY, EXPIRATION, String(currentCount + 1));
+      return;
     }
 
     await this.redisClient.setEx(KEY, EXPIRATION, '1');
