@@ -43,6 +43,6 @@ You're free to host this bot on your own machine, but please keep in mind I will
 
 Requirements:
 
-- Node >=16.9.0
-- Yarn >=1.22.0
-- Redis server >=5.0.0
+- Node ^16.9.0
+- Yarn ^3.2.0
+- Redis server ^5.0.0

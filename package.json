@@ -71,7 +71,7 @@
     "#util/*": "./dist/util/*.js"
   },
   "engines": {
-    "node": ">=16.9.0",
+    "node": "^16.9.0",
     "npm": "please-use-yarn"
   },
   "packageManager": "yarn@3.2.2"
