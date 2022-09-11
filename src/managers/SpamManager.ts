@@ -17,7 +17,7 @@ export default class SpamManager extends RedisBaseManager {
     super(dbIds.SPAM_CHANNELS);
   }
 
-  private logRateLimited(channel: GuildChannel, count: number) {
+  private _logRateLimited(channel: GuildChannel, count: number) {
     logger.debug(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
   }
 
@@ -32,7 +32,7 @@ export default class SpamManager extends RedisBaseManager {
     }
 
     await this.redisClient.setEx(KEY, EXPIRATION, '1');
-    this.logRateLimited(channel, 1);
+    this._logRateLimited(channel, 1);
   }
 
   async isSpamming(channel: GuildChannel) {
@@ -56,7 +56,7 @@ export default class SpamManager extends RedisBaseManager {
       return true;
     }
 
-    this.logRateLimited(channel, newCount);
+    this._logRateLimited(channel, newCount);
     return true;
   }
 

@@ -2,7 +2,7 @@ import { createClient } from 'redis';
 
 export default class RedisClient {
   public client: ReturnType<typeof createClient>;
-  constructor(private databaseId: number) {
+  constructor(private _databaseId: number) {
     this.client = createClient({
       socket: {
         port: parseInt(process.env.REDIS_PORT) ?? 6379,
@@ -12,7 +12,7 @@ export default class RedisClient {
 
   async start() {
     await this.client.connect();
-    await this.client.select(this.databaseId);
+    await this.client.select(this._databaseId);
   }
 }
 
