@@ -764,10 +764,10 @@ discord-api-types@^0.33.3:
   resolved "https://registry.yarnpkg.com/discord-api-types/-/discord-api-types-0.33.5.tgz#6548b70520f7b944c60984dca4ab58654d664a12"
   integrity sha512-dvO5M52v7m7Dy96+XUnzXNsQ/0npsYpU6dL205kAtEDueswoz3aU3bh1UMoK4cQmcGtB1YRyLKqp+DXi05lzFg==
 
-discord-hybrid-sharding@^1.6.2:
-  version "1.6.2"
-  resolved "https://registry.yarnpkg.com/discord-hybrid-sharding/-/discord-hybrid-sharding-1.6.2.tgz#ffdffdec9d5b80118b1c3c476c43e0e5a32671bc"
-  integrity sha512-qg7p0A+iTGqSxN4i967qtELC751FF3UXvK1TFI9H2TnMNYtI3DVCoPlTG9KaY4IglWqhZ5ytMhucyTwLL9Jx+w==
+discord-hybrid-sharding@1.7.4:
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/discord-hybrid-sharding/-/discord-hybrid-sharding-1.7.4.tgz#94956cf0089097f27759fd6f7a16afa34721c132"
+  integrity sha512-St6ygasmfVyiQTH1LrSbj1gl+EC41RsFBVbAevP4C7eVHnIFrXMOshHGS75jCzHxwcD3Bw5ABco+jVK0Os39pQ==
   dependencies:
     node-fetch "^2.6.7"
 
@@ -2401,7 +2401,7 @@ touch@^3.1.0:
 tr46@~0.0.3:
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
-  integrity sha1-gYT9NH2snNwYWZLzpmIuFLnZq2o=
+  integrity sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==
 
 tree-kill@^1.2.2:
   version "1.2.2"
@@ -2606,12 +2606,12 @@ v8-compile-cache@^2.0.3:
 webidl-conversions@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
-  integrity sha1-JFNCdeKnvGvnvIZhHMFq4KVlSHE=
+  integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
 
 whatwg-url@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-5.0.0.tgz#966454e8765462e37644d3626f6742ce8b70965d"
-  integrity sha1-lmRU6HZUYuN2RNNib2dCzotwll0=
+  integrity sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==
   dependencies:
     tr46 "~0.0.3"
     webidl-conversions "^3.0.0"
