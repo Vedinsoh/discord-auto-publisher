@@ -37,7 +37,7 @@
     "dotenv": "16.0.3",
     "glob": "^8.0.3",
     "pino": "8.6.1",
-    "pino-pretty": "^8.1.0",
+    "pino-pretty": "9.1.1",
     "re2": "^1.17.7",
     "url-regex-safe": "^3.0.0",
     "utf-8-validate": "^5.0.9"
