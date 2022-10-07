@@ -34,7 +34,7 @@
     "bufferutil": "4.0.6",
     "discord-hybrid-sharding": "1.7.4",
     "discord.js-light": "^4.9.0",
-    "dotenv": "^16.0.1",
+    "dotenv": "16.0.3",
     "glob": "^8.0.3",
     "pino": "^8.1.0",
     "pino-pretty": "^8.1.0",
