@@ -31,7 +31,7 @@
   "dependencies": {
     "@joshdb/core": "^1.2.7",
     "@joshdb/json": "^1.0.5",
-    "bufferutil": "^4.0.3",
+    "bufferutil": "4.0.6",
     "discord-hybrid-sharding": "1.7.4",
     "discord.js-light": "^4.8.0",
     "dotenv": "^16.0.1",
