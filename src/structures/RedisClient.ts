@@ -5,12 +5,12 @@ export default class RedisClient {
   constructor(private _databaseId: number) {
     this.client = createClient({
       socket: {
-        port: parseInt(process.env.REDIS_PORT) ?? 6379,
+        port: parseInt(process.env.REDIS_PORT ?? 6379),
       },
     });
   }
 
-  async start() {
+  public async start() {
     await this.client.connect();
     await this.client.select(this._databaseId);
   }
