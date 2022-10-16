@@ -1,4 +1,4 @@
-import { RateLimitData } from 'discord.js-light';
+import type { RateLimitData } from 'discord.js-light';
 import pathPatterns from '#constants/pathPatterns';
 
 export default (data: RateLimitData) => {

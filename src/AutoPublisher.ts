@@ -1,7 +1,7 @@
 import Cluster from 'discord-hybrid-sharding';
 import { Intents, Options } from 'discord.js-light';
-import crosspostQueueFilter from '#functions/crosspostQueueFilter';
 import { AutoPublisherClient } from '#structures/Client';
+import crosspostQueueFilter from '#util/crosspostQueueFilter';
 
 const { FLAGS } = Intents;
 const shardData = Cluster.Client.getInfo();
