@@ -1,6 +1,5 @@
 import { sync } from 'glob';
 
-// Normalized dirname
 const normalizePath = (route: string) => route.replace(/[\\/]+/g, '/');
 
 export const getFiles = (route: string) => {

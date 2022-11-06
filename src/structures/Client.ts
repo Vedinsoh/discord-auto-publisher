@@ -26,7 +26,7 @@ export class AutoPublisherClient extends Client {
   }
 
   async start() {
-    await Promise.all([
+    return Promise.all([
       this.blacklist.start(),
       this.rateLimits.start(),
       this.spam.start(),

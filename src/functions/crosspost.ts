@@ -1,4 +1,4 @@
-import { GuildChannel, Message, PartialMessage, Snowflake } from 'discord.js-light';
+import type { GuildChannel, Message, PartialMessage, Snowflake } from 'discord.js-light';
 import urlRegex from 'url-regex-safe';
 import client from '#client';
 import config from '#config';
@@ -22,7 +22,7 @@ const deferCheck = (message: MessageType) => {
 const crosspost = async (message: MessageType) => {
   const channel = message.channel as GuildChannel;
 
-  if (await client.rateLimits.isLimited(channel.id)) return await client.spam.check(channel);
+  if (await client.rateLimits.isLimited(channel.id)) return client.spam.check(channel);
 
   message
     .crosspost()
