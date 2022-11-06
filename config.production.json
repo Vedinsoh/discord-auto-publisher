@@ -1,0 +1,15 @@
+{
+  "botAdmin": "150701861626839041",
+  "loggingLevel": "info",
+  "stringLocale": "de-DE",
+  "presenceInterval": 15,
+  "urlDetection": {
+    "enabled": true,
+    "deferTimeout": 5
+  },
+  "spam": {
+    "enabled": true,
+    "autoLeave": true,
+    "messagesThreshold": 40
+  }
+}

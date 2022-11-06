@@ -1,6 +1,6 @@
 {
-  "botAdmin": "ID HERE",
-  "loggingLevel": "info",
+  "botAdmin": "150701861626839041",
+  "loggingLevel": "debug",
   "stringLocale": "de-DE",
   "presenceInterval": 15,
   "urlDetection": {
@@ -8,7 +8,7 @@
     "deferTimeout": 5
   },
   "spam": {
-    "enabled": false,
+    "enabled": true,
     "autoLeave": false,
     "messagesThreshold": 40
   }
