@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "cross-env TS_NODE_BASEURL=dist NODE_ENV=production node -r tsconfig-paths/register dist/index.js",
+    "start": "cross-env TS_NODE_BASEURL=dist node -r tsconfig-paths/register dist/index.js",
     "start:dev": "tsc-watch --noClear --onSuccess \"yarn run start\"",
     "reinstall": "rm -rf node_modules && yarn install",
     "update": "yarn upgrade-interactive",
