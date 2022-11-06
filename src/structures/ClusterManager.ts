@@ -5,7 +5,7 @@ import { minToMs } from '#util/timeConverters';
 
 export class AutoPublisher extends Manager {
   constructor(options?: ManagerOptions) {
-    const clientFile = getFiles('AutoPublisher{.ts,.js}')[0];
+    const clientFile = getFiles('AutoPublisher.js')[0];
     super(clientFile, options);
   }
 

@@ -3,7 +3,7 @@ import { sync } from 'glob';
 const normalizePath = (route: string) => route.replace(/[\\/]+/g, '/');
 
 export const getFiles = (route: string) => {
-  return sync(normalizePath(`${process.env.PWD}/${process.env.BASE_DIR}/${route}`));
+  return sync(normalizePath(`${process.env.PWD}/dist/${route}`));
 };
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
