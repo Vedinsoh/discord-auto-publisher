@@ -3,8 +3,7 @@ import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
-import RedisBaseManager from '#managers/RedisBaseManager';
-import { keys } from '#structures/RedisClient';
+import RedisClient, { keys } from '#structures/RedisClient';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
@@ -12,7 +11,7 @@ const { spam } = config;
 const EXPIRATION = expirations.SPAM_CHANNELS;
 const getKey = (channelId: Snowflake) => `${keys.SPAM_CHANNEL}:${channelId}`;
 
-export default class SpamManager extends RedisBaseManager {
+export default class SpamManager extends RedisClient {
   constructor() {
     super(dbIds.SPAM_CHANNELS);
   }
@@ -23,26 +22,26 @@ export default class SpamManager extends RedisBaseManager {
 
   async add(channel: GuildChannel) {
     const KEY = getKey(channel.id);
-    const spamChannel = await this.redisClient.get(KEY);
+    const spamChannel = await this.client.get(KEY);
 
     if (spamChannel) {
       const currentCount = parseInt(spamChannel);
-      await this.redisClient.setEx(KEY, EXPIRATION, String(currentCount + 1));
+      await this.client.setEx(KEY, EXPIRATION, String(currentCount + 1));
       return;
     }
 
-    await this.redisClient.setEx(KEY, EXPIRATION, '1');
+    await this.client.setEx(KEY, EXPIRATION, '1');
     this._logRateLimited(channel, 1);
   }
 
   async isSpamming(channel: GuildChannel) {
     const KEY = getKey(channel.id);
-    const spamChannel = await this.redisClient.get(KEY);
+    const spamChannel = await this.client.get(KEY);
     if (!spamChannel || !spam.enabled) return false;
 
     const currentCount = parseInt(spamChannel);
     const newCount = currentCount + 1;
-    await this.redisClient.setEx(KEY, EXPIRATION, String(newCount));
+    await this.client.setEx(KEY, EXPIRATION, String(newCount));
 
     if (newCount >= spam.messagesThreshold - 10) {
       logger.info(
@@ -51,7 +50,7 @@ export default class SpamManager extends RedisBaseManager {
         }).`
       );
       const { guild } = channel;
-      this.redisClient.del(KEY);
+      this.client.del(KEY);
       client.blacklist.add(guild.id);
       return true;
     }

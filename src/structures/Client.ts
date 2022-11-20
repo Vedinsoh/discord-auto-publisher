@@ -27,9 +27,9 @@ export class AutoPublisherClient extends Client {
 
   async start() {
     return Promise.all([
-      this.blacklist.start(),
-      this.rateLimits.start(),
-      this.spam.start(),
+      this.blacklist.connect(),
+      this.rateLimits.connect(),
+      this.spam.connect(),
 
       this.registerEvents(),
       this.registerCommands(),

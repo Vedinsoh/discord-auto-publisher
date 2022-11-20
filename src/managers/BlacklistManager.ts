@@ -4,15 +4,15 @@ import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
 import getGuild from '#functions/getGuild';
-import RedisBaseManager from '#managers/RedisBaseManager';
 import { keys } from '#structures/RedisClient';
+import RedisClient from '#structures/RedisClient';
 import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
 const { spam } = config;
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
-export default class BlacklistManager extends RedisBaseManager {
+export default class BlacklistManager extends RedisClient {
   private _SET = keys.BLACKLIST;
 
   constructor() {
@@ -21,7 +21,7 @@ export default class BlacklistManager extends RedisBaseManager {
 
   async startupCheck() {
     logger.debug('Checking for blacklisted guilds...');
-    const guildIds: Snowflake[] = await this.redisClient.sMembers(this._SET);
+    const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
 
     guildIds.forEach(async (guildId) => {
       if (client.guilds.cache.get(guildId) && spam.autoLeave) this.leaveGuild(guildId);
@@ -29,13 +29,13 @@ export default class BlacklistManager extends RedisBaseManager {
   }
 
   async has(guildId: Snowflake) {
-    return await this.redisClient.sIsMember(this._SET, guildId);
+    return await this.client.sIsMember(this._SET, guildId);
   }
 
   async add(guildId: Snowflake) {
     if (!isValidGuild) return 'Invalid server ID provided.';
     if (await this.has(guildId)) return `${guildId} is already blacklisted.`;
-    await this.redisClient.sAdd(this._SET, guildId);
+    await this.client.sAdd(this._SET, guildId);
 
     this.leaveGuild(guildId);
     return `Added ${guildId} to the blacklist.`;
@@ -43,7 +43,7 @@ export default class BlacklistManager extends RedisBaseManager {
 
   async remove(guildId: Snowflake) {
     if (await this.has(guildId)) return `${guildId} is not blacklisted.`;
-    await this.redisClient.sRem(this._SET, guildId);
+    await this.client.sRem(this._SET, guildId);
     return `Removed ${guildId} from the blacklist.`;
   }
 
