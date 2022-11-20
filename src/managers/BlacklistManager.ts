@@ -29,7 +29,7 @@ export default class BlacklistManager extends RedisClient {
   }
 
   async has(guildId: Snowflake) {
-    return await this.client.sIsMember(this._SET, guildId);
+    return this.client.sIsMember(this._SET, guildId);
   }
 
   async add(guildId: Snowflake) {
@@ -42,7 +42,7 @@ export default class BlacklistManager extends RedisClient {
   }
 
   async remove(guildId: Snowflake) {
-    if (await this.has(guildId)) return `${guildId} is not blacklisted.`;
+    if (!(await this.has(guildId))) return `${guildId} is not blacklisted.`;
     await this.client.sRem(this._SET, guildId);
     return `Removed ${guildId} from the blacklist.`;
   }
