@@ -33,6 +33,7 @@ jspm_packages/
 
 # Yarn
 .yarn-integrity
+.yarn/cache
 .yarn/install-state.gz
 .yarn/build-state.gz
 

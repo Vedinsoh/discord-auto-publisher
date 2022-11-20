@@ -6,10 +6,7 @@ export default abstract class RedisClient {
   constructor(databaseId: number) {
     this.client = createClient({
       database: databaseId,
-      socket: {
-        host: process.env.REDIS_HOST,
-        port: parseInt(process.env.REDIS_PORT ?? 6379),
-      },
+      url: process.env.REDIS_URL,
     });
   }
 

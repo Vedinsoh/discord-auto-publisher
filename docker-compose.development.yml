@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.development
+    command: yarn run start:dev
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env
+    volumes:
+      - .:/app
