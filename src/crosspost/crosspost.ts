@@ -1,4 +1,4 @@
-import type { GuildChannel } from 'discord.js';
+import type { NewsChannel } from 'discord.js';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
@@ -6,7 +6,7 @@ import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
 const crosspost = async (message: ReceivedMessage) => {
-  const channel = message.channel as GuildChannel;
+  const channel = message.channel as NewsChannel;
 
   if (await client.rateLimits.isLimited(channel.id)) return client.spam.check(channel);
 
