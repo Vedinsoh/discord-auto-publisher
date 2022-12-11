@@ -1,9 +1,7 @@
-import DJS from 'discord.js';
+import { Events } from 'discord.js';
 import client from '#client';
 import Event from '#structures/Event';
 
-const { Constants } = DJS;
-
-export default new Event(Constants.Events.CLIENT_READY, async () => {
+export default new Event(Events.ClientReady, async () => {
   await client.blacklist.startupCheck();
 });

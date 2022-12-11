@@ -1,12 +1,10 @@
-import DJS from 'discord.js';
+import { Events } from 'discord.js';
 import client from '#client';
 import Event from '#structures/Event';
 import logger from '#util/logger';
 import { msToSec } from '#util/timeConverters';
 
-const { Constants } = DJS;
-
-export default new Event(Constants.Events.SHARD_READY, async (id) => {
+export default new Event(Events.ShardReady, async (id) => {
   const logPrefix = `[SHARD ${id}]`;
   const logInfo = (message: string) => logger.info(`${logPrefix} ${message}`);
 

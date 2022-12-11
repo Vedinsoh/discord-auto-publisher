@@ -1,4 +1,4 @@
-import DJS, { ClientEvents, ClientOptions } from 'discord.js';
+import { ActivityType, Client, ClientEvents, ClientOptions, Collection } from 'discord.js';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
@@ -12,7 +12,6 @@ import { getFiles, importFile } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
-const { Client, Collection } = DJS;
 const { presenceInterval } = config;
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
@@ -72,7 +71,7 @@ class AutoPublisherClient extends Client {
       activities: [
         {
           name: `${guilds} server${guilds > 1 ? 's' : ''}`,
-          type: 'WATCHING',
+          type: ActivityType.Watching,
         },
       ],
     });

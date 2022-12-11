@@ -1,8 +1,8 @@
 import type { RateLimitData } from 'discord.js';
-import pathPatterns from '#constants/pathPatterns';
+import routes from '#constants/routes';
 
-const gatewayQueueFilter = (data: RateLimitData) => {
-  return data.method.toUpperCase() === 'POST' && pathPatterns.crosspost.test(data.path);
+const gatewayQueueFilter = (data: RateLimitData): boolean => {
+  return data.method.toUpperCase() === 'POST' && routes.crosspost === data.route;
 };
 
 export default gatewayQueueFilter;
