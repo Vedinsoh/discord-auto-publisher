@@ -1,7 +1,7 @@
 import Cluster from 'discord-hybrid-sharding';
 import { Intents, Options } from 'discord.js-light';
+import gatewayQueueFilter from '#crosspost/gatewayQueueFilter';
 import { AutoPublisherClient } from '#structures/Client';
-import crosspostQueueFilter from '#util/crosspostQueueFilter';
 
 const { FLAGS } = Intents;
 const shardData = Cluster.Client.getInfo();
@@ -33,7 +33,7 @@ const client = new AutoPublisherClient({
   shards: shardData.SHARD_LIST,
   shardCount: shardData.TOTAL_SHARDS,
   restGlobalRateLimit: 50,
-  rejectOnRateLimit: crosspostQueueFilter,
+  rejectOnRateLimit: gatewayQueueFilter,
 });
 
 client.start();

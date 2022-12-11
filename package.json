@@ -63,6 +63,7 @@
     "#config": "./dist/config.js",
     "#client": "./dist/AutoPublisher.js",
     "#constants/*": "./dist/constants/*.js",
+    "#crosspost/*": "./dist/crosspost/*.js",
     "#functions/*": "./dist/functions/*.js",
     "#handlers": "./dist/handlers/*.js",
     "#managers/*": "./dist/managers/*.js",

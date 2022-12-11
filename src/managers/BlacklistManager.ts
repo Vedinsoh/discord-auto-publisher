@@ -3,9 +3,9 @@ import { Client, ShardClientUtil, Snowflake } from 'discord.js-light';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
-import getGuild from '#functions/getGuild';
 import { keys } from '#structures/RedisClient';
 import RedisClient from '#structures/RedisClient';
+import getGuild from '#util/getGuild';
 import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
