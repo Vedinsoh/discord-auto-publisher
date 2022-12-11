@@ -1,10 +1,11 @@
-import { Constants } from 'discord.js-light';
+import DJS from 'discord.js-light';
 import client from '#client';
 import config from '#config';
 import Event from '#structures/Event';
 import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
+const { Constants } = DJS;
 const { spam } = config;
 
 export default new Event(Constants.Events.GUILD_CREATE, async (guild) => {

@@ -1,10 +1,11 @@
-import { Constants } from 'discord.js-light';
+import DJS from 'discord.js-light';
 import client from '#client';
 import config from '#config';
-import crosspost from '#crosspost/crosspost';
+import handleCrosspost from '#crosspost/handleCrosspost';
 import Event from '#structures/Event';
 import type { CommandNames } from '#types/AdminCommandTypes';
 
+const { Constants } = DJS;
 const { botAdmin } = config;
 
 export default new Event(Constants.Events.MESSAGE_CREATE, async (message) => {

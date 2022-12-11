@@ -6,7 +6,7 @@
     "experimentalDecorators": true,
     "importHelpers": true,
     "lib": ["ESNext"],
-    "module": "CommonJS",
+    "module": "ESNext",
     "moduleResolution": "Node",
     "removeComments": true,
     "resolveJsonModule": true,

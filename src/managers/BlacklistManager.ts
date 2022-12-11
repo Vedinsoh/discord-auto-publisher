@@ -1,5 +1,5 @@
 import Cluster from 'discord-hybrid-sharding';
-import { Client, ShardClientUtil, Snowflake } from 'discord.js-light';
+import DJS, { Client, Snowflake } from 'discord.js-light';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
@@ -10,6 +10,8 @@ import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
 const { spam } = config;
+const { ShardClientUtil } = DJS;
+
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
 class BlacklistManager extends RedisClient {

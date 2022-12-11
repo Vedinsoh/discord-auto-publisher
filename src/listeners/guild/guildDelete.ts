@@ -1,8 +1,10 @@
-import { Constants } from 'discord.js-light';
+import DJS from 'discord.js-light';
 import client from '#client';
 import Event from '#structures/Event';
 import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
+
+const { Constants } = DJS;
 
 export default new Event(Constants.Events.GUILD_DELETE, async (guild) => {
   if (await client.blacklist.has(guild.id)) return;

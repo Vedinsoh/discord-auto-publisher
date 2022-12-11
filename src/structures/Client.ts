@@ -1,4 +1,4 @@
-import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-light';
+import DJS, { ClientEvents, ClientOptions } from 'discord.js-light';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
@@ -12,6 +12,7 @@ import { getFiles, importFile } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
+const { Client, Collection } = DJS;
 const { presenceInterval } = config;
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
@@ -46,7 +47,7 @@ class AutoPublisherClient extends Client {
   async registerEvents() {
     const filePaths = getFiles('listeners/**/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const event: Event<keyof ClientEvents> = importFile(filePath);
+      const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);
     });
   }
@@ -54,7 +55,7 @@ class AutoPublisherClient extends Client {
   async registerCommands() {
     const filePaths = getFiles('util/admin-commands/*{.ts,.js}');
     filePaths.forEach(async (filePath) => {
-      const command = importFile(filePath);
+      const command = await importFile(filePath);
       this.commands.set(command.name, command.run);
     });
   }
