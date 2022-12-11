@@ -26,7 +26,7 @@ class AutoPublisher extends Manager {
   }
 
   async registerEvents() {
-    this.on('clusterCreate', ({ id }) => logger.debug(`[Cluster #${id}] Created`));
+    this.on('clusterCreate', ({ id }) => logger.debug(`[Cluster ${id}] Created`));
     this.on('debug', (value) => logger.debug(value));
   }
 }

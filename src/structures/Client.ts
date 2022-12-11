@@ -2,6 +2,7 @@ import { Client, ClientEvents, ClientOptions, Collection } from 'discord.js-ligh
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
+import QueueManager from '#managers/QueueManager';
 import RateLimitsManager from '#managers/RateLimitsManager';
 import SpamManager from '#managers/SpamManager';
 import AutoPublisherCluster from '#structures/Cluster';
@@ -17,6 +18,7 @@ class AutoPublisherClient extends Client {
   public blacklist = new BlacklistManager();
   public rateLimits = new RateLimitsManager();
   public spam = new SpamManager();
+  public crosspostQueue = new QueueManager();
 
   public commands: CommandsCollection = new Collection();
   public startedAt = Date.now();
