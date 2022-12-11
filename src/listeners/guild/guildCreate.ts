@@ -3,7 +3,7 @@ import client from '#client';
 import config from '#config';
 import Event from '#structures/Event';
 import logger from '#util/logger';
-import { guildToString } from '#util/stringFormatters';
+import { guildMembersToString, guildToString } from '#util/stringFormatters';
 
 const { spam } = config;
 
@@ -13,6 +13,6 @@ export default new Event(Events.GuildCreate, async (guild) => {
     return;
   }
 
-  const members = guild.memberCount || 'unknown';
-  logger.debug(`Joined ${guildToString(guild)} with ${members} members.`);
+  const members = guildMembersToString(guild);
+  logger.debug(`Joined ${guildToString(guild)} with ${members}.`);
 });

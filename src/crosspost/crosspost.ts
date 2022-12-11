@@ -13,8 +13,9 @@ const crosspost = async (message: ReceivedMessage) => {
   return message
     .crosspost()
     .then(() => {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      logger.debug(`Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild!)}`);
+      logger.debug(
+        `Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild, channel.guildId)}`
+      );
     })
     .catch(async (error) => {
       if (Object.prototype.hasOwnProperty.call(error, 'code')) {

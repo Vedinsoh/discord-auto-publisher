@@ -45,7 +45,7 @@ class SpamManager extends RedisClient {
 
     if (newCount >= spam.messagesThreshold - 10) {
       logger.info(
-        `${channelToString(channel)} in ${guildToString(channel.guild)} hit the hourly spam limit (${
+        `${channelToString(channel)} in ${guildToString(channel.guild, channel.guildId)} hit the hourly spam limit (${
           spam.messagesThreshold
         }).`
       );
