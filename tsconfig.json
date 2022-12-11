@@ -1,6 +1,7 @@
 {
   "extends": "@sapphire/ts-config",
   "compilerOptions": {
+    "incremental": false,
     "module": "ESNext",
     "rootDir": "src",
     "outDir": "dist",
@@ -10,8 +11,6 @@
       "#client": ["AutoPublisher"],
       "#constants/*": ["constants/*"],
       "#crosspost/*": ["crosspost/*"],
-      "#functions/*": ["functions/*"],
-      "#handlers/*": ["handlers/*"],
       "#managers/*": ["managers/*"],
       "#schemas/*": ["schemas/*"],
       "#structures/*": ["structures/*"],
