@@ -1,7 +1,7 @@
 import urlRegex from 'url-regex-safe';
 import client from '#client';
 import config from '#config';
-import { ReceivedMessage } from '#types/MessageTypes';
+import type { ReceivedMessage } from '#types/MessageTypes';
 
 const { urlDetection } = config;
 

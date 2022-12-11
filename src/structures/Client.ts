@@ -45,7 +45,7 @@ class AutoPublisherClient extends Client {
   }
 
   async registerEvents() {
-    const filePaths = getFiles('listeners/**/*{.ts,.js}');
+    const filePaths = getFiles('listeners/**/*.js');
     filePaths.forEach(async (filePath) => {
       const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);
@@ -53,7 +53,7 @@ class AutoPublisherClient extends Client {
   }
 
   async registerCommands() {
-    const filePaths = getFiles('util/admin-commands/*{.ts,.js}');
+    const filePaths = getFiles('util/admin-commands/*.js');
     filePaths.forEach(async (filePath) => {
       const command = await importFile(filePath);
       this.commands.set(command.name, command.run);
@@ -66,7 +66,7 @@ class AutoPublisherClient extends Client {
 
   async updatePresence() {
     const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')).reduce((p: number, n: number) => p + n);
-    logger.debug(`[Cluster #${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
+    logger.debug(`[Cluster ${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
       activities: [

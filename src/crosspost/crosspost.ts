@@ -1,7 +1,7 @@
 import type { GuildChannel } from 'discord.js-light';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
-import { ReceivedMessage } from '#types/MessageTypes';
+import type { ReceivedMessage } from '#types/MessageTypes';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
