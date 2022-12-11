@@ -10,7 +10,7 @@ const logger = createLogger({
     },
   },
   base: undefined,
-  timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`,
+  timestamp: () => `,"time":"${new Date().toISOString()}"`,
 });
 
 export default logger;

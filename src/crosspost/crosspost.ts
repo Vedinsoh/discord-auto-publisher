@@ -1,4 +1,4 @@
-import type { GuildChannel } from 'discord.js-light';
+import type { GuildChannel } from 'discord.js';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';

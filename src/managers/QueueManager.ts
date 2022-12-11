@@ -1,4 +1,4 @@
-import type { Snowflake } from 'discord.js-light';
+import type { Snowflake } from 'discord.js';
 import PQueue from 'p-queue';
 import config from '#config';
 import crosspost from '#crosspost/crosspost';

@@ -1,4 +1,4 @@
-import type { Snowflake } from 'discord.js-light';
+import type { Snowflake } from 'discord.js';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
 import RedisClient, { keys } from '#structures/RedisClient';

@@ -1,3 +1,3 @@
-import type { Message, PartialMessage } from 'discord.js-light';
+import type { Message, PartialMessage } from 'discord.js';
 
 export type ReceivedMessage = Message | PartialMessage;

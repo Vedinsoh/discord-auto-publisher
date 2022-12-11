@@ -1,4 +1,4 @@
-import type { Collection, Snowflake } from 'discord.js-light';
+import type { Collection, Snowflake } from 'discord.js';
 
 export type CommandsCollection = Collection<CommandNames, (...args: unknown[]) => void>;
 

@@ -1,4 +1,4 @@
-import type { Message } from 'discord.js-light';
+import type { Message } from 'discord.js';
 import type { Commands } from '#types/AdminCommandTypes';
 
 class AdminCommand<Key extends keyof Commands> {

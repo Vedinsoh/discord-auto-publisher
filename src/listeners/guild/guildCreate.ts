@@ -1,4 +1,4 @@
-import DJS from 'discord.js-light';
+import DJS from 'discord.js';
 import client from '#client';
 import config from '#config';
 import Event from '#structures/Event';

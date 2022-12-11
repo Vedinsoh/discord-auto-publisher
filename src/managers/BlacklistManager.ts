@@ -1,5 +1,5 @@
 import Cluster from 'discord-hybrid-sharding';
-import DJS, { Client, Snowflake } from 'discord.js-light';
+import DJS, { Client, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';

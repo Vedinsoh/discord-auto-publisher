@@ -1,4 +1,4 @@
-import type { Guild, Snowflake } from 'discord.js-light';
+import type { Guild, Snowflake } from 'discord.js';
 import client from '#client';
 
 const getGuild = async (guildId: Snowflake): Promise<Guild | undefined> => {

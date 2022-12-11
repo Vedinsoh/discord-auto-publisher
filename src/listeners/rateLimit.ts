@@ -1,4 +1,4 @@
-import DJS from 'discord.js-light';
+import DJS from 'discord.js';
 import pathPatterns from '#constants/pathPatterns';
 import Event from '#structures/Event';
 import logger from '#util/logger';

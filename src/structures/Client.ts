@@ -1,4 +1,4 @@
-import DJS, { ClientEvents, ClientOptions } from 'discord.js-light';
+import DJS, { ClientEvents, ClientOptions } from 'discord.js';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
