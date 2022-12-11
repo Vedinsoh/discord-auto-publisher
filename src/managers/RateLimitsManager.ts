@@ -7,7 +7,7 @@ import logger from '#util/logger';
 const EXPIRATION = expirations.RATE_LIMITS;
 const getKey = (channelId: Snowflake) => `${keys.RATE_LIMITED}:${channelId}`;
 
-export default class RateLimitsManager extends RedisClient {
+class RateLimitsManager extends RedisClient {
   constructor() {
     super(dbIds.RATE_LIMITS);
   }
@@ -21,3 +21,5 @@ export default class RateLimitsManager extends RedisClient {
     logger.debug(`Rate limited ${channelId}`);
   }
 }
+
+export default RateLimitsManager;

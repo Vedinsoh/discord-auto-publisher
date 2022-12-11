@@ -11,7 +11,7 @@ const { spam } = config;
 const EXPIRATION = expirations.SPAM_CHANNELS;
 const getKey = (channelId: Snowflake) => `${keys.SPAM_CHANNEL}:${channelId}`;
 
-export default class SpamManager extends RedisClient {
+class SpamManager extends RedisClient {
   constructor() {
     super(dbIds.SPAM_CHANNELS);
   }
@@ -65,3 +65,5 @@ export default class SpamManager extends RedisClient {
     return;
   }
 }
+
+export default SpamManager;

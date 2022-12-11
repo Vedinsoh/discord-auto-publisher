@@ -1,5 +1,7 @@
 import client from '#client';
 
-export default () => {
+const respawnClusters = () => {
   client.cluster.respawnAll();
 };
+
+export default respawnClusters;

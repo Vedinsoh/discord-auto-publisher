@@ -1,6 +1,8 @@
 import client from '#client';
 
-export default async () => {
+const shutdown = async () => {
   await client.cluster.broadcastEval((c) => c.destroy());
   process.exit(0);
 };
+
+export default shutdown;

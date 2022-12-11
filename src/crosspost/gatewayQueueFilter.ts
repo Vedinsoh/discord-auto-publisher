@@ -1,6 +1,8 @@
 import type { RateLimitData } from 'discord.js-light';
 import pathPatterns from '#constants/pathPatterns';
 
-export default (data: RateLimitData) => {
+const gatewayQueueFilter = (data: RateLimitData) => {
   return data.method.toUpperCase() === 'POST' && pathPatterns.crosspost.test(data.path);
 };
+
+export default gatewayQueueFilter;

@@ -2,7 +2,7 @@ import { Constants } from 'discord.js-light';
 import client from '#client';
 import config from '#config';
 import crosspost from '#crosspost/crosspost';
-import { Event } from '#structures/Event';
+import Event from '#structures/Event';
 import type { CommandNames } from '#types/AdminCommandTypes';
 
 const { botAdmin } = config;

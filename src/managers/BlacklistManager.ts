@@ -12,7 +12,7 @@ import { guildToString } from '#util/stringFormatters';
 const { spam } = config;
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
-export default class BlacklistManager extends RedisClient {
+class BlacklistManager extends RedisClient {
   private _SET = keys.BLACKLIST;
 
   constructor() {
@@ -77,3 +77,5 @@ export default class BlacklistManager extends RedisClient {
       .catch(logger.error);
   }
 }
+
+export default BlacklistManager;

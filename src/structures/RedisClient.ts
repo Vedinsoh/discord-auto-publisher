@@ -1,6 +1,6 @@
 import { RedisClientType, createClient } from 'redis';
 
-export default abstract class RedisClient {
+abstract class RedisClient {
   public client: RedisClientType;
 
   constructor(databaseId: number) {
@@ -20,3 +20,5 @@ export enum keys {
   SPAM_CHANNEL = 'spam_channel',
   RATE_LIMITED = 'rate_limited',
 }
+
+export default RedisClient;

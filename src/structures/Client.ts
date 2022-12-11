@@ -4,15 +4,15 @@ import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
 import RateLimitsManager from '#managers/RateLimitsManager';
 import SpamManager from '#managers/SpamManager';
-import { AutoPublisherCluster } from '#structures/Cluster';
-import type { Event } from '#structures/Event';
+import AutoPublisherCluster from '#structures/Cluster';
+import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
 const { presenceInterval } = config;
-export class AutoPublisherClient extends Client {
+class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public blacklist = new BlacklistManager();
   public rateLimits = new RateLimitsManager();
@@ -79,3 +79,5 @@ export class AutoPublisherClient extends Client {
     logger.level = level;
   }
 }
+
+export default AutoPublisherClient;

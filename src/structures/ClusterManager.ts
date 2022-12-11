@@ -3,7 +3,7 @@ import { getFiles } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
-export class AutoPublisher extends Manager {
+class AutoPublisher extends Manager {
   constructor(options?: ManagerOptions) {
     const clientFile = getFiles('AutoPublisher.js')[0];
     super(clientFile, options);
@@ -32,3 +32,5 @@ export class AutoPublisher extends Manager {
 }
 
 process.on('unhandledRejection', ({ stack }: Error) => logger.error(stack));
+
+export default AutoPublisher;

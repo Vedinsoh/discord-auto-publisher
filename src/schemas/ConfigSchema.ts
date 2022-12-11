@@ -1,8 +1,8 @@
 import z from 'zod';
-import { LoggerLevel } from '#schemas/LoggerLevel';
-import { Snowflake } from '#schemas/Snowflake';
+import LoggerLevel from '#schemas/LoggerLevel';
+import Snowflake from '#schemas/Snowflake';
 
-export const ConfigSchema = z
+const ConfigSchema = z
   .object({
     botAdmin: Snowflake,
     loggingLevel: LoggerLevel,
@@ -19,3 +19,5 @@ export const ConfigSchema = z
     }),
   })
   .strict();
+
+export default ConfigSchema;
