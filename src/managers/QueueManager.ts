@@ -3,6 +3,7 @@ import PQueue from 'p-queue';
 import config from '#config';
 import crosspost from '#crosspost/crosspost';
 import type { ReceivedMessage } from '#types/MessageTypes';
+import logger from '#util/logger';
 import { secToMs } from '#util/timeConverters';
 
 const { urlDetection } = config;
@@ -12,7 +13,6 @@ class QueueManager {
 
   private _addQueue = (guildId: Snowflake) => {
     if (this._queues.has(guildId)) return;
-
     this._queues.set(
       guildId,
       new PQueue({
@@ -24,6 +24,7 @@ class QueueManager {
         autoStart: true,
       })
     );
+    logger.debug(`Added queue for guild ${guildId}`);
   };
 
   private _getQueue = (guildId: Snowflake) => {
@@ -33,7 +34,7 @@ class QueueManager {
     return this._queues.get(guildId);
   };
 
-  private async _enqueue(message: ReceivedMessage) {
+  private _enqueue(message: ReceivedMessage) {
     const { guild } = message;
     if (!guild) return;
 
@@ -41,15 +42,22 @@ class QueueManager {
     const queue = this._getQueue(guildId);
     if (!queue) throw new Error(`Queue for guild ${guildId} not found`);
 
-    return queue.add(() => crosspost(message));
+    queue.add(() => crosspost(message));
   }
 
-  public async add(message: ReceivedMessage, defer = false) {
-    if (defer)
+  public add(message: ReceivedMessage, defer = false) {
+    if (defer) {
       setTimeout(() => {
         this._enqueue(message);
       }, secToMs(urlDetection.deferTimeout));
+      return;
+    }
     return this._enqueue(message);
+  }
+
+  public sweepQueue(guildId: Snowflake) {
+    this._queues.delete(guildId);
+    logger.debug(`Swept queue for guild ${guildId}`);
   }
 }
 
