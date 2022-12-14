@@ -9,8 +9,10 @@ export default new AdminCommand(CommandNames.UNBLACKLIST, async ({ channel }, gu
     return;
   }
 
-  await client.blacklist.remove(guildId).then((response) => {
-    channel.send(response);
-    logger.info(response);
-  });
+  await client.blacklist //
+    .remove(guildId)
+    .then((response) => {
+      channel.send(response);
+      logger.info(response);
+    });
 });

@@ -8,5 +8,6 @@ export default new AdminCommand(CommandNames.CHECK, async ({ channel }, guildId)
     return;
   }
 
-  channel.send(`Server is ${!(await client.blacklist.has(guildId)) ? 'not ' : ''}blacklisted.`);
+  const isBlacklisted = await client.blacklist.has(guildId);
+  channel.send(`Server is ${!isBlacklisted ? 'not ' : ''}blacklisted.`);
 });

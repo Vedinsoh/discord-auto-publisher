@@ -4,7 +4,7 @@ import config from '#config';
 const { stringLocale } = config;
 
 const getUsageMB = async (): Promise<number[]> => {
-  return await client.cluster.evalOnManager('process.memoryUsage().rss / 1024 ** 2');
+  return client.cluster.evalOnManager('process.memoryUsage().rss / 1024 ** 2');
 };
 
 const getMemString = (usage: number) => {
@@ -17,5 +17,5 @@ export const getMemoryUsage = async () => {
     const totalUsage = usage.reduce((p, n) => p + n);
     return getMemString(totalUsage);
   }
-  return getMemString(usage as unknown as number);
+  return 'unknown';
 };

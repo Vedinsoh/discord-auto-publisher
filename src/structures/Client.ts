@@ -1,4 +1,4 @@
-import { ActivityType, Client, ClientEvents, ClientOptions, Collection } from 'discord.js';
+import { ActivityType, Client, ClientEvents, Collection } from 'discord.js';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import BlacklistManager from '#managers/BlacklistManager';
@@ -22,10 +22,6 @@ class AutoPublisherClient extends Client {
 
   public commands: CommandsCollection = new Collection();
   public startedAt = Date.now();
-
-  constructor(options: ClientOptions) {
-    super(options);
-  }
 
   async start() {
     return Promise.all([

@@ -4,5 +4,5 @@ import shutdown from '#util/shutdown';
 
 export default new AdminCommand(CommandNames.SHUTDOWN, async ({ channel }) => {
   await channel.send('Shutting down...');
-  await shutdown();
+  shutdown();
 });

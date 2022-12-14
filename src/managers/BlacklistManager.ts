@@ -58,7 +58,7 @@ class BlacklistManager extends RedisClient {
       return;
     }
 
-    // In case the guild is not on the same shard
+    // * In case the guild is not on the same shard
     const shardData = Cluster.Client.getInfo();
     const shardId = ShardClientUtil.shardIdForGuildId(guildId, shardData.TOTAL_SHARDS);
 

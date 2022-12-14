@@ -9,7 +9,7 @@ const { spam } = config;
 
 export default new Event(Events.GuildCreate, async (guild) => {
   if (await client.blacklist.has(guild.id)) {
-    if (spam.autoLeave) await client.blacklist.leaveGuild(guild.id);
+    if (spam.autoLeave) client.blacklist.leaveGuild(guild.id);
     return;
   }
 

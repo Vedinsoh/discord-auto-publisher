@@ -3,8 +3,6 @@ import path from 'node:path';
 
 const { sync } = glob;
 
-path.resolve();
-
 const normalizePath = (route: string) => route.replace(/[\\/]+/g, '/');
 
 export const getFiles = (route: string) => {
