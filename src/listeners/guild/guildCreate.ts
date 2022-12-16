@@ -5,11 +5,11 @@ import Event from '#structures/Event';
 import logger from '#util/logger';
 import { guildMembersToString, guildToString } from '#util/stringFormatters';
 
-const { spam } = config;
+const { antiSpam } = config;
 
 export default new Event(Events.GuildCreate, async (guild) => {
   if (await client.blacklist.has(guild.id)) {
-    if (spam.autoLeave) client.blacklist.leaveGuild(guild.id);
+    if (antiSpam.autoLeave) client.blacklist.leaveGuild(guild.id);
     return;
   }
 

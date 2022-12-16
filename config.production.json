@@ -7,7 +7,7 @@
     "enabled": true,
     "deferTimeout": 5
   },
-  "spam": {
+  "antiSpam": {
     "enabled": true,
     "autoLeave": true,
     "messagesThreshold": 40

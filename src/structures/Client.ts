@@ -1,10 +1,10 @@
 import { ActivityType, Client, ClientEvents, Collection } from 'discord.js';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
+import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
 import QueueManager from '#managers/QueueManager';
 import RateLimitsManager from '#managers/RateLimitsManager';
-import SpamManager from '#managers/SpamManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
@@ -13,24 +13,25 @@ import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
 const { presenceInterval } = config;
+
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public blacklist = new BlacklistManager();
   public rateLimits = new RateLimitsManager();
-  public spam = new SpamManager();
+  public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
 
   public commands: CommandsCollection = new Collection();
   public startedAt = Date.now();
 
-  async start() {
+  public async start() {
     return Promise.all([
       this.blacklist.connect(),
       this.rateLimits.connect(),
-      this.spam.connect(),
+      this.antiSpam.connect(),
 
-      this.registerEvents(),
-      this.registerCommands(),
+      this._registerEvents(),
+      this._registerCommands(),
       this.login(process.env.BOT_TOKEN),
     ]).catch((error) => {
       logger.error(error);
@@ -39,7 +40,7 @@ class AutoPublisherClient extends Client {
     });
   }
 
-  async registerEvents() {
+  private async _registerEvents() {
     const filePaths = getFiles('listeners/**/*.js');
     filePaths.forEach(async (filePath) => {
       const event: Event<keyof ClientEvents> = await importFile(filePath);
@@ -47,7 +48,7 @@ class AutoPublisherClient extends Client {
     });
   }
 
-  async registerCommands() {
+  private async _registerCommands() {
     const filePaths = getFiles('util/admin-commands/*.js');
     filePaths.forEach(async (filePath) => {
       const command = await importFile(filePath);
@@ -55,12 +56,13 @@ class AutoPublisherClient extends Client {
     });
   }
 
-  async startPresenceInterval() {
+  public async startPresenceInterval() {
     setInterval(() => this.updatePresence(), minToMs(presenceInterval));
   }
 
-  async updatePresence() {
-    const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')).reduce((p: number, n: number) => p + n);
+  public async updatePresence() {
+    const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')) //
+      .reduce((p: number, n: number) => p + n);
     logger.debug(`[Cluster ${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
@@ -73,7 +75,7 @@ class AutoPublisherClient extends Client {
     });
   }
 
-  setLoggerLevel(level: LoggerLevel) {
+  public setLoggerLevel(level: LoggerLevel) {
     logger.level = level;
   }
 }

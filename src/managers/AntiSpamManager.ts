@@ -7,20 +7,22 @@ import RedisClient, { keys } from '#structures/RedisClient';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
-const { spam } = config;
+const { antiSpam } = config;
 const EXPIRATION = expirations.SPAM_CHANNELS;
 const getKey = (channelId: Snowflake) => `${keys.SPAM_CHANNEL}:${channelId}`;
 
-class SpamManager extends RedisClient {
+class AntiSpamManager extends RedisClient {
   constructor() {
     super(dbIds.SPAM_CHANNELS);
   }
 
   private _logRateLimited(channel: GuildChannel, count: number) {
-    logger.debug(`Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${spam.messagesThreshold}`);
+    logger.debug(
+      `Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${antiSpam.messagesThreshold}`
+    );
   }
 
-  async add(channel: GuildChannel) {
+  private async _add(channel: GuildChannel) {
     const KEY = getKey(channel.id);
     const spamChannel = await this.client.get(KEY);
 
@@ -34,19 +36,21 @@ class SpamManager extends RedisClient {
     this._logRateLimited(channel, 1);
   }
 
-  async isSpamming(channel: GuildChannel) {
+  private async _isSpamming(channel: GuildChannel) {
+    if (!antiSpam.enabled) return false;
+
     const KEY = getKey(channel.id);
     const spamChannel = await this.client.get(KEY);
-    if (!spamChannel || !spam.enabled) return false;
+    if (!spamChannel) return false;
 
     const currentCount = parseInt(spamChannel);
     const newCount = currentCount + 1;
     await this.client.setEx(KEY, EXPIRATION, String(newCount));
 
-    if (newCount >= spam.messagesThreshold - 10) {
+    if (newCount >= antiSpam.messagesThreshold - 10) {
       logger.info(
         `${channelToString(channel)} in ${guildToString(channel.guild, channel.guildId)} hit the hourly spam limit (${
-          spam.messagesThreshold
+          antiSpam.messagesThreshold
         }).`
       );
       const { guild } = channel;
@@ -59,11 +63,10 @@ class SpamManager extends RedisClient {
     return true;
   }
 
-  async check(channel: GuildChannel) {
-    if (await this.isSpamming(channel)) return;
-    await this.add(channel);
-    return;
+  public async check(channel: GuildChannel) {
+    if (await this._isSpamming(channel)) return;
+    return this._add(channel);
   }
 }
 
-export default SpamManager;
+export default AntiSpamManager;

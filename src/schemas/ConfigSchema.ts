@@ -12,7 +12,7 @@ const ConfigSchema = z
       enabled: z.boolean(),
       deferTimeout: z.number().min(1).max(60),
     }),
-    spam: z.object({
+    antiSpam: z.object({
       enabled: z.boolean(),
       autoLeave: z.boolean(),
       messagesThreshold: z.number().min(0),

@@ -9,7 +9,7 @@ import getGuild from '#util/getGuild';
 import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
-const { spam } = config;
+const { antiSpam } = config;
 
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
@@ -25,7 +25,7 @@ class BlacklistManager extends RedisClient {
     const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
 
     guildIds.forEach(async (guildId) => {
-      if (client.guilds.cache.get(guildId) && spam.autoLeave) this.leaveGuild(guildId);
+      if (client.guilds.cache.get(guildId) && antiSpam.autoLeave) this.leaveGuild(guildId);
     });
   }
 

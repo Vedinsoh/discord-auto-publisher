@@ -1,16 +1,16 @@
-import { Manager, ManagerOptions } from 'discord-hybrid-sharding';
+import { Manager as ClusterManager, ManagerOptions as ClusterManagerOptions } from 'discord-hybrid-sharding';
 import { getFiles } from '#util/fileUtils';
 import logger from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
-class AutoPublisher extends Manager {
-  constructor(options?: ManagerOptions) {
+class AutoPublisher extends ClusterManager {
+  constructor(options?: ClusterManagerOptions) {
     const clientFile = getFiles('AutoPublisher.js')[0];
     super(clientFile, options);
   }
 
-  start() {
-    this.registerEvents();
+  public start() {
+    this._registerEvents();
     this.spawn({ timeout: -1 }).then(() => {
       logger.info('Clustering complete!');
       setTimeout(() => {
@@ -25,7 +25,7 @@ class AutoPublisher extends Manager {
     });
   }
 
-  async registerEvents() {
+  private async _registerEvents() {
     this.on('clusterCreate', ({ id }) => logger.debug(`[Cluster ${id}] Created`));
     this.on('debug', (value) => logger.debug(value));
   }
