@@ -7,6 +7,7 @@ const logger = createLogger({
     target: 'pino-pretty',
     options: {
       colorize: true,
+      translateTime: false,
     },
   },
   base: undefined,
