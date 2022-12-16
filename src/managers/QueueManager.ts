@@ -55,9 +55,9 @@ class QueueManager {
     return this._enqueue(message);
   }
 
-  public sweepQueue(guildId: Snowflake) {
+  public deleteQueue(guildId: Snowflake) {
     this._queues.delete(guildId);
-    logger.debug(`Swept queue for guild ${guildId}`);
+    logger.debug(`Deleted queue for guild ${guildId}`);
   }
 }
 
