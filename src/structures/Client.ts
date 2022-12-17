@@ -16,12 +16,12 @@ const { presenceInterval } = config;
 
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
+  public commands: CommandsCollection = new Collection();
+
   public blacklist = new BlacklistManager();
   public rateLimits = new RateLimitsManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
-
-  public commands: CommandsCollection = new Collection();
 
   public async start() {
     return Promise.all([
@@ -34,7 +34,6 @@ class AutoPublisherClient extends Client {
       this.login(process.env.BOT_TOKEN),
     ]).catch((error) => {
       logger.error(error);
-      new Error('Failed to start the client. Please ensure your Redis server is running.');
       process.exit(1);
     });
   }
@@ -55,7 +54,7 @@ class AutoPublisherClient extends Client {
     });
   }
 
-  public async startPresenceInterval() {
+  public startPresenceInterval() {
     setInterval(() => this.updatePresence(), minToMs(presenceInterval));
   }
 
