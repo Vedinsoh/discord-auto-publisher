@@ -1,7 +1,12 @@
 import Cluster from 'discord-hybrid-sharding';
-import { GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
+import { CacheWithLimitsOptions, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import gatewayQueueFilter from '#crosspost/gatewayQueueFilter';
 import AutoPublisherClient from '#structures/Client';
+
+type CacheOptions = CacheWithLimitsOptions & {
+  PermissionOverwriteManager: 0;
+  RoleManager: 0;
+};
 
 const shardData = Cluster.Client.getInfo();
 const client = new AutoPublisherClient({
@@ -18,15 +23,17 @@ const client = new AutoPublisherClient({
     GuildStickerManager: 0,
     GuildTextThreadManager: 0,
     MessageManager: 0,
+    PermissionOverwriteManager: 0,
     PresenceManager: 0,
     ReactionManager: 0,
     ReactionUserManager: 0,
+    RoleManager: 0,
     StageInstanceManager: 0,
     ThreadManager: 0,
     ThreadMemberManager: 0,
     UserManager: 0,
     VoiceStateManager: 0,
-  }),
+  } as CacheOptions),
   intents: [IntentBits.Guilds, IntentBits.GuildMessages, IntentBits.DirectMessages],
   partials: [Partials.Channel],
   shards: shardData.SHARD_LIST,
