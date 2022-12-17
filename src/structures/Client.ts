@@ -22,7 +22,6 @@ class AutoPublisherClient extends Client {
   public crosspostQueue = new QueueManager();
 
   public commands: CommandsCollection = new Collection();
-  public startedAt = Date.now();
 
   public async start() {
     return Promise.all([
@@ -63,7 +62,7 @@ class AutoPublisherClient extends Client {
   public async updatePresence() {
     const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')) //
       .reduce((p: number, n: number) => p + n);
-    logger.debug(`[Cluster ${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
+    logger.debug(`[CLUSTER ${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
       activities: [
