@@ -3,13 +3,13 @@ import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
-import RedisClient, { keys } from '#structures/RedisClient';
+import RedisClient, { Keys } from '#structures/RedisClient';
 import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
 const { antiSpam } = config;
 const EXPIRATION = expirations.SPAM_CHANNELS;
-const getKey = (channelId: Snowflake) => `${keys.SPAM_CHANNEL}:${channelId}`;
+const getKey = (channelId: Snowflake) => `${Keys.SpamChannel}:${channelId}`;
 
 class AntiSpamManager extends RedisClient {
   constructor() {
@@ -26,14 +26,10 @@ class AntiSpamManager extends RedisClient {
     const KEY = getKey(channel.id);
     const spamChannel = await this.client.get(KEY);
 
-    if (spamChannel) {
-      const currentCount = parseInt(spamChannel);
-      await this.client.setEx(KEY, EXPIRATION, String(currentCount + 1));
-      return;
-    }
+    if (spamChannel) return this.client.incr(KEY);
 
-    await this.client.setEx(KEY, EXPIRATION, '1');
     this._logRateLimited(channel, 1);
+    return this.client.setEx(KEY, EXPIRATION, '1');
   }
 
   private async _isSpamming(channel: GuildChannel) {
@@ -45,7 +41,7 @@ class AntiSpamManager extends RedisClient {
 
     const currentCount = parseInt(spamChannel);
     const newCount = currentCount + 1;
-    await this.client.setEx(KEY, EXPIRATION, String(newCount));
+    await this.client.incr(KEY);
 
     if (newCount >= antiSpam.messagesThreshold - 10) {
       logger.info(

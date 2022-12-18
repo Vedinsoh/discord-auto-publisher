@@ -1,18 +1,19 @@
 import type { Snowflake } from 'discord.js';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
-import RedisClient, { keys } from '#structures/RedisClient';
+import RedisClient, { Keys } from '#structures/RedisClient';
 import logger from '#util/logger';
 
 const EXPIRATION = expirations.RATE_LIMITS;
-const getKey = (channelId: Snowflake) => `${keys.RATE_LIMITED}:${channelId}`;
+const getKey = (channelId: Snowflake) => `${Keys.RateLimited}:${channelId}`;
 
 class RateLimitsManager extends RedisClient {
   constructor() {
     super(dbIds.RATE_LIMITS);
   }
 
-  async isLimited(channelId: Snowflake) {
+  async isLimited(channelId: Snowflake | null) {
+    if (!channelId) return false;
     return this.client.get(getKey(channelId));
   }
 

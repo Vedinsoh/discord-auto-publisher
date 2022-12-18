@@ -3,7 +3,7 @@ import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
-import { keys } from '#structures/RedisClient';
+import { Keys } from '#structures/RedisClient';
 import RedisClient from '#structures/RedisClient';
 import getGuild from '#util/getGuild';
 import logger from '#util/logger';
@@ -14,7 +14,7 @@ const { antiSpam } = config;
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
 class BlacklistManager extends RedisClient {
-  private _SET = keys.BLACKLIST;
+  private _SET = Keys.Blacklist;
 
   constructor() {
     super(dbIds.BLACKLIST);

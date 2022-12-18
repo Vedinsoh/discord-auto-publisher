@@ -4,9 +4,9 @@ export const channelToString = (channel: GuildChannel): string => {
   return `#${channel.name} (${channel.id})`;
 };
 
-export const guildToString = (guild: Guild | null, guildIdOverride?: Snowflake): string => {
-  if (!guild) return `unknown guild (${guildIdOverride ?? 'unknown guild ID'})`;
-  return `"${guild}" (${guildIdOverride ?? guild.id})`;
+export const guildToString = (guild: Guild | null, guildIdFallback?: Snowflake): string => {
+  if (!guild) return `unknown guild (${guildIdFallback ?? 'unknown guild ID'})`;
+  return `"${guild}" (${guildIdFallback ?? guild.id})`;
 };
 
 export const guildMembersToString = (guild: Guild): string => {

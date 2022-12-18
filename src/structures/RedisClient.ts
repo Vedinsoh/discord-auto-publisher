@@ -15,10 +15,10 @@ abstract class RedisClient {
   }
 }
 
-export enum keys {
-  BLACKLIST = 'blacklist',
-  SPAM_CHANNEL = 'spam_channel',
-  RATE_LIMITED = 'rate_limited',
+export enum Keys {
+  Blacklist = 'blacklist',
+  SpamChannel = 'spam_channel',
+  RateLimited = 'rate_limited',
 }
 
 export default RedisClient;

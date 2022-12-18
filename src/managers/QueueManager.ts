@@ -4,7 +4,7 @@ import config from '#config';
 import crosspost from '#crosspost/crosspost';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import logger from '#util/logger';
-import { secToMs } from '#util/timeConverters';
+import { minToMs, secToMs } from '#util/timeConverters';
 
 const { urlDetection } = config;
 
@@ -19,7 +19,7 @@ class QueueManager {
         concurrency: 10,
         intervalCap: 10,
         interval: secToMs(15),
-        timeout: secToMs(60),
+        timeout: minToMs(10),
         carryoverConcurrencyCount: true,
         autoStart: true,
       })
