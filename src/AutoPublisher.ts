@@ -34,7 +34,7 @@ const client = new AutoPublisherClient({
     UserManager: 0,
     VoiceStateManager: 0,
   } as CacheOptions),
-  intents: [IntentBits.Guilds, IntentBits.GuildMessages, IntentBits.DirectMessages],
+  intents: [IntentBits.Guilds, IntentBits.GuildMessages, IntentBits.DirectMessages, IntentBits.MessageContent],
   partials: [Partials.Channel],
   shards: shardData.SHARD_LIST,
   shardCount: shardData.TOTAL_SHARDS,
