@@ -1,25 +1,41 @@
-import type { Snowflake } from 'discord.js';
+import type { NewsChannel, Snowflake } from 'discord.js';
+import client from '#client';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
 import RedisClient, { Keys } from '#structures/RedisClient';
+import type { ReceivedMessage } from '#types/MessageTypes';
 import logger from '#util/logger';
 
 const EXPIRATION = expirations.RATE_LIMITS;
-const getKey = (channelId: Snowflake) => `${Keys.RateLimited}:${channelId}`;
 
 class RateLimitsManager extends RedisClient {
   constructor() {
     super(dbIds.RATE_LIMITS);
   }
 
-  async isLimited(channelId: Snowflake | null) {
-    if (!channelId) return false;
-    return this.client.get(getKey(channelId));
+  private _createKey(message: ReceivedMessage) {
+    return this.separateKeys([Keys.RateLimited, message.channelId, message.id]);
   }
 
-  async add(channelId: Snowflake) {
-    await this.client.setEx(getKey(channelId), EXPIRATION, String(Date.now()));
-    logger.debug(`Rate limited ${channelId}`);
+  private _createChannelKey(channelId: Snowflake) {
+    return this.separateKeys([Keys.RateLimited, channelId, '*']);
+  }
+
+  async isLimited(message: ReceivedMessage) {
+    const channelKey = this._createChannelKey(message.channelId);
+    const keys = await this.client.keys(channelKey);
+    const isAtLimit = keys.length >= 3;
+
+    if (isAtLimit) {
+      client.antiSpam.check(message.channel as NewsChannel);
+    }
+
+    return isAtLimit;
+  }
+
+  async add(message: ReceivedMessage) {
+    await this.client.setEx(this._createKey(message), EXPIRATION, 'rate limited');
+    logger.debug(`Rate limited ${message.channelId}`);
   }
 }
 

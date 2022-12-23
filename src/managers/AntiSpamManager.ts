@@ -1,4 +1,4 @@
-import type { GuildChannel, Snowflake } from 'discord.js';
+import type { NewsChannel, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
@@ -9,21 +9,25 @@ import { channelToString, guildToString } from '#util/stringFormatters';
 
 const { antiSpam } = config;
 const EXPIRATION = expirations.SPAM_CHANNELS;
-const getKey = (channelId: Snowflake) => `${Keys.SpamChannel}:${channelId}`;
 
 class AntiSpamManager extends RedisClient {
   constructor() {
     super(dbIds.SPAM_CHANNELS);
   }
 
-  private _logRateLimited(channel: GuildChannel, count: number) {
+  private _createKey(channelId: Snowflake) {
+    return this.separateKeys([Keys.SpamChannel, channelId]);
+  }
+
+  private _logRateLimited(channel: NewsChannel, count: number) {
+    const normalizedCount = count + antiSpam.rateLimitsThreshold + 10;
     logger.debug(
-      `Channel ${channelToString(channel)} is being rate limited: ${10 + count}/${antiSpam.messagesThreshold}`
+      `Channel ${channelToString(channel)} is being rate limited: ${normalizedCount}/${antiSpam.messagesThreshold}`
     );
   }
 
-  private async _add(channel: GuildChannel) {
-    const KEY = getKey(channel.id);
+  private async _add(channel: NewsChannel) {
+    const KEY = this._createKey(channel.id);
     const spamChannel = await this.client.get(KEY);
 
     if (spamChannel) return this.client.incr(KEY);
@@ -32,10 +36,8 @@ class AntiSpamManager extends RedisClient {
     return this.client.setEx(KEY, EXPIRATION, '1');
   }
 
-  private async _isSpamming(channel: GuildChannel) {
-    if (!antiSpam.enabled) return false;
-
-    const KEY = getKey(channel.id);
+  private async _isSpamming(channel: NewsChannel) {
+    const KEY = this._createKey(channel.id);
     const spamChannel = await this.client.get(KEY);
     if (!spamChannel) return false;
 
@@ -43,7 +45,7 @@ class AntiSpamManager extends RedisClient {
     const newCount = currentCount + 1;
     await this.client.incr(KEY);
 
-    if (newCount >= antiSpam.messagesThreshold - 10) {
+    if (newCount >= antiSpam.messagesThreshold - antiSpam.rateLimitsThreshold - 10) {
       logger.info(
         `${channelToString(channel)} in ${guildToString(channel.guild, channel.guildId)} hit the hourly spam limit (${
           antiSpam.messagesThreshold
@@ -59,7 +61,9 @@ class AntiSpamManager extends RedisClient {
     return true;
   }
 
-  public async check(channel: GuildChannel) {
+  public async check(channel: NewsChannel) {
+    if (!antiSpam.enabled) return;
+
     if (await this._isSpamming(channel)) return;
     return this._add(channel);
   }

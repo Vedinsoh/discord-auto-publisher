@@ -8,7 +8,7 @@ import { channelToString, guildToString } from '#util/stringFormatters';
 const crosspost = async (message: ReceivedMessage) => {
   const channel = message.channel as NewsChannel;
 
-  if (await client.rateLimits.isLimited(channel.id)) return client.antiSpam.check(channel);
+  if (await client.rateLimits.isLimited(message)) return;
 
   return message
     .crosspost()
@@ -17,12 +17,11 @@ const crosspost = async (message: ReceivedMessage) => {
         `Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild, channel.guildId)}`
       );
     })
-    .catch(async (error) => {
+    .catch((error) => {
       if (Object.prototype.hasOwnProperty.call(error, 'code')) {
         if (safeErrorCodes.includes(error.code)) return;
       }
-      await client.antiSpam.check(channel);
-      await client.rateLimits.add(channel.id);
+      client.rateLimits.add(message);
     });
 };
 

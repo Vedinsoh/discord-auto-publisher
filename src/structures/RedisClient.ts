@@ -13,6 +13,10 @@ abstract class RedisClient {
   public async connect() {
     return this.client.connect();
   }
+
+  public separateKeys(keys: string[]) {
+    return keys.join(':');
+  }
 }
 
 export enum Keys {

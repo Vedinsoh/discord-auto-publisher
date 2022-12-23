@@ -10,6 +10,7 @@
   "antiSpam": {
     "enabled": true,
     "autoLeave": false,
+    "rateLimitsThreshold": 3,
     "messagesThreshold": 40
   }
 }

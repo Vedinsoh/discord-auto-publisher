@@ -15,6 +15,7 @@ const ConfigSchema = z
     antiSpam: z.object({
       enabled: z.boolean(),
       autoLeave: z.boolean(),
+      rateLimitsThreshold: z.number().min(0),
       messagesThreshold: z.number().min(0),
     }),
   })
