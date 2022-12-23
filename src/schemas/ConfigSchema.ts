@@ -6,7 +6,6 @@ const ConfigSchema = z
   .object({
     botAdmin: Snowflake,
     loggingLevel: LoggerLevel,
-    stringLocale: z.string(),
     presenceInterval: z.number().min(1).max(60),
     urlDetection: z.object({
       enabled: z.boolean(),
