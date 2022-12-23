@@ -1,0 +1,30 @@
+name: Continuous integration
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: yarn
+
+      - name: Install dependencies
+      - run: yarn install --immutable
+
+      - name: Lint
+        run: yarn run lint
+
+      - name: Build
+        run: yarn run build
