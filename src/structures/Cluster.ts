@@ -1,7 +1,11 @@
-import { Client as ClusterClient, client as DiscordClient } from 'discord-hybrid-sharding';
+import DHS, { client as DiscordClient } from 'discord-hybrid-sharding';
 
-export class AutoPublisherCluster extends ClusterClient {
+const { Client: ClusterClient } = DHS;
+
+class AutoPublisherCluster extends ClusterClient {
   constructor(options: DiscordClient) {
     super(options);
   }
 }
+
+export default AutoPublisherCluster;

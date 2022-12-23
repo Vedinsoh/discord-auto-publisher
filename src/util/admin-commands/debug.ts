@@ -26,11 +26,13 @@ export default new AdminCommand(CommandNames.DEBUG, async ({ channel }, value) =
   }
 
   if (enable.includes(value)) {
-    setLevel('debug').then(() => channel.send('Debug mode on.'));
+    setLevel('debug').then(() => {
+      channel.send('Debug mode on.');
+    });
   }
   if (disable.includes(value)) {
-    setLevel(loggingLevel === 'debug' ? 'info' : (loggingLevel as LoggerLevel)).then(() =>
-      channel.send('Debug mode off.')
-    );
+    setLevel(loggingLevel === 'debug' ? 'info' : (loggingLevel as LoggerLevel)).then(() => {
+      channel.send('Debug mode off.');
+    });
   }
 });

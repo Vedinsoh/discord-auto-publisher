@@ -1,6 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ClientEvents } from 'discord.js';
 
-export class Event<Key extends keyof ClientEvents> {
-  constructor(public name: Key, public run: (...args: ClientEvents[Key]) => any) {}
+class Event<Key extends keyof ClientEvents> {
+  constructor(public name: Key, public run: (...args: ClientEvents[Key]) => void) {}
 }
+
+export default Event;

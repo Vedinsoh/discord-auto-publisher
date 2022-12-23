@@ -1,19 +1,20 @@
 import Cluster from 'discord-hybrid-sharding';
-import { Client, ShardClientUtil, Snowflake } from 'discord.js-light';
+import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
-import getGuild from '#functions/getGuild';
-import { keys } from '#structures/RedisClient';
+import { Keys } from '#structures/RedisClient';
 import RedisClient from '#structures/RedisClient';
+import getGuild from '#util/getGuild';
 import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
-const { spam } = config;
+const { antiSpam } = config;
+
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
-export default class BlacklistManager extends RedisClient {
-  private _SET = keys.BLACKLIST;
+class BlacklistManager extends RedisClient {
+  private _SET = Keys.Blacklist;
 
   constructor() {
     super(dbIds.BLACKLIST);
@@ -24,7 +25,7 @@ export default class BlacklistManager extends RedisClient {
     const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
 
     guildIds.forEach(async (guildId) => {
-      if (client.guilds.cache.get(guildId) && spam.autoLeave) this.leaveGuild(guildId);
+      if (client.guilds.cache.get(guildId) && antiSpam.autoLeave) this.leaveGuild(guildId);
     });
   }
 
@@ -57,7 +58,7 @@ export default class BlacklistManager extends RedisClient {
       return;
     }
 
-    // In case the guild is not on the same shard
+    // * In case the guild is not on the same shard
     const shardData = Cluster.Client.getInfo();
     const shardId = ShardClientUtil.shardIdForGuildId(guildId, shardData.TOTAL_SHARDS);
 
@@ -77,3 +78,5 @@ export default class BlacklistManager extends RedisClient {
       .catch(logger.error);
   }
 }
+
+export default BlacklistManager;

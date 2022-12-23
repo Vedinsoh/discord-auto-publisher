@@ -1,4 +1,4 @@
-import type { Collection, Snowflake } from 'discord.js-light';
+import type { Collection, Snowflake } from 'discord.js';
 
 export type CommandsCollection = Collection<CommandNames, (...args: unknown[]) => void>;
 
@@ -13,7 +13,7 @@ export enum CommandNames {
   UPTIME = 'uptime',
 }
 
-export interface Commands {
+export type Commands = {
   [CommandNames.BLACKLIST]: [guildId?: Snowflake];
   [CommandNames.CHECK]: [guildId?: Snowflake];
   [CommandNames.DEBUG]: [value: string];
@@ -22,4 +22,4 @@ export interface Commands {
   [CommandNames.SHUTDOWN]: [];
   [CommandNames.UNBLACKLIST]: [guildId?: Snowflake];
   [CommandNames.UPTIME]: [];
-}
+};

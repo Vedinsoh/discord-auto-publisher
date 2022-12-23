@@ -1,18 +1,18 @@
-import { Constants } from 'discord.js-light';
+import { Events } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import { Event } from '#structures/Event';
+import Event from '#structures/Event';
 import logger from '#util/logger';
-import { guildToString } from '#util/stringFormatters';
+import { guildMembersToString, guildToString } from '#util/stringFormatters';
 
-const { spam } = config;
+const { antiSpam } = config;
 
-export default new Event(Constants.Events.GUILD_CREATE, async (guild) => {
+export default new Event(Events.GuildCreate, async (guild) => {
   if (await client.blacklist.has(guild.id)) {
-    if (spam.autoLeave) await client.blacklist.leaveGuild(guild.id);
+    if (antiSpam.autoLeave) client.blacklist.leaveGuild(guild.id);
     return;
   }
 
-  const members = guild.memberCount || 'unknown';
-  logger.debug(`Joined ${guildToString(guild)} with ${members} members.`);
+  const members = guildMembersToString(guild);
+  logger.debug(`Joined ${guildToString(guild)} with ${members}.`);
 });

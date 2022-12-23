@@ -9,8 +9,10 @@ export default new AdminCommand(CommandNames.BLACKLIST, async ({ channel }, guil
     return;
   }
 
-  await client.blacklist.add(guildId).then((response) => {
-    channel.send(response);
-    logger.info(response);
-  });
+  await client.blacklist //
+    .add(guildId)
+    .then((response) => {
+      channel.send(response);
+      logger.info(response);
+    });
 });

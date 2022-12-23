@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import fs from 'node:fs';
 import type z from 'zod';
-import type { ConfigSchema } from '#schemas/ConfigSchema';
+import type ConfigSchema from '#schemas/ConfigSchema';
 import getConfigFilename from '#util/getConfigFilename';
 import validateConfig from '#util/validateConfig';
 

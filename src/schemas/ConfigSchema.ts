@@ -1,21 +1,23 @@
 import z from 'zod';
-import { LoggerLevel } from '#schemas/LoggerLevel';
-import { Snowflake } from '#schemas/Snowflake';
+import LoggerLevel from '#schemas/LoggerLevel';
+import Snowflake from '#schemas/Snowflake';
 
-export const ConfigSchema = z
+const ConfigSchema = z
   .object({
     botAdmin: Snowflake,
     loggingLevel: LoggerLevel,
-    stringLocale: z.string(),
     presenceInterval: z.number().min(1).max(60),
     urlDetection: z.object({
       enabled: z.boolean(),
       deferTimeout: z.number().min(1).max(60),
     }),
-    spam: z.object({
+    antiSpam: z.object({
       enabled: z.boolean(),
       autoLeave: z.boolean(),
+      rateLimitsThreshold: z.number().min(0),
       messagesThreshold: z.number().min(0),
     }),
   })
   .strict();
+
+export default ConfigSchema;

@@ -1,12 +1,14 @@
-import { Constants } from 'discord.js-light';
+import { Events } from 'discord.js';
 import client from '#client';
-import { Event } from '#structures/Event';
+import Event from '#structures/Event';
 import logger from '#util/logger';
-import { guildToString } from '#util/stringFormatters';
+import { guildMembersToString, guildToString } from '#util/stringFormatters';
 
-export default new Event(Constants.Events.GUILD_DELETE, async (guild) => {
+export default new Event(Events.GuildDelete, async (guild) => {
   if (await client.blacklist.has(guild.id)) return;
 
-  const members = guild.memberCount || 'unknown';
-  logger.debug(`Left ${guildToString(guild)} with ${members} members.`);
+  client.crosspostQueue.deleteQueue(guild.id);
+
+  const members = guildMembersToString(guild);
+  logger.debug(`Left ${guildToString(guild)} with ${members}.`);
 });

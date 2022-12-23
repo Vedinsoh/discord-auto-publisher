@@ -1,14 +1,17 @@
 import createLogger from 'pino';
 import config from '#config';
 
-export default createLogger({
+const logger = createLogger({
   level: config.loggingLevel ?? 'info',
   transport: {
     target: 'pino-pretty',
     options: {
       colorize: true,
+      translateTime: false,
     },
   },
   base: undefined,
-  timestamp: () => `,"time":"${new Date(Date.now()).toISOString()}"`,
+  timestamp: () => `,"time":"${new Date().toISOString()}"`,
 });
+
+export default logger;
