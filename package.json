@@ -1,16 +1,16 @@
 {
   "name": "discord-auto-publisher",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "Automatically publish messages or news in your announcement channels!",
-  "author": "Forcellrus",
+  "author": "Vedinsoh",
   "license": "GPL-3.0-or-later",
-  "homepage": "https://github.com/Forcellrus/Discord-Auto-Publisher#readme",
+  "homepage": "https://github.com/Vedinsoh/Discord-Auto-Publisher#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Forcellrus/Discord-Auto-Publisher.git"
+    "url": "git+https://github.com/Vedinsoh/Discord-Auto-Publisher.git"
   },
   "bugs": {
-    "url": "https://github.com/Forcellrus/Discord-Auto-Publisher/issues"
+    "url": "https://github.com/Vedinsoh/Discord-Auto-Publisher/issues"
   },
   "keywords": [
     "discord",
