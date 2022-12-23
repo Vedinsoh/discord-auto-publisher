@@ -16,9 +16,9 @@ class QueueManager {
     this._queues.set(
       guildId,
       new PQueue({
-        concurrency: 10,
-        intervalCap: 10,
-        interval: secToMs(15),
+        concurrency: 5,
+        intervalCap: 5,
+        interval: secToMs(10),
         timeout: minToMs(10),
         carryoverConcurrencyCount: true,
         autoStart: true,
