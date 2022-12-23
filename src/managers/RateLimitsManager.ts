@@ -1,5 +1,6 @@
 import type { NewsChannel, Snowflake } from 'discord.js';
 import client from '#client';
+import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
 import RedisClient, { Keys } from '#structures/RedisClient';
@@ -24,7 +25,7 @@ class RateLimitsManager extends RedisClient {
   async isLimited(message: ReceivedMessage) {
     const channelKey = this._createChannelKey(message.channelId);
     const keys = await this.client.keys(channelKey);
-    const isAtLimit = keys.length >= 3;
+    const isAtLimit = keys.length >= config.antiSpam.rateLimitsThreshold;
 
     if (isAtLimit) {
       client.antiSpam.check(message.channel as NewsChannel);
