@@ -27,6 +27,8 @@ class AntiSpamManager extends RedisClient {
   }
 
   private async _add(channel: NewsChannel) {
+    await channel.fetch();
+
     const KEY = this._createKey(channel.id);
     const spamChannel = await this.client.get(KEY);
 
