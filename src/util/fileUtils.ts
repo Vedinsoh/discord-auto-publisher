@@ -5,7 +5,7 @@ const { sync } = glob;
 
 const normalizePath = (route: string) => route.replace(/[\\/]+/g, '/');
 
-export const getFiles = (route: string) => {
+export const getFilePaths = (route: string) => {
   return sync(normalizePath(`${process.env.PWD}/dist/${route}`));
 };
 

@@ -1,4 +1,4 @@
-import Cluster from 'discord-hybrid-sharding';
+import { getInfo } from 'discord-hybrid-sharding';
 import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
@@ -58,7 +58,7 @@ class BlacklistManager extends RedisClient {
     }
 
     // * In case the guild is not on the same shard
-    const shardData = Cluster.Client.getInfo();
+    const shardData = getInfo();
     const shardId = ShardClientUtil.shardIdForGuildId(guildId, shardData.TOTAL_SHARDS);
 
     client.cluster

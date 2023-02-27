@@ -18,5 +18,3 @@ export const createLogger = (pid?: string) => {
 };
 
 export const logger = createLogger();
-
-// export default logger;

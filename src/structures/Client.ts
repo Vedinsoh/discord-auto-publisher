@@ -8,7 +8,7 @@ import RateLimitsManager from '#managers/RateLimitsManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
-import { getFiles, importFile } from '#util/fileUtils';
+import { getFilePaths, importFile } from '#util/fileUtils';
 import { createLogger, logger } from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
@@ -35,8 +35,7 @@ class AutoPublisherClient extends Client {
       this.login(process.env.BOT_TOKEN),
     ])
       .then(() => {
-        const shardIds = this.shard?.ids.map((id) => id).join(', ');
-        this.logger = createLogger(`SHARD ${shardIds}`);
+        this.logger = createLogger(`CLUSTER ${this.cluster.id}`);
       })
       .catch((error) => {
         logger.error(error);
@@ -45,16 +44,16 @@ class AutoPublisherClient extends Client {
   }
 
   private async _registerEvents() {
-    const filePaths = getFiles('listeners/**/*.js');
-    filePaths.forEach(async (filePath) => {
+    const filePaths = getFilePaths('listeners/**/*.js');
+    return filePaths.forEach(async (filePath) => {
       const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);
     });
   }
 
   private async _registerCommands() {
-    const filePaths = getFiles('util/admin-commands/*.js');
-    filePaths.forEach(async (filePath) => {
+    const filePaths = getFilePaths('util/admin-commands/*.js');
+    return filePaths.forEach(async (filePath) => {
       const command = await importFile(filePath);
       this.commands.set(command.name, command.run);
     });
