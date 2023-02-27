@@ -5,7 +5,6 @@ import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
 import RedisClient, { Keys } from '#structures/RedisClient';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import logger from '#util/logger';
 
 const EXPIRATION = expirations.RATE_LIMITS;
 
@@ -36,7 +35,7 @@ class RateLimitsManager extends RedisClient {
 
   async add(message: ReceivedMessage) {
     await this.client.setEx(this._createKey(message), EXPIRATION, 'rate limited');
-    logger.debug(`Rate limited ${message.channelId}`);
+    client.logger.debug(`Rate limited ${message.channelId}`);
   }
 }
 

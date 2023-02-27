@@ -4,7 +4,6 @@ import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
 import RedisClient, { Keys } from '#structures/RedisClient';
-import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
 const { antiSpam } = config;
@@ -21,7 +20,7 @@ class AntiSpamManager extends RedisClient {
 
   private _logRateLimited(channel: NewsChannel, count: number) {
     const normalizedCount = count + antiSpam.rateLimitsThreshold + 10;
-    logger.debug(
+    client.logger.debug(
       `Channel ${channelToString(channel)} is being rate limited: ${normalizedCount}/${antiSpam.messagesThreshold}`
     );
   }
@@ -48,7 +47,7 @@ class AntiSpamManager extends RedisClient {
     await this.client.incr(KEY);
 
     if (newCount >= antiSpam.messagesThreshold - antiSpam.rateLimitsThreshold - 10) {
-      logger.info(
+      client.logger.info(
         `${channelToString(channel)} in ${guildToString(channel.guild, channel.guildId)} hit the hourly spam limit (${
           antiSpam.messagesThreshold
         }).`

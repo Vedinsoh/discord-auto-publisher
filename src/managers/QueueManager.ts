@@ -1,9 +1,9 @@
 import type { Snowflake } from 'discord.js';
 import PQueue from 'p-queue';
+import client from '#client';
 import config from '#config';
 import crosspost from '#crosspost/crosspost';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import logger from '#util/logger';
 import { minToMs, secToMs } from '#util/timeConverters';
 
 const { urlDetection } = config;
@@ -24,7 +24,7 @@ class QueueManager {
         autoStart: true,
       })
     );
-    logger.debug(`Added queue for guild ${guildId}`);
+    client.logger.debug(`Added queue for guild ${guildId}`);
   };
 
   private _getQueue = (guildId: Snowflake) => {
@@ -57,7 +57,7 @@ class QueueManager {
 
   public deleteQueue(guildId: Snowflake) {
     this._queues.delete(guildId);
-    logger.debug(`Deleted queue for guild ${guildId}`);
+    client.logger.debug(`Deleted queue for guild ${guildId}`);
   }
 }
 

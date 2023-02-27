@@ -2,7 +2,6 @@ import type { NewsChannel } from 'discord.js';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import logger from '#util/logger';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
 const crosspost = async (message: ReceivedMessage) => {
@@ -13,7 +12,7 @@ const crosspost = async (message: ReceivedMessage) => {
   return message
     .crosspost()
     .then(() => {
-      logger.debug(
+      client.logger.debug(
         `Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild, channel.guildId)}`
       );
     })

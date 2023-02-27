@@ -6,7 +6,6 @@ import dbIds from '#constants/redisDatabaseIds';
 import { Keys } from '#structures/RedisClient';
 import RedisClient from '#structures/RedisClient';
 import getGuild from '#util/getGuild';
-import logger from '#util/logger';
 import { guildToString } from '#util/stringFormatters';
 
 const { antiSpam } = config;
@@ -21,7 +20,7 @@ class BlacklistManager extends RedisClient {
   }
 
   async startupCheck() {
-    logger.debug('Checking for blacklisted guilds...');
+    client.logger.debug('Checking for blacklisted guilds...');
     const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
 
     guildIds.forEach(async (guildId) => {
@@ -53,8 +52,8 @@ class BlacklistManager extends RedisClient {
     if (guild) {
       guild
         .leave()
-        .then(() => logger.info(`Left blacklisted guild ${guildToString(guild)}`))
-        .catch(logger.error);
+        .then(() => client.logger.info(`Left blacklisted guild ${guildToString(guild)}`))
+        .catch(client.logger.error);
       return;
     }
 
@@ -74,8 +73,8 @@ class BlacklistManager extends RedisClient {
           context: { guildId },
         }
       )
-      .then(() => logger.info(`Left blacklisted guild ${guildId}`))
-      .catch(logger.error);
+      .then(() => client.logger.info(`Left blacklisted guild ${guildId}`))
+      .catch(client.logger.error);
   }
 }
 

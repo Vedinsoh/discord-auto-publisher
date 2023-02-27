@@ -3,7 +3,6 @@ import client from '#client';
 import config from '#config';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
-import logger from '#util/logger';
 
 const { loggingLevel } = config;
 
@@ -17,7 +16,7 @@ const setLevel = async (level: LoggerLevel) =>
     .broadcastEval((c, { level }) => c.setLoggerLevel(level), {
       context: { level },
     })
-    .catch(logger.error);
+    .catch(client.logger.error);
 
 export default new AdminCommand(CommandNames.DEBUG, async ({ channel }, value) => {
   if (![...enable, ...disable].includes(value)) {

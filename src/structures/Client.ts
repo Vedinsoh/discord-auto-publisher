@@ -9,7 +9,7 @@ import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { getFiles, importFile } from '#util/fileUtils';
-import logger from '#util/logger';
+import { createLogger, logger } from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
 const { presenceInterval } = config;
@@ -22,6 +22,7 @@ class AutoPublisherClient extends Client {
   public rateLimits = new RateLimitsManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
+  public logger = createLogger();
 
   public async start() {
     return Promise.all([
@@ -32,10 +33,15 @@ class AutoPublisherClient extends Client {
       this._registerEvents(),
       this._registerCommands(),
       this.login(process.env.BOT_TOKEN),
-    ]).catch((error) => {
-      logger.error(error);
-      process.exit(1);
-    });
+    ])
+      .then(() => {
+        const shardIds = this.shard?.ids.map((id) => id).join(', ');
+        this.logger = createLogger(`SHARD ${shardIds}`);
+      })
+      .catch((error) => {
+        logger.error(error);
+        process.exit(1);
+      });
   }
 
   private async _registerEvents() {

@@ -1,17 +1,22 @@
-import createLogger from 'pino';
+import pino from 'pino';
 import config from '#config';
 
-const logger = createLogger({
-  level: config.loggingLevel ?? 'info',
-  transport: {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: false,
+export const createLogger = (pid?: string) => {
+  return pino({
+    level: config.loggingLevel ?? 'info',
+    transport: {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l o',
+      },
     },
-  },
-  base: undefined,
-  timestamp: () => `,"time":"${new Date().toISOString()}"`,
-});
+    base: {
+      pid,
+    },
+  });
+};
 
-export default logger;
+export const logger = createLogger();
+
+// export default logger;

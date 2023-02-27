@@ -1,7 +1,6 @@
 import { Events } from 'discord.js';
 import client from '#client';
 import Event from '#structures/Event';
-import logger from '#util/logger';
 import { guildMembersToString, guildToString } from '#util/stringFormatters';
 
 export default new Event(Events.GuildDelete, async (guild) => {
@@ -10,5 +9,5 @@ export default new Event(Events.GuildDelete, async (guild) => {
   client.crosspostQueue.deleteQueue(guild.id);
 
   const members = guildMembersToString(guild);
-  logger.debug(`Left ${guildToString(guild)} with ${members}.`);
+  client.logger.debug(`Left ${guildToString(guild)} with ${members}.`);
 });

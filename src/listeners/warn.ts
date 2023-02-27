@@ -1,7 +1,7 @@
 import { Events } from 'discord.js';
+import client from '#client';
 import Event from '#structures/Event';
-import logger from '#util/logger';
 
 export default new Event(Events.Warn, async (info) => {
-  logger.warn(info);
+  client.logger.warn(info);
 });
