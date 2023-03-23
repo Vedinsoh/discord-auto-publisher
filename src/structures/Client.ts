@@ -4,7 +4,6 @@ import config from '#config';
 import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
 import QueueManager from '#managers/QueueManager';
-import RateLimitsManager from '#managers/RateLimitsManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
@@ -12,14 +11,11 @@ import { getFilePaths, importFile } from '#util/fileUtils';
 import { createLogger, logger } from '#util/logger';
 import { minToMs } from '#util/timeConverters';
 
-const { presenceInterval } = config;
-
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();
 
   public blacklist = new BlacklistManager();
-  public rateLimits = new RateLimitsManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
   public logger = createLogger();
@@ -27,7 +23,6 @@ class AutoPublisherClient extends Client {
   public async start() {
     return Promise.all([
       this.blacklist.connect(),
-      this.rateLimits.connect(),
       this.antiSpam.connect(),
 
       this._registerEvents(),
@@ -60,7 +55,7 @@ class AutoPublisherClient extends Client {
   }
 
   public startPresenceInterval() {
-    setInterval(() => this.updatePresence(), minToMs(presenceInterval));
+    setInterval(() => this.updatePresence(), minToMs(config.presenceInterval));
   }
 
   public async updatePresence() {

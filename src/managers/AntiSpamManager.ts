@@ -3,7 +3,7 @@ import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
 import expirations from '#constants/redisExpirations';
-import RedisClient, { Keys } from '#structures/RedisClient';
+import { Keys, RedisClient } from '#structures/RedisClient';
 import { channelToString, guildToString } from '#util/stringFormatters';
 
 const { antiSpam } = config;
@@ -15,58 +15,66 @@ class AntiSpamManager extends RedisClient {
   }
 
   private _createKey(channelId: Snowflake) {
-    return this.separateKeys([Keys.SpamChannel, channelId]);
+    return this.joinKeys([Keys.SpamChannel, channelId]);
   }
 
-  private _logRateLimited(channel: NewsChannel, count: number) {
-    const normalizedCount = count + antiSpam.rateLimitsThreshold + 10;
-    client.logger.debug(
-      `Channel ${channelToString(channel)} is being rate limited: ${normalizedCount}/${antiSpam.messagesThreshold}`
-    );
-  }
-
-  private async _add(channel: NewsChannel) {
-    await channel.fetch();
-
+  public async add(channel: NewsChannel) {
     const KEY = this._createKey(channel.id);
-    const spamChannel = await this.client.get(KEY);
+    const isStored = await this.client.get(KEY);
 
-    if (spamChannel) return this.client.incr(KEY);
+    if (isStored) {
+      await this.client.incr(KEY);
+      return this._atThreshold(channel);
+    }
 
     this._logRateLimited(channel, 1);
     return this.client.setEx(KEY, EXPIRATION, '1');
   }
 
-  private async _isSpamming(channel: NewsChannel) {
+  public async isFlagged(channel: NewsChannel) {
+    if (!antiSpam.enabled) return false;
+
     const KEY = this._createKey(channel.id);
-    const spamChannel = await this.client.get(KEY);
-    if (!spamChannel) return false;
+    const isStored = await this.client.get(KEY);
 
-    const currentCount = parseInt(spamChannel);
-    const newCount = currentCount + 1;
-    await this.client.incr(KEY);
+    return Boolean(isStored);
+  }
 
-    if (newCount >= antiSpam.messagesThreshold - antiSpam.rateLimitsThreshold - 10) {
+  private async _atThreshold(channel: NewsChannel) {
+    const KEY = this._createKey(channel.id);
+    const storedCount = await this.client.get(KEY);
+    if (!storedCount) return;
+
+    const parsedCount = parseInt(storedCount);
+
+    if (parsedCount >= antiSpam.messagesThreshold - 10) {
       client.logger.info(
         `${channelToString(channel)} in ${guildToString(channel.guild, channel.guildId)} hit the hourly spam limit (${
           antiSpam.messagesThreshold
         }).`
       );
-      const { guild } = channel;
-      this.client.del(KEY);
-      client.blacklist.add(guild.id);
-      return true;
+      this._handleCleanup(channel);
+      return;
     }
 
-    this._logRateLimited(channel, newCount);
-    return true;
+    this._logRateLimited(channel, parsedCount);
   }
 
-  public async check(channel: NewsChannel) {
-    if (!antiSpam.enabled) return;
+  private async _handleCleanup(channel: NewsChannel) {
+    const KEY = this._createKey(channel.id);
+    const { guild } = channel;
 
-    if (await this._isSpamming(channel)) return;
-    return this._add(channel);
+    await this.client.del(KEY);
+    return client.blacklist.add(guild.id);
+  }
+
+  private async _logRateLimited(channel: NewsChannel, count: number) {
+    await channel.fetch();
+    const normalizedCount = count + 10;
+
+    client.logger.debug(
+      `Channel ${channelToString(channel)} is being rate limited: ${normalizedCount}/${antiSpam.messagesThreshold}`
+    );
   }
 }
 

@@ -1,7 +1,6 @@
 const redisDatabaseIds = {
   BLACKLIST: 0,
-  RATE_LIMITS: 1,
-  SPAM_CHANNELS: 2,
+  SPAM_CHANNELS: 1,
 };
 
 export default redisDatabaseIds;

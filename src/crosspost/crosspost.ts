@@ -3,11 +3,19 @@ import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { channelToString, guildToString } from '#util/stringFormatters';
+import { secToMs } from '#util/timeConverters';
 
-const crosspost = async (message: ReceivedMessage) => {
+const crosspost = async (message: ReceivedMessage, retry = 0) => {
   const channel = message.channel as NewsChannel;
 
-  if (await client.rateLimits.isLimited(message)) return;
+  if (await client.antiSpam.isFlagged(channel)) {
+    if (retry > 0) return;
+    return client.antiSpam.add(channel);
+  }
+
+  if (retry >= 5) {
+    return client.antiSpam.add(channel);
+  }
 
   return message
     .crosspost()
@@ -20,7 +28,10 @@ const crosspost = async (message: ReceivedMessage) => {
       if (Object.prototype.hasOwnProperty.call(error, 'code')) {
         if (safeErrorCodes.includes(error.code)) return;
       }
-      client.rateLimits.add(message);
+
+      setTimeout(() => {
+        client.crosspostQueue.add(message, { retry: retry + 1 });
+      }, secToMs(10));
     });
 };
 

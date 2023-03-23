@@ -1,6 +1,6 @@
 import { RedisClientType, createClient } from 'redis';
 
-abstract class RedisClient {
+export abstract class RedisClient {
   public client: RedisClientType;
 
   constructor(databaseId: number) {
@@ -14,7 +14,7 @@ abstract class RedisClient {
     return this.client.connect();
   }
 
-  public separateKeys(keys: string[]) {
+  public joinKeys(keys: string[]) {
     return keys.join(':');
   }
 }
@@ -22,7 +22,4 @@ abstract class RedisClient {
 export enum Keys {
   Blacklist = 'blacklist',
   SpamChannel = 'spam_channel',
-  RateLimited = 'rate_limited',
 }
-
-export default RedisClient;

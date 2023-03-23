@@ -6,18 +6,20 @@ import crosspost from '#crosspost/crosspost';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { minToMs, secToMs } from '#util/timeConverters';
 
-const { urlDetection } = config;
+type MessageOptions = {
+  retry?: number;
+  hasUrl?: boolean;
+};
 
 class QueueManager {
-  private _queues = new Map<Snowflake, PQueue>();
-
+  private _guildQueues = new Map<Snowflake, PQueue>();
   private _addQueue = (guildId: Snowflake) => {
-    if (this._queues.has(guildId)) return;
-    this._queues.set(
+    if (this._guildQueues.has(guildId)) return;
+    this._guildQueues.set(
       guildId,
       new PQueue({
         concurrency: 5,
-        intervalCap: 5,
+        intervalCap: 10,
         interval: secToMs(10),
         timeout: minToMs(10),
         carryoverConcurrencyCount: true,
@@ -27,37 +29,38 @@ class QueueManager {
     client.logger.debug(`Added queue for guild ${guildId}`);
   };
 
-  private _getQueue = (guildId: Snowflake) => {
-    const guild = this._queues.get(guildId);
-
-    if (!guild) this._addQueue(guildId);
-    return this._queues.get(guildId);
-  };
-
-  private _enqueue(message: ReceivedMessage) {
-    const { guild } = message;
-    if (!guild) return;
-
-    const { id: guildId } = guild;
-    const queue = this._getQueue(guildId);
-    if (!queue) throw new Error(`Queue for guild ${guildId} not found`);
-
-    queue.add(() => crosspost(message));
-  }
-
-  public add(message: ReceivedMessage, defer = false) {
-    if (defer) {
+  public add(message: ReceivedMessage, options?: MessageOptions) {
+    if (options?.hasUrl) {
       setTimeout(() => {
-        this._enqueue(message);
-      }, secToMs(urlDetection.deferTimeout));
+        this._enqueue(message, options.retry);
+      }, secToMs(config.urlDetection.deferTimeout));
       return;
     }
-    return this._enqueue(message);
+    return this._enqueue(message, options?.retry);
   }
 
   public deleteQueue(guildId: Snowflake) {
-    this._queues.delete(guildId);
+    this._guildQueues.delete(guildId);
     client.logger.debug(`Deleted queue for guild ${guildId}`);
+  }
+
+  private _getQueue = (guildId: Snowflake) => {
+    const queue = this._guildQueues.get(guildId);
+
+    if (!queue) this._addQueue(guildId);
+    return this._guildQueues.get(guildId);
+  };
+
+  private _enqueue(message: ReceivedMessage, retry = 0) {
+    const { guild } = message;
+    if (!guild) return;
+
+    const queue = this._getQueue(guild.id);
+    if (!queue) throw new Error(`Queue for guild ${guild.id} not found`);
+
+    queue.add(() => crosspost(message, retry), {
+      priority: retry,
+    });
   }
 }
 

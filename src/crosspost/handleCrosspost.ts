@@ -11,7 +11,7 @@ const handleCrosspost = (message: ReceivedMessage) => {
     const hasEmbeds = !!message.embeds.length;
 
     if (hasUrl && !hasEmbeds) {
-      return client.crosspostQueue.add(message, true);
+      return client.crosspostQueue.add(message, { hasUrl: true });
     }
   }
 

@@ -3,12 +3,9 @@ import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import dbIds from '#constants/redisDatabaseIds';
-import { Keys } from '#structures/RedisClient';
-import RedisClient from '#structures/RedisClient';
+import { Keys, RedisClient } from '#structures/RedisClient';
 import getGuild from '#util/getGuild';
 import { guildToString } from '#util/stringFormatters';
-
-const { antiSpam } = config;
 
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
@@ -24,7 +21,7 @@ class BlacklistManager extends RedisClient {
     const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
 
     guildIds.forEach(async (guildId) => {
-      if (client.guilds.cache.get(guildId) && antiSpam.autoLeave) this.leaveGuild(guildId);
+      if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave) this.leaveGuild(guildId);
     });
   }
 
