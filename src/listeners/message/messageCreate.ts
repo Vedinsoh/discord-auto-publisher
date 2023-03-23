@@ -8,9 +8,12 @@ import type { CommandNames } from '#types/AdminCommandTypes';
 const { botAdmin } = config;
 
 export default new Event(Events.MessageCreate, async (message) => {
-  const { channel } = message;
+  if (message.partial) {
+    message = await message.fetch();
+  }
+  let { channel } = message;
 
-  if (channel.partial) await message.channel.fetch();
+  if (channel.partial) channel = await message.channel.fetch();
   if (!channel) return;
 
   if (channel.type === ChannelType.GuildAnnouncement) return handleCrosspost(message);
