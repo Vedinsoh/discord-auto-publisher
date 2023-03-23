@@ -8,9 +8,6 @@ import type { CommandNames } from '#types/AdminCommandTypes';
 const { botAdmin } = config;
 
 export default new Event(Events.MessageCreate, async (message) => {
-  if (message.partial) {
-    message = await message.fetch();
-  }
   let { channel } = message;
 
   if (channel.partial) channel = await message.channel.fetch();
