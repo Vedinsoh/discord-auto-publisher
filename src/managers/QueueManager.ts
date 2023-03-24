@@ -20,7 +20,7 @@ class QueueManager {
       new PQueue({
         concurrency: 5,
         intervalCap: 10,
-        interval: secToMs(10),
+        interval: secToMs(12),
         timeout: minToMs(10),
         carryoverConcurrencyCount: true,
         autoStart: true,
