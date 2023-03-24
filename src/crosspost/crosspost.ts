@@ -1,4 +1,4 @@
-import type { NewsChannel } from 'discord.js';
+import { DiscordAPIError, NewsChannel, RateLimitError } from 'discord.js';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
@@ -24,14 +24,18 @@ const crosspost = async (message: ReceivedMessage, retry = 0) => {
         `Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild, channel.guildId)}`
       );
     })
-    .catch((error) => {
-      if (Object.prototype.hasOwnProperty.call(error, 'code')) {
-        if (safeErrorCodes.includes(error.code)) return;
+    .catch((error: DiscordAPIError | RateLimitError | unknown) => {
+      if (error instanceof RateLimitError) {
+        setTimeout(() => {
+          client.crosspostQueue.add(message, { retry: retry + 1 });
+        }, secToMs(10));
+        return;
       }
 
-      setTimeout(() => {
-        client.crosspostQueue.add(message, { retry: retry + 1 });
-      }, secToMs(10));
+      if (error instanceof DiscordAPIError) {
+        const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
+        if (safeErrorCodes.includes(code)) return;
+      }
     });
 };
 
