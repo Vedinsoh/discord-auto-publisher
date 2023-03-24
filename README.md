@@ -25,13 +25,13 @@ A lightweight command-less bot that will automatically publish every new message
 
 ### Need help? Message me on Discord:
 
-<a href="https://discord.com/users/150701861626839041" target="_blank">`Forcellrus#5555`</a>
+<a href="https://discord.com/users/150701861626839041" target="_blank">`Vedinsoh#0001`</a>
 
 ---
 
 Did the bot help you or do you simply want to support my work? ❤️
 
-<a href="https://www.buymeacoffee.com/Forcellrus" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="160" height="44" alt="Buy Me A Coffee"></a>
+<a href="https://www.buymeacoffee.com/Vedinsoh" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="160" height="44" alt="Buy Me A Coffee"></a>
 
 ## Self-hosting
 
