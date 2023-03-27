@@ -6,8 +6,6 @@ import { guildMembersToString, guildToString } from '#util/stringFormatters';
 export default new Event(Events.GuildDelete, async (guild) => {
   if (await client.blacklist.has(guild.id)) return;
 
-  client.crosspostQueue.deleteQueue(guild.id);
-
   const members = guildMembersToString(guild);
   client.logger.debug(`Left ${guildToString(guild)} with ${members}.`);
 });
