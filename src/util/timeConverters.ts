@@ -1,7 +1,7 @@
-export const minToMs = (minute: number): number => minute * 60 * 1000;
+type TimeConversion = (time: number) => number;
 
-export const minToSec = (minute: number): number => minute * 60;
+export const secToMs: TimeConversion = (second) => second * 1000;
+export const minToMs: TimeConversion = (minute) => minute * 60 * 1000;
 
-export const secToMs = (second: number): number => second * 1000;
-
-export const msToSec = (ms: number): number => ms / 1000;
+export const msToSec: TimeConversion = (ms) => ms / 1000;
+export const minToSec: TimeConversion = (minute) => minute * 60;

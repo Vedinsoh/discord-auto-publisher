@@ -6,7 +6,6 @@ export enum CommandNames {
   BLACKLIST = 'blacklist',
   CHECK = 'check',
   DEBUG = 'debug',
-  MEM = 'mem',
   RESPAWN = 'respawn',
   SHUTDOWN = 'shutdown',
   UNBLACKLIST = 'unblacklist',
@@ -17,7 +16,6 @@ export type Commands = {
   [CommandNames.BLACKLIST]: [guildId?: Snowflake];
   [CommandNames.CHECK]: [guildId?: Snowflake];
   [CommandNames.DEBUG]: [value: string];
-  [CommandNames.MEM]: [];
   [CommandNames.RESPAWN]: [];
   [CommandNames.SHUTDOWN]: [];
   [CommandNames.UNBLACKLIST]: [guildId?: Snowflake];

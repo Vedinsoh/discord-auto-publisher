@@ -61,7 +61,7 @@ class AutoPublisherClient extends Client {
   public async updatePresence() {
     const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')) //
       .reduce((p: number, n: number) => p + n);
-    logger.debug(`[CLUSTER ${this.cluster.id}] Updating presence. Guilds: ${guilds}`);
+    logger.debug(`Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
       activities: [
