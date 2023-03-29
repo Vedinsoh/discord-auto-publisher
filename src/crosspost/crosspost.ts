@@ -8,7 +8,7 @@ import { secToMs } from '#util/timeConverters';
 const crosspost = async (message: ReceivedMessage, retry = 0) => {
   const channel = message.channel as NewsChannel;
 
-  if (await client.antiSpam.isFlagged(channel)) {
+  if (await client.antiSpam.isFlagged(message.channelId)) {
     if (retry > 0) return;
     return client.antiSpam.add(channel);
   }

@@ -22,19 +22,22 @@ class AntiSpamManager extends RedisClient {
     const KEY = this._createKey(channel.id);
     const isStored = await this.client.get(KEY);
 
+    client.crosspostQueue.clearChannelQueue(channel.id);
+
     if (isStored) {
       await this.client.incr(KEY);
       return this._atThreshold(channel);
     }
 
     this._logRateLimited(channel, 1);
-    return this.client.setEx(KEY, EXPIRATION, '1');
+    await this.client.setEx(KEY, EXPIRATION, '1');
+    return;
   }
 
-  public async isFlagged(channel: NewsChannel) {
+  public async isFlagged(channelId: Snowflake) {
     if (!antiSpam.enabled) return false;
 
-    const KEY = this._createKey(channel.id);
+    const KEY = this._createKey(channelId);
     const isStored = await this.client.get(KEY);
 
     return Boolean(isStored);
