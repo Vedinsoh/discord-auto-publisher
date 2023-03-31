@@ -14,9 +14,9 @@ type MessageOptions = {
 class QueueManager {
   private _mainQueue = new PQueue({
     concurrency: 5,
-    intervalCap: 10,
-    interval: secToMs(11),
-    timeout: minToMs(10),
+    intervalCap: 5,
+    interval: secToMs(12),
+    timeout: minToMs(15),
     carryoverConcurrencyCount: true,
     autoStart: true,
   });
