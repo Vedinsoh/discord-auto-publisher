@@ -5,8 +5,6 @@ import handleCrosspost from '#crosspost/handleCrosspost';
 import Event from '#structures/Event';
 import type { CommandNames } from '#types/AdminCommandTypes';
 
-const { botAdmin } = config;
-
 export default new Event(Events.MessageCreate, async (message) => {
   let { channel } = message;
 
@@ -16,7 +14,7 @@ export default new Event(Events.MessageCreate, async (message) => {
   if (channel.type === ChannelType.GuildAnnouncement) return handleCrosspost(message);
 
   // * Bot owner commands handler
-  if (channel.type === ChannelType.DM && message.author.id === botAdmin) {
+  if (channel.type === ChannelType.DM && config.botAdmins.includes(message.author.id)) {
     const [commandName, argument] = message.content //
       .toLowerCase()
       .split(/ +/g)

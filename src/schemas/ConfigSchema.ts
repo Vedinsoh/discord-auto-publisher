@@ -2,10 +2,8 @@ import z from 'zod';
 import LoggerLevel from '#schemas/LoggerLevel';
 import Snowflake from '#schemas/Snowflake';
 
-const ConfigSchema = z
+export const BotConfigSchema = z
   .object({
-    botAdmin: Snowflake,
-    loggingLevel: LoggerLevel,
     presenceInterval: z.number().min(1).max(60),
     urlDetection: z.object({
       enabled: z.boolean(),
@@ -19,4 +17,13 @@ const ConfigSchema = z
   })
   .strict();
 
-export default ConfigSchema;
+export const EnvSchema = z
+  .object({
+    botToken: z.string(),
+    redisUri: z.string().url(),
+    botAdmins: z.array(Snowflake),
+    loggerLevel: LoggerLevel,
+  })
+  .strict();
+
+export const ConfigSchema = BotConfigSchema.merge(EnvSchema);

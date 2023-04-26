@@ -4,7 +4,7 @@ import config from '#config';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
 
-const { loggingLevel } = config;
+const { loggerLevel } = config;
 
 const enable = ['1', 'true', 'enable', 'accept', 'on', 'yes'];
 const disable = ['0', 'false', 'disable', 'deny', 'off', 'no'];
@@ -30,7 +30,7 @@ export default new AdminCommand(CommandNames.DEBUG, async ({ channel }, value) =
     });
   }
   if (disable.includes(value)) {
-    setLevel(loggingLevel === 'debug' ? 'info' : (loggingLevel as LoggerLevel)).then(() => {
+    setLevel(loggerLevel === 'debug' ? 'info' : (loggerLevel as LoggerLevel)).then(() => {
       channel.send('Debug mode off.');
     });
   }

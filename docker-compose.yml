@@ -7,10 +7,8 @@ services:
       dockerfile: .docker/Dockerfile
     restart: unless-stopped
     command: yarn run start
-    environment:
-      - NODE_ENV=production
     env_file:
-      - .env
+      - .env.production
     depends_on:
       - redis
 

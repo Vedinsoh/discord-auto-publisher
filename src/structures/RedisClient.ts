@@ -1,4 +1,5 @@
 import { RedisClientType, createClient } from 'redis';
+import config from '#config';
 
 export abstract class RedisClient {
   public client: RedisClientType;
@@ -6,7 +7,7 @@ export abstract class RedisClient {
   constructor(databaseId: number) {
     this.client = createClient({
       database: databaseId,
-      url: process.env.REDIS_URL,
+      url: config.redisUri,
     });
   }
 

@@ -3,7 +3,7 @@ import config from '#config';
 
 export const createLogger = (pid?: string) => {
   return pino({
-    level: config.loggingLevel ?? 'info',
+    level: config.loggerLevel ?? 'info',
     transport: {
       target: 'pino-pretty',
       options: {

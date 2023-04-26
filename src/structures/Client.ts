@@ -27,7 +27,7 @@ class AutoPublisherClient extends Client {
 
       this._registerEvents(),
       this._registerCommands(),
-      this.login(process.env.BOT_TOKEN),
+      this.login(config.botToken),
     ])
       .then(() => {
         this.logger = createLogger(`CLUSTER ${this.cluster.id}`);
