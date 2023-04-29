@@ -56,7 +56,7 @@ class QueueManager {
   }
 
   private async _addToMainQueue(message: ReceivedMessage, retry = 0) {
-    const channel = (await message.channel.fetch()) as NewsChannel;
+    const channel = (await message.channel?.fetch()) as NewsChannel;
 
     if (await client.antiSpam.isFlagged(message.channelId)) {
       if (retry > 0) return;
