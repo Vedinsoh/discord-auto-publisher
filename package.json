@@ -23,7 +23,7 @@
     "start": "TS_NODE_BASEURL=dist node -r tsconfig-paths/register ./dist/index.js",
     "start:dev": "tsc-watch --noClear --onSuccess \"yarn run start\"",
     "compose": "docker compose up --build -d",
-    "compose:dev": "docker compose -f docker-compose.yml -f docker-compose.development.yml up --build",
+    "compose:dev": "docker compose -f docker-compose.yml -f docker-compose.development.yml up --build --attach=bot",
     "reinstall": "rm -rf node_modules && yarn install",
     "update": "yarn upgrade-interactive",
     "lint": "eslint src --ext .ts",

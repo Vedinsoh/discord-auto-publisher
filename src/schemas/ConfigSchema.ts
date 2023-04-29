@@ -20,6 +20,7 @@ export const BotConfigSchema = z
 export const EnvSchema = z
   .object({
     botToken: z.string(),
+    mongoUri: z.string().url(),
     redisUri: z.string().url(),
     botAdmins: z.array(Snowflake),
     loggerLevel: LoggerLevel,

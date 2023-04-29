@@ -1,19 +1,13 @@
 import type { NewsChannel, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import dbIds from '#constants/redisDatabaseIds';
-import expirations from '#constants/redisExpirations';
 import { Keys, RedisClient } from '#structures/RedisClient';
 import { channelToString, guildToString } from '#util/stringFormatters';
+import { minToSec } from '#util/timeConverters';
 
 const { antiSpam } = config;
-const EXPIRATION = expirations.SPAM_CHANNELS;
 
 class AntiSpamManager extends RedisClient {
-  constructor() {
-    super(dbIds.SPAM_CHANNELS);
-  }
-
   private _createKey(channelId: Snowflake) {
     return this.joinKeys([Keys.SpamChannel, channelId]);
   }
@@ -30,7 +24,7 @@ class AntiSpamManager extends RedisClient {
     }
 
     this._logRateLimited(channel, 1);
-    await this.client.setEx(KEY, EXPIRATION, '1');
+    await this.client.setEx(KEY, minToSec(60), '1');
     return;
   }
 

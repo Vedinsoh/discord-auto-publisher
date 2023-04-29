@@ -2,46 +2,42 @@ import { getInfo } from 'discord-hybrid-sharding';
 import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import dbIds from '#constants/redisDatabaseIds';
-import { Keys, RedisClient } from '#structures/RedisClient';
+import { MongoClient } from '#structures/MongoClient';
 import getGuild from '#util/getGuild';
 import { guildToString } from '#util/stringFormatters';
 
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
-class BlacklistManager extends RedisClient {
-  private _SET = Keys.Blacklist;
-
-  constructor() {
-    super(dbIds.BLACKLIST);
-  }
-
+class BlacklistManager extends MongoClient {
   async startupCheck() {
     client.logger.debug('Checking for blacklisted guilds...');
-    const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
+    // const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
 
-    guildIds.forEach(async (guildId) => {
-      if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave) this.leaveGuild(guildId);
-    });
+    // guildIds.forEach(async (guildId) => {
+    //   if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave) this.leaveGuild(guildId);
+    // });
   }
 
   async has(guildId: Snowflake) {
-    return this.client.sIsMember(this._SET, guildId);
+    return false;
+    // return this.client.sIsMember(this._SET, guildId);
   }
 
   async add(guildId: Snowflake) {
-    if (!isValidGuild) return 'Invalid server ID provided.';
-    if (await this.has(guildId)) return `${guildId} is already blacklisted.`;
-    await this.client.sAdd(this._SET, guildId);
+    if (!(await isValidGuild(guildId))) return 'Invalid server ID provided.';
+    // if (await this.has(guildId)) return `${guildId} is already blacklisted.`;
+    // await this.client.sAdd(this._SET, guildId);
 
-    this.leaveGuild(guildId);
-    return `Added ${guildId} to the blacklist.`;
+    // this.leaveGuild(guildId);
+    // return `Added ${guildId} to the blacklist.`;
+    return 'Blacklist is disabled.';
   }
 
   async remove(guildId: Snowflake) {
-    if (!(await this.has(guildId))) return `${guildId} is not blacklisted.`;
-    await this.client.sRem(this._SET, guildId);
-    return `Removed ${guildId} from the blacklist.`;
+    return 'Blacklist is disabled.';
+    // if (!(await this.has(guildId))) return `${guildId} is not blacklisted.`;
+    // await this.client.sRem(this._SET, guildId);
+    // return `Removed ${guildId} from the blacklist.`;
   }
 
   async leaveGuild(guildId: Snowflake) {
