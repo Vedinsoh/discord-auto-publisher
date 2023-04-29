@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "start": "cross-env TS_NODE_BASEURL=dist node -r tsconfig-paths/register /app/dist/index.js",
+    "start": "TS_NODE_BASEURL=dist node -r tsconfig-paths/register ./dist/index.js",
     "start:dev": "tsc-watch --noClear --onSuccess \"yarn run start\"",
     "compose": "docker compose up --build -d",
     "compose:dev": "docker compose -f docker-compose.yml -f docker-compose.development.yml up --build",
@@ -31,11 +31,11 @@
   },
   "dependencies": {
     "bufferutil": "^4.0.7",
-    "cross-env": "^7.0.3",
     "discord-hybrid-sharding": "^2.1.1",
     "discord.js": "^14.8.0",
     "dotenv": "^16.0.3",
     "glob": "^9.3.2",
+    "mongoose": "^7.1.0",
     "p-queue": "^7.3.4",
     "pino": "^8.11.0",
     "pino-pretty": "^10.0.0",
@@ -58,7 +58,6 @@
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
     "prettier": "^2.8.6",
-    "ts-jest": "^29.1.0",
     "tsc-watch": "^6.0.0",
     "typescript": "^4.9.5"
   },
