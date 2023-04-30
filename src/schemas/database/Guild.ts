@@ -1,15 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
-
-export enum BlacklistEventType {
-  Unblacklist = 'unblacklist',
-  Blacklist = 'blacklist',
-}
-
-interface IBlacklistEvent {
-  type: BlacklistEventType;
-  timestamp: Date;
-  reason: string | null;
-}
+import { BlacklistEventSchema, IBlacklistEvent } from '#schemas/database/BlacklistEvent';
 
 export interface IGuild extends Document {
   guildId: string;
@@ -21,22 +11,15 @@ const GuildSchema = new Schema(
   {
     guildId: { type: String, required: true, unique: true },
     isBlacklisted: { type: Boolean, default: false },
-    blacklistEvents: [
-      {
-        type: {
-          type: String,
-          enum: Object.values(BlacklistEventType),
-          default: BlacklistEventType.Blacklist,
-          required: true,
-        },
-        timestamp: { type: Date, default: Date.now },
-        reason: { type: String, default: null },
-      },
-    ],
+    blacklistEvents: {
+      type: [BlacklistEventSchema],
+      default: [],
+    },
   },
   {
     versionKey: false,
     autoCreate: true,
+    timestamps: true,
   }
 );
 

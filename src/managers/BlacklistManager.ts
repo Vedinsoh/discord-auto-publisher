@@ -2,7 +2,8 @@ import { getInfo } from 'discord-hybrid-sharding';
 import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import { BlacklistEventType, Guild } from '#schemas/database/Guild';
+import { BlacklistEventType, IBlacklistEvent } from '#schemas/database/BlacklistEvent';
+import { Guild } from '#schemas/database/Guild';
 import { MongoDBClient } from '#structures/MongoDBClient';
 import getGuild from '#util/getGuild';
 import { guildToString } from '#util/stringFormatters';
@@ -14,6 +15,22 @@ type BlacklistEventOptions = Partial<{
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
 class BlacklistManager extends MongoDBClient {
+  private async _get(guildId: Snowflake) {
+    return Guild.findOne({ guildId });
+  }
+
+  private _createEvent(type: BlacklistEventType, options?: BlacklistEventOptions): IBlacklistEvent {
+    return {
+      type,
+      reason: options?.reason || null,
+    };
+  }
+
+  async has(guildId: Snowflake) {
+    const guild = await this._get(guildId);
+    return Boolean(guild && guild.isBlacklisted);
+  }
+
   async startupCheck() {
     client.logger.debug('Checking for blacklisted guilds...');
 
@@ -33,44 +50,26 @@ class BlacklistManager extends MongoDBClient {
     });
   }
 
-  async _get(guildId: Snowflake) {
-    return Guild.findOne({ guildId });
-  }
-
-  async has(guildId: Snowflake) {
-    const guild = await this._get(guildId);
-    return Boolean(guild && guild.isBlacklisted);
-  }
-
   async add(guildId: Snowflake, options?: BlacklistEventOptions) {
     if (!(await isValidGuild(guildId))) return 'Invalid server ID provided.';
-    if (await this.has(guildId)) return `${guildId} is already blacklisted.`;
-
     const guild = await this._get(guildId);
 
     if (guild) {
-      guild.blacklistEvents.push({
-        type: BlacklistEventType.Blacklist,
-        timestamp: new Date(),
-        reason: options?.reason || null,
-      });
+      if (guild.isBlacklisted) return `${guildId} is already blacklisted.`;
+
+      guild.blacklistEvents.push(this._createEvent(BlacklistEventType.Blacklist, options));
       await guild.save();
     } else {
       const newGuild = new Guild({
         guildId: guildId,
         isBlacklisted: true,
-        blacklistEvents: [
-          {
-            type: BlacklistEventType.Blacklist,
-            timestamp: new Date(),
-            reason: options?.reason || null,
-          },
-        ],
+        blacklistEvents: [this._createEvent(BlacklistEventType.Blacklist, options)],
       });
       await newGuild.save();
     }
 
-    this.leaveGuild(guildId);
+    // TODO
+    // this.leaveGuild(guildId);
     return `Added ${guildId} to the blacklist.`;
   }
 
@@ -80,11 +79,7 @@ class BlacklistManager extends MongoDBClient {
     if (!guild || !guild.isBlacklisted) return `${guildId} is not blacklisted.`;
 
     guild.isBlacklisted = false;
-    guild.blacklistEvents.push({
-      type: BlacklistEventType.Unblacklist,
-      timestamp: new Date(),
-      reason: options?.reason || null,
-    });
+    guild.blacklistEvents.push(this._createEvent(BlacklistEventType.Unblacklist, options));
     await guild.save();
 
     return `Removed ${guildId} from the blacklist.`;
