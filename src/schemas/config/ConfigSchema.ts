@@ -1,6 +1,6 @@
 import z from 'zod';
-import LoggerLevel from '#schemas/LoggerLevel';
-import Snowflake from '#schemas/Snowflake';
+import LoggerLevel from '#schemas/config/LoggerLevel';
+import Snowflake from '#schemas/config/Snowflake';
 
 export const BotConfigSchema = z
   .object({

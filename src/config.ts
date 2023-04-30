@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import fs from 'node:fs';
 import type z from 'zod';
-import type { BotConfigSchema, EnvSchema } from '#schemas/ConfigSchema';
+import type { BotConfigSchema, EnvSchema } from '#schemas/config/ConfigSchema';
 import validateConfig from '#util/validateConfig';
 
 const botConfigFile = fs.readFileSync(`./bot.config.json`, 'utf8');

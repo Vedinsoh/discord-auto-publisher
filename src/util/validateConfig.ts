@@ -1,5 +1,5 @@
 import { ZodError } from 'zod';
-import { ConfigSchema } from '#schemas/ConfigSchema';
+import { ConfigSchema } from '#schemas/config/ConfigSchema';
 
 const stringifyIssues = (error: ZodError) => {
   const { issues } = error;

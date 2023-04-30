@@ -9,7 +9,9 @@ export default new AdminCommand(CommandNames.BLACKLIST, async ({ channel }, guil
   }
 
   await client.blacklist //
-    .add(guildId)
+    .add(guildId, {
+      reason: 'Blacklisted by admin',
+    })
     .then((response) => {
       channel.send(response);
       client.logger.info(response);

@@ -62,7 +62,9 @@ class AntiSpamManager extends RedisClient {
     const { guild } = channel;
 
     await this.client.del(KEY);
-    return client.blacklist.add(guild.id);
+    return client.blacklist.add(guild.id, {
+      reason: channel.id,
+    });
   }
 
   private async _logRateLimited(channel: NewsChannel, count: number) {
