@@ -68,8 +68,6 @@ class BlacklistManager extends MongoDBClient {
       await newGuild.save();
     }
 
-    // TODO
-    // this.leaveGuild(guildId);
     return `Added ${guildId} to the blacklist.`;
   }
 
