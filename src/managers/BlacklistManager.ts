@@ -3,13 +3,13 @@ import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import { isDev } from '#constants/isDev';
-import { BlacklistEventType, IBlacklistEvent } from '#schemas/database/BlacklistEvent';
+import { BlacklistRecordType, IBlacklistRecord } from '#schemas/database/BlacklistRecord';
 import { Guild } from '#schemas/database/Guild';
 import { MongoDBClient } from '#structures/MongoDBClient';
 import getGuild from '#util/getGuild';
 import { guildToString } from '#util/stringFormatters';
 
-type BlacklistEventOptions = Partial<{
+type BlacklistRecordOptions = Partial<{
   reason: string | null;
 }>;
 
@@ -20,7 +20,7 @@ class BlacklistManager extends MongoDBClient {
     return Guild.findOne({ guildId });
   }
 
-  private _createEvent(type: BlacklistEventType, options?: BlacklistEventOptions): IBlacklistEvent {
+  private _createRecord(type: BlacklistRecordType, options?: BlacklistRecordOptions): IBlacklistRecord {
     return {
       type,
       reason: options?.reason || null,
@@ -30,6 +30,11 @@ class BlacklistManager extends MongoDBClient {
   async has(guildId: Snowflake) {
     const guild = await this._get(guildId);
     return Boolean(guild && guild.isBlacklisted);
+  }
+
+  async getRecords(guildId: Snowflake) {
+    const guild = await this._get(guildId);
+    return guild?.blacklistRecords || [];
   }
 
   async startupCheck() {
@@ -51,7 +56,7 @@ class BlacklistManager extends MongoDBClient {
     });
   }
 
-  async add(guildId: Snowflake, options?: BlacklistEventOptions) {
+  async add(guildId: Snowflake, options?: BlacklistRecordOptions) {
     if (!(await isValidGuild(guildId))) return 'Invalid server ID provided.';
     const guild = await this._get(guildId);
 
@@ -59,13 +64,13 @@ class BlacklistManager extends MongoDBClient {
       if (guild.isBlacklisted) return `${guildId} is already blacklisted.`;
 
       guild.isBlacklisted = true;
-      guild.blacklistEvents.push(this._createEvent(BlacklistEventType.Blacklist, options));
+      guild.blacklistRecords.push(this._createRecord(BlacklistRecordType.Blacklist, options));
       await guild.save();
     } else {
       const newGuild = new Guild({
         guildId: guildId,
         isBlacklisted: true,
-        blacklistEvents: [this._createEvent(BlacklistEventType.Blacklist, options)],
+        blacklistRecords: [this._createRecord(BlacklistRecordType.Blacklist, options)],
       });
       await newGuild.save();
     }
@@ -74,13 +79,13 @@ class BlacklistManager extends MongoDBClient {
     return `Added ${guildId} to the blacklist.`;
   }
 
-  async remove(guildId: Snowflake, options?: BlacklistEventOptions) {
+  async remove(guildId: Snowflake, options?: BlacklistRecordOptions) {
     const guild = await this._get(guildId);
 
     if (!guild || !guild.isBlacklisted) return `${guildId} is not blacklisted.`;
 
     guild.isBlacklisted = false;
-    guild.blacklistEvents.push(this._createEvent(BlacklistEventType.Unblacklist, options));
+    guild.blacklistRecords.push(this._createRecord(BlacklistRecordType.Unblacklist, options));
     await guild.save();
 
     return `Removed ${guildId} from the blacklist.`;

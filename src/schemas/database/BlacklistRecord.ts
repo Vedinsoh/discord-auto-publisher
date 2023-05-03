@@ -1,21 +1,23 @@
 import { Schema } from 'mongoose';
 
-export enum BlacklistEventType {
+export enum BlacklistRecordType {
   Unblacklist = 'unblacklist',
   Blacklist = 'blacklist',
 }
 
-export interface IBlacklistEvent {
-  type: BlacklistEventType;
+export interface IBlacklistRecord {
+  type: BlacklistRecordType;
   reason?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export const BlacklistEventSchema = new Schema(
+export const BlacklistRecordSchema = new Schema(
   {
     type: {
       type: String,
-      enum: Object.values(BlacklistEventType),
-      default: BlacklistEventType.Blacklist,
+      enum: Object.values(BlacklistRecordType),
+      default: BlacklistRecordType.Blacklist,
       required: true,
     },
     reason: { type: String, default: null },

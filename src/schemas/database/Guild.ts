@@ -1,18 +1,18 @@
 import { Document, Schema, model } from 'mongoose';
-import { BlacklistEventSchema, IBlacklistEvent } from '#schemas/database/BlacklistEvent';
+import { BlacklistRecordSchema, IBlacklistRecord } from '#schemas/database/BlacklistRecord';
 
 export interface IGuild extends Document {
   guildId: string;
   isBlacklisted: boolean;
-  blacklistEvents: IBlacklistEvent[];
+  blacklistRecords: IBlacklistRecord[];
 }
 
 const GuildSchema = new Schema(
   {
     guildId: { type: String, required: true, unique: true },
     isBlacklisted: { type: Boolean, default: false },
-    blacklistEvents: {
-      type: [BlacklistEventSchema],
+    blacklistRecords: {
+      type: [BlacklistRecordSchema],
       default: [],
     },
   },
