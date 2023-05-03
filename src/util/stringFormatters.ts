@@ -1,4 +1,8 @@
-import type { Guild, GuildChannel, Snowflake } from 'discord.js';
+import type { Guild, GuildChannel, Snowflake, User } from 'discord.js';
+
+export const userToString = (user: User): string => {
+  return `${user.tag} (${user.id})`;
+};
 
 export const channelToString = (channel: GuildChannel): string => {
   return `#${channel.name} (${channel.id})`;

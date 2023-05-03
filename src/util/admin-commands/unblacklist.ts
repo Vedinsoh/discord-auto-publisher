@@ -1,6 +1,7 @@
 import client from '#client';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
+import { userToString } from '#util/stringFormatters';
 
 export default new AdminCommand(CommandNames.UNBLACKLIST, async ({ channel, author }, guildId) => {
   if (!guildId) {
@@ -10,7 +11,7 @@ export default new AdminCommand(CommandNames.UNBLACKLIST, async ({ channel, auth
 
   await client.blacklist //
     .remove(guildId, {
-      reason: `Unblacklisted by ${author.tag} (${author.id})`,
+      reason: `Unblacklisted by ${userToString(author)}`,
     })
     .then((response) => {
       channel.send(response);
