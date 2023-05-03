@@ -2,6 +2,7 @@ import { getInfo } from 'discord-hybrid-sharding';
 import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
+import { isDev } from '#constants/isDev';
 import { BlacklistEventType, IBlacklistEvent } from '#schemas/database/BlacklistEvent';
 import { Guild } from '#schemas/database/Guild';
 import { MongoDBClient } from '#structures/MongoDBClient';
@@ -46,7 +47,7 @@ class BlacklistManager extends MongoDBClient {
     ).map((guild) => guild.guildId);
 
     guildIds.forEach(async (guildId) => {
-      if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave) this.leaveGuild(guildId);
+      if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave && !isDev) this.leaveGuild(guildId);
     });
   }
 
@@ -57,6 +58,7 @@ class BlacklistManager extends MongoDBClient {
     if (guild) {
       if (guild.isBlacklisted) return `${guildId} is already blacklisted.`;
 
+      guild.isBlacklisted = true;
       guild.blacklistEvents.push(this._createEvent(BlacklistEventType.Blacklist, options));
       await guild.save();
     } else {
@@ -68,6 +70,7 @@ class BlacklistManager extends MongoDBClient {
       await newGuild.save();
     }
 
+    if (!isDev) this.leaveGuild(guildId);
     return `Added ${guildId} to the blacklist.`;
   }
 
