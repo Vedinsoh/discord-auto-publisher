@@ -2,45 +2,92 @@ import { getInfo } from 'discord-hybrid-sharding';
 import { Client, ShardClientUtil, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import dbIds from '#constants/redisDatabaseIds';
-import { Keys, RedisClient } from '#structures/RedisClient';
+import { isDev } from '#constants/isDev';
+import { BlacklistRecordType, IBlacklistRecord } from '#schemas/database/BlacklistRecord';
+import { Guild } from '#schemas/database/Guild';
+import { MongoDBClient } from '#structures/MongoDBClient';
 import getGuild from '#util/getGuild';
 import { guildToString } from '#util/stringFormatters';
 
+type BlacklistRecordOptions = Partial<{
+  reason: string | null;
+}>;
+
 const isValidGuild = async (guildId: Snowflake) => !!(await getGuild(guildId));
 
-class BlacklistManager extends RedisClient {
-  private _SET = Keys.Blacklist;
+class BlacklistManager extends MongoDBClient {
+  private async _get(guildId: Snowflake) {
+    return Guild.findOne({ guildId });
+  }
 
-  constructor() {
-    super(dbIds.BLACKLIST);
+  private _createRecord(type: BlacklistRecordType, options?: BlacklistRecordOptions): IBlacklistRecord {
+    return {
+      type,
+      reason: options?.reason || null,
+    };
+  }
+
+  async has(guildId: Snowflake) {
+    const guild = await this._get(guildId);
+    return Boolean(guild && guild.isBlacklisted);
+  }
+
+  async getRecords(guildId: Snowflake) {
+    const guild = await this._get(guildId);
+    return guild?.blacklistRecords || [];
   }
 
   async startupCheck() {
     client.logger.debug('Checking for blacklisted guilds...');
-    const guildIds: Snowflake[] = await this.client.sMembers(this._SET);
+
+    const guildIds: Snowflake[] = (
+      await Guild.find(
+        {
+          isBlacklisted: true,
+        },
+        {
+          guildId: 1,
+        }
+      )
+    ).map((guild) => guild.guildId);
 
     guildIds.forEach(async (guildId) => {
-      if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave) this.leaveGuild(guildId);
+      if (client.guilds.cache.get(guildId) && config.antiSpam.autoLeave && !isDev) this.leaveGuild(guildId);
     });
   }
 
-  async has(guildId: Snowflake) {
-    return this.client.sIsMember(this._SET, guildId);
-  }
+  async add(guildId: Snowflake, options?: BlacklistRecordOptions) {
+    if (!(await isValidGuild(guildId))) return 'Invalid server ID provided.';
+    const guild = await this._get(guildId);
 
-  async add(guildId: Snowflake) {
-    if (!isValidGuild) return 'Invalid server ID provided.';
-    if (await this.has(guildId)) return `${guildId} is already blacklisted.`;
-    await this.client.sAdd(this._SET, guildId);
+    if (guild) {
+      if (guild.isBlacklisted) return `${guildId} is already blacklisted.`;
 
-    this.leaveGuild(guildId);
+      guild.isBlacklisted = true;
+      guild.blacklistRecords.push(this._createRecord(BlacklistRecordType.Blacklist, options));
+      await guild.save();
+    } else {
+      const newGuild = new Guild({
+        guildId: guildId,
+        isBlacklisted: true,
+        blacklistRecords: [this._createRecord(BlacklistRecordType.Blacklist, options)],
+      });
+      await newGuild.save();
+    }
+
+    if (!isDev) this.leaveGuild(guildId);
     return `Added ${guildId} to the blacklist.`;
   }
 
-  async remove(guildId: Snowflake) {
-    if (!(await this.has(guildId))) return `${guildId} is not blacklisted.`;
-    await this.client.sRem(this._SET, guildId);
+  async remove(guildId: Snowflake, options?: BlacklistRecordOptions) {
+    const guild = await this._get(guildId);
+
+    if (!guild || !guild.isBlacklisted) return `${guildId} is not blacklisted.`;
+
+    guild.isBlacklisted = false;
+    guild.blacklistRecords.push(this._createRecord(BlacklistRecordType.Unblacklist, options));
+    await guild.save();
+
     return `Removed ${guildId} from the blacklist.`;
   }
 

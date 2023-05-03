@@ -6,7 +6,24 @@ services:
       context: .
       dockerfile: .docker/Dockerfile.development
     command: yarn run start:dev
+    environment:
+      - NODE_ENV=development
     env_file:
       - .env.development
     volumes:
       - .:/app
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    command: mongod --port 27017
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

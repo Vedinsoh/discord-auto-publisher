@@ -1,7 +1,5 @@
-import glob from 'glob';
-import path from 'node:path';
-
-const { sync } = glob;
+import { sync } from 'glob';
+import { resolve } from 'node:path';
 
 const normalizePath = (route: string) => route.replace(/[\\/]+/g, '/');
 
@@ -10,6 +8,6 @@ export const getFilePaths = (route: string) => {
 };
 
 export const importFile = async (filePath: string) => {
-  const file = await import(`file://${path.resolve(filePath)}`);
+  const file = await import(`file://${resolve(filePath)}`);
   return file.default;
 };

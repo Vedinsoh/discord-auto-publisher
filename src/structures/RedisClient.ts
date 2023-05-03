@@ -4,7 +4,7 @@ import config from '#config';
 export abstract class RedisClient {
   public client: RedisClientType;
 
-  constructor(databaseId: number) {
+  constructor(databaseId = 0) {
     this.client = createClient({
       database: databaseId,
       url: config.redisUri,

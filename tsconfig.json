@@ -2,6 +2,8 @@
   "extends": "@sapphire/ts-config",
   "compilerOptions": {
     "incremental": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "module": "ESNext",
     "rootDir": "src",
     "outDir": "dist",

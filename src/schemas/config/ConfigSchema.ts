@@ -1,6 +1,6 @@
 import z from 'zod';
-import LoggerLevel from '#schemas/LoggerLevel';
-import Snowflake from '#schemas/Snowflake';
+import LoggerLevel from '#schemas/config/LoggerLevel';
+import Snowflake from '#schemas/config/Snowflake';
 
 export const BotConfigSchema = z
   .object({
@@ -20,8 +20,11 @@ export const BotConfigSchema = z
 export const EnvSchema = z
   .object({
     botToken: z.string(),
+    mongoUri: z.string().url(),
     redisUri: z.string().url(),
+
     botAdmins: z.array(Snowflake),
+    shards: z.number().min(1),
     loggerLevel: LoggerLevel,
   })
   .strict();
