@@ -11,7 +11,9 @@ const envVars: z.infer<typeof EnvSchema> = {
   botToken: process.env.BOT_TOKEN,
   mongoUri: process.env.MONGO_URI,
   redisUri: process.env.REDIS_URI,
+
   botAdmins: process.env.BOT_ADMINS.split(/,\s*/g),
+  shards: parseInt(process.env.SHARDS),
   loggerLevel: process.env.LOGGER_LEVEL,
 };
 

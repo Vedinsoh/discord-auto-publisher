@@ -22,7 +22,9 @@ export const EnvSchema = z
     botToken: z.string(),
     mongoUri: z.string().url(),
     redisUri: z.string().url(),
+
     botAdmins: z.array(Snowflake),
+    shards: z.number().min(1),
     loggerLevel: LoggerLevel,
   })
   .strict();
