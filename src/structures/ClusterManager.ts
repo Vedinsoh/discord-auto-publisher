@@ -1,4 +1,4 @@
-import { ClusterManager, ClusterManagerOptions } from 'discord-hybrid-sharding';
+import { ClusterManager, type ClusterManagerOptions } from 'discord-hybrid-sharding';
 import { getFilePaths } from '#util/fileUtils';
 import { logger } from '#util/logger';
 

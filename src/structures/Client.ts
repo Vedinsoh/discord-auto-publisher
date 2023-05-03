@@ -1,4 +1,4 @@
-import { ActivityType, Client, ClientEvents, Collection } from 'discord.js';
+import { ActivityType, Client, type ClientEvents, Collection } from 'discord.js';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import AntiSpamManager from '#managers/AntiSpamManager';

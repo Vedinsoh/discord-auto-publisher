@@ -1,5 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
-import { BlacklistRecordSchema, IBlacklistRecord } from '#schemas/database/BlacklistRecord';
+import { BlacklistRecordSchema, type IBlacklistRecord } from '#schemas/database/BlacklistRecord';
 
 export interface IGuild extends Document {
   guildId: string;

@@ -1,4 +1,4 @@
-import { RedisClientType, createClient } from 'redis';
+import { type RedisClientType, createClient } from 'redis';
 import config from '#config';
 
 export abstract class RedisClient {

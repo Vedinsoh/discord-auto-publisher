@@ -1,4 +1,4 @@
-import { RateLimitQueueFilter, RequestMethod } from 'discord.js';
+import { type RateLimitQueueFilter, RequestMethod } from 'discord.js';
 import routes from '#constants/routes';
 
 const gatewayQueueFilter: RateLimitQueueFilter = (data) => {

@@ -1,5 +1,5 @@
 import { getInfo } from 'discord-hybrid-sharding';
-import { CacheWithLimitsOptions, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
+import { type CacheWithLimitsOptions, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import gatewayQueueFilter from '#crosspost/gatewayQueueFilter';
 import AutoPublisherClient from '#structures/Client';
 

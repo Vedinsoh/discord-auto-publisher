@@ -1,9 +1,9 @@
 import { getInfo } from 'discord-hybrid-sharding';
-import { Client, ShardClientUtil, Snowflake } from 'discord.js';
+import { Client, ShardClientUtil, type Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import { isDev } from '#constants/isDev';
-import { BlacklistRecordType, IBlacklistRecord } from '#schemas/database/BlacklistRecord';
+import { BlacklistRecordType, type IBlacklistRecord } from '#schemas/database/BlacklistRecord';
 import { Guild } from '#schemas/database/Guild';
 import { MongoDBClient } from '#structures/MongoDBClient';
 import getGuild from '#util/getGuild';
