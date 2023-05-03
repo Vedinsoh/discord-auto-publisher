@@ -6,7 +6,7 @@
   },
   "antiSpam": {
     "enabled": true,
-    "autoLeave": false,
+    "autoLeave": true,
     "messagesThreshold": 40
   }
 }
