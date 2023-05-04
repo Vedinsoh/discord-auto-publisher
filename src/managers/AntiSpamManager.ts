@@ -63,7 +63,7 @@ class AntiSpamManager extends RedisClient {
 
     await this.client.del(KEY);
     return client.blacklist.add(guild.id, {
-      reason: `Spam limit hit in ${channelToString(channel)}`,
+      reason: `Spam limit hit (${antiSpam.messagesThreshold}) in ${channelToString(channel)}`,
     });
   }
 
