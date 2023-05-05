@@ -1,21 +1,25 @@
 import urlRegex from 'url-regex-safe';
-import client from '#client';
 import config from '#config';
+import crosspost from '#crosspost/crosspost';
 import type { ReceivedMessage } from '#types/MessageTypes';
+import { secToMs } from '#util/timeConverters';
 
 const { urlDetection } = config;
 
-const handleCrosspost = (message: ReceivedMessage) => {
+const preconditionRun = (message: ReceivedMessage) => {
   if (urlDetection.enabled && message.content) {
     const hasUrl = urlRegex({ strict: true, localhost: false }).test(message.content);
     const hasEmbeds = Boolean(message.embeds.length);
 
     if (hasUrl && !hasEmbeds) {
-      return client.crosspostQueue.add(message, { hasUrl: true });
+      setTimeout(() => {
+        crosspost(message);
+      }, secToMs(config.urlDetection.deferTimeout));
+      return;
     }
   }
 
-  return client.crosspostQueue.add(message);
+  return crosspost(message);
 };
 
-export default handleCrosspost;
+export default preconditionRun;

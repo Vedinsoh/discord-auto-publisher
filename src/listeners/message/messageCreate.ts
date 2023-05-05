@@ -1,7 +1,7 @@
 import { ChannelType, Events } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import handleCrosspost from '#crosspost/handleCrosspost';
+import preconditionRun from '#crosspost/preconditionRun';
 import Event from '#structures/Event';
 import type { CommandNames } from '#types/AdminCommandTypes';
 
@@ -11,7 +11,7 @@ export default new Event(Events.MessageCreate, async (message) => {
   if (channel.partial) channel = await message.channel.fetch();
   if (!channel) return;
 
-  if (channel.type === ChannelType.GuildAnnouncement) return handleCrosspost(message);
+  if (channel.type === ChannelType.GuildAnnouncement) return preconditionRun(message);
 
   // * Bot owner commands handler
   if (channel.type === ChannelType.DM && config.botAdmins.includes(message.author.id)) {

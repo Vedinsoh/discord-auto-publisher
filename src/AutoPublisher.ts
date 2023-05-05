@@ -1,6 +1,5 @@
 import { getInfo } from 'discord-hybrid-sharding';
 import { type CacheWithLimitsOptions, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
-import gatewayQueueFilter from '#crosspost/gatewayQueueFilter';
 import AutoPublisherClient from '#structures/Client';
 
 type CacheOptions = CacheWithLimitsOptions & {
@@ -39,7 +38,6 @@ const client = new AutoPublisherClient({
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
     globalRequestsPerSecond: 50,
-    rejectOnRateLimit: gatewayQueueFilter,
   },
 });
 

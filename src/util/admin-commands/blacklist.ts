@@ -9,7 +9,7 @@ export default new AdminCommand(CommandNames.BLACKLIST, async ({ channel, author
     return;
   }
 
-  await client.blacklist //
+  await client.blacklist
     .add(guildId, {
       reason: `Blacklisted by ${userToString(author)}`,
     })
