@@ -1,14 +1,14 @@
-import { ActivityType, Client, type ClientEvents, Collection } from 'discord.js';
+import { ActivityType, Client, type ClientEvents, Collection, RESTEvents } from 'discord.js';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
-import QueueManager from '#managers/QueueManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { getFilePaths, importFile } from '#util/fileUtils';
 import { createLogger, logger } from '#util/logger';
+import { parseRestSublimit } from '#util/parseRestSublimit';
 import { minToMs } from '#util/timeConverters';
 
 class AutoPublisherClient extends Client {
@@ -17,7 +17,6 @@ class AutoPublisherClient extends Client {
 
   public blacklist = new BlacklistManager();
   public antiSpam = new AntiSpamManager();
-  public crosspostQueue = new QueueManager();
   public logger = createLogger();
 
   public async start() {
@@ -40,6 +39,14 @@ class AutoPublisherClient extends Client {
 
   private async _registerEvents() {
     const filePaths = getFilePaths('listeners/**/*.js');
+
+    this.rest.on(RESTEvents.Debug, (data) => {
+      const parsedParams = parseRestSublimit(data);
+      if (parsedParams) {
+        this.antiSpam.add(parsedParams);
+      }
+    });
+
     return filePaths.forEach(async (filePath) => {
       const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);

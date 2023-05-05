@@ -9,7 +9,7 @@ export default new AdminCommand(CommandNames.UNBLACKLIST, async ({ channel, auth
     return;
   }
 
-  await client.blacklist //
+  await client.blacklist
     .remove(guildId, {
       reason: `Unblacklisted by ${userToString(author)}`,
     })

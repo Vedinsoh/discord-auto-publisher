@@ -2,8 +2,9 @@ import type { NewsChannel, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
 import { Keys, RedisClient } from '#structures/RedisClient';
+import type { SublimitedChannel } from '#types/SublimitData';
 import { channelToString, guildToString } from '#util/stringFormatters';
-import { minToSec } from '#util/timeConverters';
+import { minToSec, msToSec } from '#util/timeConverters';
 
 const { antiSpam } = config;
 
@@ -12,20 +13,30 @@ class AntiSpamManager extends RedisClient {
     return this.joinKeys([Keys.SpamChannel, channelId]);
   }
 
-  public async add(channel: NewsChannel) {
-    const KEY = this._createKey(channel.id);
+  public async add(data: SublimitedChannel) {
+    const KEY = this._createKey(data.channelId);
     const isStored = await this.client.get(KEY);
-
-    client.crosspostQueue.clearChannelQueue(channel.id);
 
     if (isStored) {
       await this.client.incr(KEY);
-      return this._atThreshold(channel);
+      return this._atThreshold(data.channelId);
     }
 
-    this._logRateLimited(channel, 1);
-    await this.client.setEx(KEY, minToSec(60), '1');
-    return;
+    this._logRateLimited(data.channelId, 1);
+    await this.client.setEx(KEY, Math.ceil(msToSec(data.sublimit)), '1');
+  }
+
+  public async increment(channelId: Snowflake) {
+    const KEY = this._createKey(channelId);
+    const isStored = await this.client.get(KEY);
+
+    if (!isStored) {
+      await this.client.setEx(KEY, minToSec(60), '1');
+      return;
+    }
+
+    await this.client.incr(KEY);
+    this._atThreshold(channelId);
   }
 
   public async isFlagged(channelId: Snowflake) {
@@ -37,7 +48,10 @@ class AntiSpamManager extends RedisClient {
     return Boolean(isStored);
   }
 
-  private async _atThreshold(channel: NewsChannel) {
+  private async _atThreshold(channelId: Snowflake) {
+    const channel = (await client.channels.fetch(channelId)) as NewsChannel;
+    if (!channel) return;
+
     const KEY = this._createKey(channel.id);
     const storedCount = await this.client.get(KEY);
     if (!storedCount) return;
@@ -54,7 +68,7 @@ class AntiSpamManager extends RedisClient {
       return;
     }
 
-    this._logRateLimited(channel, parsedCount);
+    this._logRateLimited(channelId, parsedCount);
   }
 
   private async _handleCleanup(channel: NewsChannel) {
@@ -67,13 +81,23 @@ class AntiSpamManager extends RedisClient {
     });
   }
 
-  private async _logRateLimited(channel: NewsChannel, count: number) {
-    await channel.fetch();
+  private async _logRateLimited(channelId: Snowflake, count: number) {
+    const channel = (await client.channels.fetch(channelId)) as NewsChannel;
+    if (!channel) return;
+
     const normalizedCount = count + 10;
 
     client.logger.debug(
       `Channel ${channelToString(channel)} is being rate limited: ${normalizedCount}/${antiSpam.messagesThreshold}`
     );
+  }
+
+  public async flushChannels() {
+    return this.client.flushDb();
+  }
+
+  public async getSize() {
+    return this.client.dbSize();
   }
 }
 
