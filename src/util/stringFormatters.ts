@@ -5,6 +5,10 @@ export const userToString = (user: User): string => {
 };
 
 export const channelToString = (channel: GuildChannel, escapeChannel = false): string => {
+  if (channel.partial) {
+    return `unknown channel (${channel.id})`;
+  }
+
   const channelName = escapeChannel ? `\`#${channel.name}\`` : `#${channel.name}`;
   return `${channelName} (${channel.id})`;
 };
