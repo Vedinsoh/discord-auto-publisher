@@ -9,7 +9,7 @@ COPY src ./src
 COPY .yarn ./.yarn
 COPY .yarnrc.yml .
 COPY .npmrc .
-COPY config.*.json .
+COPY bot.config.json .
 
 RUN yarn install --immutable
 RUN yarn run build
