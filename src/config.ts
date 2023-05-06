@@ -15,6 +15,7 @@ const envVars: z.infer<typeof EnvSchema> = {
   botAdmins: process.env.BOT_ADMINS.split(/,\s*/g),
   shards: parseInt(process.env.SHARDS),
   shardsPerCluster: parseInt(process.env.SHARDS_PER_CLUSTER),
+  requestsPerSecond: parseInt(process.env.REQUESTS_PER_SECOND),
   loggerLevel: process.env.LOGGER_LEVEL,
 };
 

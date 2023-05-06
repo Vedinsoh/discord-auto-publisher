@@ -1,5 +1,6 @@
 import { getInfo } from 'discord-hybrid-sharding';
 import { type CacheWithLimitsOptions, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
+import config from '#config';
 import AutoPublisherClient from '#structures/Client';
 
 type CacheOptions = CacheWithLimitsOptions & {
@@ -37,7 +38,7 @@ const client = new AutoPublisherClient({
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
-    globalRequestsPerSecond: 50,
+    globalRequestsPerSecond: config.requestsPerSecond,
   },
 });
 

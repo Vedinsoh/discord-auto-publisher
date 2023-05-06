@@ -26,6 +26,7 @@ export const EnvSchema = z
     botAdmins: z.array(Snowflake),
     shards: z.number().min(1),
     shardsPerCluster: z.number().min(1),
+    requestsPerSecond: z.number().min(1).max(50),
     loggerLevel: LoggerLevel,
   })
   .strict();
