@@ -4,8 +4,9 @@ export const userToString = (user: User): string => {
   return `${user.tag} (${user.id})`;
 };
 
-export const channelToString = (channel: GuildChannel): string => {
-  return `#${channel.name} (${channel.id})`;
+export const channelToString = (channel: GuildChannel, escapeChannel = false): string => {
+  const channelName = escapeChannel ? `\`#${channel.name}\`` : `#${channel.name}`;
+  return `${channelName} (${channel.id})`;
 };
 
 export const guildToString = (guild: Guild | null, guildIdFallback?: Snowflake): string => {

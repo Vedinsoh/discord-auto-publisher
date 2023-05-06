@@ -48,6 +48,20 @@ class AntiSpamManager extends RedisClient {
     return Boolean(isStored);
   }
 
+  public async getCount(channelId: Snowflake) {
+    const KEY = this._createKey(channelId);
+    const count = await this.client.get(KEY);
+
+    return count ? parseInt(count) : null;
+  }
+
+  public async ttl(channelId: Snowflake) {
+    const KEY = this._createKey(channelId);
+    const ttl = await this.client.ttl(KEY);
+
+    return ttl;
+  }
+
   private async _atThreshold(channelId: Snowflake) {
     const channel = (await client.channels.fetch(channelId)) as NewsChannel;
     if (!channel) return;
@@ -64,14 +78,14 @@ class AntiSpamManager extends RedisClient {
           antiSpam.messagesThreshold
         }).`
       );
-      this._handleCleanup(channel);
+      this._cleanup(channel);
       return;
     }
 
     this._logRateLimited(channelId, parsedCount);
   }
 
-  private async _handleCleanup(channel: NewsChannel) {
+  private async _cleanup(channel: NewsChannel) {
     const KEY = this._createKey(channel.id);
     const { guild } = channel;
 

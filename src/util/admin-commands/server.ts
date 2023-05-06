@@ -18,7 +18,7 @@ const parseRecord = (record: IBlacklistRecord) => {
   return `${type} [${date}] - ${reason}`;
 };
 
-export default new AdminCommand(CommandNames.CHECK, async ({ channel }, guildId) => {
+export default new AdminCommand(CommandNames.SERVER, async ({ channel }, guildId) => {
   if (!guildId) {
     channel.send('Please provide server ID.');
     return;
