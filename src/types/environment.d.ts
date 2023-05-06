@@ -6,6 +6,7 @@ declare namespace NodeJS {
 
     BOT_ADMINS: string;
     SHARDS: string;
+    SHARDS_PER_CLUSTER: string;
     LOGGER_LEVEL: string;
   }
 }
