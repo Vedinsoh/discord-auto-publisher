@@ -1,8 +1,7 @@
 import urlRegex from 'url-regex-safe';
+import client from '#client';
 import config from '#config';
-import crosspost from '#crosspost/crosspost';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import { secToMs } from '#util/timeConverters';
 
 const { urlDetection } = config;
 
@@ -12,14 +11,11 @@ const preconditionRun = (message: ReceivedMessage) => {
     const hasEmbeds = Boolean(message.embeds.length);
 
     if (hasUrl && !hasEmbeds) {
-      setTimeout(() => {
-        crosspost(message);
-      }, secToMs(config.urlDetection.deferTimeout));
-      return;
+      return client.crosspostQueue.add(message, { hasUrl: true });
     }
   }
 
-  return crosspost(message);
+  return client.crosspostQueue.add(message);
 };
 
 export default preconditionRun;

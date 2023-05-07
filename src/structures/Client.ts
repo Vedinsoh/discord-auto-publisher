@@ -3,6 +3,7 @@ import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
+import QueueManager from '#managers/QueueManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
@@ -17,6 +18,7 @@ class AutoPublisherClient extends Client {
 
   public blacklist = new BlacklistManager();
   public antiSpam = new AntiSpamManager();
+  public crosspostQueue = new QueueManager();
   public logger = createLogger();
 
   public async start() {

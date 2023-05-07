@@ -26,16 +26,20 @@ class AntiSpamManager extends RedisClient {
     await this.client.setEx(KEY, Math.ceil(msToSec(data.sublimit)), '1');
   }
 
-  public async increment(channelId: Snowflake) {
+  public async increment(channelId: Snowflake, amount = 1) {
     const KEY = this._createKey(channelId);
     const isStored = await this.client.get(KEY);
 
     if (!isStored) {
-      await this.client.setEx(KEY, minToSec(60), '1');
+      await this.client.setEx(KEY, minToSec(60), String(amount));
       return;
     }
 
-    await this.client.incr(KEY);
+    if ((await this.ttl(channelId)) < 5) {
+      return;
+    }
+
+    await this.client.incrBy(KEY, amount);
     this._atThreshold(channelId);
   }
 
