@@ -1,4 +1,4 @@
-import type { NewsChannel, Snowflake } from 'discord.js';
+import type { Snowflake } from 'discord.js';
 import PQueue from 'p-queue';
 import client from '#client';
 import config from '#config';
@@ -12,7 +12,6 @@ type MessageOptions = {
 
 class QueueManager {
   private _mainQueue = new PQueue({
-    concurrency: 5,
     intervalCap: 100,
     interval: secToMs(15),
     timeout: minToMs(120),
@@ -21,10 +20,8 @@ class QueueManager {
   private _channelsQueue = new Map<Snowflake, PQueue>();
 
   public async add(message: ReceivedMessage, options?: MessageOptions) {
-    const channel = message.channel as NewsChannel;
-
     if (await client.antiSpam.isFlagged(message.channelId)) {
-      client.antiSpam.increment(channel.id);
+      client.antiSpam.increment(message.channelId);
       return;
     }
 
@@ -66,7 +63,7 @@ class QueueManager {
     this._channelsQueue.set(
       channelId,
       new PQueue({
-        concurrency: 1,
+        concurrency: 2,
         intervalCap: 11,
         interval: minToMs(5),
         timeout: minToMs(60),
@@ -97,6 +94,14 @@ class QueueManager {
       this._channelsQueue.delete(channelId);
     });
     client.logger.debug(`Deleted channel queues for guild ${guildId}`);
+  }
+
+  public getQueueData() {
+    return {
+      size: this._mainQueue.size,
+      pending: this._mainQueue.pending,
+      channelQueues: this._channelsQueue.size,
+    };
   }
 }
 
