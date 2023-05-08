@@ -56,7 +56,7 @@ class QueueManager {
   }
 
   private _getMessagePriority(message: ReceivedMessage) {
-    const messageTimestamp = message.createdTimestamp ?? Date.now();
+    const messageTimestamp = message.createdTimestamp || Date.now();
     const priority = 9999999999999 - messageTimestamp;
     return priority >= 0 ? priority : 0;
   }

@@ -23,8 +23,8 @@ const crosspost = async (message: ReceivedMessage) => {
       if (error instanceof DiscordAPIError) {
         const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
         if (safeErrorCodes.includes(code)) return;
-        client.logger.error(error);
       }
+      client.logger.error(error);
     });
 };
 
