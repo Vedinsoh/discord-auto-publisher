@@ -3,6 +3,7 @@ const safeErrorCodes: number[] = [
   40033, // * Already crossposted
   50001, // * Missing access
   50013, // * Missing permissions
+  50068, // * Invalid message type
 ];
 
 export default safeErrorCodes;
