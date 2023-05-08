@@ -10,7 +10,7 @@ export default new Event(Events.GuildDelete, async (guild) => {
     .filter((channel) => channel.type === ChannelType.GuildAnnouncement)
     .map((channel) => channel.id);
 
-  client.crosspostQueue.deleteChannelsQueue(guild.id, newsChannelIds);
+  client.crosspostQueue.deleteChannels(guild.id, newsChannelIds);
 
   const members = guildMembersToString(guild);
   client.logger.debug(`Left ${guildToString(guild)} with ${members}.`);
