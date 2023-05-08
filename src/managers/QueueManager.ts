@@ -12,9 +12,9 @@ type MessageOptions = {
 
 class QueueManager {
   private _mainQueue = new PQueue({
-    concurrency: 2,
-    intervalCap: 10,
-    interval: secToMs(12),
+    concurrency: 5,
+    intervalCap: 100,
+    interval: secToMs(15),
     timeout: minToMs(120),
     autoStart: true,
   });
