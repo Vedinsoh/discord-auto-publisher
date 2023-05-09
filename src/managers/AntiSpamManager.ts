@@ -16,12 +16,10 @@ class AntiSpamManager extends RedisClient {
   public async add(data: SublimitedChannel) {
     const KEY = this._createKey(data.channelId);
     const isStored = await this.client.get(KEY);
-
     if (isStored) {
       await this.client.incr(KEY);
       return this._atThreshold(data.channelId);
     }
-
     this._logRateLimited(data.channelId, 1);
     await this.client.setEx(KEY, Math.ceil(msToSec(data.sublimit)), '1');
   }
@@ -29,40 +27,33 @@ class AntiSpamManager extends RedisClient {
   public async increment(channelId: Snowflake, amount = 1) {
     const KEY = this._createKey(channelId);
     const isStored = await this.client.get(KEY);
-
     if (!isStored) {
       await this.client.setEx(KEY, minToSec(60), String(amount));
       return;
     }
-
     if ((await this.ttl(channelId)) < 5) {
       return;
     }
-
     await this.client.incrBy(KEY, amount);
     this._atThreshold(channelId);
   }
 
   public async isFlagged(channelId: Snowflake) {
     if (!antiSpam.enabled) return false;
-
     const KEY = this._createKey(channelId);
     const isStored = await this.client.get(KEY);
-
     return Boolean(isStored);
   }
 
   public async getCount(channelId: Snowflake) {
     const KEY = this._createKey(channelId);
     const count = await this.client.get(KEY);
-
     return count ? parseInt(count) : null;
   }
 
   public async ttl(channelId: Snowflake) {
     const KEY = this._createKey(channelId);
     const ttl = await this.client.ttl(KEY);
-
     return ttl;
   }
 
@@ -92,7 +83,6 @@ class AntiSpamManager extends RedisClient {
   private async _cleanup(channel: NewsChannel) {
     const KEY = this._createKey(channel.id);
     const { guild } = channel;
-
     await this.client.del(KEY);
     return client.blacklist.add(guild.id, {
       reason: `Spam limit hit (${antiSpam.messagesThreshold}) in ${channelToString(channel)}`,
@@ -102,9 +92,7 @@ class AntiSpamManager extends RedisClient {
   private async _logRateLimited(channelId: Snowflake, count: number) {
     const channel = (await client.channels.fetch(channelId)) as NewsChannel;
     if (!channel) return;
-
     const normalizedCount = count + 10;
-
     client.logger.debug(
       `Channel ${channelToString(channel)} is being rate limited: ${normalizedCount}/${antiSpam.messagesThreshold}`
     );

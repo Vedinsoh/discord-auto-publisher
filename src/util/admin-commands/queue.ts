@@ -4,5 +4,11 @@ import { CommandNames } from '#types/AdminCommandTypes';
 
 export default new AdminCommand(CommandNames.QUEUE, async ({ channel }) => {
   const data = client.crosspostQueue.getQueueData();
-  channel.send(`Size: ${data.size}\nPending: ${data.pending}\nChannel queues: ${data.channelQueues}`);
+  const parsedData = [
+    `Size: ${data.size}`,
+    `Pending: ${data.pending}`,
+    `Channel queues: ${data.channelQueues}`,
+    `Paused: ${data.paused}`,
+  ];
+  channel.send(parsedData.join('\n'));
 });
