@@ -15,41 +15,33 @@ import { minToMs } from '#util/timeConverters';
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();
-
   public blacklist = new BlacklistManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
   public logger = createLogger();
 
   public async start() {
+    this.logger = createLogger(`CLUSTER ${this.cluster.id}`);
     return Promise.all([
       this.blacklist.connect(),
       this.antiSpam.connect(),
-
       this._registerEvents(),
       this._registerCommands(),
       this.login(config.botToken),
-    ])
-      .then(() => {
-        this.logger = createLogger(`CLUSTER ${this.cluster.id}`);
-      })
-      .catch((error) => {
-        logger.error(error);
-        process.exit(1);
-      });
+    ]).catch((error) => {
+      logger.error(error);
+      process.exit(1);
+    });
   }
 
   private async _registerEvents() {
-    const filePaths = getFilePaths('listeners/**/*.js');
-
     this.rest.on(RESTEvents.Debug, (data) => {
       const parsedParams = parseRestSublimit(data);
-      if (parsedParams) {
-        this.antiSpam.add(parsedParams);
-      }
+      if (parsedParams) this.antiSpam.add(parsedParams);
     });
 
-    return filePaths.forEach(async (filePath) => {
+    const filePaths = getFilePaths('listeners/**/*.js');
+    return filePaths.map(async (filePath) => {
       const event: Event<keyof ClientEvents> = await importFile(filePath);
       this.on(event.name, event.run);
     });
@@ -57,7 +49,7 @@ class AutoPublisherClient extends Client {
 
   private async _registerCommands() {
     const filePaths = getFilePaths('util/admin-commands/*.js');
-    return filePaths.forEach(async (filePath) => {
+    return filePaths.map(async (filePath) => {
       const command = await importFile(filePath);
       this.commands.set(command.name, command.run);
     });
