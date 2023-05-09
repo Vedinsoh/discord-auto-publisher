@@ -2,6 +2,7 @@ import client from '#client';
 import type { IBlacklistRecord } from '#schemas/database/BlacklistRecord';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
+import { getDiscordFormat } from '#util/timeConverters';
 import { EmbedBuilder } from '@discordjs/builders';
 
 const recordPrefix: Record<IBlacklistRecord['type'], string> = {
@@ -10,7 +11,7 @@ const recordPrefix: Record<IBlacklistRecord['type'], string> = {
 };
 
 const parseRecord = (record: IBlacklistRecord) => {
-  const timestamp = Math.floor((record.createdAt?.getTime() || 0) / 1000);
+  const timestamp = getDiscordFormat(record.createdAt?.getTime());
   const date = `<t:${timestamp}:f>`;
   const type = `${recordPrefix[record.type]} \`${record.type.toUpperCase()}\``;
   const reason = record.reason || 'No reason provided.';
