@@ -14,11 +14,14 @@ type MessageOptions = {
 class QueueManager {
   private _channels = new Map<Snowflake, QueueChannel>();
   private _mainQueue = new PQueue({
-    intervalCap: 50,
-    interval: secToMs(15),
-    timeout: minToMs(120),
+    concurrency: 25,
+    intervalCap: 25,
+    interval: secToMs(12),
+    timeout: minToMs(1),
+    carryoverConcurrencyCount: true,
     autoStart: true,
   });
+  private _lastPause = Date.now();
 
   constructor() {
     setInterval(() => {
@@ -31,6 +34,8 @@ class QueueManager {
       client.antiSpam.increment(message.channelId);
       return;
     }
+
+    this._throttlePrecondition();
     if (options?.hasUrl) {
       setTimeout(() => {
         this._addToChannelQueue(message);
@@ -58,7 +63,7 @@ class QueueManager {
   private _getMessagePriority(message: ReceivedMessage) {
     const messageTimestamp = message.createdTimestamp || Date.now();
     const priority = 9999999999999 - messageTimestamp;
-    return priority >= 0 ? priority : 0;
+    return priority;
   }
 
   private _newChannel = (channelId: Snowflake) => {
@@ -78,6 +83,7 @@ class QueueManager {
       size: this._mainQueue.size,
       pending: this._mainQueue.pending,
       channelQueues: this._channels.size,
+      paused: this._mainQueue.isPaused,
     };
   }
 
@@ -96,6 +102,20 @@ class QueueManager {
       }
     });
     client.logger.debug(`Sweeped ${count} inactive channel queues`);
+  }
+
+  private _throttlePrecondition() {
+    if (this._mainQueue.isPaused) return;
+    if (this._mainQueue.pending < this._mainQueue.concurrency) return;
+    if (Date.now() - this._lastPause < minToMs(10)) return;
+
+    client.logger.debug('Crosspost queue paused');
+    this._mainQueue.pause();
+    this._lastPause = Date.now();
+    setTimeout(() => {
+      this._mainQueue.start();
+      client.logger.debug('Crosspost queue resumed');
+    }, minToMs(5));
   }
 }
 
