@@ -7,6 +7,10 @@ const bucketRegex = /(?<=(Bucket\s*:\s*))(.+)/i;
 const majorParamRegex = /(?<=(Major parameter\s*:\s*))(\d+)/i;
 const sublimitRegex = /(?<=(Sublimit\s*:\s*))(\d+)(?=ms)/i;
 
+export const is429 = (response: string) => {
+  return response.toLowerCase().includes('429 rate limit');
+};
+
 export const parseRestSublimit = (response: string): SublimitedChannel | undefined => {
   if (!response) return;
 

@@ -21,6 +21,6 @@ export abstract class RedisClient {
 }
 
 export enum Keys {
-  Blacklist = 'blacklist',
   SpamChannel = 'spam_channel',
+  InvalidRequest = 'invalid_request',
 }

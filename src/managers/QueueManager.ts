@@ -15,15 +15,17 @@ class QueueManager {
   private _channels = new Map<Snowflake, QueueChannel>();
   private _mainQueue = new PQueue({
     concurrency: 25,
-    intervalCap: 25,
+    intervalCap: 100,
     interval: secToMs(12),
-    timeout: minToMs(1),
-    carryoverConcurrencyCount: true,
+    timeout: secToMs(1),
     autoStart: true,
   });
-  private _lastPause = Date.now();
+  private _lastPause = 0;
 
   constructor() {
+    setInterval(() => {
+      this._throttleCheck();
+    }, secToMs(5));
     setInterval(() => {
       this._sweepInactiveChannels();
     }, minToMs(15));
@@ -34,8 +36,6 @@ class QueueManager {
       client.antiSpam.increment(message.channelId);
       return;
     }
-
-    this._throttlePrecondition();
     if (options?.hasUrl) {
       setTimeout(() => {
         this._addToChannelQueue(message);
@@ -104,10 +104,10 @@ class QueueManager {
     client.logger.debug(`Sweeped ${count} inactive channel queues`);
   }
 
-  private _throttlePrecondition() {
+  private async _throttleCheck() {
     if (this._mainQueue.isPaused) return;
-    if (this._mainQueue.pending < this._mainQueue.concurrency) return;
-    if (Date.now() - this._lastPause < minToMs(10)) return;
+    if (Date.now() - this._lastPause < minToMs(60)) return;
+    if ((await client.requestLimits.getSize()) <= 10000 - 500) return;
 
     client.logger.debug('Crosspost queue paused');
     this._mainQueue.pause();
@@ -115,7 +115,7 @@ class QueueManager {
     setTimeout(() => {
       this._mainQueue.start();
       client.logger.debug('Crosspost queue resumed');
-    }, minToMs(5));
+    }, minToMs(10));
   }
 }
 

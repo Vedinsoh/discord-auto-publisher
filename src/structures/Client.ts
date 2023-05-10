@@ -1,23 +1,27 @@
 import { ActivityType, Client, type ClientEvents, Collection, RESTEvents } from 'discord.js';
+import crypto from 'node:crypto';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
 import QueueManager from '#managers/QueueManager';
+import RequestLimitManager from '#managers/RequestLimitManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { getFilePaths, importFile } from '#util/fileUtils';
 import { createLogger, logger } from '#util/logger';
-import { parseRestSublimit } from '#util/parseRestSublimit';
+import { is429, parseRestSublimit } from '#util/parseRestSublimit';
 import { minToMs } from '#util/timeConverters';
 
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();
+
   public blacklist = new BlacklistManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
+  public requestLimits = new RequestLimitManager();
   public logger = createLogger();
 
   public async start() {
@@ -25,6 +29,7 @@ class AutoPublisherClient extends Client {
     return Promise.all([
       this.blacklist.connect(),
       this.antiSpam.connect(),
+      this.requestLimits.connect(),
       this._registerEvents(),
       this._registerCommands(),
       this.login(config.botToken),
@@ -36,6 +41,9 @@ class AutoPublisherClient extends Client {
 
   private async _registerEvents() {
     this.rest.on(RESTEvents.Debug, (data) => {
+      const rateLimited = is429(data);
+      if (rateLimited) this.requestLimits.add(crypto.randomUUID(), 429);
+
       const parsedParams = parseRestSublimit(data);
       if (parsedParams) this.antiSpam.add(parsedParams);
     });

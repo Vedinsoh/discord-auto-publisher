@@ -22,6 +22,9 @@ const crosspost = async (message: ReceivedMessage) => {
     .catch((error: DiscordAPIError | unknown) => {
       if (error instanceof DiscordAPIError) {
         const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
+        if (error.status === 403) {
+          client.requestLimits.add(message.id, error.status);
+        }
         if (safeErrorCodes.includes(code)) return;
       }
       client.logger.error(error);
