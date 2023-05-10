@@ -4,7 +4,7 @@ import config from '#config';
 export abstract class RedisClient {
   public client: RedisClientType;
 
-  constructor(databaseId = 0) {
+  constructor(databaseId: number) {
     this.client = createClient({
       database: databaseId,
       url: config.redisUri,
@@ -20,7 +20,14 @@ export abstract class RedisClient {
   }
 }
 
+export enum Databases {
+  AntiSpam,
+  RequestLimits,
+  Crossposts,
+}
+
 export enum Keys {
   SpamChannel = 'spam_channel',
   InvalidRequest = 'invalid_request',
+  Crosspost = 'crosspost',
 }

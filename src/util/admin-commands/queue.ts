@@ -4,7 +4,7 @@ import { CommandNames } from '#types/AdminCommandTypes';
 
 export default new AdminCommand(CommandNames.QUEUE, async ({ channel }) => {
   const data = client.crosspostQueue.getQueueData();
-  const rateLimitSize = await client.requestLimits.getSize();
+  const rateLimitSize = await client.cache.requestLimits.getSize();
   const parsedData = [
     `Size: ${data.size}`,
     `Pending: ${data.pending}`,

@@ -17,7 +17,7 @@ class QueueManager {
     concurrency: 25,
     intervalCap: 100,
     interval: secToMs(12),
-    timeout: secToMs(1),
+    timeout: minToMs(1),
     autoStart: true,
   });
   private _lastPause = 0;
@@ -78,15 +78,6 @@ class QueueManager {
     return this._channels.get(channelId);
   };
 
-  public getQueueData() {
-    return {
-      size: this._mainQueue.size,
-      pending: this._mainQueue.pending,
-      channelQueues: this._channels.size,
-      paused: this._mainQueue.isPaused,
-    };
-  }
-
   public deleteChannels(guildId: Snowflake, channelIds: Snowflake[]) {
     channelIds.forEach((channelId) => this._channels.delete(channelId));
     client.logger.debug(`Deleted channel queues for guild ${guildId}`);
@@ -104,10 +95,19 @@ class QueueManager {
     client.logger.debug(`Sweeped ${count} inactive channel queues`);
   }
 
+  public getQueueData() {
+    return {
+      size: this._mainQueue.size,
+      pending: this._mainQueue.pending,
+      channelQueues: this._channels.size,
+      paused: this._mainQueue.isPaused,
+    };
+  }
+
   private async _throttleCheck() {
     if (this._mainQueue.isPaused) return;
     if (Date.now() - this._lastPause < minToMs(60)) return;
-    if ((await client.requestLimits.getSize()) <= 10000 - 500) return;
+    if ((await client.cache.requestLimits.getSize()) <= 5000) return;
 
     client.logger.debug('Crosspost queue paused');
     this._mainQueue.pause();

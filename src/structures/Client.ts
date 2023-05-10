@@ -4,6 +4,7 @@ import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
 import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
+import CrosspostsManager from '#managers/CrosspostsManager';
 import QueueManager from '#managers/QueueManager';
 import RequestLimitManager from '#managers/RequestLimitManager';
 import AutoPublisherCluster from '#structures/Cluster';
@@ -18,18 +19,22 @@ class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();
 
+  public logger = createLogger();
   public blacklist = new BlacklistManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();
-  public requestLimits = new RequestLimitManager();
-  public logger = createLogger();
+  public cache = {
+    requestLimits: new RequestLimitManager(),
+    crossposts: new CrosspostsManager(),
+  };
 
   public async start() {
     this.logger = createLogger(`CLUSTER ${this.cluster.id}`);
     return Promise.all([
       this.blacklist.connect(),
       this.antiSpam.connect(),
-      this.requestLimits.connect(),
+      this.cache.requestLimits.connect(),
+      this.cache.crossposts.connect(),
       this._registerEvents(),
       this._registerCommands(),
       this.login(config.botToken),
@@ -42,7 +47,7 @@ class AutoPublisherClient extends Client {
   private async _registerEvents() {
     this.rest.on(RESTEvents.Debug, (data) => {
       const rateLimited = is429(data);
-      if (rateLimited) this.requestLimits.add(crypto.randomUUID(), 429);
+      if (rateLimited) this.cache.requestLimits.add(crypto.randomUUID(), 429);
 
       const parsedParams = parseRestSublimit(data);
       if (parsedParams) this.antiSpam.add(parsedParams);

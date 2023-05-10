@@ -1,7 +1,7 @@
 import type { NewsChannel, Snowflake } from 'discord.js';
 import client from '#client';
 import config from '#config';
-import { Keys, RedisClient } from '#structures/RedisClient';
+import { Databases, Keys, RedisClient } from '#structures/RedisClient';
 import type { SublimitedChannel } from '#types/SublimitData';
 import { channelToString, guildToString } from '#util/stringFormatters';
 import { minToSec, msToSec } from '#util/timeConverters';
@@ -9,6 +9,10 @@ import { minToSec, msToSec } from '#util/timeConverters';
 const { antiSpam } = config;
 
 class AntiSpamManager extends RedisClient {
+  constructor() {
+    super(Databases.AntiSpam);
+  }
+
   private _createKey(channelId: Snowflake) {
     return this.joinKeys([Keys.SpamChannel, channelId]);
   }
@@ -27,22 +31,25 @@ class AntiSpamManager extends RedisClient {
   public async increment(channelId: Snowflake, amount = 1) {
     const KEY = this._createKey(channelId);
     const isStored = await this.client.get(KEY);
-    if (!isStored) {
+    if (isStored) {
+      if ((await this.ttl(channelId)) < 5) return;
+      await this.client.incrBy(KEY, amount);
+    } else {
       await this.client.setEx(KEY, minToSec(60), String(amount));
-      return;
     }
-    if ((await this.ttl(channelId)) < 5) {
-      return;
-    }
-    await this.client.incrBy(KEY, amount);
     this._atThreshold(channelId);
   }
 
   public async isFlagged(channelId: Snowflake) {
     if (!antiSpam.enabled) return false;
     const KEY = this._createKey(channelId);
-    const isStored = await this.client.get(KEY);
-    return Boolean(isStored);
+    const isStored = Boolean(await this.client.get(KEY));
+    if (isStored) return true;
+
+    const count = await client.cache.crossposts.getCount(channelId);
+    if (count >= 10) return true;
+
+    return isStored;
   }
 
   public async getCount(channelId: Snowflake) {

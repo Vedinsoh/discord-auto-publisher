@@ -1,9 +1,9 @@
-import { Keys, RedisClient } from '#structures/RedisClient';
+import { Databases, Keys, RedisClient } from '#structures/RedisClient';
 import { minToSec } from '#util/timeConverters';
 
 class RequestLimitManager extends RedisClient {
   constructor() {
-    super(1);
+    super(Databases.RequestLimits);
   }
 
   private _createKey(identifier: string, code: number) {
