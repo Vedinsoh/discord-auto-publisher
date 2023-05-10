@@ -1,11 +1,11 @@
 import PQueue from 'p-queue';
-import { minToMs, secToMin } from '#util/timeConverters';
+import { minToMs, secToMs } from '#util/timeConverters';
 
 class QueueChannel {
   private _queue = new PQueue({
     concurrency: 1,
     intervalCap: 1,
-    interval: secToMin(15),
+    interval: secToMs(10),
     timeout: minToMs(60),
     carryoverConcurrencyCount: true,
     autoStart: true,

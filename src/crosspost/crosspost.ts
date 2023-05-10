@@ -15,6 +15,7 @@ const crosspost = async (message: ReceivedMessage) => {
   return message
     .crosspost()
     .then(() => {
+      client.cache.crossposts.add(message);
       client.logger.debug(
         `Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild, channel.guildId)}`
       );

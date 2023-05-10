@@ -15,12 +15,12 @@ class QueueManager {
   private _channels = new Map<Snowflake, QueueChannel>();
   private _mainQueue = new PQueue({
     concurrency: 25,
-    intervalCap: 100,
-    interval: secToMs(12),
-    timeout: minToMs(1),
+    intervalCap: 50,
+    interval: secToMs(10),
+    timeout: minToMs(5),
     autoStart: true,
   });
-  private _lastPause = 0;
+  private _queueTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
     setInterval(() => {
@@ -105,17 +105,38 @@ class QueueManager {
   }
 
   private async _throttleCheck() {
-    if (this._mainQueue.isPaused) return;
-    if (Date.now() - this._lastPause < minToMs(60)) return;
-    if ((await client.cache.requestLimits.getSize()) <= 5000) return;
+    const rateLimitSize = await client.cache.requestLimits.getSize();
+    if (this._mainQueue.isPaused) {
+      if (rateLimitSize > 1500) return;
+      if (this._mainQueue.pending === 0) this._resumeQueue();
+      return;
+    }
+    if (this._mainQueue.pending < this._mainQueue.concurrency) return;
+    if (rateLimitSize > 2500) {
+      this._pauseQueue(minToMs(10));
+      return;
+    }
+    if (rateLimitSize > 500) {
+      this._pauseQueue(minToMs(2));
+      return;
+    }
+  }
 
-    client.logger.debug('Crosspost queue paused');
+  private _pauseQueue(duration?: number) {
     this._mainQueue.pause();
-    this._lastPause = Date.now();
-    setTimeout(() => {
-      this._mainQueue.start();
-      client.logger.debug('Crosspost queue resumed');
-    }, minToMs(10));
+    this._queueTimeout = setTimeout(() => {
+      this._resumeQueue();
+    }, duration ?? minToMs(5));
+    client.logger.debug('Crosspost queue paused');
+  }
+
+  private _resumeQueue() {
+    this._mainQueue.start();
+    if (this._queueTimeout) {
+      clearTimeout(this._queueTimeout);
+      this._queueTimeout = null;
+    }
+    client.logger.debug('Crosspost queue resumed');
   }
 }
 
