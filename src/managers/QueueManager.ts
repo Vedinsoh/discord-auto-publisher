@@ -107,27 +107,24 @@ class QueueManager {
   private async _throttleCheck() {
     const rateLimitSize = await client.cache.requestLimits.getSize();
     if (this._mainQueue.isPaused) {
-      if (rateLimitSize > 1500) return;
+      if (rateLimitSize > 200) return;
       if (this._mainQueue.pending === 0) this._resumeQueue();
       return;
     }
     if (this._mainQueue.pending < this._mainQueue.concurrency) return;
-    if (rateLimitSize > 2500) {
-      this._pauseQueue(minToMs(10));
-      return;
-    }
-    if (rateLimitSize > 500) {
-      this._pauseQueue(minToMs(2));
+    if (rateLimitSize > 100) {
+      this._pauseQueue(minToMs(5));
       return;
     }
   }
 
-  private _pauseQueue(duration?: number) {
+  private _pauseQueue(duration = minToMs(5)) {
     this._mainQueue.pause();
     this._queueTimeout = setTimeout(() => {
       this._resumeQueue();
-    }, duration ?? minToMs(5));
-    client.logger.debug('Crosspost queue paused');
+    }, duration);
+    // client.logger.debug(`Crosspost queue paused for ${msToSec(duration)}s`); // TODO
+    client.logger.info(`Crosspost queue paused for ${msToSec(duration)}s`); // TODO
   }
 
   private _resumeQueue() {
@@ -136,7 +133,8 @@ class QueueManager {
       clearTimeout(this._queueTimeout);
       this._queueTimeout = null;
     }
-    client.logger.debug('Crosspost queue resumed');
+    // client.logger.debug('Crosspost queue resumed'); // TODO
+    client.logger.info('Crosspost queue resumed'); // TODO
   }
 }
 

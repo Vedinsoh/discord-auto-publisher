@@ -9,5 +9,5 @@ export interface SublimitedData {
 
 export interface SublimitedChannel {
   channelId: Snowflake;
-  sublimit: number;
+  sublimit?: number;
 }
