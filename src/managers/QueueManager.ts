@@ -5,7 +5,7 @@ import config from '#config';
 import crosspost from '#crosspost/crosspost';
 import QueueChannel from '#structures/QueueChannel';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import { minToMs, secToMs } from '#util/timeConverters';
+import { minToMs, msToSec, secToMs } from '#util/timeConverters';
 
 type MessageOptions = {
   hasUrl?: boolean;

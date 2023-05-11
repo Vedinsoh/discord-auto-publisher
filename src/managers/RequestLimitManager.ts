@@ -12,7 +12,7 @@ class RequestLimitManager extends RedisClient {
 
   public async add(identifier: string, code: number) {
     const KEY = this._createKey(identifier, code);
-    return this.client.setEx(KEY, minToSec(2), '1');
+    return this.client.setEx(KEY, minToSec(1), '1');
   }
 
   public async getSize() {

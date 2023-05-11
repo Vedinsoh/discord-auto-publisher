@@ -1,4 +1,5 @@
 import { DiscordAPIError, NewsChannel } from 'discord.js';
+import crypto from 'node:crypto';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
@@ -24,10 +25,11 @@ const crosspost = async (message: ReceivedMessage) => {
       if (error instanceof DiscordAPIError) {
         const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
         if (error.status === 403) {
-          client.cache.requestLimits.add(message.id, error.status);
+          client.cache.requestLimits.add(crypto.randomUUID(), error.status);
         }
         if (safeErrorCodes.includes(code)) return;
       }
+
       client.logger.error(error);
     });
 };

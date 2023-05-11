@@ -25,7 +25,8 @@ class AntiSpamManager extends RedisClient {
       return this._atThreshold(data.channelId);
     }
     this._logRateLimited(data.channelId, 1);
-    await this.client.setEx(KEY, Math.ceil(msToSec(data.sublimit)), '1');
+    const expires = data.sublimit ? msToSec(data.sublimit) : minToSec(60);
+    await this.client.setEx(KEY, Math.ceil(expires), '1');
   }
 
   public async increment(channelId: Snowflake, amount = 1) {
