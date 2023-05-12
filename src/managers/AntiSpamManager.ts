@@ -66,7 +66,7 @@ class AntiSpamManager extends RedisClient {
   }
 
   private async _atThreshold(channelId: Snowflake) {
-    const channel = (await client.channels.fetch(channelId)) as NewsChannel;
+    const channel = (await client.channels.fetch(channelId).catch(() => false)) as NewsChannel;
     if (!channel) return;
 
     const KEY = this._createKey(channel.id);

@@ -14,8 +14,8 @@ type MessageOptions = {
 class QueueManager {
   private _channels = new Map<Snowflake, QueueChannel>();
   private _mainQueue = new PQueue({
-    concurrency: 25,
-    intervalCap: 50,
+    concurrency: 7,
+    intervalCap: 40,
     interval: secToMs(10),
     timeout: minToMs(5),
     autoStart: true,
@@ -107,12 +107,12 @@ class QueueManager {
   private async _throttleCheck() {
     const rateLimitSize = await client.cache.requestLimits.getSize();
     if (this._mainQueue.isPaused) {
-      if (rateLimitSize > 200) return;
+      if (rateLimitSize > 400) return;
       if (this._mainQueue.pending === 0) this._resumeQueue();
       return;
     }
     if (this._mainQueue.pending < this._mainQueue.concurrency) return;
-    if (rateLimitSize > 100) {
+    if (rateLimitSize > 200) {
       this._pauseQueue(minToMs(5));
       return;
     }

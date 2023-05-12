@@ -1,4 +1,6 @@
 import { DiscordAPIError, NewsChannel } from 'discord.js';
+import { DiscordjsError } from 'discord.js';
+import { DiscordjsErrorCodes } from 'discord.js';
 import crypto from 'node:crypto';
 import client from '#client';
 import safeErrorCodes from '#constants/safeErrorCodes';
@@ -21,7 +23,13 @@ const crosspost = async (message: ReceivedMessage) => {
         `Published ${message.id} in ${channelToString(channel)} - ${guildToString(message.guild, channel.guildId)}`
       );
     })
-    .catch((error: DiscordAPIError | unknown) => {
+    .catch((error: DiscordAPIError | DiscordjsError | unknown) => {
+      if (error instanceof DiscordjsError) {
+        if (error.code === DiscordjsErrorCodes.ChannelNotCached) {
+          return;
+        }
+      }
+
       if (error instanceof DiscordAPIError) {
         const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
         if (error.status === 403) {
