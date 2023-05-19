@@ -14,7 +14,7 @@ type MessageOptions = {
 class QueueManager {
   private _channels = new Map<Snowflake, QueueChannel>();
   private _mainQueue = new PQueue({
-    concurrency: 7,
+    concurrency: 12,
     intervalCap: 40,
     interval: secToMs(10),
     timeout: minToMs(5),
@@ -123,8 +123,7 @@ class QueueManager {
     this._queueTimeout = setTimeout(() => {
       this._resumeQueue();
     }, duration);
-    // client.logger.debug(`Crosspost queue paused for ${msToSec(duration)}s`); // TODO
-    client.logger.info(`Crosspost queue paused for ${msToSec(duration)}s`); // TODO
+    client.logger.debug(`Crosspost queue paused for ${msToSec(duration)}s`);
   }
 
   private _resumeQueue() {
@@ -133,8 +132,7 @@ class QueueManager {
       clearTimeout(this._queueTimeout);
       this._queueTimeout = null;
     }
-    // client.logger.debug('Crosspost queue resumed'); // TODO
-    client.logger.info('Crosspost queue resumed'); // TODO
+    client.logger.debug('Crosspost queue resumed');
   }
 }
 
