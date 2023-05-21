@@ -2,16 +2,10 @@ import { ActivityType, Client, type ClientEvents, Collection, RESTEvents } from 
 import crypto from 'node:crypto';
 import type { Level as LoggerLevel } from 'pino';
 import config from '#config';
-import AntiSpamManager from '#managers/AntiSpamManager';
-import BlacklistManager from '#managers/BlacklistManager';
-import CrosspostsManager from '#managers/CrosspostsManager';
-import QueueManager from '#managers/QueueManager';
-import RequestLimitManager from '#managers/RequestLimitManager';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { getFilePaths, importFile } from '#util/fileUtils';
-import { createLogger, logger } from '#util/logger';
 import { is429, parseRestSublimit } from '#util/parseRestSublimit';
 import { minToMs } from '#util/timeConverters';
 
@@ -19,17 +13,13 @@ class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();
 
-  public logger = createLogger();
-  public blacklist = new BlacklistManager();
-  public antiSpam = new AntiSpamManager();
-  public crosspostQueue = new QueueManager();
-  public cache = {
-    requestLimits: new RequestLimitManager(),
-    crossposts: new CrosspostsManager(),
-  };
+  public logger = this.cluster.logger;
+  public blacklist = this.cluster.blacklist;
+  public antiSpam = this.cluster.antiSpam;
+  public crosspostQueue = this.cluster.crosspostQueue;
+  public cache = this.cluster.cache;
 
   public async start() {
-    this.logger = createLogger(`CLUSTER ${this.cluster.id}`);
     return Promise.all([
       this.blacklist.connect(),
       this.antiSpam.connect(),
@@ -39,7 +29,7 @@ class AutoPublisherClient extends Client {
       this._registerCommands(),
       this.login(config.botToken),
     ]).catch((error) => {
-      logger.error(error);
+      this.logger.error(error);
       process.exit(1);
     });
   }
@@ -75,7 +65,7 @@ class AutoPublisherClient extends Client {
   public async updatePresence() {
     const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')) //
       .reduce((p: number, n: number) => p + n);
-    logger.debug(`Updating presence. Guilds: ${guilds}`);
+    this.logger.debug(`Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
       activities: [
@@ -88,7 +78,7 @@ class AutoPublisherClient extends Client {
   }
 
   public setLoggerLevel(level: LoggerLevel) {
-    logger.level = level;
+    this.logger.level = level;
   }
 }
 

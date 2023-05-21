@@ -5,6 +5,7 @@ const manager = new AutoPublisher({
   totalShards: config.shards,
   shardsPerClusters: config.shardsPerCluster,
   token: config.botToken,
+  mode: 'worker',
 });
 
 manager.start();

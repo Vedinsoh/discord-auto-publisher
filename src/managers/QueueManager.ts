@@ -14,18 +14,19 @@ type MessageOptions = {
 class QueueManager {
   private _channels = new Map<Snowflake, QueueChannel>();
   private _mainQueue = new PQueue({
-    concurrency: 12,
-    intervalCap: 40,
+    concurrency: 5,
+    intervalCap: 10,
     interval: secToMs(10),
     timeout: minToMs(5),
     autoStart: true,
   });
   private _queueTimeout: NodeJS.Timeout | null = null;
+  private _intervalCounter = 0;
 
   constructor() {
     setInterval(() => {
       this._throttleCheck();
-    }, secToMs(5));
+    }, secToMs(2));
     setInterval(() => {
       this._sweepInactiveChannels();
     }, minToMs(15));
@@ -111,7 +112,7 @@ class QueueManager {
       if (this._mainQueue.pending === 0) this._resumeQueue();
       return;
     }
-    if (this._mainQueue.pending < this._mainQueue.concurrency) return;
+    if (this._mainQueue.pending < 10) return;
     if (rateLimitSize > 200) {
       this._pauseQueue(minToMs(5));
       return;
