@@ -12,7 +12,7 @@ A lightweight command-less bot that will automatically publish every new message
 
 ## How to set up?
 
-1. Invite the bot to your server: https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot
+1. Invite the bot to your server: https://invite.auto-publisher.gg/
 2. Navigate to your announcement channel's settings and give the bot following permissions: `View Channel`, `Send Messages`, `Manage Messages`, `Read Message History`
 3. Repeat step 2. for every channel where you want auto-publishing
 4. Done!
