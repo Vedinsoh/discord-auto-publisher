@@ -31,7 +31,7 @@ https://discord.gg/xcEeJkdQX8
 
 Did the bot help you or do you simply want to support my work? ❤️
 
-<a href="https://www.buymeacoffee.com/Vedinsoh" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" width="160" height="44" alt="Buy Me A Coffee"></a>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/vedinsoh)
 
 ## Self-hosting
 
