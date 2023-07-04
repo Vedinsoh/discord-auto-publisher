@@ -1,6 +1,7 @@
 import { ClusterClient, type DjsDiscordClient } from 'discord-hybrid-sharding';
 import AntiSpamManager from '#managers/AntiSpamManager';
 import BlacklistManager from '#managers/BlacklistManager';
+import ClientDataManager from '#managers/ClientDataManager';
 import CrosspostsManager from '#managers/CrosspostsManager';
 import QueueManager from '#managers/QueueManager';
 import RequestLimitManager from '#managers/RequestLimitManager';
@@ -9,6 +10,7 @@ import { createLogger } from '#util/logger';
 class AutoPublisherCluster extends ClusterClient<DjsDiscordClient> {
   public logger = createLogger(`CLUSTER ${this.id}`);
 
+  public data = new ClientDataManager();
   public blacklist = new BlacklistManager();
   public antiSpam = new AntiSpamManager();
   public crosspostQueue = new QueueManager();

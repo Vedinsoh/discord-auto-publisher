@@ -14,6 +14,7 @@ class AutoPublisherClient extends Client {
   public commands: CommandsCollection = new Collection();
 
   public logger = this.cluster.logger;
+  public data = this.cluster.data;
   public blacklist = this.cluster.blacklist;
   public antiSpam = this.cluster.antiSpam;
   public crosspostQueue = this.cluster.crosspostQueue;
@@ -63,8 +64,9 @@ class AutoPublisherClient extends Client {
   }
 
   public async updatePresence() {
-    const guilds = (await this.cluster.fetchClientValues('guilds.cache.size')) //
-      .reduce((p: number, n: number) => p + n);
+    const guilds = await this.data.getGuildsCount();
+    if (!guilds) return;
+
     this.logger.debug(`Updating presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
