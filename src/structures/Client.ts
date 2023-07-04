@@ -64,10 +64,10 @@ class AutoPublisherClient extends Client {
   }
 
   public async updatePresence() {
-    const guilds = await this.data.getGuildsCount();
+    const guilds = await this.data.getAllGuildsCount();
     if (!guilds) return;
 
-    this.logger.debug(`Updating presence. Guilds: ${guilds}`);
+    this.logger.debug(`Updating Discord presence. Guilds: ${guilds}`);
 
     this.user?.setPresence({
       activities: [

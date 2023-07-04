@@ -1,5 +1,4 @@
 import client from '#client';
-import config from '#config';
 import { Client, type IClient } from '#schemas/database/Client';
 import { MongoDBClient } from '#structures/MongoDBClient';
 import { minToMs } from '#util/timeConverters';
@@ -10,7 +9,7 @@ class ClientDataManager extends MongoDBClient {
   }
 
   public startGuildsCountInterval() {
-    setInterval(() => this.updateGuildsCount(), minToMs(config.presenceInterval));
+    setInterval(() => this.updateGuildsCount(), minToMs(5));
   }
 
   public async updateGuildsCount() {
@@ -36,6 +35,11 @@ class ClientDataManager extends MongoDBClient {
   }
 
   public async getGuildsCount() {
+    const data = await this._get();
+    return data?.get('guildsCount') as number;
+  }
+
+  public async getAllGuildsCount() {
     const clients: IClient[] = await Client.find({ guildsCount: { $exists: true } });
     const guildsCountSum = clients.reduce((sum: number, client: IClient) => {
       return sum + (client.get('guildsCount') as number);

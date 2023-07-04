@@ -7,8 +7,8 @@ export enum CommandNames {
   CHANNEL = 'channel',
   DEBUG = 'debug',
   FLUSHRL = 'flushrl',
+  INFO = 'info',
   PING = 'ping',
-  QUEUE = 'queue',
   RESPAWN = 'respawn',
   RLSIZE = 'rlsize',
   SERVER = 'server',
@@ -22,8 +22,8 @@ export type Commands = {
   [CommandNames.CHANNEL]: [channelId?: Snowflake];
   [CommandNames.DEBUG]: [value: string];
   [CommandNames.FLUSHRL]: [];
+  [CommandNames.INFO]: [];
   [CommandNames.PING]: [];
-  [CommandNames.QUEUE]: [];
   [CommandNames.RESPAWN]: [];
   [CommandNames.RLSIZE]: [];
   [CommandNames.SERVER]: [guildId?: Snowflake];

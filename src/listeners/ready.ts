@@ -7,6 +7,6 @@ export default new Event(Events.ClientReady, async () => {
   await client.blacklist.orphansCleanup();
 
   client.startPresenceInterval();
-  client.data.startGuildsCountInterval();
   client.updatePresence();
+  client.data.startGuildsCountInterval();
 });
