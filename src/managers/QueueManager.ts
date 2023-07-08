@@ -21,7 +21,6 @@ class QueueManager {
     autoStart: true,
   });
   private _queueTimeout: NodeJS.Timeout | null = null;
-  private _intervalCounter = 0;
 
   constructor() {
     setInterval(() => {
