@@ -3,7 +3,7 @@
 ## Overview
 Auto Publisher is a collection of Discord bots designed to automatically publish messages in announcement channels. The codebase for Auto Publisher is occasionally hosted as multiple bots due to technical considerations, primarily to optimize performance in response to rate limits imposed by the Discord API.
 
-You can acces the bot's source code here: https://github.com/Vedinsoh/discord-auto-publisher
+You can access the bot's source code here: https://github.com/Vedinsoh/discord-auto-publisher
 
 ## Stored data
 Auto Publisher does not store any personal data that can be used to identify users of the bot.
