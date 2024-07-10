@@ -2,44 +2,27 @@
 logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-lerna-debug.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
 
 # Dependency directories
 node_modules/
-jspm_packages/
 
 # TypeScript cache
 *.tsbuildinfo
 
-# Optional npm cache directory
+# Caches
 .npm
-
-# Optional eslint cache
+.turbo
 .eslintcache
 
 # Output of 'npm pack'
 *.tgz
 
-# Yarn
-.yarn-integrity
-.yarn/cache
-.yarn/install-state.gz
-.yarn/build-state.gz
-
 # dotenv environment variables file
 .env*
 !.env.example
 
-# Custom
-.vscode
-dist
-data
+# Redis
 *.rdb
+
+# Build
+dist

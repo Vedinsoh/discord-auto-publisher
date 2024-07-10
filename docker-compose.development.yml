@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: .docker/Dockerfile.development
-    command: yarn run start:dev
+    command: npm run start:dev
     environment:
       - NODE_ENV=development
     env_file:

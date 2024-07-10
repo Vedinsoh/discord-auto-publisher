@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: .docker/Dockerfile
     restart: unless-stopped
-    command: yarn run start
+    command: npm run start
     env_file:
       - .env
     depends_on:

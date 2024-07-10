@@ -1,4 +1,4 @@
-[![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png)](https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot 'Auto Publisher bot')
+[![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png)](https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot "Auto Publisher bot")
 
 # Discord Auto Publisher
 
@@ -43,7 +43,6 @@ You're free to host this bot on your own machine, but please keep in mind I will
 
 Requirements:
 
-- Node ^18.12.0
-- Yarn ^3.0.0
-- Redis server ^7.0.0
-- MongoDB server ^6.0.0
+- Node ^20
+- Redis server ^7
+- MongoDB server ^6
