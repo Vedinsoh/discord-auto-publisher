@@ -35,7 +35,7 @@ const client = new AutoPublisherClient({
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
-    globalRequestsPerSecond: config.requestsPerSecond,
+    globalRequestsPerSecond: 1,
   },
 });
 

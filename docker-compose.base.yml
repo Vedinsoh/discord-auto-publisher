@@ -1,0 +1,26 @@
+services:
+  bot:
+    build:
+      context: services/bot
+      dockerfile: .docker/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - rest
+
+  rest:
+    build:
+      context: services/rest
+      dockerfile: .docker/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - rest-redis
+
+  rest-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: 'redis-server --port 6379'
+    volumes:
+      - rest-redis-data:/data
+
+volumes:
+  rest-redis-data:

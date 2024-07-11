@@ -1,0 +1,52 @@
+name: auto-publisher-dev
+
+services:
+  bot:
+    extends:
+      file: docker-compose.base.yml
+      service: bot
+    build:
+      dockerfile: .docker/Dockerfile.dev
+    volumes:
+      - ./src:/home/node/app/src
+    depends_on:
+      - rest
+
+  rest:
+    extends:
+      file: docker-compose.base.yml
+      service: rest
+    build:
+      dockerfile: .docker/Dockerfile.dev
+    restart: unless-stopped
+    ports:
+      - 3000:8080
+    volumes:
+      - ./src:/home/node/app/src
+    depends_on:
+      - rest-redis
+      - rest-mongo
+
+  rest-redis:
+    image: redis:7-alpine
+    extends:
+      file: docker-compose.base.yml
+      service: rest-redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - rest-redis-data:/data
+
+  rest-mongo:
+    image: mongo:6
+    restart: unless-stopped
+    command: mongod --port 27017
+    ports:
+      - 27017:27017
+    volumes:
+      - rest-mongo-data:/data/db
+
+volumes:
+  rest-redis-data:
+  rest-mongo-data:

@@ -1,23 +1,35 @@
-version: '3.8'
+name: auto-publisher
 
 services:
   bot:
+    extends:
+      file: docker-compose.base.yml
+      service: bot
     build:
-      context: .
       dockerfile: .docker/Dockerfile
     restart: unless-stopped
     command: npm run start
-    env_file:
-      - .env
     depends_on:
-      - redis
+      - rest
 
-  redis:
-    image: redis:7-alpine
+  rest:
+    extends:
+      file: docker-compose.base.yml
+      service: rest
+    build:
+      dockerfile: .docker/Dockerfile
     restart: unless-stopped
-    command: 'redis-server --port 6379'
     volumes:
-      - redis-data:/data
+      - ./src:/home/node/app/src
+    depends_on:
+      - rest-redis
+
+  rest-redis:
+    extends:
+      file: docker-compose.base.yml
+      service: rest-redis
+    volumes:
+      - rest-redis-data:/data
 
 volumes:
   redis-data:
