@@ -41,8 +41,6 @@ services:
       service: rest-db
     ports:
       - 27017:27017
-    volumes:
-      - rest-db-data:/data/db
 
 volumes:
   rest-cache-data:
