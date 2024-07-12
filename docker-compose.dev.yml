@@ -18,35 +18,30 @@ services:
       service: rest
     build:
       dockerfile: .docker/Dockerfile.dev
-    restart: unless-stopped
     ports:
       - 3000:8080
     volumes:
       - ./src:/home/node/app/src
     depends_on:
-      - rest-redis
-      - rest-mongo
+      - rest-cache
+      - rest-db
 
-  rest-redis:
-    image: redis:7-alpine
+  rest-cache:
     extends:
       file: docker-compose.base.yml
-      service: rest-redis
-    restart: unless-stopped
+      service: rest-cache
     ports:
       - 6379:6379
-    volumes:
-      - rest-redis-data:/data
 
-  rest-mongo:
+  rest-db:
     image: mongo:6
     restart: unless-stopped
     command: mongod --port 27017
     ports:
       - 27017:27017
     volumes:
-      - rest-mongo-data:/data/db
+      - rest-db-data:/data/db
 
 volumes:
-  rest-redis-data:
-  rest-mongo-data:
+  rest-cache-data:
+  rest-db-data:

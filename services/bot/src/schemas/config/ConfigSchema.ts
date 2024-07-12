@@ -19,7 +19,7 @@ export const BotConfigSchema = z
 
 export const EnvSchema = z
   .object({
-    botToken: z.string(),
+    discordToken: z.string(),
     mongoUri: z.string().url(),
     redisUri: z.string().url(),
 

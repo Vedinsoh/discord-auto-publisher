@@ -8,6 +8,7 @@
     "rootDir": "src",
     "outDir": "dist",
     "baseUrl": "src",
+    "skipLibCheck": true,
     "paths": {
       "#config": ["config"],
       "#client": ["AutoPublisher"],

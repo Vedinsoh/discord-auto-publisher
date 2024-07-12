@@ -27,7 +27,7 @@ class AutoPublisherClient extends Client {
       this.cache.crossposts.connect(),
       this._registerEvents(),
       this._registerCommands(),
-      this.login(config.botToken),
+      this.login(config.discordToken),
     ]).catch((error) => {
       this.logger.error(error);
       process.exit(1);

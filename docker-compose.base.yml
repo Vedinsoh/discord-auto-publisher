@@ -13,14 +13,14 @@ services:
       dockerfile: .docker/Dockerfile
     restart: unless-stopped
     depends_on:
-      - rest-redis
+      - rest-cache
 
-  rest-redis:
+  rest-cache:
     image: redis:7-alpine
     restart: unless-stopped
     command: 'redis-server --port 6379'
     volumes:
-      - rest-redis-data:/data
+      - rest-cache-data:/data
 
 volumes:
-  rest-redis-data:
+  rest-cache-data:

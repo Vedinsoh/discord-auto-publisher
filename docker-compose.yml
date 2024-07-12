@@ -5,10 +5,6 @@ services:
     extends:
       file: docker-compose.base.yml
       service: bot
-    build:
-      dockerfile: .docker/Dockerfile
-    restart: unless-stopped
-    command: npm run start
     depends_on:
       - rest
 
@@ -16,20 +12,13 @@ services:
     extends:
       file: docker-compose.base.yml
       service: rest
-    build:
-      dockerfile: .docker/Dockerfile
-    restart: unless-stopped
-    volumes:
-      - ./src:/home/node/app/src
     depends_on:
-      - rest-redis
+      - rest-cache
 
-  rest-redis:
+  rest-cache:
     extends:
       file: docker-compose.base.yml
-      service: rest-redis
-    volumes:
-      - rest-redis-data:/data
+      service: rest-cache
 
 volumes:
-  redis-data:
+  rest-cache-data:

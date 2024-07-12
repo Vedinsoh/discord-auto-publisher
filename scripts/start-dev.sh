@@ -1,6 +1,6 @@
 #!/bin/sh
 
-COMPOSE_FILES="-f docker-compose.base.yml -f docker-compose.dev.yml"
+COMPOSE_FILES="-f docker-compose.dev.yml"
 
 docker compose $COMPOSE_FILES down
 docker compose $COMPOSE_FILES build &&
