@@ -8,7 +8,8 @@ services:
     build:
       dockerfile: .docker/Dockerfile.dev
     volumes:
-      - ./src:/home/node/app/src
+      - ./services/bot/src:/home/node/app/src
+      - /home/node/app/node_modules
     depends_on:
       - rest
 
@@ -21,7 +22,8 @@ services:
     ports:
       - 3000:8080
     volumes:
-      - ./src:/home/node/app/src
+      - ./services/rest/src:/home/node/app/src
+      - /home/node/app/node_modules
     depends_on:
       - rest-cache
       - rest-db
@@ -34,9 +36,9 @@ services:
       - 6379:6379
 
   rest-db:
-    image: mongo:6
-    restart: unless-stopped
-    command: mongod --port 27017
+    extends:
+      file: docker-compose.base.yml
+      service: rest-db
     ports:
       - 27017:27017
     volumes:
