@@ -1,10 +1,14 @@
 import { REST } from '@discordjs/rest';
-import { Routes, Snowflake } from 'discord-api-types/v10';
+import { Snowflake } from 'discord-api-types/globals';
+import { Routes } from 'discord-api-types/v10';
 
 import { env } from '@/utils/config';
 
 // Initializes the Discord REST client
-const rest = new REST({ version: '10' }).setToken(env.DISCORD_TOKEN);
+const rest = new REST({
+  version: '10',
+  globalRequestsPerSecond: 41, // TODO adjust this parameter
+}).setToken(env.DISCORD_TOKEN);
 
 /**
  * Crossposts a message in announcement channel

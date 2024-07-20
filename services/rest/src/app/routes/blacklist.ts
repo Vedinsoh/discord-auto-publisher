@@ -2,7 +2,7 @@ import express, { Request, Response, Router } from 'express';
 
 import { Services } from '@/services';
 import { handleServiceResponse, validateRequest } from '@/utils/httpHandlers';
-import { Validations } from '@/utils/validation';
+import { Validations } from '@/utils/validations';
 
 export const Blacklist: Router = (() => {
   const router = express.Router();

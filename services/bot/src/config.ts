@@ -11,6 +11,8 @@ const envVars: z.infer<typeof EnvSchema> = {
   discordToken: process.env.DISCORD_TOKEN,
   mongoUri: process.env.MONGO_URI,
   redisUri: process.env.REDIS_URI,
+  restHost: process.env.REST_HOST,
+  restPort: process.env.REST_PORT,
 
   botAdmins: process.env.BOT_ADMINS.split(/,\s*/g),
   shards: parseInt(process.env.BOT_SHARDS),

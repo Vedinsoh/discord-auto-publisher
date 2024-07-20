@@ -2,26 +2,18 @@ import express, { Request, Response, Router } from 'express';
 
 import { Services } from '@/services';
 import { handleServiceResponse, validateRequest } from '@/utils/httpHandlers';
-import { CrosspostRequestSchema } from '@/utils/validation';
+import { CrosspostReqSchema } from '@/utils/validations';
 
 export const Crosspost: Router = (() => {
   const router = express.Router();
 
-  // TODO for adding to crosspost queue
-  router.post(
-    '/:channelId/:messageId',
-    validateRequest(CrosspostRequestSchema),
-    async (req: Request, res: Response) => {
-      const messageId = req.params.messageId;
-      const channelId = req.params.channelId;
+  router.post('/:channelId/:messageId', validateRequest(CrosspostReqSchema), async (req: Request, res: Response) => {
+    const { messageId, channelId } = req.params;
 
-      // TODO check if channel is flagged for spam
+    const serviceResponse = await Services.Crosspost.push(channelId, messageId);
 
-      const serviceResponse = await Services.Crosspost.push(channelId, messageId);
-
-      handleServiceResponse(serviceResponse, res);
-    }
-  );
+    handleServiceResponse(serviceResponse, res);
+  });
 
   // TODO for deleting from crosspost queue
   // router.delete('/:id', validateRequest(Validations.snowflakeId), async (req: Request, res: Response) => {

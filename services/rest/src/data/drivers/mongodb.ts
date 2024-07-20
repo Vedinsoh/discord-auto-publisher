@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-import { logger } from '@/server';
+import { Services } from '@/services';
 import { env } from '@/utils/config';
 
 const { MONGO_URI } = env;
@@ -19,7 +19,7 @@ export async function connect() {
     client = new MongoClient(MONGO_URI);
     await client.connect();
 
-    logger.info('Connected to MongoDB');
+    Services.Logger.info('Connected to MongoDB');
   }
 
   // Return the client
@@ -36,7 +36,7 @@ export async function disconnect() {
     await client.close();
     client = null;
 
-    logger.info('Disconnected from MongoDB');
+    Services.Logger.info('Disconnected from MongoDB');
   }
 }
 

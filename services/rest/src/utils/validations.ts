@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const RegExPatterns = {
-  snowflake: /^[0-9]{17,19}$/,
+  snowflake: /^(?<id>\d{17,20})$/,
 };
 
 export const Validations = {
@@ -13,7 +13,7 @@ export const Validations = {
   ),
 };
 
-export const CrosspostRequestSchema = z.object({
+export const CrosspostReqSchema = z.object({
   params: z.object({
     channelId: Validations.snowflakeId,
     messageId: Validations.snowflakeId,

@@ -11,19 +11,20 @@ export default new AdminCommand(CommandNames.CHANNEL, async ({ channel }, channe
     return;
   }
 
-  const isFlagged = await client.antiSpam.isFlagged(channelId);
-  const ttl = await client.antiSpam.ttl(channelId);
-  const count = await client.antiSpam.getCount(channelId);
-  const targetChannel = await getChannel(channelId);
+  // TODO
+  // const isFlagged = await client.antiSpam.isFlagged(channelId);
+  // const ttl = await client.antiSpam.ttl(channelId);
+  // const count = await client.antiSpam.getCount(channelId);
+  // const targetChannel = await getChannel(channelId);
 
-  if (!targetChannel || !isFlagged || !ttl || !count) {
-    channel.send('Channel is not flagged.');
-    return;
-  }
+  // if (!targetChannel || !isFlagged || !ttl || !count) {
+  //   channel.send('Channel is not flagged.');
+  //   return;
+  // }
 
-  channel.send(
-    `Channel ${channelToString(targetChannel, true)} is flagged. Count: ${count + 10}. Expires in ${Math.floor(
-      secToMin(ttl)
-    )} min.`
-  );
+  // channel.send(
+  //   `Channel ${channelToString(targetChannel, true)} is flagged. Count: ${count + 10}. Expires in ${Math.floor(
+  //     secToMin(ttl)
+  //   )} min.`
+  // );
 });

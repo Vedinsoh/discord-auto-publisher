@@ -3,6 +3,8 @@ declare namespace NodeJS {
     DISCORD_TOKEN: string;
     REDIS_URI: string;
     MONGO_URI: string;
+    REST_HOST: string;
+    REST_PORT: string;
 
     BOT_ADMINS: string;
     BOT_SHARDS: string;

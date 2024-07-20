@@ -1,18 +1,20 @@
-import { Snowflake } from 'discord-api-types/v10';
+import { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
 
 import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
-import { logger } from '@/server';
+import { Services } from '@/services';
 
 const push = async (channelId: Snowflake, messageId: Snowflake) => {
+  // TODO check if channel is flagged for spam
+
   try {
     // TODO add to queue
     await Data.API.Discord.crosspost(channelId, messageId);
 
     // TODO increment crossposts cache counter
 
-    logger.debug(`Message pushed to crosspost queue: ${messageId}`);
+    Services.Logger.debug(`Message pushed to crosspost queue: ${messageId}`);
 
     return new ServiceResponse(
       ResponseStatus.Success,
@@ -23,7 +25,7 @@ const push = async (channelId: Snowflake, messageId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    logger.error(error);
+    Services.Logger.error(error);
 
     // TODO cache request limits
 

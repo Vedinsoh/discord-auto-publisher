@@ -15,14 +15,14 @@ class AutoPublisherClient extends Client {
 
   public logger = this.cluster.logger;
   public blacklist = this.cluster.blacklist;
-  public antiSpam = this.cluster.antiSpam;
-  public crosspostQueue = this.cluster.crosspostQueue;
+  // public antiSpam = this.cluster.antiSpam;
+  // public crosspostQueue = this.cluster.crosspostQueue;
   public cache = this.cluster.cache;
 
   public async start() {
     return Promise.all([
       this.blacklist.connect(),
-      this.antiSpam.connect(),
+      // this.antiSpam.connect(),
       this.cache.requestLimits.connect(),
       this.cache.crossposts.connect(),
       this._registerEvents(),
@@ -35,13 +35,14 @@ class AutoPublisherClient extends Client {
   }
 
   private async _registerEvents() {
-    this.rest.on(RESTEvents.Debug, (data) => {
-      const rateLimited = is429(data);
-      if (rateLimited) this.cache.requestLimits.add(crypto.randomUUID(), 429);
+    // TODO
+    // this.rest.on(RESTEvents.Debug, (data) => {
+    //   const rateLimited = is429(data);
+    //   if (rateLimited) this.cache.requestLimits.add(crypto.randomUUID(), 429);
 
-      const parsedParams = parseRestSublimit(data);
-      if (parsedParams) this.antiSpam.add(parsedParams);
-    });
+    //   const parsedParams = parseRestSublimit(data);
+    //   if (parsedParams) this.antiSpam.add(parsedParams);
+    // });
 
     const filePaths = getFilePaths('listeners/**/*.js');
     return filePaths.map(async (filePath) => {

@@ -22,6 +22,8 @@ export const EnvSchema = z
     discordToken: z.string(),
     mongoUri: z.string().url(),
     redisUri: z.string().url(),
+    restHost: z.string(),
+    restPort: z.string(),
 
     botAdmins: z.array(Snowflake),
     shards: z.number().min(1),
