@@ -1,5 +1,5 @@
-import { Guild } from './guild';
+import { CrosspostsCounter } from './crosspostsCounter';
 
 export const Repo = {
-  Guild,
+  CrosspostsCounter,
 };

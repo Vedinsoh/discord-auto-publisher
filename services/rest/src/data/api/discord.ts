@@ -1,10 +1,10 @@
-import { REST } from '@discordjs/rest';
+import { REST, RESTEvents } from '@discordjs/rest';
 import { Snowflake } from 'discord-api-types/globals';
 import { Routes } from 'discord-api-types/v10';
 
 import { env } from '@/utils/config';
 
-// Initializes the Discord REST client
+// Initialize Discord REST client
 const rest = new REST({
   version: '10',
   globalRequestsPerSecond: 41, // TODO adjust this parameter
@@ -19,6 +19,15 @@ const rest = new REST({
 const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {
   return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
 };
+
+// TODO
+// rest.on(RESTEvents.Debug, (data) => {
+//   const rateLimited = is429(data);
+//   if (rateLimited) this.cache.requestLimits.add(crypto.randomUUID(), 429);
+
+//   const parsedParams = parseRestSublimit(data);
+//   if (parsedParams) this.antiSpam.add(parsedParams);
+// });
 
 export const Discord = {
   crosspost,

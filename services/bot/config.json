@@ -3,10 +3,5 @@
   "urlDetection": {
     "enabled": true,
     "deferTimeout": 5
-  },
-  "antiSpam": {
-    "enabled": true,
-    "autoLeave": true,
-    "messagesThreshold": 40
   }
 }

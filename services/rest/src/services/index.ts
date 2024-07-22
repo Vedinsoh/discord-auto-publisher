@@ -1,5 +1,6 @@
-import { Blacklist } from './blacklist';
 import { Crosspost } from './crosspost';
-import { logger as Logger } from './logger';
+import { CrosspostsCounter } from './crosspostsCounter';
+import { Logger } from './logger';
+import { MessagesQueue } from './messagesQueue';
 
-export const Services = { Blacklist, Crosspost, Logger };
+export const Services = { Crosspost, CrosspostsCounter, Logger, MessagesQueue };

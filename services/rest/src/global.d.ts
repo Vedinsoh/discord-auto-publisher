@@ -1,9 +1,10 @@
 /* eslint-disable no-var */
 
-import { MessagesQueue } from './services/messagesQueue';
+import { Services } from '@/services';
 
 export declare global {
   declare module globalThis {
-    var messagesQueue: MessagesQueue;
+    var crosspostsCounter: Services.CrosspostsCounter;
+    var messagesQueue: Services.MessagesQueue;
   }
 }

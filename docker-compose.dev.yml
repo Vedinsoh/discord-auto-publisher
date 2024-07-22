@@ -26,7 +26,6 @@ services:
       - /home/node/app/node_modules
     depends_on:
       - rest-cache
-      - rest-db
 
   rest-cache:
     extends:
@@ -35,13 +34,5 @@ services:
     ports:
       - 6379:6379
 
-  rest-db:
-    extends:
-      file: docker-compose.base.yml
-      service: rest-db
-    ports:
-      - 27017:27017
-
 volumes:
   rest-cache-data:
-  rest-db-data:

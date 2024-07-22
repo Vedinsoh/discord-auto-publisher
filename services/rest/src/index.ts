@@ -14,19 +14,18 @@ app.use(requestLogger);
 
 // Routes
 app.use('/crosspost', App.Routes.Crosspost);
-app.use('/blacklist', App.Routes.Blacklist);
 
 // Error handlers
 app.use(errorHandler());
 
 // Start the server
-const server = app.listen(env.REST_PORT, () => {
+const server = app.listen(env.REST_PORT, async () => {
   const { NODE_ENV, REST_HOST: HOST, REST_PORT: PORT } = env;
   Services.Logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
 });
 
 // Gracefully handle server shutdown
-const onCloseSignal = () => {
+const onCloseSignal = async () => {
   server.close(() => {
     Services.Logger.info('Server closed');
     process.exit();

@@ -26,13 +26,5 @@ services:
     volumes:
       - rest-cache-data:/data
 
-  rest-db:
-    image: mongo:6
-    restart: unless-stopped
-    command: mongod --port 27017
-    volumes:
-      - rest-db-data:/data/db
-
 volumes:
   rest-cache-data:
-  rest-db-data:

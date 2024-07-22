@@ -1,16 +1,17 @@
 import { Snowflake } from 'discord-api-types/v10';
 import PQueue from 'p-queue';
 
+import { Data } from '@/data';
 import { Services } from '@/services';
 // import client from '#client';
 // import config from '#config';
 // import crosspost from '#crosspost/crosspost';
-import QueueChannel from '@/structures/QueueChannel';
+import ChannelQueue from '@/structures/QueueChannel';
 // import type { ReceivedMessage } from '#types/MessageTypes';
 import { minToMs, msToSec, secToMs } from '@/utils/timeConversions';
 
 export class MessagesQueue {
-  private _channels = new Map<Snowflake, QueueChannel>();
+  private _channels = new Map<Snowflake, ChannelQueue>();
   private _mainQueue = new PQueue({
     concurrency: 5,
     intervalCap: 10,
@@ -50,9 +51,17 @@ export class MessagesQueue {
     // if (await client.antiSpam.isFlagged(message.channelId)) {
     //   return client.antiSpam.increment(message.channelId);
     // }
-    return this._mainQueue.add(() => Services.Crosspost.push(channelId, messageId), {
-      // priority: this._getMessagePriority(message),
-    });
+    return this._mainQueue.add(
+      async () => {
+        // TODO check
+        return Data.API.Discord.crosspost(channelId, messageId).then(() => {
+          Services.CrosspostsCounter.add(channelId, messageId);
+        });
+      },
+      {
+        // priority: this._getMessagePriority(message),
+      }
+    );
   }
 
   // private _getMessagePriority(message: ReceivedMessage) {
@@ -63,7 +72,7 @@ export class MessagesQueue {
 
   private _newChannel = (channelId: Snowflake) => {
     if (this._channels.has(channelId)) return;
-    this._channels.set(channelId, new QueueChannel());
+    this._channels.set(channelId, new ChannelQueue());
     Services.Logger.debug(`Added queue for channel ${channelId}`);
   };
 

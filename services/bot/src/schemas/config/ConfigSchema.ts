@@ -9,18 +9,12 @@ export const BotConfigSchema = z
       enabled: z.boolean(),
       deferTimeout: z.number().min(1).max(60),
     }),
-    antiSpam: z.object({
-      enabled: z.boolean(),
-      autoLeave: z.boolean(),
-      messagesThreshold: z.number().min(0),
-    }),
   })
   .strict();
 
 export const EnvSchema = z
   .object({
     discordToken: z.string(),
-    mongoUri: z.string().url(),
     redisUri: z.string().url(),
     restHost: z.string(),
     restPort: z.string(),

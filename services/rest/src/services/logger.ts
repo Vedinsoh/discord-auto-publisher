@@ -1,5 +1,5 @@
 import { pino } from 'pino';
 
-const logger = pino({ name: 'REST' });
+const Logger = pino({ name: 'REST' });
 
-export { logger };
+export { Logger };

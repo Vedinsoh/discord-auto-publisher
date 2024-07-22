@@ -14,7 +14,8 @@ COPY tsconfig.json .
 COPY config.json .
 
 # Install the necessary packages
-RUN apk add --no-cache g++ make python3 linux-headers
+# RUN apk add --no-cache g++ make python3 linux-headers
+RUN apk add g++ make python3 linux-headers
 
 # Install the dependencies
 RUN npm install

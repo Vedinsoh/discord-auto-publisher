@@ -2,7 +2,8 @@ import PQueue from 'p-queue';
 
 import { minToMs, secToMs } from '@/utils/timeConversions';
 
-class QueueChannel {
+// TODO see if this is needed
+class ChannelQueue {
   private _queue = new PQueue({
     concurrency: 1,
     intervalCap: 1,
@@ -23,4 +24,4 @@ class QueueChannel {
   }
 }
 
-export default QueueChannel;
+export default ChannelQueue;

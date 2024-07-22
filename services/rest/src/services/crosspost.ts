@@ -1,16 +1,13 @@
 import { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
 
-import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 import { Services } from '@/services';
 
 const push = async (channelId: Snowflake, messageId: Snowflake) => {
-  // TODO check if channel is flagged for spam
-
   try {
     // TODO add to queue
-    await Data.API.Discord.crosspost(channelId, messageId);
+    global.messagesQueue.add(channelId, messageId);
 
     // TODO increment crossposts cache counter
 
