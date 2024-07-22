@@ -7,7 +7,7 @@ import client from '#client';
 import config from '#config';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import { channelToString, guildToString } from '#util/stringFormatters';
+import { channelToString, guildToString } from '#utils/stringFormatters';
 
 const crosspost = async (message: ReceivedMessage) => {
   // if (await client.antiSpam.isFlagged(message.channelId)) {

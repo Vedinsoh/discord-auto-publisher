@@ -5,9 +5,9 @@ import config from '#config';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
-import { getFilePaths, importFile } from '#util/fileUtils';
-import { is429, parseRestSublimit } from '#util/parseRestSublimit';
-import { minToMs } from '#util/timeConverters';
+import { getFilePaths, importFile } from '#utils/fileUtils';
+import { is429, parseRestSublimit } from '#utils/parseRestSublimit';
+import { minToMs } from '#utils/timeConverters';
 
 class AutoPublisherClient extends Client {
   public cluster = new AutoPublisherCluster(this);

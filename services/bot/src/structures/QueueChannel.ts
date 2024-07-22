@@ -1,5 +1,5 @@
 import PQueue from 'p-queue';
-import { minToMs, secToMs } from '#util/timeConverters';
+import { minToMs, secToMs } from '#utils/timeConverters';
 
 class QueueChannel {
   private _queue = new PQueue({

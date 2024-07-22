@@ -1,13 +1,16 @@
-import dotenv from 'dotenv';
-import { cleanEnv, host, port, str, testOnly } from 'envalid';
+import 'dotenv/config';
 
-dotenv.config();
+import { cleanEnv, host, port, str, testOnly, url } from 'envalid';
+import { levels as loggerLevels } from 'pino';
 
 export const env = cleanEnv(process.env, {
+  // Common
   NODE_ENV: str({ devDefault: testOnly('test'), choices: ['development', 'production', 'test'] }),
-  // TODO url validation
-  REDIS_URI: str({ devDefault: testOnly('redis://redis:6379') }),
+  LOGGER_LEVEL: str({ default: 'info', choices: Object.values(loggerLevels.labels) }),
+  REDIS_URI: url({ default: 'redis://rest-cache:6379' }),
   DISCORD_TOKEN: str({ devDefault: testOnly('') }),
-  REST_HOST: host({ devDefault: testOnly('localhost') }),
-  REST_PORT: port({ devDefault: testOnly(3000) }),
+
+  // REST
+  REST_HOST: host({ devDefault: 'localhost' }),
+  REST_PORT: port({ devDefault: 3000 }),
 });

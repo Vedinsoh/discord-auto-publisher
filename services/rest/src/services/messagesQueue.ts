@@ -1,3 +1,4 @@
+import { DiscordSnowflake } from '@sapphire/snowflake';
 import { Snowflake } from 'discord-api-types/v10';
 import PQueue from 'p-queue';
 
@@ -32,10 +33,12 @@ export class MessagesQueue {
   }
 
   public async add(channelId: Snowflake, messageId: Snowflake) {
-    // if (await client.antiSpam.isFlagged(message.channelId)) {
-    //   client.antiSpam.increment(message.channelId);
-    //   return;
-    // }
+    const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
+    if (isOverLimit) {
+      Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
+      return;
+    }
+
     return this._addToChannelQueue(channelId, messageId);
   }
 
@@ -48,27 +51,23 @@ export class MessagesQueue {
   }
 
   private async _addToMainQueue(channelId: Snowflake, messageId: Snowflake) {
-    // if (await client.antiSpam.isFlagged(message.channelId)) {
-    //   return client.antiSpam.increment(message.channelId);
-    // }
-    return this._mainQueue.add(
-      async () => {
-        // TODO check
-        return Data.API.Discord.crosspost(channelId, messageId).then(() => {
-          Services.CrosspostsCounter.add(channelId, messageId);
-        });
-      },
-      {
-        // priority: this._getMessagePriority(message),
-      }
-    );
+    const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
+    if (isOverLimit) {
+      Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
+      return;
+    }
+
+    return this._mainQueue.add(async () => Services.Crosspost.submit(channelId, messageId), {
+      // TODO check if this is needed
+      priority: this._getMessagePriority(messageId),
+    });
   }
 
-  // private _getMessagePriority(message: ReceivedMessage) {
-  //   const messageTimestamp = message.createdTimestamp || Date.now();
-  //   const priority = 9999999999999 - messageTimestamp;
-  //   return priority;
-  // }
+  private _getMessagePriority(messageId: Snowflake) {
+    const messageTimestamp = DiscordSnowflake.timestampFrom(messageId) || Date.now();
+    const priority = 9999999999999 - messageTimestamp;
+    return priority;
+  }
 
   private _newChannel = (channelId: Snowflake) => {
     if (this._channels.has(channelId)) return;

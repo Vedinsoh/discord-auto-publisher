@@ -1,17 +1,40 @@
 import { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
 
+import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 import { Services } from '@/services';
 
+/**
+ * Submit message for crossposting
+ * @param channelId ID of the channel
+ * @param messageId ID of the message
+ */
+const submit = async (channelId: Snowflake, messageId: Snowflake) => {
+  try {
+    await Data.API.Discord.crosspost(channelId, messageId);
+    await Services.CrosspostsCounter.increment(channelId);
+
+    Services.Logger.debug(`Crossposted message ${messageId}`);
+  } catch (error) {
+    Services.Logger.error(error);
+
+    // TODO cache request limits
+  }
+};
+
+/**
+ * Push message to crosspost queue
+ * @param channelId ID of the channel
+ * @param messageId ID of the message
+ * @returns ServiceResponse
+ */
 const push = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
-    // TODO add to queue
+    // TODO
     global.messagesQueue.add(channelId, messageId);
 
-    // TODO increment crossposts cache counter
-
-    Services.Logger.debug(`Message pushed to crosspost queue: ${messageId}`);
+    Services.Logger.debug(`Message ${messageId} pushed to crosspost queue`);
 
     return new ServiceResponse(
       ResponseStatus.Success,
@@ -23,8 +46,6 @@ const push = async (channelId: Snowflake, messageId: Snowflake) => {
     );
   } catch (error) {
     Services.Logger.error(error);
-
-    // TODO cache request limits
 
     return new ServiceResponse(
       ResponseStatus.Failed,
@@ -39,4 +60,5 @@ const push = async (channelId: Snowflake, messageId: Snowflake) => {
 
 export const Crosspost = {
   push,
+  submit,
 };

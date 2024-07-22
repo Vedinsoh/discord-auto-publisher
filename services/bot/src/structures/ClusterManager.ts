@@ -1,6 +1,6 @@
 import { ClusterManager, type ClusterManagerOptions } from 'discord-hybrid-sharding';
-import { getFilePaths } from '#util/fileUtils';
-import { logger } from '#util/logger';
+import { getFilePaths } from '#utils/fileUtils';
+import { logger } from '#utils/logger';
 
 class AutoPublisher extends ClusterManager {
   constructor(options: ClusterManagerOptions) {

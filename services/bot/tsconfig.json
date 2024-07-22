@@ -20,7 +20,7 @@
       "#schemas/*": ["schemas/*"],
       "#structures/*": ["structures/*"],
       "#types/*": ["types/*"],
-      "#util/*": ["util/*"]
+      "#utils/*": ["utils/*"]
     }
   },
   "include": ["./src"],

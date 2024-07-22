@@ -1,8 +1,10 @@
 import 'dotenv/config';
+import { cleanEnv, num, str, testOnly, url } from 'envalid';
 import fs from 'node:fs';
+import { levels as loggerLevels } from 'pino';
 import type z from 'zod';
 import type { BotConfigSchema, EnvSchema } from '#schemas/config/ConfigSchema';
-import validateConfig from '#util/validateConfig';
+import validateConfig from '#utils/validateConfig';
 
 const botConfigFile = fs.readFileSync(`./config.json`, 'utf8');
 const botConfig = JSON.parse(botConfigFile) as z.infer<typeof BotConfigSchema>;
@@ -22,5 +24,18 @@ const envVars: z.infer<typeof EnvSchema> = {
 
 const config = { ...botConfig, ...envVars };
 validateConfig(config);
+
+export const env = cleanEnv(process.env, {
+  // Common
+  NODE_ENV: str({ devDefault: testOnly('test'), choices: ['development', 'production', 'test'] }),
+  LOGGER_LEVEL: str({ default: 'info', choices: Object.values(loggerLevels.labels) }),
+  REDIS_URI: url({ default: 'redis://rest-cache:6379' }),
+  DISCORD_TOKEN: str({ devDefault: testOnly('') }),
+
+  // Bot
+  BOT_ADMINS: str({ default: '[]' })._parse((input: string) => input.split(/,\s*/g)) as unknown as string[],
+  BOT_SHARDS: num({ default: 1 }),
+  BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
+});
 
 export default config;

@@ -20,7 +20,7 @@ const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {
   return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
 };
 
-// TODO
+// TODO move to the appropriate place
 // rest.on(RESTEvents.Debug, (data) => {
 //   const rateLimited = is429(data);
 //   if (rateLimited) this.cache.requestLimits.add(crypto.randomUUID(), 429);

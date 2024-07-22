@@ -1,5 +1,7 @@
 import { pino } from 'pino';
 
-const Logger = pino({ name: 'REST' });
+import { env } from '@/utils/config';
+
+const Logger = pino({ name: 'REST', level: env.LOGGER_LEVEL });
 
 export { Logger };

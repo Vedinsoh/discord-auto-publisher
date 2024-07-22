@@ -15,42 +15,30 @@ await redis.connect();
 const client = redis.client;
 
 // Create key for the channel ID
-const createKey = (channelId: Snowflake) => `${Keys.Channel}:${channelId}`;
+const _createKey = (channelId: Snowflake) => `${Keys.Channel}:${channelId}`;
 
 /**
  * Add channel to crossposts counter
  * @param channelId ID of the channel
+ * @param options.count Crossposts count
+ * @param options.ttl Expiration time in seconds
  * @returns Redis response
  */
-const add = async (channelId: Snowflake, ttlSeconds = minToSec(60)) => {
-  return client.setEx(createKey(channelId), ttlSeconds, '1');
+const add = async (channelId: Snowflake, { count = '1', ttl = minToSec(60) }) => {
+  return await client.setEx(_createKey(channelId), ttl, count);
 };
 
 /**
- * Increment crosspost counter
+ * Get expiration time of the key
  * @param channelId ID of the channel
- * @returns Redis response
+ * @returns Expiration of the key in seconds, or null if the key does not exist
  */
-const increment = async (channelId: Snowflake, ttlSeconds?: number) => {
-  // Get previous crosspots count for the channel
-  const prevCount = await client.get(createKey(channelId));
-
-  // Add the channel crossposts counter if it does not exist
-  if (!prevCount) {
-    return await add(channelId, ttlSeconds);
+const getExpiration = async (channelId: Snowflake) => {
+  const ttl = await client.ttl(_createKey(channelId));
+  if (ttl === -2) {
+    return null;
   }
-
-  // Get previous TTL
-  const prevTtl = await client.ttl(createKey(channelId));
-
-  // Fallback to add if the key's TTL expired or does not exist
-  if (prevTtl === -2) {
-    return await add(channelId, ttlSeconds);
-  }
-
-  // Increment crossposts counter for the channel and re-set the TTL
-  const updatedCount = String(Number(prevCount) + 1);
-  return await client.setEx(createKey(channelId), prevTtl, updatedCount);
+  return ttl;
 };
 
 /**
@@ -59,7 +47,7 @@ const increment = async (channelId: Snowflake, ttlSeconds?: number) => {
  * @returns Number of crossposts
  */
 const getCount = async (channelId: Snowflake) => {
-  const count = await client.get(createKey(channelId));
+  const count = await client.get(_createKey(channelId));
   return count ? Number(count) : 0;
 };
 
@@ -71,4 +59,4 @@ const getSize = async () => {
   return await client.dbSize();
 };
 
-export const CrosspostsCounter = { add, getCount, getSize, increment };
+export const CrosspostsCounter = { add, getCount, getExpiration, getSize };

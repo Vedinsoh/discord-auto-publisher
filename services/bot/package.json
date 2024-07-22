@@ -16,6 +16,7 @@
     "discord-hybrid-sharding": "^2.1.2",
     "discord.js": "^14.11.0",
     "dotenv": "^16.0.3",
+    "envalid": "^8.0.0",
     "glob": "^10.2.5",
     "p-queue": "^7.3.4",
     "pino": "^8.14.1",
@@ -52,7 +53,7 @@
     "#schemas/*": "./dist/schemas/*.js",
     "#structures/*": "./dist/structures/*.js",
     "#types/*": "./dist/types/*.js",
-    "#util/*": "./dist/util/*.js"
+    "#utils/*": "./dist/utils/*.js"
   },
   "engines": {
     "node": "^20"

@@ -1,7 +1,7 @@
 import client from '#client';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
-import { getDiscordFormat } from '#util/timeConverters';
+import { getDiscordFormat } from '#utils/timeConverters';
 
 export default new AdminCommand(CommandNames.UPTIME, async ({ channel }) => {
   const uptimes = await client.cluster.broadcastEval((c) => c.uptime);

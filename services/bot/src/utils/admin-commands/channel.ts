@@ -1,9 +1,9 @@
 import client from '#client';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
-import getChannel from '#util/getChannel';
-import { channelToString } from '#util/stringFormatters';
-import { secToMin } from '#util/timeConverters';
+import getChannel from '#utils/getChannel';
+import { channelToString } from '#utils/stringFormatters';
+import { secToMin } from '#utils/timeConverters';
 
 export default new AdminCommand(CommandNames.CHANNEL, async ({ channel }, channelId) => {
   if (!channelId) {

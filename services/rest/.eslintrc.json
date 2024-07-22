@@ -7,7 +7,8 @@
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "prettier/prettier": "error",
-    "@typescript-eslint/no-unused-vars": "warn"
+    "@typescript-eslint/no-unused-vars": "warn",
+    "no-console": "warn"
   },
   "parserOptions": {
     "ecmaVersion": "latest",

@@ -2,8 +2,8 @@ import urlRegex from 'url-regex-safe';
 import config from '#config';
 import { Services } from '#services';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import { delay } from '#util/delay';
-import { secToMs } from '#util/timeConverters';
+import { delay } from '#utils/delay';
+import { secToMs } from '#utils/timeConverters';
 
 const { urlDetection } = config;
 
