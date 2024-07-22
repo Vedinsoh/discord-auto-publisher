@@ -6,7 +6,6 @@ dotenv.config();
 export const env = cleanEnv(process.env, {
   NODE_ENV: str({ devDefault: testOnly('test'), choices: ['development', 'production', 'test'] }),
   // TODO url validation
-  MONGO_URI: str({ devDefault: testOnly('mongodb://mongo:27017/auto_publisher') }),
   REDIS_URI: str({ devDefault: testOnly('redis://redis:6379') }),
   DISCORD_TOKEN: str({ devDefault: testOnly('') }),
   REST_HOST: host({ devDefault: testOnly('localhost') }),

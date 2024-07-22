@@ -12,6 +12,7 @@ const client = new AutoPublisherClient({
     GuildEmojiManager: 0,
     GuildForumThreadManager: 0,
     GuildInviteManager: 0,
+    // Only cache the bot member
     GuildMemberManager: {
       maxSize: 1,
       keepOverLimit: (member) => member.id === member.client.user.id,

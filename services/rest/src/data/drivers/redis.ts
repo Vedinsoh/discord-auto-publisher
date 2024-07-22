@@ -6,12 +6,12 @@ import { env } from '@/utils/config';
 export enum DatabaseIDs {
   CrosspostsCounter,
   RequestLimits,
+  // TODO add rate limited channels
 }
 
 // Redis keys
 export enum Keys {
-  InvalidRequest = 'invalid_request',
-  Crosspost = 'crosspost',
+  Channel = 'channel',
 }
 
 /**
