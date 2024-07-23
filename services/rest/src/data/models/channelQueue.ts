@@ -1,11 +1,13 @@
 import PQueue from 'p-queue';
-import { minToMs, secToMs } from '#utils/timeConverters';
 
-class QueueChannel {
+import { minToMs, secToMs } from '@/utils/timeConversions';
+
+// TODO
+export class ChannelQueue {
   private _queue = new PQueue({
     concurrency: 1,
     intervalCap: 1,
-    interval: secToMs(11),
+    interval: secToMs(5),
     timeout: minToMs(60),
     carryoverConcurrencyCount: true,
     autoStart: true,
@@ -21,5 +23,3 @@ class QueueChannel {
     return this._queue.add(fn);
   }
 }
-
-export default QueueChannel;

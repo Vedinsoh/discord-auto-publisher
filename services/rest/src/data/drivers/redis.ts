@@ -4,18 +4,6 @@ import { createClient, type RedisClientType } from 'redis';
 
 import { env } from '@/utils/config';
 
-// Redis database IDs
-export enum DatabaseIDs {
-  CrosspostsCounter,
-  RequestLimits,
-  // TODO add rate limited channels
-}
-
-// Redis keys
-export enum Keys {
-  Channel = 'channel',
-}
-
 /**
  * @class Redis
  * @description Redis driver
@@ -60,6 +48,4 @@ export class Client {
 
 export const Redis = {
   Client,
-  DatabaseIDs,
-  Keys,
 };

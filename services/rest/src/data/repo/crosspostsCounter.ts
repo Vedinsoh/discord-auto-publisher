@@ -1,14 +1,13 @@
 import { Snowflake } from 'discord-api-types/globals';
 
+import { Constants } from '@/constants';
+import { Data } from '@/data';
 import { minToSec } from '@/utils/timeConversions';
 
-import { Drivers } from '../drivers';
-
-const { Redis } = Drivers;
-const { Keys } = Redis;
+const { DatabaseIDs, Keys } = Constants.Data.Redis;
 
 // Initialize Redis and connect to database
-const redis = new Redis.Client(Redis.DatabaseIDs.CrosspostsCounter);
+const redis = new Data.Drivers.Redis.Client(DatabaseIDs.CrosspostsCounter);
 await redis.connect();
 
 // Initialize Redis client

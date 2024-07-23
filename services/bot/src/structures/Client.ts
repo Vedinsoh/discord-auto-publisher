@@ -42,7 +42,7 @@ class AutoPublisherClient extends Client {
   }
 
   private async _registerCommands() {
-    const filePaths = getFilePaths('util/admin-commands/*.js');
+    const filePaths = getFilePaths('utils/admin-commands/*.js');
     return filePaths.map(async (filePath) => {
       const command = await importFile(filePath);
       this.commands.set(command.name, command.run);

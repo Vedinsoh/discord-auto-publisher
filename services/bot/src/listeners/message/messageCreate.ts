@@ -7,6 +7,7 @@ import { env } from '#utils/config';
 
 const botAdmins = env.BOT_ADMINS.split(/,\s*/g);
 
+// TODO separate the services
 /**
  * Event handler for the messageCreate event
  */
@@ -31,7 +32,6 @@ export default new Event(Events.MessageCreate, async (message) => {
   }
 
   // Bot owner commands handler
-  // TODO handle bot admins
   if (channel.type === ChannelType.DM && botAdmins.includes(message.author.id)) {
     // Get the command name and argument
     const [commandName, argument] = message.content //

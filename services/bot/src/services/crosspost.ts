@@ -1,7 +1,7 @@
 import urlRegex from 'url-regex-safe';
 import { Services } from '#services';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import { delay } from '#utils/delay';
+import { delay } from '#utils/common';
 import { secToMs } from '#utils/timeConverters';
 
 /**
