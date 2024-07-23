@@ -2,9 +2,10 @@ import { DiscordSnowflake } from '@sapphire/snowflake';
 import { Snowflake } from 'discord-api-types/v10';
 import PQueue from 'p-queue';
 
-import { ChannelQueue } from '@/data/models/channelQueue';
 import { Services } from '@/services';
 import { minToMs, msToSec, secToMs } from '@/utils/timeConversions';
+
+import { ChannelQueue } from './channelQueue';
 
 export class MessagesQueue {
   private _channelQueues = new Map<Snowflake, ChannelQueue>();

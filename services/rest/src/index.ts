@@ -14,6 +14,7 @@ app.use(requestLogger);
 
 // Routes
 app.use('/crosspost', App.Routes.Crosspost);
+// TODO add presence route
 
 // Error handlers
 app.use(errorHandler());
