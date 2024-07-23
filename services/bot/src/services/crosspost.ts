@@ -1,11 +1,8 @@
 import urlRegex from 'url-regex-safe';
-import config from '#config';
 import { Services } from '#services';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { delay } from '#utils/delay';
 import { secToMs } from '#utils/timeConverters';
-
-const { urlDetection } = config;
 
 /**
  * Sends a message to the REST service to crosspost
@@ -13,7 +10,7 @@ const { urlDetection } = config;
  */
 const push = async (message: ReceivedMessage) => {
   // If URL detection is disabled or the message has no content, crosspost immediately
-  if (!urlDetection.enabled || !message.content) {
+  if (!message.content) {
     return Services.REST.pushCrosspost(message.channel.id, message.id);
   }
 
@@ -23,7 +20,7 @@ const push = async (message: ReceivedMessage) => {
 
   // Defer crossposting if the message has a URL but no embeds
   if (hasUrl && !hasEmbeds) {
-    await delay(secToMs(urlDetection.deferTimeout));
+    await delay(secToMs(5));
   }
 
   return Services.REST.pushCrosspost(message.channel.id, message.id);

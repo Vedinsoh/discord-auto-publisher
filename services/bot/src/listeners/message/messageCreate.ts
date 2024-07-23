@@ -1,9 +1,11 @@
 import { ChannelType, Events, PermissionsBitField } from 'discord.js';
 import client from '#client';
-import config from '#config';
 import { Services } from '#services';
 import Event from '#structures/Event';
 import type { CommandNames } from '#types/AdminCommandTypes';
+import { env } from '#utils/config';
+
+const botAdmins = env.BOT_ADMINS.split(/,\s*/g);
 
 /**
  * Event handler for the messageCreate event
@@ -28,9 +30,9 @@ export default new Event(Events.MessageCreate, async (message) => {
     return;
   }
 
-  // TODO
   // Bot owner commands handler
-  if (channel.type === ChannelType.DM && config.botAdmins.includes(message.author.id)) {
+  // TODO handle bot admins
+  if (channel.type === ChannelType.DM && botAdmins.includes(message.author.id)) {
     // Get the command name and argument
     const [commandName, argument] = message.content //
       .toLowerCase()

@@ -4,7 +4,6 @@ import { DiscordjsErrorCodes } from 'discord.js';
 import crypto from 'node:crypto';
 import { Services } from 'services';
 import client from '#client';
-import config from '#config';
 import safeErrorCodes from '#constants/safeErrorCodes';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { channelToString, guildToString } from '#utils/stringFormatters';

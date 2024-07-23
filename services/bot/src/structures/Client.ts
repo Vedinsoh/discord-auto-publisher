@@ -1,10 +1,10 @@
 import { ActivityType, Client, type ClientEvents, Collection, RESTEvents } from 'discord.js';
 import crypto from 'node:crypto';
 import type { Level as LoggerLevel } from 'pino';
-import config from '#config';
 import AutoPublisherCluster from '#structures/Cluster';
 import type Event from '#structures/Event';
 import type { CommandsCollection } from '#types/AdminCommandTypes';
+import { env } from '#utils/config';
 import { getFilePaths, importFile } from '#utils/fileUtils';
 import { is429, parseRestSublimit } from '#utils/parseRestSublimit';
 import { minToMs } from '#utils/timeConverters';
@@ -16,7 +16,7 @@ class AutoPublisherClient extends Client {
   public logger = this.cluster.logger;
 
   public async start() {
-    return Promise.all([this._registerEvents(), this._registerCommands(), this.login(config.discordToken)]).catch(
+    return Promise.all([this._registerEvents(), this._registerCommands(), this.login(env.DISCORD_TOKEN)]).catch(
       (error) => {
         this.logger.error(error);
         process.exit(1);
@@ -50,7 +50,7 @@ class AutoPublisherClient extends Client {
   }
 
   public startPresenceInterval() {
-    setInterval(() => this.updatePresence(), minToMs(config.presenceInterval));
+    setInterval(() => this.updatePresence(), minToMs(15));
   }
 
   public async updatePresence() {

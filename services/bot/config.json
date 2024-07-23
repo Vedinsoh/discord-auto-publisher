@@ -1,7 +1,0 @@
-{
-  "presenceInterval": 15,
-  "urlDetection": {
-    "enabled": true,
-    "deferTimeout": 5
-  }
-}

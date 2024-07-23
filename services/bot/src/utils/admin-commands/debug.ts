@@ -1,10 +1,10 @@
 import type { Level as LoggerLevel } from 'pino';
 import client from '#client';
-import config from '#config';
 import AdminCommand from '#structures/AdminCommand';
 import { CommandNames } from '#types/AdminCommandTypes';
+import { env } from '#utils/config';
 
-const { loggerLevel } = config;
+const loggerLevel = env.LOGGER_LEVEL as LoggerLevel;
 
 const enable = ['1', 'true', 'enable', 'accept', 'on', 'yes'];
 const disable = ['0', 'false', 'disable', 'deny', 'off', 'no'];

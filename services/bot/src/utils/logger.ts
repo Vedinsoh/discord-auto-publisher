@@ -1,9 +1,9 @@
 import pino from 'pino';
-import config from '#config';
+import { env } from './config';
 
 export const createLogger = (pid?: string) => {
   return pino({
-    level: config.loggerLevel ?? 'info',
+    level: env.LOGGER_LEVEL ?? 'info',
     transport: {
       target: 'pino-pretty',
       options: {

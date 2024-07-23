@@ -43,7 +43,6 @@
     "typescript": "^5.0.4"
   },
   "imports": {
-    "#config": "./dist/config.js",
     "#client": "./dist/AutoPublisher.js",
     "#constants/*": "./dist/constants/*.js",
     "#crosspost/*": "./dist/crosspost/*.js",

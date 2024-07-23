@@ -1,29 +1,6 @@
 import 'dotenv/config';
-import { cleanEnv, num, str, testOnly, url } from 'envalid';
-import fs from 'node:fs';
+import { cleanEnv, num, port, str, testOnly, url } from 'envalid';
 import { levels as loggerLevels } from 'pino';
-import type z from 'zod';
-import type { BotConfigSchema, EnvSchema } from '#schemas/config/ConfigSchema';
-import validateConfig from '#utils/validateConfig';
-
-const botConfigFile = fs.readFileSync(`./config.json`, 'utf8');
-const botConfig = JSON.parse(botConfigFile) as z.infer<typeof BotConfigSchema>;
-
-const envVars: z.infer<typeof EnvSchema> = {
-  discordToken: process.env.DISCORD_TOKEN,
-  redisUri: process.env.REDIS_URI,
-  restHost: process.env.REST_HOST,
-  restPort: process.env.REST_PORT,
-
-  botAdmins: process.env.BOT_ADMINS.split(/,\s*/g),
-  shards: parseInt(process.env.BOT_SHARDS),
-  shardsPerCluster: parseInt(process.env.BOT_SHARDS_PER_CLUSTER),
-  // loggerLevel: process.env.LOGGER_LEVEL, // TODO
-  loggerLevel: 'info',
-};
-
-const config = { ...botConfig, ...envVars };
-validateConfig(config);
 
 export const env = cleanEnv(process.env, {
   // Common
@@ -33,9 +10,10 @@ export const env = cleanEnv(process.env, {
   DISCORD_TOKEN: str({ devDefault: testOnly('') }),
 
   // Bot
-  BOT_ADMINS: str({ default: '[]' })._parse((input: string) => input.split(/,\s*/g)) as unknown as string[],
+  BOT_ADMINS: str({ default: '' }),
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
-});
 
-export default config;
+  // REST
+  REST_PORT: port({ devDefault: 3000 }),
+});

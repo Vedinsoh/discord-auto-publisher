@@ -10,7 +10,6 @@
     "baseUrl": "src",
     "skipLibCheck": true,
     "paths": {
-      "#config": ["config"],
       "#client": ["AutoPublisher"],
       "#constants/*": ["constants/*"],
       "#crosspost/*": ["crosspost/*"],
