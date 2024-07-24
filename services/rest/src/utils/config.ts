@@ -8,6 +8,7 @@ export const env = cleanEnv(process.env, {
   NODE_ENV: str({ devDefault: testOnly('test'), choices: ['development', 'production', 'test'] }),
   LOGGER_LEVEL: str({ default: 'info', choices: Object.values(loggerLevels.labels) }),
   REDIS_URI: url({ default: 'redis://rest-cache:6379' }),
+  MONGO_URI: url({ default: 'mongodb://rest-db:27017' }),
   DISCORD_TOKEN: str({ devDefault: testOnly('') }),
 
   // REST

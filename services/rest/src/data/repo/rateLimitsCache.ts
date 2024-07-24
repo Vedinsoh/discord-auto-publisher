@@ -13,7 +13,11 @@ await redis.connect();
 // Initialize Redis client
 const client = redis.client;
 
-// Create key for the identifier and code
+/**
+ * Create a key for the rate limits cache
+ * @param statusCode Status code of the request
+ * @returns Key for the cache
+ */
 const _createKey = (statusCode: number) => `${crypto.randomUUID()}:${statusCode}`;
 
 /**

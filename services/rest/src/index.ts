@@ -1,6 +1,7 @@
 import express from 'express';
 
 import { App } from '@/app';
+import { Data } from '@/data';
 import errorHandler from '@/middlewares/errorHandler';
 import requestLogger from '@/middlewares/requestLogger';
 import { Services } from '@/services';
@@ -14,7 +15,7 @@ app.use(requestLogger);
 
 // Routes
 app.use('/crosspost', App.Routes.Crosspost);
-// TODO add presence route
+app.use('/presence', App.Routes.Presence);
 
 // Error handlers
 app.use(errorHandler());
@@ -27,6 +28,8 @@ const server = app.listen(env.REST_PORT, async () => {
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {
+  await Data.Drivers.MongoDB.client.close();
+
   server.close(() => {
     Services.Logger.info('Server closed');
     process.exit();

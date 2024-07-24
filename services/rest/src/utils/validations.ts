@@ -19,3 +19,9 @@ export const CrosspostReqSchema = z.object({
     messageId: Validations.snowflakeId,
   }),
 });
+
+export const PresenceReqSchema = z.object({
+  params: z.object({
+    appId: Validations.snowflakeId,
+  }),
+});

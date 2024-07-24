@@ -7,6 +7,9 @@ import { CrosspostReqSchema } from '@/utils/validations';
 export const Crosspost: Router = (() => {
   const router = express.Router();
 
+  /**
+   * Crosspost a message to a channel
+   */
   router.post('/:channelId/:messageId', validateRequest(CrosspostReqSchema), async (req: Request, res: Response) => {
     const { messageId, channelId } = req.params;
 
@@ -14,13 +17,6 @@ export const Crosspost: Router = (() => {
 
     handleServiceResponse(serviceResponse, res);
   });
-
-  // TODO for deleting from crosspost queue
-  // router.delete('/:id', validateRequest(Validations.snowflakeId), async (req: Request, res: Response) => {
-  //   const messageId = req.params.id;
-  //   const serviceResponse = await Services.Crosspost.findById(messageId);
-  //   handleServiceResponse(serviceResponse, res);
-  // });
 
   return router;
 })();
