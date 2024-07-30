@@ -3,5 +3,10 @@ import client from '#client';
 import Event from '#structures/Event';
 
 export default new Event(Events.Debug, async (message) => {
-  if (!message.match(/heartbeat/gi)) client.logger.debug(message);
+  // Filter out certain debug messages
+  if (!message.match(/heartbeat/gi)) {
+    return;
+  }
+
+  client.logger.debug(message);
 });
