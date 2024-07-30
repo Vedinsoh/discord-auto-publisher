@@ -1,4 +1,5 @@
 import { Routes } from 'discord-api-types/v10';
+import { StatusCodes } from 'http-status-codes';
 
 const routes = {
   crosspost: Routes.channelMessageCrosspost(':id', ':id'),
@@ -15,7 +16,14 @@ const safeErrorCodes: { [key: string]: number[] } = {
   ],
 };
 
+const invalidRequestCodes = [
+  StatusCodes.UNAUTHORIZED, // 401
+  StatusCodes.FORBIDDEN, // 403
+  StatusCodes.TOO_MANY_REQUESTS, // 429
+];
+
 export const Discord = {
   routes,
   safeErrorCodes,
+  invalidRequestCodes,
 };

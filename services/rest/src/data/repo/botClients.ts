@@ -1,8 +1,8 @@
-import { Data } from '@/data';
-import { BotClient as BotClientModel } from '@/data/models/botClient';
+import { Drivers } from '../drivers';
+import { BotClient as BotClientModel } from '../models/botClient';
 
 // Get the MongoDB client and database
-const db = Data.Drivers.MongoDB.client.db('auto_publisher');
+const db = Drivers.MongoDB.client.db('auto_publisher');
 const collection = db.collection<BotClientModel>('botClients');
 
 type MutatedData = Omit<BotClientModel, 'appId' | 'createdAt' | 'updatedAt'>;

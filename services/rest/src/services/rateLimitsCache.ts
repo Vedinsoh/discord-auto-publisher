@@ -5,7 +5,7 @@ import { Data } from '@/data';
  * @param statusCode Status code of the request
  */
 const add = async (statusCode: number) => {
-  return Data.Repo.RateLimitsCache.add(statusCode);
+  return Data.Repo.RateLimitsCache.set(statusCode);
 };
 
 /**

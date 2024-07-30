@@ -11,7 +11,6 @@ WORKDIR /home/node/app
 COPY package.json .
 COPY package-lock.json .
 COPY tsconfig.json .
-COPY config.json .
 
 # Install the necessary packages
 RUN apk add --no-cache g++ make python3 linux-headers

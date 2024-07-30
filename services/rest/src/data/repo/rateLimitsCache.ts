@@ -1,13 +1,14 @@
 import crypto from 'node:crypto';
 
 import { Constants } from '@/constants';
-import { Data } from '@/data';
 import { minToSec } from '@/utils/timeConversions';
+
+import { Drivers } from '../drivers';
 
 const { DatabaseIDs } = Constants.Data.Redis;
 
 // Initialize Redis and connect to database
-const redis = new Data.Drivers.Redis.Client(DatabaseIDs.RequestLimitsCache);
+const redis = new Drivers.Redis.Client(DatabaseIDs.RequestLimitsCache);
 await redis.connect();
 
 // Initialize Redis client
@@ -25,8 +26,8 @@ const _createKey = (statusCode: number) => `${crypto.randomUUID()}:${statusCode}
  * @param statusCode Status code of the request
  * @returns Redis response
  */
-const add = async (statusCode: number) => {
-  return await client.setEx(_createKey(statusCode), minToSec(1), '1');
+const set = async (statusCode: number) => {
+  return await client.setEx(_createKey(statusCode), minToSec(10), '1');
 };
 
 /**
@@ -38,6 +39,6 @@ const getSize = async () => {
 };
 
 export const RateLimitsCache = {
-  add,
+  set,
   getSize,
 };

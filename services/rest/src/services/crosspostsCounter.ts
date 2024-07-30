@@ -2,6 +2,7 @@ import { Snowflake } from 'discord-api-types/globals';
 
 import { Data } from '@/data';
 import { Services } from '@/services';
+import { secToMin } from '@/utils/timeConversions';
 
 /**
  * Add channel to crossposts counter
@@ -9,13 +10,13 @@ import { Services } from '@/services';
  * @param options.count Crossposts count
  * @param options.expiry Expiration time in seconds
  */
-const _add = async (channelId: Snowflake, options: { count?: number; expiry?: number }) => {
+const set = async (channelId: Snowflake, options?: { count?: number; expiry?: number }) => {
   try {
-    const { count, expiry } = options;
+    await Data.Repo.CrosspostsCounter.set(channelId, { ttl: options?.expiry, count: options?.count });
 
-    await Data.Repo.CrosspostsCounter.add(channelId, { ttl: expiry, count: count?.toString() });
-
-    Services.Logger.debug(`Added channel ${channelId} to the crossposts counter`);
+    Services.Logger.debug(
+      `Crossposts counter set for channel ${channelId}, count: ${options?.count || 0}, expiry: ${options?.expiry ? Math.round(secToMin(options?.expiry)) : 'default'}`
+    );
   } catch (error) {
     Services.Logger.error(error);
   }
@@ -49,7 +50,7 @@ const increment = async (channelId: Snowflake, expiry?: number) => {
 
   // Add the channel crossposts counter if it does not exist
   if (!prevCount) {
-    return await _add(channelId, { expiry });
+    return await set(channelId, { expiry });
   }
 
   // Get previous expiration time
@@ -57,14 +58,14 @@ const increment = async (channelId: Snowflake, expiry?: number) => {
 
   // Fallback to add if the key expired or does not exist
   if (!prevExpiry) {
-    return await _add(channelId, {
+    return await set(channelId, {
       expiry,
     });
   }
 
   // Increment crossposts counter for the channel and re-set the expiration time
   const updatedCount = prevCount + 1;
-  await _add(channelId, {
+  await set(channelId, {
     count: updatedCount,
     expiry: prevExpiry,
   });
@@ -81,4 +82,4 @@ const isOverLimit = async (channelId: Snowflake) => {
   return count >= 10;
 };
 
-export const CrosspostsCounter = { getCount, getChannelsCount, increment, isOverLimit };
+export const CrosspostsCounter = { getCount, getChannelsCount, increment, isOverLimit, set };

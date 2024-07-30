@@ -1,5 +1,5 @@
 import pino from 'pino';
-import { env } from './config';
+import { env } from '#utils/config';
 
 export const createLogger = (pid?: string) => {
   return pino({

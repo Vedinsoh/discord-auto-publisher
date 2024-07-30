@@ -1,13 +1,14 @@
 import { Snowflake } from 'discord-api-types/globals';
 
 import { Constants } from '@/constants';
-import { Data } from '@/data';
 import { minToSec } from '@/utils/timeConversions';
+
+import { Drivers } from '../drivers';
 
 const { DatabaseIDs, Keys } = Constants.Data.Redis;
 
 // Initialize Redis and connect to database
-const redis = new Data.Drivers.Redis.Client(DatabaseIDs.CrosspostsCounter);
+const redis = new Drivers.Redis.Client(DatabaseIDs.CrosspostsCounter);
 await redis.connect();
 
 // Initialize Redis client
@@ -23,8 +24,8 @@ const _createKey = (channelId: Snowflake) => `${Keys.Channel}:${channelId}`;
  * @param options.ttl Expiration time in seconds
  * @returns Redis response
  */
-const add = async (channelId: Snowflake, { count = '1', ttl = minToSec(60) }) => {
-  return await client.setEx(_createKey(channelId), ttl, count);
+const set = async (channelId: Snowflake, { count = 1, ttl = minToSec(60) }) => {
+  return await client.setEx(_createKey(channelId), ttl, String(count));
 };
 
 /**
@@ -58,4 +59,4 @@ const getSize = async () => {
   return await client.dbSize();
 };
 
-export const CrosspostsCounter = { add, getCount, getExpiration, getSize };
+export const CrosspostsCounter = { set, getCount, getExpiration, getSize };
