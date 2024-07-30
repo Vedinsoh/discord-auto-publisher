@@ -5,7 +5,6 @@ export type CommandsCollection = Collection<CommandNames, (...args: unknown[]) =
 export enum CommandNames {
   INFO = 'info',
   PING = 'ping',
-  QUEUE = 'queue',
   RESPAWN = 'respawn',
   SHUTDOWN = 'shutdown',
   UPTIME = 'uptime',
@@ -14,7 +13,6 @@ export enum CommandNames {
 export type Commands = {
   [CommandNames.INFO]: [];
   [CommandNames.PING]: [];
-  [CommandNames.QUEUE]: [];
   [CommandNames.RESPAWN]: [];
   [CommandNames.SHUTDOWN]: [];
   [CommandNames.UPTIME]: [];
