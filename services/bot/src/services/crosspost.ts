@@ -1,5 +1,5 @@
 import urlRegex from 'url-regex-safe';
-import { Services } from '#services';
+import { Data } from '#data';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { delay } from '#utils/common';
 import { secToMs } from '#utils/timeConverters';
@@ -11,7 +11,8 @@ import { secToMs } from '#utils/timeConverters';
 const push = async (message: ReceivedMessage) => {
   // If URL detection is disabled or the message has no content, crosspost immediately
   if (!message.content) {
-    return Services.REST.pushCrosspost(message.channel.id, message.id);
+    await Data.API.REST.pushCrosspost(message.channel.id, message.id);
+    return;
   }
 
   // Check if the message has a URL and no embeds
@@ -23,7 +24,7 @@ const push = async (message: ReceivedMessage) => {
     await delay(secToMs(5));
   }
 
-  return Services.REST.pushCrosspost(message.channel.id, message.id);
+  await Data.API.REST.pushCrosspost(message.channel.id, message.id);
 };
 
 export const Crosspost = { push };

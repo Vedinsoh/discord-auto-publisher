@@ -24,4 +24,7 @@ export const PresenceReqSchema = z.object({
   params: z.object({
     appId: Validations.snowflakeId,
   }),
+  body: z.object({
+    count: z.number(),
+  }),
 });

@@ -1,7 +1,9 @@
 import { Crosspost } from './crosspost.js';
-import { REST } from './rest.js';
+import { Info } from './info.js';
+import { Presence } from './presence.js';
 
 export const Services = {
   Crosspost,
-  REST,
+  Info,
+  Presence,
 };

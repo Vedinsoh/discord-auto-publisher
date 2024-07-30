@@ -7,6 +7,7 @@ import { minToMs, msToSec, secToMs } from '@/utils/timeConversions';
 
 import { ChannelQueue } from './channelQueue';
 
+// TODO refactor this class
 export class MessagesQueue {
   private _channelQueues = new Map<Snowflake, ChannelQueue>();
   private _mainQueue = new PQueue({

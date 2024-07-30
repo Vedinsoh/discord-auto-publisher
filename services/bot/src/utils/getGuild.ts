@@ -7,7 +7,7 @@ const getGuild = async (guildId: Snowflake): Promise<Guild | undefined> => {
       context: { guildId },
     })) as (Guild | undefined)[];
 
-  return evalResult.find((guild) => guild !== null);
+  return evalResult.find((guild) => guild);
 };
 
 export default getGuild;

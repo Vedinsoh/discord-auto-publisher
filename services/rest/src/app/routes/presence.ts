@@ -17,9 +17,19 @@ export const Presence: Router = (() => {
   });
 
   /**
+   * Get count of the bot client
+   */
+  router.get('/:appId', async (req: Request, res: Response) => {
+    const { appId } = req.params;
+    const serviceResponse = await Services.Presence.getCount(appId);
+
+    handleServiceResponse(serviceResponse, res);
+  });
+
+  /**
    * Update count of the bot client
    */
-  router.post('/:appId', validateRequest(PresenceReqSchema), async (req: Request, res: Response) => {
+  router.put('/:appId', validateRequest(PresenceReqSchema), async (req: Request, res: Response) => {
     const { appId } = req.params;
     const { count } = req.body;
 

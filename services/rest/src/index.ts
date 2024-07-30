@@ -10,12 +10,14 @@ import { env } from '@/utils/config';
 // Create the Express app
 const app = express();
 
-// Request logging
+// Middlewares
 app.use(requestLogger);
+app.use(express.json());
 
 // Routes
 app.use('/crosspost', App.Routes.Crosspost);
 app.use('/presence', App.Routes.Presence);
+app.use('/info', App.Routes.Info);
 
 // Error handlers
 app.use(errorHandler());

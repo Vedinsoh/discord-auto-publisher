@@ -7,6 +7,12 @@ const collection = db.collection<BotClientModel>('botClients');
 
 type MutatedData = Omit<BotClientModel, 'appId' | 'createdAt' | 'updatedAt'>;
 
+const findOne = async (appId: BotClientModel['appId']) => {
+  return await collection.findOne({
+    appId,
+  });
+};
+
 /**
  * Find all bot clients
  * @returns All bot clients
@@ -34,7 +40,7 @@ const insert = async (appId: BotClientModel['appId'], data: Partial<MutatedData>
  */
 const update = async (id: BotClientModel['appId'], data: Partial<MutatedData>) => {
   // Get the current guild data
-  const guild = await collection.findOne({ guildId: id });
+  const guild = await collection.findOne({ appId: id });
 
   // Insert the guild if it doesn't exist
   if (!guild) {
@@ -46,6 +52,7 @@ const update = async (id: BotClientModel['appId'], data: Partial<MutatedData>) =
 };
 
 export const BotClients = {
+  findOne,
   findMany,
   insert,
   update,
