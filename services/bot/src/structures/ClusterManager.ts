@@ -1,8 +1,8 @@
-import { ClusterManager, type ClusterManagerOptions } from 'discord-hybrid-sharding';
+import { ClusterManager as BaseClusterManager, type ClusterManagerOptions } from 'discord-hybrid-sharding';
 import { getFilePaths } from '#utils/fileUtils';
 import { logger } from '#utils/logger';
 
-class AutoPublisher extends ClusterManager {
+export class ClusterManager extends BaseClusterManager {
   constructor(options: ClusterManagerOptions) {
     const clientFilePath = getFilePaths('AutoPublisher.js')[0];
     super(clientFilePath, options);
@@ -22,5 +22,3 @@ class AutoPublisher extends ClusterManager {
 }
 
 process.on('unhandledRejection', ({ stack }: Error) => logger.error(stack));
-
-export default AutoPublisher;

@@ -6,7 +6,7 @@ import type { CommandsCollection } from '#types/AdminCommandTypes';
 import { env } from '#utils/config';
 import { getFilePaths, importFile } from '#utils/fileUtils';
 
-class AutoPublisherClient extends Client {
+export class BotClient extends Client {
   public cluster = new AutoPublisherCluster(this);
   public commands: CommandsCollection = new Collection();
 
@@ -41,5 +41,3 @@ class AutoPublisherClient extends Client {
     this.logger.level = level;
   }
 }
-
-export default AutoPublisherClient;

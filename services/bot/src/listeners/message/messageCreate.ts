@@ -13,7 +13,7 @@ const botAdmins = env.BOT_ADMINS.split(/,\s*/g);
  */
 export default new Event(Events.MessageCreate, async (message) => {
   // Get the channel data if it's partial
-  let { channel } = message;
+  let channel = message.channel;
   if (channel.partial) channel = await message.channel.fetch();
 
   // Don't process further if the channel is not available
