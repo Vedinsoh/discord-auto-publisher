@@ -2,7 +2,7 @@ import { Drivers } from '../drivers';
 import { BotClient as BotClientModel } from '../models/botClient';
 
 // Get the MongoDB client and database
-const db = Drivers.MongoDB.client.db('auto_publisher');
+const db = Drivers.MongoDB.client.db();
 const collection = db.collection<BotClientModel>('botClients');
 
 type MutatedData = Omit<BotClientModel, 'appId' | 'createdAt' | 'updatedAt'>;
@@ -34,21 +34,21 @@ const insert = async (appId: BotClientModel['appId'], data: Partial<MutatedData>
 
 /**
  * Update a bot client in the database
- * @param id ID of the bot client
+ * @param appId ID of the bot client
  * @param data Bot client data
  * @returns Updated bot client
  */
-const update = async (id: BotClientModel['appId'], data: Partial<MutatedData>) => {
+const update = async (appId: BotClientModel['appId'], data: Partial<MutatedData>) => {
   // Get the current guild data
-  const guild = await collection.findOne({ appId: id });
+  const guild = await collection.findOne({ appId: appId });
 
   // Insert the guild if it doesn't exist
   if (!guild) {
-    return await insert(id, { ...data });
+    return await insert(appId, { ...data });
   }
 
   // Update the guild data
-  return await collection.updateOne({ appId: id }, { $set: { ...data, updatedAt: new Date() } });
+  return await collection.updateOne({ appId }, { $set: { ...data, updatedAt: new Date() } });
 };
 
 export const BotClients = {
