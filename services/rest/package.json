@@ -7,7 +7,7 @@
     "build": "rimraf dist && tsup",
     "start": "tsx src/index.ts | pino-pretty",
     "start:dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
-    "clean": "rimraf dist coverage",
+    "clean": "rimraf dist",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "format": "prettier --config .prettierrc --write ."
@@ -31,7 +31,6 @@
     "@types/express": "^4.17.21",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
-    "@vitest/coverage-v8": "^1.4.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
