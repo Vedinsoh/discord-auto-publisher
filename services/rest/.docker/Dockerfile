@@ -7,17 +7,14 @@ ENV NODE_ENV=production
 # Set the working directory
 WORKDIR /home/node/app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install app dependencies
-RUN npm ci
-
-# Bundle app source
+# Copy all files from the current directory to the working directory
 COPY . .
+
+# Install dependencies
+RUN npm ci
 
 # Build the TypeScript files
 RUN npm run build
 
-# Start the app
+# Start the application
 CMD npm run start

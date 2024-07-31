@@ -7,16 +7,16 @@ ENV NODE_ENV=development
 # Set the working directory
 WORKDIR /home/node/app
 
-# Copy all files from the current directory to the working directory
+# Copy necessary files from the current directory to the working directory
 COPY package.json .
 COPY package-lock.json .
 COPY tsconfig.json .
 
-# Install the necessary packages
+# Install necessary packages
 RUN apk add --no-cache g++ make python3 linux-headers
 
-# Install the dependencies
+# Install dependencies
 RUN npm install
 
-# Start the application in development mode
+# Start the application
 CMD npm run start:dev

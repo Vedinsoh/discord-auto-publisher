@@ -1,14 +1,20 @@
+# Run Node.js on Alpine Linux
 FROM node:20-alpine
 
-WORKDIR /app
+# Define the environment variables
+ENV NODE_ENV=production
 
-COPY package.json .
-COPY package-lock.json .
-COPY tsconfig.json .
-COPY src ./src
-COPY .npmrc .
-COPY .nvmrc .
-COPY config.json .
+# Set the working directory
+WORKDIR /home/node/app
 
+# Copy all files from the current directory to the working directory
+COPY . .
+
+# Install dependencies
 RUN npm ci
+
+# Build the TypeScript files
 RUN npm run build
+
+# Start the application
+CMD npm run start
