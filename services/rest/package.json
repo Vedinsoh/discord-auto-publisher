@@ -12,6 +12,7 @@
     "lint:fix": "eslint --fix",
     "format": "prettier --config .prettierrc --write ."
   },
+  "type": "module",
   "dependencies": {
     "@discordjs/rest": "^2.3.0",
     "@sapphire/snowflake": "^3.5.3",
@@ -42,5 +43,13 @@
     "tsx": "^4.16.2",
     "typescript": "^5.4.4"
   },
-  "type": "module"
+  "tsup": {
+    "entry": [
+      "src"
+    ],
+    "splitting": false,
+    "sourcemap": true,
+    "clean": true,
+    "format": "esm"
+  }
 }

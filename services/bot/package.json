@@ -11,6 +11,7 @@
     "lint": "eslint src --ext .ts",
     "prettier": "prettier --write src"
   },
+  "type": "module",
   "dependencies": {
     "bufferutil": "^4.0.7",
     "discord-hybrid-sharding": "^2.1.2",
@@ -53,9 +54,5 @@
     "#structures/*": "./dist/structures/*.js",
     "#types/*": "./dist/types/*.js",
     "#utils/*": "./dist/utils/*.js"
-  },
-  "engines": {
-    "node": "^20"
-  },
-  "type": "module"
+  }
 }

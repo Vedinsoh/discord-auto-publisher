@@ -11,7 +11,7 @@ WORKDIR /home/node/app
 COPY . .
 
 # Install dependencies
-RUN npm ci
+RUN npm ci --include=dev
 
 # Build the TypeScript files
 RUN npm run build
