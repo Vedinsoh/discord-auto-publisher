@@ -26,7 +26,7 @@ type PinoCustomProps = {
 
 const requestLogger = (options?: Options): RequestHandler[] => {
   const pinoOptions: Options = {
-    enabled: env.isProduction,
+    enabled: env.isDevelopment,
     customProps: customProps as unknown as Options['customProps'],
     redact: [],
     genReqId,
@@ -75,7 +75,9 @@ const customLogLevel = (_req: IncomingMessage, res: ServerResponse<IncomingMessa
 };
 
 const customSuccessMessage = (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
-  if (res.statusCode === StatusCodes.NOT_FOUND) return getReasonPhrase(StatusCodes.NOT_FOUND);
+  if (res.statusCode === StatusCodes.NOT_FOUND) {
+    return getReasonPhrase(StatusCodes.NOT_FOUND);
+  }
   return `${req.method} completed`;
 };
 
