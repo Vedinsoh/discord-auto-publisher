@@ -13,8 +13,5 @@ COPY . .
 # Install dependencies
 RUN npm ci --include=dev
 
-# Build the TypeScript files
-RUN npm run build
-
 # Start the application
 CMD npm run start

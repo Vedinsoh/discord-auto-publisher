@@ -4,13 +4,11 @@
   "license": "GPL-3.0-or-later",
   "main": "index.ts",
   "scripts": {
-    "build": "rimraf dist && tsup",
     "start": "tsx src/index.ts | pino-pretty",
     "start:dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
-    "clean": "rimraf dist",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "format": "prettier --config .prettierrc --write ."
+    "format": "prettier --write ."
   },
   "type": "module",
   "dependencies": {
@@ -38,17 +36,7 @@
     "pino-pretty": "^11.0.0",
     "prettier": "^3.2.5",
     "rimraf": "^5.0.5",
-    "tsup": "^8.1.0",
     "tsx": "^4.16.2",
     "typescript": "^5.4.4"
-  },
-  "tsup": {
-    "entry": [
-      "src"
-    ],
-    "splitting": false,
-    "sourcemap": true,
-    "clean": true,
-    "format": "esm"
   }
 }
