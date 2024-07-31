@@ -1,3 +1,3 @@
 #!/bin/sh
 
-docker compose $FILE up -d
+docker compose up --build -d
