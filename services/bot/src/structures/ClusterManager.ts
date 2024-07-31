@@ -4,7 +4,7 @@ import { logger } from '#utils/logger';
 
 export class ClusterManager extends BaseClusterManager {
   constructor(options: ClusterManagerOptions) {
-    const clientFilePath = getFilePaths('AutoPublisher.js')[0];
+    const clientFilePath = getFilePaths('shard.js')[0];
     super(clientFilePath, options);
   }
 
