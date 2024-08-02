@@ -9,7 +9,7 @@ const get = async () => {
   try {
     // TODO fix types
     const messagesQueue = new MessagesQueue();
-    const data = messagesQueue.getQueueData() as ReturnType<typeof messagesQueue.getQueueData>;
+    const data = global.messagesQueue.getQueueData() as ReturnType<typeof messagesQueue.getQueueData>;
 
     return new ServiceResponse(
       ResponseStatus.Success,
