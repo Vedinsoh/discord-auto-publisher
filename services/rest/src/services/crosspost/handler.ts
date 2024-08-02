@@ -22,12 +22,12 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
 
   try {
     // Check if the channel is over the crossposts limit
-    const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
+    const isOverLimit = await Services.Crosspost.Counter.isOverLimit(channelId);
     if (isOverLimit) return;
 
     // Crosspost the message & increment the counter for the channel
     await Data.API.Discord.crosspost(channelId, messageId);
-    await Services.CrosspostsCounter.increment(channelId);
+    await Services.Crosspost.Counter.increment(channelId);
 
     Services.Logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
   } catch (error: DiscordAPIError | RateLimitError | unknown) {
@@ -52,7 +52,7 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
       }
 
       // Set the crossposts counter for the channel with the sublimit
-      Services.CrosspostsCounter.set(channelId, {
+      Services.Crosspost.Counter.set(channelId, {
         count: 10,
         expiry: Math.ceil(msToSec(error.sublimitTimeout)) || undefined,
       });
@@ -114,7 +114,7 @@ const push = async (channelId: Snowflake, messageId: Snowflake) => {
   }
 };
 
-export const Crosspost = {
+export const Handler = {
   push,
   submit,
 };

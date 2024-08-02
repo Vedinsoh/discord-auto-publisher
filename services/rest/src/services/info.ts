@@ -3,7 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 
 import { Services } from '.';
-import { MessagesQueue } from './messagesQueue';
+import { MessagesQueue } from './crosspost/messagesQueue';
 
 const get = async () => {
   try {

@@ -13,7 +13,7 @@ export const Crosspost: Router = (() => {
   router.post('/:channelId/:messageId', validateRequest(CrosspostReqSchema), async (req: Request, res: Response) => {
     const { messageId, channelId } = req.params;
 
-    const serviceResponse = await Services.Crosspost.push(channelId, messageId);
+    const serviceResponse = await Services.Crosspost.Handler.push(channelId, messageId);
 
     handleServiceResponse(serviceResponse, res);
   });

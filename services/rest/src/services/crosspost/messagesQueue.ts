@@ -7,7 +7,6 @@ import { minToMs, msToSec, secToMs } from '@/utils/timeConversions';
 
 import { ChannelQueue } from './channelQueue';
 
-// TODO refactor this class
 export class MessagesQueue {
   private _channelQueues = new Map<Snowflake, ChannelQueue>();
   private _queue = new PQueue({
@@ -34,7 +33,7 @@ export class MessagesQueue {
   public async add(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     // Check if the channel is over the crossposts limit
 
-    const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
+    const isOverLimit = await Services.Crosspost.Counter.isOverLimit(channelId);
     if (isOverLimit) return;
 
     // Check if the message has reached the max retries
@@ -56,10 +55,10 @@ export class MessagesQueue {
 
   private async _addToMainQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     // Check if the channel is over the crossposts limit
-    const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
+    const isOverLimit = await Services.Crosspost.Counter.isOverLimit(channelId);
     if (isOverLimit) return;
 
-    return this._queue.add(async () => Services.Crosspost.submit(channelId, messageId, retries), {
+    return this._queue.add(async () => Services.Crosspost.Handler.submit(channelId, messageId, retries), {
       priority: this._getMessagePriority(messageId),
     });
   }

@@ -88,4 +88,4 @@ const isOverLimit = async (channelId: Snowflake) => {
   return isOverLimit;
 };
 
-export const CrosspostsCounter = { getCount, getChannelsCount, increment, isOverLimit, set };
+export const Counter = { getCount, getChannelsCount, increment, isOverLimit, set };
