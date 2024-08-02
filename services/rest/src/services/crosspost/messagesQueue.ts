@@ -7,6 +7,9 @@ import { minToMs, msToSec, secToMs } from '@/utils/timeConversions';
 
 import { ChannelQueue } from './channelQueue';
 
+/**
+ * Messages queue
+ */
 class Queue {
   private _queue = new PQueue({
     concurrency: 5,
@@ -30,6 +33,12 @@ class Queue {
     }, minToMs(5));
   }
 
+  /**
+   * Add message to the queue
+   * @param channelId ID of the channel
+   * @param messageId ID of the message
+   * @param retries Number of retries
+   */
   public async add(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     // Check if the channel is over the crossposts limit
 
@@ -45,6 +54,9 @@ class Queue {
     return this._addToChannelQueue(channelId, messageId, retries);
   }
 
+  /**
+   * Add message to the channel queue
+   */
   private _addToChannelQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     const channel = this._getChannelQueue(channelId);
     if (!channel) return;
@@ -53,6 +65,9 @@ class Queue {
     });
   }
 
+  /**
+   * Add message to the main queue
+   */
   private async _addToMainQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     // Check if the channel is over the crossposts limit
     const isOverLimit = await Services.Crosspost.Counter.isOverLimit(channelId);
@@ -63,24 +78,36 @@ class Queue {
     });
   }
 
+  /**
+   * Get message priority based on timestamp
+   */
   private _getMessagePriority(messageId: Snowflake) {
     const messageTimestamp = DiscordSnowflake.timestampFrom(messageId) || Date.now();
     const priority = 9999999999999 - messageTimestamp;
     return priority;
   }
 
+  /**
+   * Create new channel queue
+   */
   private _newChannelQueue = (channelId: Snowflake) => {
     if (this._channelQueues.has(channelId)) return;
     this._channelQueues.set(channelId, new ChannelQueue());
     Services.Logger.debug(`Created queue for channel ${channelId}`);
   };
 
+  /**
+   * Get channel queue
+   */
   private _getChannelQueue = (channelId: Snowflake) => {
     const channelData = this._channelQueues.get(channelId);
     if (!channelData) this._newChannelQueue(channelId);
     return this._channelQueues.get(channelId);
   };
 
+  /**
+   * Sweep inactive channel queues
+   */
   private _sweepInactiveChannels() {
     Services.Logger.debug('Sweeping inactive channel queues...');
     let count = 0;
@@ -93,6 +120,10 @@ class Queue {
     Services.Logger.debug(`Sweeped ${count} inactive channel queues`);
   }
 
+  /**
+   * Get queue information
+   * @returns Queue information
+   */
   public getInfo() {
     return {
       size: this._queue.size,
@@ -102,6 +133,9 @@ class Queue {
     };
   }
 
+  /**
+   * Check rate limits and pause/resume the queue
+   */
   private async _rateLimitsCheck() {
     const rateLimitSize = await Services.RateLimitsCache.getSize();
     if (this._queue.isPaused) {
@@ -115,6 +149,10 @@ class Queue {
     }
   }
 
+  /**
+   * Pause the queue
+   * @param duration Pause duration in milliseconds
+   */
   public pause(duration = minToMs(1)) {
     this._queue.pause();
     this._timeout = setTimeout(() => {
@@ -123,6 +161,9 @@ class Queue {
     Services.Logger.debug(`Messages queue paused for ${msToSec(duration)}s`);
   }
 
+  /**
+   * Resume the queue
+   */
   public resume() {
     this._queue.start();
     if (this._timeout) {
