@@ -4,6 +4,8 @@ import { createClient, type RedisClientType } from 'redis';
 
 import { env } from '@/utils/config';
 
+import { Logger } from '../../services/logger';
+
 /**
  * @class Redis
  * @description Redis driver
@@ -27,7 +29,8 @@ export class Client {
   public async connect() {
     try {
       await this.client.connect();
-      console.log(`Connected to Redis database ${this._databaseId}`);
+      // console.log(`Connected to Redis database ${this._databaseId}`);
+      Logger.info(`Connected to Redis database ${this._databaseId}`);
     } catch (error) {
       console.error(`Error connecting to Redis ${this._databaseId}:`, error);
       throw new Error(error as string);
@@ -38,7 +41,8 @@ export class Client {
   public async disconnect() {
     try {
       await this.client.disconnect();
-      console.log(`Disconnected from Redis database ${this._databaseId}`);
+      // console.log(`Disconnected from Redis database ${this._databaseId}`);
+      Logger.info(`Disconnected from Redis database ${this._databaseId}`);
     } catch (error) {
       console.error('Error disconnecting from Redis:', error);
       throw new Error(error as string);
