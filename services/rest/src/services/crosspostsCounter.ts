@@ -79,7 +79,13 @@ const increment = async (channelId: Snowflake, expiry?: number) => {
  */
 const isOverLimit = async (channelId: Snowflake) => {
   const count = await getCount(channelId);
-  return count >= 10;
+  const isOverLimit = count >= 10;
+
+  if (isOverLimit) {
+    Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
+  }
+
+  return isOverLimit;
 };
 
 export const CrosspostsCounter = { getCount, getChannelsCount, increment, isOverLimit, set };

@@ -20,22 +20,22 @@ export class MessagesQueue {
   private _timeout: NodeJS.Timeout | null = null;
 
   constructor() {
+    // Check rate limits every 5 seconds
     setInterval(() => {
-      this._throttleCheck();
-    }, secToMs(2));
+      this._rateLimitsCheck();
+    }, secToMs(5));
+
+    // Sweep inactive channel queues every 5 minutes
     setInterval(() => {
       this._sweepInactiveChannels();
-    }, minToMs(15));
+    }, minToMs(5));
   }
 
   public async add(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     // Check if the channel is over the crossposts limit
 
     const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
-    if (isOverLimit) {
-      Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
-      return;
-    }
+    if (isOverLimit) return;
 
     // Check if the message has reached the max retries
     if (retries >= 10) {
@@ -57,10 +57,7 @@ export class MessagesQueue {
   private async _addToMainQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     // Check if the channel is over the crossposts limit
     const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
-    if (isOverLimit) {
-      Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
-      return;
-    }
+    if (isOverLimit) return;
 
     return this._queue.add(async () => Services.Crosspost.submit(channelId, messageId, retries), {
       priority: this._getMessagePriority(messageId),
@@ -106,14 +103,13 @@ export class MessagesQueue {
     };
   }
 
-  private async _throttleCheck() {
+  private async _rateLimitsCheck() {
     const rateLimitSize = await Services.RateLimitsCache.getSize();
     if (this._queue.isPaused) {
       if (rateLimitSize > 8000) return;
       if (this._queue.pending === 0) this.resume();
       return;
     }
-    if (this._queue.pending < 10) return;
     if (rateLimitSize > 8000) {
       this.pause();
       return;
