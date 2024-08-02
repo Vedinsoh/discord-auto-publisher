@@ -7,8 +7,7 @@ import { minToMs, msToSec, secToMs } from '@/utils/timeConversions';
 
 import { ChannelQueue } from './channelQueue';
 
-export class MessagesQueue {
-  private _channelQueues = new Map<Snowflake, ChannelQueue>();
+class Queue {
   private _queue = new PQueue({
     concurrency: 5,
     intervalCap: 10,
@@ -16,6 +15,7 @@ export class MessagesQueue {
     timeout: minToMs(5),
     autoStart: true,
   });
+  private _channelQueues = new Map<Snowflake, ChannelQueue>();
   private _timeout: NodeJS.Timeout | null = null;
 
   constructor() {
@@ -48,7 +48,7 @@ export class MessagesQueue {
   private _addToChannelQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     const channel = this._getChannelQueue(channelId);
     if (!channel) return;
-    channel.enqueue(async () => {
+    channel.add(async () => {
       await this._addToMainQueue(channelId, messageId, retries);
     });
   }
@@ -93,7 +93,7 @@ export class MessagesQueue {
     Services.Logger.debug(`Sweeped ${count} inactive channel queues`);
   }
 
-  public getQueueData() {
+  public getInfo() {
     return {
       size: this._queue.size,
       pending: this._queue.pending,
@@ -133,5 +133,4 @@ export class MessagesQueue {
   }
 }
 
-// TODO change this to export instance instead
-global.messagesQueue = new MessagesQueue();
+export const MessagesQueue = new Queue();

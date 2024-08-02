@@ -41,13 +41,13 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
 
       // Pause the global queue if the rate limit is global
       if (error.global) {
-        global.messagesQueue.pause(error.retryAfter);
+        Services.Crosspost.Queue.pause(error.retryAfter);
       }
 
       // Handle non-sublimit rate limits
       if (error.sublimitTimeout === 0) {
         await sleep(error.retryAfter);
-        global.messagesQueue.add(channelId, messageId, retries + 1);
+        Services.Crosspost.Queue.add(channelId, messageId, retries + 1);
         return;
       }
 
@@ -88,7 +88,7 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
  */
 const push = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
-    global.messagesQueue.add(channelId, messageId);
+    Services.Crosspost.Queue.add(channelId, messageId);
 
     Services.Logger.debug(`Message ${messageId} pushed to crosspost queue`);
 

@@ -3,19 +3,16 @@ import { StatusCodes } from 'http-status-codes';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 
 import { Services } from '.';
-import { MessagesQueue } from './crosspost/messagesQueue';
 
 const get = async () => {
   try {
-    // TODO fix types
-    const messagesQueue = new MessagesQueue();
-    const data = global.messagesQueue.getQueueData() as ReturnType<typeof messagesQueue.getQueueData>;
+    const info = Services.Crosspost.Queue.getInfo();
 
     return new ServiceResponse(
       ResponseStatus.Success,
       'Info',
       {
-        ...data,
+        ...info,
       },
       StatusCodes.OK
     );
