@@ -30,7 +30,9 @@ const server = app.listen(env.REST_PORT, async () => {
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {
-  await Data.Drivers.MongoDB.client.close();
+  await Data.Drivers.MongoDB.client.close().then(() => {
+    Services.Logger.info('MongoDB connection closed');
+  });
 
   server.close(() => {
     Services.Logger.info('Server closed');

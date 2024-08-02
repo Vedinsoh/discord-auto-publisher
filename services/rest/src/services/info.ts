@@ -4,6 +4,9 @@ import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 
 import { Services } from '.';
 
+/**
+ * Get info about the crosspost service
+ */
 const get = async () => {
   try {
     const info = Services.Crosspost.Queue.getInfo();
