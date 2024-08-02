@@ -6,6 +6,7 @@ import { Constants } from '@/constants';
 import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 import { Services } from '@/services';
+import { sleep } from '@/utils/common';
 import { msToSec } from '@/utils/timeConversions';
 
 /**
@@ -13,8 +14,14 @@ import { msToSec } from '@/utils/timeConversions';
  * @param channelId ID of the channel
  * @param messageId ID of the message
  */
-const submit = async (channelId: Snowflake, messageId: Snowflake) => {
+const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) => {
+  // Check if the message has reached the max retries
+  if (retries >= 10) {
+    return;
+  }
+
   try {
+    // Check if the channel is over the crossposts limit
     const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
     if (isOverLimit) {
       Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
@@ -30,16 +37,29 @@ const submit = async (channelId: Snowflake, messageId: Snowflake) => {
   } catch (error: DiscordAPIError | RateLimitError | unknown) {
     // Handle Discord rate limit errors
     if (error instanceof RateLimitError) {
-      const sublimit = Math.ceil(msToSec(error.sublimitTimeout));
+      // Add the rate limit to the cache if it's not shared
+      // Shared rate limits are not counted against the bot
+      if (error.scope !== 'shared') {
+        Services.RateLimitsCache.add(429);
+      }
+
+      // Pause the global queue if the rate limit is global
+      if (error.global) {
+        global.messagesQueue.pause(error.retryAfter);
+      }
+
+      // Handle non-sublimit rate limits
+      if (error.sublimitTimeout === 0) {
+        await sleep(error.retryAfter);
+        global.messagesQueue.add(channelId, messageId, retries + 1);
+        return;
+      }
 
       // Set the crossposts counter for the channel
       Services.CrosspostsCounter.set(channelId, {
         count: 10,
-        expiry: sublimit || undefined,
+        expiry: Math.ceil(msToSec(error.sublimitTimeout)) || undefined,
       });
-
-      // Add the rate limit to the cache
-      Services.RateLimitsCache.add(429);
 
       return;
     }
@@ -59,7 +79,7 @@ const submit = async (channelId: Snowflake, messageId: Snowflake) => {
       }
     }
 
-    // Log the error
+    // Log the error if it's not handled above
     Services.Logger.error(error);
   }
 };

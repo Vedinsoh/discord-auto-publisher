@@ -1,7 +1,7 @@
 import urlRegex from 'url-regex-safe';
 import { Data } from '#data';
 import type { ReceivedMessage } from '#types/MessageTypes';
-import { delay } from '#utils/common';
+import { sleep } from '#utils/common';
 import { secToMs } from '#utils/timeConverters';
 
 /**
@@ -21,7 +21,7 @@ const push = async (message: ReceivedMessage) => {
 
   // Defer crossposting if the message has a URL but no embeds
   if (hasUrl && !hasEmbeds) {
-    await delay(secToMs(5));
+    await sleep(secToMs(5));
   }
 
   await Data.API.REST.pushCrosspost(message.channel.id, message.id);

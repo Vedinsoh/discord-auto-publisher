@@ -10,14 +10,14 @@ import { ChannelQueue } from './channelQueue';
 // TODO refactor this class
 export class MessagesQueue {
   private _channelQueues = new Map<Snowflake, ChannelQueue>();
-  private _mainQueue = new PQueue({
+  private _queue = new PQueue({
     concurrency: 5,
     intervalCap: 10,
     interval: secToMs(1),
     timeout: minToMs(5),
     autoStart: true,
   });
-  private _queueTimeout: NodeJS.Timeout | null = null;
+  private _timeout: NodeJS.Timeout | null = null;
 
   constructor() {
     setInterval(() => {
@@ -28,32 +28,41 @@ export class MessagesQueue {
     }, minToMs(15));
   }
 
-  public async add(channelId: Snowflake, messageId: Snowflake) {
+  public async add(channelId: Snowflake, messageId: Snowflake, retries = 0) {
+    // Check if the channel is over the crossposts limit
+
     const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
     if (isOverLimit) {
       Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
       return;
     }
 
-    return this._addToChannelQueue(channelId, messageId);
+    // Check if the message has reached the max retries
+    if (retries >= 10) {
+      Services.Logger.debug(`Message ${messageId} has reached the max retries`);
+      return;
+    }
+
+    return this._addToChannelQueue(channelId, messageId, retries);
   }
 
-  private _addToChannelQueue(channelId: Snowflake, messageId: Snowflake) {
+  private _addToChannelQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
     const channel = this._getChannelQueue(channelId);
     if (!channel) return;
     channel.enqueue(async () => {
-      await this._addToMainQueue(channelId, messageId);
+      await this._addToMainQueue(channelId, messageId, retries);
     });
   }
 
-  private async _addToMainQueue(channelId: Snowflake, messageId: Snowflake) {
+  private async _addToMainQueue(channelId: Snowflake, messageId: Snowflake, retries = 0) {
+    // Check if the channel is over the crossposts limit
     const isOverLimit = await Services.CrosspostsCounter.isOverLimit(channelId);
     if (isOverLimit) {
       Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
       return;
     }
 
-    return this._mainQueue.add(async () => Services.Crosspost.submit(channelId, messageId), {
+    return this._queue.add(async () => Services.Crosspost.submit(channelId, messageId, retries), {
       priority: this._getMessagePriority(messageId),
     });
   }
@@ -90,43 +99,44 @@ export class MessagesQueue {
 
   public getQueueData() {
     return {
-      size: this._mainQueue.size,
-      pending: this._mainQueue.pending,
+      size: this._queue.size,
+      pending: this._queue.pending,
       channelQueues: this._channelQueues.size,
-      paused: this._mainQueue.isPaused,
+      paused: this._queue.isPaused,
     };
   }
 
   private async _throttleCheck() {
     const rateLimitSize = await Services.RateLimitsCache.getSize();
-    if (this._mainQueue.isPaused) {
+    if (this._queue.isPaused) {
       if (rateLimitSize > 8000) return;
-      if (this._mainQueue.pending === 0) this._resumeQueue();
+      if (this._queue.pending === 0) this.resume();
       return;
     }
-    if (this._mainQueue.pending < 10) return;
+    if (this._queue.pending < 10) return;
     if (rateLimitSize > 8000) {
-      this._pauseQueue();
+      this.pause();
       return;
     }
   }
 
-  private _pauseQueue(duration = minToMs(1)) {
-    this._mainQueue.pause();
-    this._queueTimeout = setTimeout(() => {
-      this._resumeQueue();
+  public pause(duration = minToMs(1)) {
+    this._queue.pause();
+    this._timeout = setTimeout(() => {
+      this.resume();
     }, duration);
     Services.Logger.debug(`Messages queue paused for ${msToSec(duration)}s`);
   }
 
-  private _resumeQueue() {
-    this._mainQueue.start();
-    if (this._queueTimeout) {
-      clearTimeout(this._queueTimeout);
-      this._queueTimeout = null;
+  public resume() {
+    this._queue.start();
+    if (this._timeout) {
+      clearTimeout(this._timeout);
+      this._timeout = null;
     }
     Services.Logger.debug('Messages queue resumed');
   }
 }
 
+// TODO change this to export instance instead
 global.messagesQueue = new MessagesQueue();
