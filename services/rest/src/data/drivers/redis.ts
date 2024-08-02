@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { createClient, type RedisClientType } from 'redis';
 
 import { env } from '@/utils/config';
@@ -31,7 +29,7 @@ export class Client {
       await this.client.connect();
       Logger.info(`Connected to Redis database ${this._databaseId}`);
     } catch (error) {
-      console.error(`Error connecting to Redis ${this._databaseId}:`, error);
+      Logger.error(`Error connecting to Redis ${this._databaseId}:`, error);
       throw new Error(error as string);
     }
   }
@@ -42,7 +40,7 @@ export class Client {
       await this.client.disconnect();
       Logger.info(`Disconnected from Redis database ${this._databaseId}`);
     } catch (error) {
-      console.error('Error disconnecting from Redis:', error);
+      Logger.error('Error disconnecting from Redis:', error);
       throw new Error(error as string);
     }
   }
