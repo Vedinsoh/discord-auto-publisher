@@ -6,7 +6,6 @@ import { handleServiceResponse } from '@/utils/httpHandlers';
 export const Info: Router = (() => {
   const router = express.Router();
 
-  // TODO
   /**
    * Get messages queue data
    */

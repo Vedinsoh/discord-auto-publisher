@@ -12,6 +12,7 @@ const get = async () => {
     pending: number;
     channelQueues: number;
     paused: boolean;
+    rateLimitsSize: number;
   };
 };
 
