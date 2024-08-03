@@ -9,7 +9,7 @@ export class ChannelQueue {
   private _queue = new PQueue({
     concurrency: 1,
     intervalCap: 1,
-    interval: secToMs(5),
+    interval: secToMs(10),
     timeout: minToMs(60),
     carryoverConcurrencyCount: true,
     autoStart: true,
