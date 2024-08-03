@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2024-07-06T16:53:35.573Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.6.4 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36" etag="_6MG-c-RFqb0scl8pAE7" version="24.6.4" type="device">
+<mxfile host="Electron" modified="2024-08-03T09:41:31.326Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.6.4 Chrome/124.0.6367.207 Electron/30.0.6 Safari/537.36" etag="h9VWzDvDbSSouiwC9S2L" version="24.6.4" type="device">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
-    <mxGraphModel dx="1434" dy="854" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1026" dy="743" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
         <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
@@ -106,8 +106,11 @@
         <mxCell id="WaBOD0cPtCX-z9Iq6tfD-0" value="&lt;b&gt;Discord bot&lt;/b&gt;&lt;div&gt;services/bot&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="149" y="100" width="160" height="60" as="geometry" />
         </mxCell>
+        <mxCell id="X5uqsgu8LUejti0N5Nwr-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WaBOD0cPtCX-z9Iq6tfD-5" target="X5uqsgu8LUejti0N5Nwr-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
         <mxCell id="WaBOD0cPtCX-z9Iq6tfD-5" value="Check if channel is being rate limited (10 messages/hour sublimit)" style="rounded=1;whiteSpace=wrap;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
-          <mxGeometry x="590" y="270" width="210" height="60" as="geometry" />
+          <mxGeometry x="590" y="300" width="210" height="60" as="geometry" />
         </mxCell>
         <mxCell id="WaBOD0cPtCX-z9Iq6tfD-10" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WaBOD0cPtCX-z9Iq6tfD-7" target="WaBOD0cPtCX-z9Iq6tfD-5" edge="1">
           <mxGeometry relative="1" as="geometry" />
@@ -117,6 +120,15 @@
         </mxCell>
         <mxCell id="WaBOD0cPtCX-z9Iq6tfD-9" value="POST /crosspost" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
           <mxGeometry x="230" y="600" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="X5uqsgu8LUejti0N5Nwr-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="X5uqsgu8LUejti0N5Nwr-1" target="X5uqsgu8LUejti0N5Nwr-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X5uqsgu8LUejti0N5Nwr-1" value="Add message to per-channel queue" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="620" y="420" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X5uqsgu8LUejti0N5Nwr-3" value="Add message to crossposts queue" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="635" y="520" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
