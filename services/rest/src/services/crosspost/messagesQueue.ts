@@ -13,6 +13,7 @@ import { ChannelQueue } from './channelQueue';
 class Queue {
   private _queue = new PQueue({
     intervalCap: 35, // TODO
+    concurrency: 20,
     interval: secToMs(1),
     timeout: minToMs(5),
     autoStart: true,
