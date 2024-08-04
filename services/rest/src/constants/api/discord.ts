@@ -8,6 +8,7 @@ const routes = {
 const safeErrorCodes: { [key: string]: number[] } = {
   crosspost: [
     10003, // Unknown channel
+    10004, // Unknown guild
     10008, // Unknown message
     40033, // Already crossposted
     50001, // Missing access
