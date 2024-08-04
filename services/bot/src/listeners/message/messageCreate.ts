@@ -1,22 +1,14 @@
 import { ChannelType, Events } from 'discord.js';
-import client from '#client';
+import { Constants } from '#constants/index';
 import { Services } from '#services';
 import Event from '#structures/Event';
-import type { CommandNames } from '#types/AdminCommandTypes';
-import { env } from '#utils/config';
 
-const botAdmins = env.BOT_ADMINS.split(/,\s*/g);
-
-// TODO separate the services
 /**
  * Event handler for the messageCreate event
  */
 export default new Event(Events.MessageCreate, async (message) => {
-  // Get the channel data if it's partial
-  let channel = message.channel;
-  if (channel.partial) channel = await message.channel.fetch();
-
-  // Don't process further if the channel is not available
+  // Get the channel data
+  const channel = await Services.Channel.fetch(message.channel);
   if (!channel) return;
 
   // Announcement channel handler
@@ -25,16 +17,9 @@ export default new Event(Events.MessageCreate, async (message) => {
     return;
   }
 
-  // Bot owner commands handler
-  if (channel.type === ChannelType.DM && botAdmins.includes(message.author.id)) {
-    // Get the command name and argument
-    const [commandName, argument] = message.content //
-      .toLowerCase()
-      .split(/ +/g)
-      .splice(0, 2);
-
-    // Get the command and execute it
-    const command = client.commands.get(commandName as CommandNames);
-    if (command) command(message, argument);
+  // Admin commands handler
+  if (channel.type === ChannelType.DM && Constants.AdminCommands.adminIds.includes(message.author.id)) {
+    Services.AdminCommands.handle(message);
+    return;
   }
 });
