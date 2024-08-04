@@ -1,4 +1,4 @@
-import { ChannelType, Events, PermissionsBitField } from 'discord.js';
+import { ChannelType, Events } from 'discord.js';
 import client from '#client';
 import { Services } from '#services';
 import Event from '#structures/Event';
@@ -21,13 +21,7 @@ export default new Event(Events.MessageCreate, async (message) => {
 
   // Announcement channel handler
   if (channel.type === ChannelType.GuildAnnouncement) {
-    // Check if the bot has the necessary permissions to crosspost
-    const botMember = await message.guild?.members.me?.fetch();
-    const permissionsBitfield = botMember?.permissionsIn(channel);
-    if (!permissionsBitfield?.has(PermissionsBitField.Flags.ManageMessages)) return;
-
-    // Push the message to the crosspost service
-    Services.Crosspost.push(message);
+    Services.Crosspost.handle(message, channel);
     return;
   }
 
