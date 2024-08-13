@@ -5,7 +5,7 @@ const routes = {
   crosspost: Routes.channelMessageCrosspost(':id', ':id'),
 };
 
-const safeErrorCodes: { [key: string]: number[] } = {
+const safeErrorCodes: { [key: string]: ErrorCodes[] } = {
   crosspost: [
     ErrorCodes.UnknownChannel,
     ErrorCodes.UnknownGuild,
@@ -17,7 +17,7 @@ const safeErrorCodes: { [key: string]: number[] } = {
   ],
 };
 
-const invalidRequestCodes = [
+const invalidRequestCodes: StatusCodes[] = [
   StatusCodes.UNAUTHORIZED, // 401
   StatusCodes.FORBIDDEN, // 403
   StatusCodes.TOO_MANY_REQUESTS, // 429
