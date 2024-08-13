@@ -69,6 +69,11 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
         Services.RateLimitsCache.add(error.status);
       }
 
+      // Increment the counter if the message was already crossposted
+      if (code === ErrorCodes.ThisMessageWasAlreadyCrossposted) {
+        Services.Crosspost.Counter.increment(channelId);
+      }
+
       // Check if the error code is safe to ignore
       if (Constants.API.Discord.safeErrorCodes.crosspost.includes(code)) {
         return;
