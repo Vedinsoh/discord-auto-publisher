@@ -140,8 +140,9 @@ class Queue {
   private async _rateLimitsCheck() {
     const rateLimitSize = await Services.RateLimitsCache.getSize();
     if (this._queue.isPaused) {
-      if (rateLimitSize > 8000) return;
-      if (this._queue.pending === 0) this.resume();
+      if (rateLimitSize < 8000 && this._queue.size === 0) {
+        this.resume();
+      }
       return;
     }
     if (rateLimitSize >= 1000) {
