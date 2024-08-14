@@ -20,12 +20,13 @@ class Queue {
   });
   private _channelQueues = new Map<Snowflake, ChannelQueue>();
   private _timeout: NodeJS.Timeout | null = null;
+  private _lastPause = 0;
 
   constructor() {
     // Check rate limits every 5 seconds
     setInterval(() => {
       this._rateLimitsCheck();
-    }, secToMs(5));
+    }, secToMs(2));
 
     // Sweep inactive channel queues every 5 minutes
     setInterval(() => {
@@ -143,7 +144,9 @@ class Queue {
       if (this._queue.pending === 0) this.resume();
       return;
     }
-    if (rateLimitSize > 8000) {
+    if (rateLimitSize >= 1000) {
+      // Check if the queue was paused recently
+      if (Date.now() - this._lastPause < minToMs(1)) return;
       this.pause();
       return;
     }
@@ -153,8 +156,9 @@ class Queue {
    * Pause the queue
    * @param duration Pause duration in milliseconds
    */
-  public pause(duration = minToMs(1)) {
+  public pause(duration = secToMs(10)) {
     this._queue.pause();
+    this._lastPause = Date.now();
     this._timeout = setTimeout(() => {
       this.resume();
     }, duration);

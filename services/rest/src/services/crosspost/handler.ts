@@ -1,5 +1,6 @@
 import { DiscordAPIError, RateLimitError } from '@discordjs/rest';
 import { Snowflake } from 'discord-api-types/globals';
+import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
 import { StatusCodes } from 'http-status-codes';
 
 import { Constants } from '@/constants';
