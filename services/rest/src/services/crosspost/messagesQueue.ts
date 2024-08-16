@@ -157,7 +157,7 @@ class Queue {
    * Pause the queue
    * @param duration Pause duration in milliseconds
    */
-  public pause(duration = secToMs(10)) {
+  public pause(duration = secToMs(15)) {
     this._queue.pause();
     this._lastPause = Date.now();
     this._timeout = setTimeout(() => {
