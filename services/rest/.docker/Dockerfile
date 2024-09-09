@@ -1,5 +1,5 @@
 # Run Node.js on Alpine Linux
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Define the environment variables
 ENV NODE_ENV=production
