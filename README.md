@@ -40,9 +40,3 @@ The bot's code provided here is primarily for transparency reasons and to help o
 Given the bot's simple nature, using the publicly-hosted version will be enough for most people, so it is highly recommended to use that version, unless you have a specific reason not to do so (such as experimenting with the code).
 
 You're free to host this bot on your own machine, but please keep in mind I will not be providing any support in that regard (do it on your own risk). If you're directly hosting this bot, you should not monetize it in any way; the bot's goal is to help everyone and be free of any charge.
-
-Requirements:
-
-- Node ^20
-- Redis server ^7
-- MongoDB server ^6
