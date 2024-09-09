@@ -1,10 +1,9 @@
 {
-  "extends": "@sapphire/ts-config",
+  "extends": ["@sapphire/ts-config", "@sapphire/ts-config/decorators", "@sapphire/ts-config/verbatim"],
   "compilerOptions": {
     "incremental": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "module": "ESNext",
     "rootDir": "src",
     "outDir": "dist",
     "baseUrl": "src",
