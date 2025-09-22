@@ -1,0 +1,29 @@
+{
+  "name": "discord-auto-publisher",
+  "version": "7.0.0",
+  "author": "Vedinsoh",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:bot-core": "turbo run dev --filter=bot-core",
+    "check": "bunx @biomejs/biome check .",
+    "check:fix": "bunx @biomejs/biome check . --write",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.4",
+    "rimraf": "^6.0.1",
+    "turbo": "^2.5.6",
+    "typescript": "5.9.2"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "packageManager": "bun@1.2.22",
+  "engines": {
+    "node": ">=22"
+  }
+}

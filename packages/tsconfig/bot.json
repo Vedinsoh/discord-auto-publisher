@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": [
+    "@sapphire/ts-config",
+    "@sapphire/ts-config/decorators",
+    "@sapphire/ts-config/verbatim"
+  ],
+  "compilerOptions": {
+    "incremental": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "skipLibCheck": true
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@ap/logger",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "bun --watch run .",
+    "start": "bun run .",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "pino": "^9.11.0",
+    "pino-pretty": "^13.1.1"
+  }
+}

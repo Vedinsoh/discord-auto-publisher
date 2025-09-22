@@ -1,0 +1,20 @@
+import 'dotenv/config';
+import { loggerLevels } from '@ap/logger';
+import { cleanEnv, num, port, str } from 'envalid';
+
+/**
+ * Environment variables
+ */
+export const env = cleanEnv(process.env, {
+  // Common
+  NODE_ENV: str({ default: 'development', choices: ['development', 'production', 'test'] }),
+  LOGGER_LEVEL: str({ default: 'info', choices: loggerLevels }),
+  DISCORD_TOKEN: str({ default: '' }),
+
+  // Bot
+  BOT_SHARDS: num({ default: 1 }),
+  BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
+
+  // REST
+  REST_PORT: port({ devDefault: 3000 }),
+});

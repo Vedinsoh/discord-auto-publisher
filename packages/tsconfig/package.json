@@ -1,0 +1,7 @@
+{
+  "name": "@ap/tsconfig",
+  "private": true,
+  "dependencies": {
+    "@sapphire/ts-config": "^5.0.1"
+  }
+}

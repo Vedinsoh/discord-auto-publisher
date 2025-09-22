@@ -1,0 +1,15 @@
+{
+  "name": "@ap/utils",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "bun --watch run .",
+    "start": "bun run .",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*"
+  }
+}

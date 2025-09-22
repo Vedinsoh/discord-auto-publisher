@@ -1,32 +1,51 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependency directories
+node_modules/
+.pnp
+.pnp.js
+
+# Local env files
+.env
+.env.*
+!.env.example
+
+# Testing
+coverage
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
+# Misc
+.DS_Store
+*.pem
+*.bkp
+
 # Logs
 logs
 *.log
 npm-debug.log*
-
-# Dependency directories
-node_modules/
+yarn-debug.log*
+yarn-error.log*
 
 # TypeScript cache
 *.tsbuildinfo
 
 # Caches
 .npm
-.turbo
 .eslintcache
 
 # Output of 'npm pack'
 *.tgz
 
-# dotenv environment variables file
-.env*
-!.env.example
-
 # Redis
 *.rdb
-
-# Build
-dist
-
-# OS
-.DS_Store
-*.bkp

@@ -1,0 +1,16 @@
+{
+  "name": "@ap/http",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "bun --watch run .",
+    "start": "bun run .",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "discord-api-types": "^0.38.26",
+    "http-status-codes": "^2.3.0"
+  }
+}
