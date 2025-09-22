@@ -18,6 +18,7 @@ export class APCommand extends Subcommand {
       builder //
         .setName(this.name)
         .setDescription(this.description)
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
         .setContexts([InteractionContextType.Guild])
         .addSubcommand(subcommand =>
           subcommand //

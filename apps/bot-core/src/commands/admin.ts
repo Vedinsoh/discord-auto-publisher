@@ -25,6 +25,7 @@ export class AdminCommand extends Subcommand {
         builder //
           .setName(this.name)
           .setDescription(this.description)
+          .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
           .addSubcommand(subcommand =>
             subcommand //
               .setName('info')
