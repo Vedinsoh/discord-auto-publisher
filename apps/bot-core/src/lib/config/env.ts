@@ -12,6 +12,8 @@ export const env = cleanEnv(process.env, {
   DISCORD_TOKEN: str({ default: '' }),
 
   // Bot
+  BOT_APP_ID: str({ default: '' }),
+  BOT_SUPPORT_GUILD_ID: str({ default: '' }),
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 

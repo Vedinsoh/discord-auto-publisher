@@ -1,7 +1,8 @@
 import { getDiscordFormat } from '@ap/utils';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
-import { MessageFlags, PermissionFlagsBits } from 'discord.js';
+import { InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
+import { env } from 'lib/config/env.js';
 import { Services } from 'services/index.js';
 import { client } from 'shard.js';
 import { respawnClusters } from 'utils/respawnClusters.js';
@@ -10,6 +11,7 @@ import { shutdown } from 'utils/shutdown.js';
 @ApplyOptions<Subcommand.Options>({
   description: '[BOT ADMIN] Utility command for bot admins',
   requiredUserPermissions: [PermissionFlagsBits.Administrator],
+  preconditions: ['SupportGuild'],
   subcommands: [
     { name: 'info', chatInputRun: 'chatInputInfo' },
     { name: 'ping', chatInputRun: 'chatInputPing' },
@@ -26,6 +28,7 @@ export class AdminCommand extends Subcommand {
           .setName(this.name)
           .setDescription(this.description)
           .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+          .setContexts([InteractionContextType.Guild])
           .addSubcommand(subcommand =>
             subcommand //
               .setName('info')
@@ -52,7 +55,7 @@ export class AdminCommand extends Subcommand {
               .setDescription('[BOT ADMIN] Check how long the bot has been online')
           ),
       {
-        guildIds: ['958709555683033128'],
+        guildIds: [env.BOT_SUPPORT_GUILD_ID],
       }
     );
   }

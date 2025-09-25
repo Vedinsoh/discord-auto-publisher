@@ -1,6 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { links } from 'lib/consts/index.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Add Auto Publisher to your server!',
@@ -15,17 +16,16 @@ export class InviteCommand extends Command {
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-    const inviteButton = new ButtonBuilder()
+    const botInviteButton = new ButtonBuilder()
       .setLabel('Invite the bot!')
-      .setURL('https://invite.auto-publisher.gg')
+      .setURL(links.botInvite)
       .setStyle(ButtonStyle.Link);
 
     const buttonRow = new ActionRowBuilder<ButtonBuilder>() //
-      .addComponents(inviteButton);
+      .addComponents(botInviteButton);
 
     return interaction.reply({
       flags: [MessageFlags.Ephemeral],
-      content: 'https://discord.gg/xcEeJkdQX8',
       components: [buttonRow],
     });
   }

@@ -30,12 +30,7 @@ export const client = new BotClient({
     UserManager: 0,
     VoiceStateManager: 0,
   }),
-  intents: [
-    IntentBits.Guilds,
-    IntentBits.GuildMessages,
-    IntentBits.DirectMessages,
-    IntentBits.MessageContent,
-  ],
+  intents: [IntentBits.Guilds, IntentBits.GuildMessages, IntentBits.MessageContent],
   partials: [Partials.Channel, Partials.GuildMember],
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,

@@ -30,7 +30,7 @@ export class ClusterManager extends BaseClusterManager {
   /**
    * Register cluster events
    */
-  private async registerEvents() {
+  private registerEvents() {
     this.on('debug', value => logger.debug(value));
   }
 }
