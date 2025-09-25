@@ -6,8 +6,9 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
-    "dev:bot-core": "turbo run dev --filter=bot-core",
+    "dev": "turbo watch start",
+    "dev:bot-api": "turbo watch start --filter=bot-api",
+    "dev:bot-core": "turbo watch start --filter=bot-core",
     "check": "bunx @biomejs/biome check .",
     "check:fix": "bunx @biomejs/biome check . --write",
     "clean": "turbo run clean"

@@ -10,13 +10,24 @@
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": ["dist/**"]
     },
+    "start": {
+      "cache": false,
+      "persistent": true,
+      "interruptible": true
+    },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "dev:bot": {
+    "dev:bot-api": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "interruptible": true
+    },
+    "dev:bot-core": {
+      "cache": false,
+      "persistent": true,
+      "interruptible": true
     },
     "clean": {
       "cache": false
