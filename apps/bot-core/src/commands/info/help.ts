@@ -6,6 +6,7 @@ import {
   MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
+import { Buttons } from 'lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
   description: 'See how to use the bot',
@@ -34,10 +35,19 @@ export class HelpCommand extends Command {
           '• Use `/ap disable <channel>` to stop auto-publishing in a channel.'
         )
       )
+      .addSeparatorComponents(separator => separator)
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
           '• Use `/ap status <channel>` to check if auto-publishing is enabled.'
         )
+      )
+      .addSeparatorComponents(separator => separator)
+      .addSectionComponents(section =>
+        section
+          .addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent('Need more help? Join the support server!')
+          )
+          .setButtonAccessory(Buttons.supportServer)
       );
 
     return interaction.reply({
