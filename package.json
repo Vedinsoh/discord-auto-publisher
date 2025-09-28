@@ -6,12 +6,17 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo watch start",
-    "dev:bot-api": "turbo watch start --filter=bot-api",
-    "dev:bot-core": "turbo watch start --filter=bot-core",
+    "clean": "turbo run clean",
     "check": "bunx @biomejs/biome check .",
     "check:fix": "bunx @biomejs/biome check . --write",
-    "clean": "turbo run clean"
+    "dev:start": "sh ./scripts/bot/dev/start.sh",
+    "dev:stop": "sh ./scripts/bot/dev/stop.sh",
+    "dev:logs": "sh ./scripts/bot/dev/logs.sh",
+    "dev:ps": "sh ./scripts/bot/dev/ps.sh",
+    "prod:start": "sh ./scripts/bot/prod/start.sh",
+    "prod:stop": "sh ./scripts/bot/prod/stop.sh",
+    "prod:logs": "sh ./scripts/bot/prod/logs.sh",
+    "prod:ps": "sh ./scripts/bot/prod/ps.sh"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

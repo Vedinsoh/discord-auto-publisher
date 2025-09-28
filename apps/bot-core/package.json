@@ -16,18 +16,16 @@
     "@sapphire/framework": "^5.3.6",
     "@sapphire/plugin-subcommands": "^7.0.1",
     "@sapphire/utilities": "^3.18.2",
-    "bufferutil": "^4.0.8",
     "discord-hybrid-sharding": "^3.0.1",
     "discord.js": "14.22.1",
     "dotenv": "^17.2.2",
-    "envalid": "^8.1.0",
-    "pino": "^9.4.0",
-    "re2": "^1.21.4",
-    "url-regex-safe": "^4.0.0",
-    "utf-8-validate": "^6.0.4"
+    "envalid": "^8.1.0"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.8",
+    "zlib-sync": "^0.1.10"
   },
   "devDependencies": {
-    "@ap/tsconfig": "*",
-    "@types/url-regex-safe": "^1.0.2"
+    "@ap/tsconfig": "*"
   }
 }

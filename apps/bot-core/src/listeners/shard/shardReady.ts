@@ -8,6 +8,6 @@ import { logger } from 'utils/logger.js';
 })
 export class ShardReadyListener extends Listener {
   public run(id: number) {
-    logger.info(`[Shard #${id}] Ready!`);
+    logger.info(`[Shard ${id}] Ready!`);
   }
 }

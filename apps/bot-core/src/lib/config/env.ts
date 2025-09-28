@@ -7,16 +7,18 @@ import { cleanEnv, num, port, str } from 'envalid';
  */
 export const env = cleanEnv(process.env, {
   // Common
-  NODE_ENV: str({ default: 'development', choices: ['development', 'production', 'test'] }),
-  LOGGER_LEVEL: str({ default: 'info', choices: loggerLevels }),
   DISCORD_TOKEN: str({ default: '' }),
 
-  // Bot
+  // Runtime
+  NODE_ENV: str({ default: 'development', choices: ['development', 'production', 'test'] }),
+  LOGGER_LEVEL: str({ default: 'info', choices: loggerLevels }),
+
+  // Bot core
   BOT_APP_ID: str({ default: '' }),
   BOT_SUPPORT_GUILD_ID: str({ default: '' }),
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 
-  // REST
+  // Bot API
   REST_PORT: port({ devDefault: 3000 }),
 });

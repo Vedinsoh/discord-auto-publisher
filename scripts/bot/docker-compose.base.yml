@@ -1,0 +1,63 @@
+services:
+  bot-core:
+    build:
+      context: ../..
+      dockerfile: apps/bot-core/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../../.env.local
+    networks:
+      - bot-network
+    depends_on:
+      bot-api:
+        condition: service_healthy
+      bot-api-cache:
+        condition: service_healthy
+        
+  bot-api:
+    build:
+      context: ../..
+      dockerfile: apps/bot-api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../../.env.local
+    networks:
+      - bot-network
+    depends_on:
+      bot-api-cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  bot-api-cache:
+    image: redis:8-alpine
+    restart: unless-stopped
+    ports:
+      - 6379:6379  # Only expose to localhost
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server 
+      --appendonly yes 
+      --appendfsync everysec 
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  bot-network:
+    driver: bridge
+    internal: false  # Allow external access for Discord API
+
+volumes:
+  redis_data:
+    driver: local

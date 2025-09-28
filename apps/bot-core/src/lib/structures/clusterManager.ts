@@ -24,7 +24,7 @@ export class ClusterManager extends BaseClusterManager {
    * Register cluster listeners
    */
   private registerListeners() {
-    this.on('clusterCreate', cluster => logger.info(`[Cluster #${cluster.id}] Created!`));
+    this.on('clusterCreate', cluster => logger.info(`[Cluster ${cluster.id}] Created!`));
   }
 
   /**

@@ -1,0 +1,27 @@
+# Development Dockerfile for bot-core with hot reloading
+FROM oven/bun:1.2.22-alpine
+
+# Create app user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S app -u 1001
+
+WORKDIR /app
+
+# Copy workspace configuration and package files
+COPY package.json bun.lock turbo.json ./
+COPY packages/ ./packages/
+COPY apps/bot-core/package.json ./apps/bot-core/package.json
+
+# Install all dependencies (skip optional native deps for faster builds)
+RUN bun install --no-optional
+
+# Copy source code
+COPY . .
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD bun --version || exit 1
+
+# Start in development mode with watch
+WORKDIR /app/apps/bot-core
+CMD ["bun", "--watch", "./src/index.ts"]

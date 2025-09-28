@@ -1,6 +1,6 @@
+import { createRestLogger } from '@ap/logger';
 import { env } from 'lib/config/env.js';
-import { pino } from 'pino';
 
-const Logger = pino({ name: 'REST', level: env.LOGGER_LEVEL });
+const Logger = createRestLogger(env.LOGGER_LEVEL);
 
 export { Logger };

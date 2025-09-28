@@ -17,6 +17,7 @@ app.use(express.json());
 app.use('/crosspost', App.Routes.Crosspost);
 app.use('/presence', App.Routes.Presence);
 app.use('/info', App.Routes.Info);
+app.get('/health', App.Routes.Health);
 
 // Error handlers
 app.use(errorHandler());

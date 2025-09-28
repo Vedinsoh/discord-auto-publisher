@@ -1,0 +1,55 @@
+name: auto-publisher-dev
+
+services:
+  bot-core:
+    extends:
+      file: docker-compose.base.yml
+      service: bot-core
+    build:
+      dockerfile: apps/bot-core/Dockerfile.dev
+    env_file:
+      - ../../.env.local
+    environment:
+      - NODE_ENV=development
+      - LOGGER_LEVEL=debug
+    volumes:
+      - ../../apps/bot-core:/app/apps/bot-core:cached # Watch only bot-core source
+      - ../../packages:/app/packages:cached           # Watch shared packages
+      - /app/node_modules  # Prevent overwriting node_modules
+    depends_on:
+      bot-api:
+        condition: service_started
+      bot-api-cache:
+        condition: service_started
+    healthcheck: 
+      disable: true # Remove healthcheck for faster development startup
+
+  bot-api:
+    extends:
+      file: docker-compose.base.yml
+      service: bot-api
+    build:
+      dockerfile: apps/bot-api/Dockerfile.dev
+    env_file:
+      - ../../.env.local
+    environment:
+      - NODE_ENV=development
+      - LOGGER_LEVEL=debug
+    volumes:
+      - ../../apps/bot-api:/app/apps/bot-api:cached # Watch only bot-api source
+      - ../../packages:/app/packages:cached         # Watch shared packages
+      - /app/node_modules  # Prevent overwriting node_modules
+    depends_on:
+      bot-api-cache:
+        condition: service_started
+    ports:
+      - 3000:8080
+    healthcheck: 
+      disable: true # Remove healthcheck for faster development startup
+
+  bot-api-cache:
+    extends:
+      file: docker-compose.base.yml
+      service: bot-api-cache
+    ports:
+      - 6379:6379

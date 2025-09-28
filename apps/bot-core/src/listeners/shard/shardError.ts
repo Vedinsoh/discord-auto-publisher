@@ -8,6 +8,6 @@ import { logger } from 'utils/logger.js';
 })
 export class ShardErrorListener extends Listener {
   public run(error: Error, id: number) {
-    logger.error(`[Shard #${id}] ${error.stack}`);
+    logger.error(`[Shard ${id}] ${error.stack}`);
   }
 }

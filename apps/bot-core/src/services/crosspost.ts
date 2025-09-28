@@ -1,8 +1,7 @@
-import { secToMs, sleep } from '@ap/utils';
+import { RegExPatterns, secToMs, sleep } from '@ap/utils';
 import { Data } from 'data/index.js';
 import { type Message, type NewsChannel, PermissionsBitField } from 'discord.js';
 import type { ReceivedMessage } from 'lib/types/MessageTypes.js';
-import urlRegex from 'url-regex-safe';
 
 /**
  * Handles the message for crossposting
@@ -24,8 +23,8 @@ const handle = async (message: Message, channel: NewsChannel) => {
   }
 
   // Check if the message has a URL and no embeds
-  const hasUrl = urlRegex({ strict: true, localhost: false }).test(message.content);
   const hasEmbeds = Boolean(message.embeds.length);
+  const hasUrl = RegExPatterns.url.test(message.content);
 
   // Defer crossposting if the message has a URL but no embeds
   if (hasUrl && !hasEmbeds) {
