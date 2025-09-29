@@ -15,7 +15,7 @@ services:
     volumes:
       - ../../apps/bot-core:/app/apps/bot-core:cached # Watch only bot-core source
       - ../../packages:/app/packages:cached           # Watch shared packages
-      - /app/node_modules  # Prevent overwriting node_modules
+      - bot_core_node_modules:/app/node_modules        # Named volume for node_modules
     depends_on:
       bot-api:
         condition: service_started
@@ -38,7 +38,7 @@ services:
     volumes:
       - ../../apps/bot-api:/app/apps/bot-api:cached # Watch only bot-api source
       - ../../packages:/app/packages:cached         # Watch shared packages
-      - /app/node_modules  # Prevent overwriting node_modules
+      - bot_api_node_modules:/app/node_modules       # Named volume for node_modules
     depends_on:
       bot-api-cache:
         condition: service_started
@@ -53,3 +53,9 @@ services:
       service: bot-api-cache
     ports:
       - 6379:6379
+
+volumes:
+  bot_core_node_modules:
+    name: auto-publisher-dev-bot-core-node-modules
+  bot_api_node_modules:
+    name: auto-publisher-dev-bot-api-node-modules

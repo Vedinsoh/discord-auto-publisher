@@ -12,27 +12,29 @@ build/
 .env
 .env.*
 !.env.example
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
+.env.local
+.env.development
 
 # Logs
 logs/
 *.log
 
-# Test coverage
-coverage/
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
 
 # Temporary files
-.tmp/
+tmp/
 temp/
+.tmp/
+*.tmp
+*.temp
 
 # Git
 .git/
@@ -40,19 +42,25 @@ temp/
 
 # Documentation
 *.md
+CHANGELOG.md
+LICENSE
 !README.md
 
 # CI/CD
 .github/
 .gitlab-ci.yml
 
-# Docker
-Dockerfile*
+# Docker related
+Dockerfile
+Dockerfile.dev
 docker-compose*.yml
 .dockerignore
 
-# Diagrams
+# Test coverage
+coverage/
+
+# Diagrams and assets
 diagrams/
 
-# Development scripts
+# Development scripts (not needed in containers)
 scripts/
