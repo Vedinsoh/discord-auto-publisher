@@ -27,8 +27,9 @@ export class Client {
       await this.client.connect();
       Logger.info(`Connected to Redis database ${this._databaseId}`);
     } catch (error) {
-      Logger.error(`Error connecting to Redis ${this._databaseId}:`, error);
-      throw new Error(error as string);
+      Logger.error(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Error connecting to Redis ${this._databaseId}: ${errorMessage}`);
     }
   }
 
@@ -38,8 +39,9 @@ export class Client {
       await this.client.disconnect();
       Logger.info(`Disconnected from Redis database ${this._databaseId}`);
     } catch (error) {
-      Logger.error('Error disconnecting from Redis:', error);
-      throw new Error(error as string);
+      Logger.error(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Error disconnecting from Redis: ${errorMessage}`);
     }
   }
 }

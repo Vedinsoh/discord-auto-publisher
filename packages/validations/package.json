@@ -5,11 +5,15 @@
   "main": "src/index.ts",
   "scripts": {
     "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit",
     "dev": "bun --watch run .",
-    "start": "bun run .",
-    "clean": "rimraf dist"
+    "start": "bun run ."
   },
   "dependencies": {
     "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*"
   }
 }

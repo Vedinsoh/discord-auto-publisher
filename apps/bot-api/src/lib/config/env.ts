@@ -13,6 +13,6 @@ export const env = cleanEnv(process.env, {
   // Bot API
   REDIS_URI: url({ default: 'redis://bot-api-cache:6379' }),
   MONGO_URI: url({ default: 'mongodb://bot:27017' }),
-  BOT_API_HOST: host({ default: 'localhost' }),
-  BOT_API_PORT: port({ devDefault: 3000 }),
+  REST_HOST: host({ default: 'localhost' }),
+  REST_PORT: port({ devDefault: 8080 }),
 });

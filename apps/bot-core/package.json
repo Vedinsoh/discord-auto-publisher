@@ -4,9 +4,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit",
     "dev": "bun --watch run .",
-    "start": "bun run .",
-    "clean": "rimraf dist"
+    "start": "bun run ."
   },
   "dependencies": {
     "@ap/logger": "workspace:*",

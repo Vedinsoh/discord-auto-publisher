@@ -33,3 +33,15 @@ is_docker_services_running() {
         exit 1
     fi
 }
+
+print_resource_usage() {
+    local FILES="$1"
+    echo "📊 Resource Usage:"
+    # Get container names from the compose project and show their stats
+    local CONTAINER_NAMES=$(docker compose $FILES ps --format "{{.Name}}" | tr '\n' ' ')
+    if [ -n "$CONTAINER_NAMES" ]; then
+        docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" $CONTAINER_NAMES
+    else
+        echo "No containers running for this project"
+    fi
+}

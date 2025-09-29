@@ -20,7 +20,7 @@ export const Presence: Router = (() => {
    */
   router.get('/:appId', async (req: Request, res: Response) => {
     const { appId } = req.params;
-    const serviceResponse = await Services.Presence.getCount(appId);
+    const serviceResponse = await Services.Presence.getCount(appId as string);
 
     handleServiceResponse(serviceResponse, res);
   });
@@ -32,7 +32,7 @@ export const Presence: Router = (() => {
     const { appId } = req.params;
     const { count } = req.body;
 
-    const serviceResponse = await Services.Presence.updateCount(appId, count);
+    const serviceResponse = await Services.Presence.updateCount(appId as string, count);
 
     handleServiceResponse(serviceResponse, res);
   });

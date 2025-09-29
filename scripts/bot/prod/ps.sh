@@ -11,3 +11,6 @@ is_docker_services_running "prod" "$BOT_COMPOSE_FILES_PROD"
 
 # Show current status of bot services
 docker compose $BOT_COMPOSE_FILES_PROD ps
+
+# Show resource usage of bot services
+print_resource_usage "$BOT_COMPOSE_FILES_PROD"

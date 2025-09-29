@@ -7,12 +7,9 @@ export const RegExPatterns = {
 
 // Base validation schemas
 export const Validations = {
-  snowflakeId: z.string().refine(
-    (value: string) => RegExPatterns.snowflake.test(value),
-    value => ({
-      message: `${value} is not a valid snowflake ID`,
-    }) // TODO fix
-  ),
+  snowflakeId: z.string().refine((value: string) => RegExPatterns.snowflake.test(value), {
+    error: value => `${value} is not a valid snowflake ID`,
+  }),
 };
 
 // Request validation schemas

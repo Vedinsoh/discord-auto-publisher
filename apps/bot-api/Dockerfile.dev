@@ -23,4 +23,4 @@ EXPOSE 8080
 
 # Start in development mode with watch
 WORKDIR /app/apps/bot-api
-CMD ["bun", "--watch", "./src/index.ts"]
+CMD ["bun", "run", "--watch", "./src/index.ts"]

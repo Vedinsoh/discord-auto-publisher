@@ -1,4 +1,3 @@
-# Development Dockerfile for bot-core with hot reloading
 FROM oven/bun:1.2.22-alpine
 
 # Create app user for security
@@ -24,4 +23,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start in development mode with watch
 WORKDIR /app/apps/bot-core
-CMD ["bun", "--watch", "./src/index.ts"]
+CMD ["bun", "run", "--watch", "./src/index.ts"]

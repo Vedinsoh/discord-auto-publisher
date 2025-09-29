@@ -42,6 +42,7 @@ services:
       - redis_data:/data
     command: >
       redis-server 
+      --port 6379
       --appendonly yes 
       --appendfsync everysec 
     networks:

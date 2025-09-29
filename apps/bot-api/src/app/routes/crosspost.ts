@@ -15,7 +15,11 @@ export const Crosspost: Router = (() => {
     async (req: Request, res: Response) => {
       const { messageId, channelId } = req.params;
 
-      const serviceResponse = await Services.Crosspost.Handler.push(channelId, messageId);
+      // Parameters are validated by middleware, safe to use as strings
+      const serviceResponse = await Services.Crosspost.Handler.push(
+        channelId as string,
+        messageId as string
+      );
 
       handleServiceResponse(serviceResponse, res);
     }

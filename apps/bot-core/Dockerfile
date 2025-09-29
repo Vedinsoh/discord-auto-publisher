@@ -1,54 +1,43 @@
-# Multi-stage build for bot-core
-# Stage 1: Dependencies
-FROM oven/bun:1.2.22-alpine AS deps
+FROM oven/bun:1.2.22-alpine AS base
 
+# Stage 1: Install and Build
+FROM base AS builder
 # Install necessary packages (needed for optional dependencies)
-RUN apk add g++ make python3 linux-headers
-
+RUN apk update && apk add --no-cache g++ make python3 linux-headers
 WORKDIR /app
 
-# Copy workspace configuration and packages
+# Copy workspace configuration and package files
 COPY package.json bun.lock turbo.json ./
 COPY packages/ ./packages/
+# COPY apps/bot-api/package.json ./apps/bot-api/package.json
 COPY apps/bot-core/package.json ./apps/bot-core/package.json
 
-# Install dependencies
-RUN bun install --frozen-lockfile --production
+# Install all dependencies (including dev dependencies for build)
+RUN bun install
 
-# Stage 2: Build
-FROM oven/bun:1.2.22-alpine AS builder
-WORKDIR /app
-
-# Copy all necessary files
+# Copy source code
 COPY . .
-COPY --from=deps /app/node_modules ./node_modules
 
-# Build the application
+# Build the project
 RUN bun run build --filter=bot-core
 
-# Stage 3: Runtime
-FROM oven/bun:1.2.22-alpine AS runtime
-
-# Create app user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S app -u 1001
-
+# Stage 2: Runtime
+FROM base AS runtime
 WORKDIR /app
 
-# Copy built application and dependencies
-COPY --from=deps --chown=app:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=app:nodejs /app/apps/bot-core/dist ./apps/bot-core/dist
-COPY --from=builder --chown=app:nodejs /app/packages ./packages
-COPY --from=builder --chown=app:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=app:nodejs /app/turbo.json ./turbo.json
+# Create app user for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 app
 
-# Switch to non-root user
+# Copy the built application and production dependencies from builder
+COPY --from=builder --chown=app:nodejs /app .
+
 USER app
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD bun --version || exit 1
 
-# Start the application
+# Start the application using the built JavaScript files
 WORKDIR /app/apps/bot-core
-CMD ["bun", "run", "start"]
+CMD ["bun", "run", "./dist/index.js"]
