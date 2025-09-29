@@ -17,10 +17,6 @@ RUN bun install --no-optional
 # Copy source code
 COPY . .
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD bun --version || exit 1
-
 # Start in development mode with watch
 WORKDIR /app/apps/bot-core
-CMD ["bun", "run", "--watch", "./src/index.ts"]
+CMD ["bun", "run", "dev"]
