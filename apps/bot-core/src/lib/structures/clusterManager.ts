@@ -6,7 +6,7 @@ import { logger } from 'utils/logger.js';
 
 export class ClusterManager extends BaseClusterManager {
   constructor(options: ClusterManagerOptions) {
-    super('src/shard.ts', options);
+    super('src/lib/shard.ts', options);
   }
 
   /**

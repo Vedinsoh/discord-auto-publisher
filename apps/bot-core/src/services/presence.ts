@@ -1,7 +1,7 @@
 import { minToMs } from '@ap/utils';
 import { Data } from 'data/index.js';
 import { ActivityType } from 'discord.js';
-import { client } from 'shard.js';
+import { client } from 'lib/shard.js';
 
 type GuildsCountResponse = { data?: { count?: number } };
 

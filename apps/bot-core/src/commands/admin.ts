@@ -3,8 +3,8 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
 import { env } from 'lib/config/env.js';
+import { client } from 'lib/shard.js';
 import { Services } from 'services/index.js';
-import { client } from 'shard.js';
 import { respawnClusters } from 'utils/respawnClusters.js';
 import { shutdown } from 'utils/shutdown.js';
 
