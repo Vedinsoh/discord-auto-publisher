@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Common variables
+BOT_COMPOSE_FILES_DEV="-f scripts/bot/docker-compose.base.yml -f scripts/bot/dev/docker-compose.yml"
+BOT_COMPOSE_FILES_PROD="-f scripts/bot/docker-compose.base.yml -f scripts/bot/prod/docker-compose.yml"
+
 # Check if .env.local exists
 check_env_exists() {
     local ENV_NAME="$1"
@@ -21,10 +25,11 @@ is_docker_running() {
 
 # Check if Docker services are running
 is_docker_services_running() {
-    local FILES="$1"
+    local ENV_NAME="$1"
+    local FILES="$2"
 
     if ! docker compose $FILES ps --services --filter "status=running" | grep -q "bot-core\|bot-api"; then
-        echo "⚠️  Bot services are not running. Start them first with: bun run dev:start"
+        echo "⚠️  Bot services are not running. Start them first with: bun run $ENV_NAME:start"
         exit 1
     fi
 }

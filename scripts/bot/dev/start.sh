@@ -4,7 +4,6 @@ set -e
 
 # Load common functions and variables
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/config.sh"
 source "$SCRIPT_DIR/../../utils/common.sh"
 
 echo "🚀 Starting development environment..."
@@ -16,11 +15,11 @@ echo "📋 Using .env.local for environment configuration"
 echo "📦 Building and starting services..."
 
 # Run Docker Compose from project root
-docker compose $FILES up -d
+docker compose $BOT_COMPOSE_FILES_DEV up -d
 echo "✅ Development environment started!"
 
 # Show continuous logs after starting
-docker compose $FILES logs -f bot-core bot-api
+docker compose $BOT_COMPOSE_FILES_DEV logs -f bot-core bot-api
 
 info() {
   echo "📄 View logs: bun run dev:logs"
