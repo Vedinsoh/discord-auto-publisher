@@ -17,7 +17,7 @@ export class Client {
     this._databaseId = databaseId;
     this.client = createClient({
       database: databaseId,
-      url: env.REDIS_URI,
+      url: 'redis://bot-api-cache:6379',
     });
   }
 

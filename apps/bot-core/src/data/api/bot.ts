@@ -1,8 +1,7 @@
 import { RequestMethod, type Snowflake } from 'discord.js';
-import { env } from 'lib/config/env.js';
 
 // TODO REST instance
-const baseUrl = `http://bot-api:${env.REST_PORT}`;
+const baseUrl = 'http://bot-api:8080';
 
 // Crossposts
 const pushCrosspost = async (channelId: Snowflake, messageId: Snowflake) => {

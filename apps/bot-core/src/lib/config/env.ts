@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { loggerLevels } from '@ap/logger';
-import { cleanEnv, num, port, str } from 'envalid';
+import { cleanEnv, num, str } from 'envalid';
 
 /**
  * Environment variables
@@ -18,7 +18,4 @@ export const env = cleanEnv(process.env, {
   BOT_SUPPORT_GUILD_ID: str({ default: '' }),
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
-
-  // Bot API
-  REST_PORT: port({ devDefault: 3000 }),
 });

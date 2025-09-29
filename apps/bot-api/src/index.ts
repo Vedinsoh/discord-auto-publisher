@@ -23,9 +23,9 @@ app.get('/health', App.Routes.Health);
 app.use(errorHandler());
 
 // Start the server
-const server = app.listen(env.REST_PORT, async () => {
-  const { NODE_ENV, REST_HOST: HOST, REST_PORT: PORT } = env;
-  Services.Logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
+const server = app.listen('8080', async () => {
+  const { NODE_ENV } = env;
+  Services.Logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
 });
 
 // Gracefully handle server shutdown
