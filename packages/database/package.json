@@ -1,0 +1,20 @@
+{
+  "name": "@ap/database",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit",
+    "dev": "bun --watch run .",
+    "start": "bun run ."
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.3"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*",
+    "prisma": "^6.16.3"
+  }
+}
