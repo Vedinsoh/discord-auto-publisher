@@ -18,6 +18,9 @@ RUN bun install
 # Copy source code
 COPY . .
 
+# Generate Prisma client for the target platform
+RUN bun run db:generate
+
 # Build the project
 RUN bun run build --filter=bot-core
 

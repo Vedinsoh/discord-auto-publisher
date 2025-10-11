@@ -23,4 +23,4 @@ docker container prune -f 2>/dev/null || true
 echo "✅ Development environment stopped and cleaned up!"
 echo ""
 echo "📝 Note: All Redis data has been removed"
-echo "🚀 To start again: npm run dev:start"
+echo "🚀 To start again: bun run dev:start"

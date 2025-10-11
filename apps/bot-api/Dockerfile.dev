@@ -18,6 +18,9 @@ RUN bun install --no-optional
 # Copy remaining source code (will be overridden by volume mount in dev)
 COPY . .
 
+# Generate Prisma client for the target platform
+RUN bun run db:generate
+
 # Expose port
 EXPOSE 8080
 

@@ -10,6 +10,7 @@
     "check-types": "turbo run check-types",
     "check": "bunx @biomejs/biome check .",
     "check:fix": "bunx @biomejs/biome check . --write",
+    "db:generate": "turbo run db:generate",
     "dev:start": "sh ./scripts/bot/dev/start.sh",
     "dev:stop": "sh ./scripts/bot/dev/stop.sh",
     "dev:logs": "sh ./scripts/bot/dev/logs.sh",

@@ -61,7 +61,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
     // Handle Discord API errors
     if (error instanceof DiscordAPIError) {
-      const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
+      const code = typeof error.code === 'string' ? parseInt(error.code, 10) : error.code;
 
       // Cache the invalid request status codes
       if (Constants.API.Discord.invalidRequestCodes.includes(error.status)) {

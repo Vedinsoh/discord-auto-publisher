@@ -17,6 +17,9 @@ RUN bun install --no-optional
 # Copy source code
 COPY . .
 
+# Generate Prisma client for the target platform
+RUN bun run db:generate
+
 # Start in development mode with watch
 WORKDIR /app/apps/bot-core
 CMD ["bun", "run", "dev"]

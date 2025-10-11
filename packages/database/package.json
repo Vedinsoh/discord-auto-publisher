@@ -8,7 +8,8 @@
     "clean": "rimraf dist",
     "check-types": "tsc --noEmit",
     "dev": "bun --watch run .",
-    "start": "bun run ."
+    "start": "bun run .",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3"

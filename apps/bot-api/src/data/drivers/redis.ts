@@ -1,4 +1,3 @@
-import { env } from 'lib/config/env.js';
 import { createClient, type RedisClientType } from 'redis';
 import { Logger } from 'services/logger.js';
 

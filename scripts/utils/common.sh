@@ -34,6 +34,7 @@ is_docker_services_running() {
     fi
 }
 
+# Print resource usage of the Docker containers
 print_resource_usage() {
     local FILES="$1"
     echo "📊 Resource Usage:"

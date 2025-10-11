@@ -48,7 +48,7 @@ yarn-error.log*
 *.tgz
 
 # Prisma generated files
-**/generated/prisma
+**/prisma/generated
 
 # Redis
 *.rdb

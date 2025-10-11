@@ -15,6 +15,9 @@
     "//#check": {},
     "//#check:fix": {
       "cache": false
+    },
+    "db:generate": {
+      "cache": false
     }
   }
 }

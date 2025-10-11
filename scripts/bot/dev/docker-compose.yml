@@ -15,7 +15,7 @@ services:
     volumes:
       - ../../apps/bot-core:/app/apps/bot-core:cached # Watch only bot-core source
       - ../../packages:/app/packages:cached           # Watch shared packages
-      - bot_core_node_modules:/app/node_modules        # Named volume for node_modules
+      - bot_core_node_modules:/app/node_modules       # Named volume for node_modules
     depends_on:
       bot-api:
         condition: service_started
@@ -38,12 +38,12 @@ services:
     volumes:
       - ../../apps/bot-api:/app/apps/bot-api:cached # Watch only bot-api source
       - ../../packages:/app/packages:cached         # Watch shared packages
-      - bot_api_node_modules:/app/node_modules       # Named volume for node_modules
+      - bot_api_node_modules:/app/node_modules      # Named volume for node_modules
     depends_on:
       bot-api-cache:
         condition: service_started
     ports:
-      - 3000:8080
+      - 3000:8080 # Expose API for local development
     healthcheck: 
       disable: true # Remove healthcheck for faster development startup
 
@@ -52,7 +52,7 @@ services:
       file: docker-compose.base.yml
       service: bot-api-cache
     ports:
-      - 6379:6379
+      - 6379:6379 # Expose Redis for local development
 
 volumes:
   bot_core_node_modules:

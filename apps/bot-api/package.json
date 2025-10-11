@@ -10,6 +10,7 @@
     "start": "bun run ."
   },
   "dependencies": {
+    "@ap/database": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/utils": "workspace:*",
     "@discordjs/rest": "^2.4.0",
