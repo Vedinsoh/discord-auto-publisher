@@ -12,6 +12,7 @@ model Guilds {
   id               String   @id @default(auto()) @map("_id") @db.ObjectId
   guildId          String   @unique
   updatesChannelId String?
+  isMigrated       Boolean?
   channels         String[] @default([])
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

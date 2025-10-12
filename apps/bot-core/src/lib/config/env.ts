@@ -6,12 +6,13 @@ import { cleanEnv, num, str } from 'envalid';
  * Environment variables
  */
 export const env = cleanEnv(process.env, {
-  // Common
-  DISCORD_TOKEN: str({ default: '' }),
-
   // Runtime
   NODE_ENV: str({ default: 'development', choices: ['development', 'production', 'test'] }),
   LOGGER_LEVEL: str({ default: 'info', choices: loggerLevels }),
+
+  // Common
+  DISCORD_TOKEN: str({ default: '' }),
+  APP_EDITION: str({ default: 'free', choices: ['free', 'pro'] }),
 
   // Bot core
   BOT_APP_ID: str({ default: '' }),
