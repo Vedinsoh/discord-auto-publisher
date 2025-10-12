@@ -1,4 +1,3 @@
-import { ApplicationCommandRegistries, RegisterBehavior } from '@sapphire/framework';
 import { GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { getInfo } from 'discord-hybrid-sharding';
 import { BotClient } from 'lib/structures/client.js';
@@ -38,11 +37,5 @@ export const client = new BotClient({
     globalRequestsPerSecond: 5, // TODO
   },
 });
-
-/**
- * Set the default behavior when the application commands are not identical. This prevents the need to manually delete duplicate commands.
- * Reference: https://sapphirejs.dev/docs/Guide/commands/application-commands/application-command-registry/advanced/setting-global-behavior-when-not-identical/
- */
-ApplicationCommandRegistries.setDefaultBehaviorWhenNotIdentical(RegisterBehavior.BulkOverwrite);
 
 client.start();

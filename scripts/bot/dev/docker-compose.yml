@@ -12,10 +12,6 @@ services:
     environment:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
-    volumes:
-      - ../../apps/bot-core:/app/apps/bot-core:cached # Watch only bot-core source
-      - ../../packages:/app/packages:cached           # Watch shared packages
-      - bot_core_node_modules:/app/node_modules       # Named volume for node_modules
     depends_on:
       bot-api:
         condition: service_started
@@ -23,6 +19,29 @@ services:
         condition: service_started
     healthcheck: 
       disable: true # Remove healthcheck for faster development startup
+    command: ["bun", "run", "start"]
+    develop:
+      watch:
+        - action: sync+restart
+          path: ../../apps/bot-core/src
+          target: /app/apps/bot-core/src
+          ignore:
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+        - action: sync+restart
+          path: ../../packages
+          target: /app/packages
+          ignore:
+            - "**/node_modules/"
+            - "**/dist/"
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+        - action: rebuild
+          path: ../../apps/bot-core/package.json
+        - action: rebuild
+          path: ../../package.json
+        - action: rebuild
+          path: ../../bun.lock
 
   bot-api:
     extends:
@@ -35,10 +54,6 @@ services:
     environment:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
-    volumes:
-      - ../../apps/bot-api:/app/apps/bot-api:cached # Watch only bot-api source
-      - ../../packages:/app/packages:cached         # Watch shared packages
-      - bot_api_node_modules:/app/node_modules      # Named volume for node_modules
     depends_on:
       bot-api-cache:
         condition: service_started
@@ -46,6 +61,29 @@ services:
       - 3000:8080 # Expose API for local development
     healthcheck: 
       disable: true # Remove healthcheck for faster development startup
+    command: ["bun", "run", "start"]
+    develop:
+      watch:
+        - action: sync+restart
+          path: ../../apps/bot-api/src
+          target: /app/apps/bot-api/src
+          ignore:
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+        - action: sync+restart
+          path: ../../packages
+          target: /app/packages
+          ignore:
+            - "**/node_modules/"
+            - "**/dist/"
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+        - action: rebuild
+          path: ../../apps/bot-api/package.json
+        - action: rebuild
+          path: ../../package.json
+        - action: rebuild
+          path: ../../bun.lock
 
   bot-api-cache:
     extends:
@@ -53,9 +91,3 @@ services:
       service: bot-api-cache
     ports:
       - 6379:6379 # Expose Redis for local development
-
-volumes:
-  bot_core_node_modules:
-    name: auto-publisher-dev-bot-core-node-modules
-  bot_api_node_modules:
-    name: auto-publisher-dev-bot-api-node-modules

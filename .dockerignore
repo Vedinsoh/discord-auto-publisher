@@ -11,7 +11,6 @@ build/
 # Environment files
 .env
 .env.*
-!.env.example
 .env.local
 .env.development
 
@@ -44,7 +43,6 @@ temp/
 *.md
 CHANGELOG.md
 LICENSE
-!README.md
 
 # CI/CD
 .github/

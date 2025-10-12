@@ -9,9 +9,10 @@ datasource db {
 }
 
 model Guilds {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  guildId   String   @unique
-  channels  String[] @default([])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId          String   @unique
+  updatesChannelId String?
+  channels         String[] @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
