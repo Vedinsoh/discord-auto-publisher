@@ -5,7 +5,6 @@ import { BotClient } from 'lib/structures/client.js';
 export const client = new BotClient({
   makeCache: Options.cacheWithLimits({
     ...Options.DefaultMakeCacheSettings,
-    ApplicationCommandManager: 0,
     AutoModerationRuleManager: 0,
     BaseGuildEmojiManager: 0,
     GuildBanManager: 0,
