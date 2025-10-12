@@ -35,7 +35,7 @@ export class LinksCommand extends Command {
       .addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent('**Add bot to your server**')
+            textDisplay.setContent('✨ **Add bot to your server** ✨')
           )
           .setButtonAccessory(Buttons.botInvite)
       );
