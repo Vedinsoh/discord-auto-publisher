@@ -10,27 +10,6 @@ const pushCrosspost = async (channelId: Snowflake, messageId: Snowflake) => {
   });
 };
 
-// Presence
-const getGuildsCount = async (appId: Snowflake) => {
-  return fetch(`${baseUrl}/presence/${appId}`);
-};
-
-const getTotalGuildsCount = async () => {
-  return fetch(`${baseUrl}/presence`);
-};
-
-const updateGuildsCount = async (appId: Snowflake, count: number) => {
-  return fetch(`${baseUrl}/presence/${appId}`, {
-    method: RequestMethod.Put,
-    body: JSON.stringify({
-      count,
-    }),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-};
-
 // Info
 const getInfo = async () => {
   return fetch(`${baseUrl}/info`);
@@ -38,8 +17,5 @@ const getInfo = async () => {
 
 export const Bot = {
   pushCrosspost,
-  getGuildsCount,
-  getTotalGuildsCount,
-  updateGuildsCount,
   getInfo,
 };

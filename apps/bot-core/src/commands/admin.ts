@@ -62,9 +62,11 @@ export class AdminCommand extends Subcommand {
 
   public async chatInputInfo(interaction: Subcommand.ChatInputCommandInteraction) {
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
-
     const data = await Services.Info.get();
-    const guildsCount = await Services.Presence.getGuildsCount();
+    const guildsCount = await client.cluster
+      .broadcastEval('this.guilds.cache.size')
+      .then((results: number[]) => results.reduce((p: number, n: number) => p + n));
+
     const parsedData = [
       `Guilds: ${guildsCount}`,
       '### Messages queue:',

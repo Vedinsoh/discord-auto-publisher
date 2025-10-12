@@ -6,10 +6,6 @@ export { StatusCodes, getReasonPhrase };
 // Internal REST API routes
 export const RestApiRoutes = {
   crosspost: '/crosspost/:channelId/:messageId',
-  presence: {
-    base: '/presence',
-    withId: '/presence/:appId',
-  },
   info: '/info',
 };
 
@@ -48,10 +44,6 @@ export const buildCrosspostUrl = (
   messageId: string
 ): string => {
   return createRestApiUrl(baseUrl, `/crosspost/${channelId}/${messageId}`);
-};
-
-export const buildPresenceUrl = (baseUrl: string, appId?: string): string => {
-  return createRestApiUrl(baseUrl, appId ? `/presence/${appId}` : '/presence');
 };
 
 export const buildInfoUrl = (baseUrl: string): string => {
