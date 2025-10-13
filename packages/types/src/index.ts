@@ -60,26 +60,3 @@ export interface ReceivedMessage {
   content?: string;
   embeds?: unknown[];
 }
-
-// Bot Configuration Types
-export interface BotConfig {
-  shards: number;
-  shardsPerCluster: number;
-  token: string;
-  adminIds: Snowflake[];
-}
-
-// REST Configuration Types
-export interface RestConfig {
-  host: string;
-  port: number;
-  redisUri: string;
-  mongoUri: string;
-}
-
-// Common Configuration Types
-export interface CommonConfig {
-  nodeEnv: 'development' | 'production' | 'test';
-  loggerLevel: string;
-  discordToken: string;
-}

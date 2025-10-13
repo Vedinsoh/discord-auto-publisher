@@ -15,6 +15,7 @@
     "@ap/utils": "workspace:*",
     "@discordjs/rest": "^2.4.0",
     "@sapphire/snowflake": "^3.5.3",
+    "cron": "^4.3.3",
     "discord-api-types": "^0.37.100",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",

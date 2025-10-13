@@ -1,5 +1,5 @@
 import { App } from 'app/index.js';
-import { Data } from 'data/index.js';
+import { CronJob } from 'cron';
 import express from 'express';
 import { env } from 'lib/config/env.js';
 import errorHandler from 'middlewares/errorHandler.js';
@@ -14,12 +14,25 @@ app.use(requestLogger);
 app.use(express.json());
 
 // Routes
+app.use('/channel', App.Routes.Channel);
 app.use('/crosspost', App.Routes.Crosspost);
 app.use('/info', App.Routes.Info);
 app.get('/health', App.Routes.Health);
 
 // Error handlers
 app.use(errorHandler());
+
+// TODO check if this is good
+// Sync cache on startup and every 30 minutes
+await Services.Channels.DB.syncCache();
+new CronJob(
+  '*/30 * * * *', // Every 30 minutes
+  async () => {
+    await Services.Channels.DB.syncCache();
+  },
+  null,
+  true
+);
 
 // Start the server
 const server = app.listen('8080', async () => {
@@ -29,10 +42,6 @@ const server = app.listen('8080', async () => {
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {
-  await Data.Drivers.MongoDB.client.close().then(() => {
-    Services.Logger.info('MongoDB connection closed');
-  });
-
   server.close(() => {
     Services.Logger.info('Server closed');
     process.exit();

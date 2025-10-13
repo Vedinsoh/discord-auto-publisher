@@ -1,9 +1,9 @@
-import { BotClients } from './botClients.js';
-import { CrosspostsCounter } from './crosspostsCounter.js';
+import { ChannelCrosspostsCache } from './channelCrosspostsCache.js';
+import { ChannelsCache } from './channelsCache.js';
 import { RateLimitsCache } from './rateLimitsCache.js';
 
 export const Repo = {
-  BotClients,
-  CrosspostsCounter,
+  ChannelCrosspostsCache,
+  ChannelsCache,
   RateLimitsCache,
 };

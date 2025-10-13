@@ -6,7 +6,7 @@ import type { Snowflake } from 'discord-api-types/globals';
 const { DatabaseIDs, Keys } = Constants.Data.Redis;
 
 // Initialize Redis and connect to database
-const redis = new Drivers.Redis.Client(DatabaseIDs.CrosspostsCounter);
+const redis = new Drivers.Redis.Client(DatabaseIDs.ChannelsCrosspostsCount);
 await redis.connect();
 
 // Initialize Redis client
@@ -57,4 +57,4 @@ const getSize = async () => {
   return await client.dbSize();
 };
 
-export const CrosspostsCounter = { set, getCount, getExpiration, getSize };
+export const ChannelCrosspostsCache = { set, getCount, getExpiration, getSize };

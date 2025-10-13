@@ -6,7 +6,7 @@ import { Drivers } from 'data/drivers/index.js';
 const { DatabaseIDs } = Constants.Data.Redis;
 
 // Initialize Redis and connect to database
-const redis = new Drivers.Redis.Client(DatabaseIDs.RequestLimitsCache);
+const redis = new Drivers.Redis.Client(DatabaseIDs.RateLimitsCache);
 await redis.connect();
 
 // Initialize Redis client

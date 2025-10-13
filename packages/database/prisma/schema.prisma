@@ -15,8 +15,6 @@ model Guilds {
   isMigrated       Boolean?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  @@index([guildId])
 }
 
 model Channels {
@@ -26,5 +24,5 @@ model Channels {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([guildId, channelId])
+  @@index([guildId])
 }

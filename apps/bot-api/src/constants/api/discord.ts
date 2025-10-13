@@ -1,9 +1,5 @@
-import { RESTJSONErrorCodes as ErrorCodes, Routes } from 'discord-api-types/v10';
+import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
 import { StatusCodes } from 'http-status-codes';
-
-const routes = {
-  crosspost: Routes.channelMessageCrosspost(':id', ':id'),
-};
 
 const safeErrorCodes: { [key: string]: ErrorCodes[] } = {
   crosspost: [
@@ -24,7 +20,6 @@ const invalidRequestCodes: StatusCodes[] = [
 ];
 
 export const Discord = {
-  routes,
   safeErrorCodes,
   invalidRequestCodes,
 };

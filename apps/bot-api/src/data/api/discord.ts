@@ -1,5 +1,4 @@
 import { REST, RequestMethod } from '@discordjs/rest';
-import { Constants } from 'constants/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Routes } from 'discord-api-types/v10';
 import { env } from 'lib/config/env.js';
@@ -12,7 +11,7 @@ const rest = new REST({
   rejectOnRateLimit: data => {
     // Reject crosspost requests on rate limit to obtain sublimit data
     const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;
-    const isCrosspostRoute = Constants.API.Discord.routes.crosspost === data.route;
+    const isCrosspostRoute = Routes.channelMessageCrosspost(':id', ':id') === data.route;
     const isGlobal = data.global;
 
     return isPostMethod && isCrosspostRoute && !isGlobal;

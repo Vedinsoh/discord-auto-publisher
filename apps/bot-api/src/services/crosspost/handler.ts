@@ -61,7 +61,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
     // Handle Discord API errors
     if (error instanceof DiscordAPIError) {
-      const code = typeof error.code === 'string' ? parseInt(error.code, 10) : error.code;
+      const errorCode = typeof error.code === 'string' ? parseInt(error.code, 10) : error.code;
 
       // Cache the invalid request status codes
       if (Constants.API.Discord.invalidRequestCodes.includes(error.status)) {
@@ -69,12 +69,19 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
       }
 
       // Increment the counter if the message was already crossposted
-      if (code === ErrorCodes.ThisMessageWasAlreadyCrossposted) {
+      if (errorCode === ErrorCodes.ThisMessageWasAlreadyCrossposted) {
         Services.Crosspost.Counter.increment(channelId);
+      }
+      // TODO Handle missing permissions error
+      if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
+      }
+
+      // TODO Handle unknown channel error (channel deleted)
+      if (errorCode === ErrorCodes.UnknownChannel) {
       }
 
       // Check if the error code is safe to ignore
-      if (Constants.API.Discord.safeErrorCodes.crosspost?.includes(code)) {
+      if (Constants.API.Discord.safeErrorCodes.crosspost?.includes(errorCode)) {
         return;
       }
     }
