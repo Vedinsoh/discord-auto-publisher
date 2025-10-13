@@ -4,7 +4,7 @@ import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'Get useful links related to the bot',
+  description: 'Find helpful resources, invite the bot, and connect with our community!',
 })
 export class LinksCommand extends Command {
   public override registerApplicationCommands(registry: Command.Registry) {
@@ -20,6 +20,14 @@ export class LinksCommand extends Command {
       .addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent('✨ **Add bot to your server** ✨')
+          )
+          .setButtonAccessory(Buttons.botInvite)
+      )
+      .addSeparatorComponents(separator => separator)
+      .addSectionComponents(section =>
+        section
+          .addTextDisplayComponents(textDisplay =>
             textDisplay.setContent('Find out more on the website')
           )
           .setButtonAccessory(Buttons.website)
@@ -30,14 +38,6 @@ export class LinksCommand extends Command {
             textDisplay.setContent('Join the support server')
           )
           .setButtonAccessory(Buttons.supportServer)
-      )
-      .addSeparatorComponents(separator => separator)
-      .addSectionComponents(section =>
-        section
-          .addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent('✨ **Add bot to your server** ✨')
-          )
-          .setButtonAccessory(Buttons.botInvite)
       );
 
     return interaction.reply({

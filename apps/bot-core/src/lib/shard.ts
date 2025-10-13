@@ -1,8 +1,16 @@
-import { GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
+import { ActivityType, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { getInfo } from 'discord-hybrid-sharding';
 import { BotClient } from 'lib/structures/client.js';
 
 export const client = new BotClient({
+  presence: {
+    activities: [
+      {
+        name: '/help | auto-publisher.gg',
+        type: ActivityType.Custom,
+      },
+    ],
+  },
   makeCache: Options.cacheWithLimits({
     ...Options.DefaultMakeCacheSettings,
     AutoModerationRuleManager: 0,

@@ -10,7 +10,7 @@ import { Buttons } from 'lib/components/buttons.js';
 import { logger } from 'utils/logger.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'See how to use the bot',
+  description: 'Discover all the ways you can use Auto Publisher to manage your channels!',
 })
 export class HelpCommand extends Command {
   public override registerApplicationCommands(registry: Command.Registry) {

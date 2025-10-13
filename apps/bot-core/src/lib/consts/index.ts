@@ -1,4 +1,4 @@
-import { env } from '../config/env.js';
+import { env } from 'lib/config/env.js';
 
 export const links = {
   website: 'https://auto-publisher.gg',
