@@ -10,8 +10,7 @@ import {
 import { env } from 'lib/config/env.js';
 import { client } from 'lib/shard.js';
 import { Services } from 'services/index.js';
-import { respawnClusters } from 'utils/respawnClusters.js';
-import { shutdown } from 'utils/shutdown.js';
+import { respawnClusters, shutdown } from 'utils/process.js';
 
 @ApplyOptions<Subcommand.Options>({
   description: '[BOT ADMIN] Utility command for bot admins',

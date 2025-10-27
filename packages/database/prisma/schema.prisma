@@ -15,6 +15,9 @@ model Guilds {
   isMigrated       Boolean?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Relations
+  channels Channels[]
 }
 
 model Channels {
@@ -23,6 +26,9 @@ model Channels {
   guildId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relations
+  guild Guilds @relation(fields: [guildId], references: [guildId])
 
   @@index([guildId])
 }

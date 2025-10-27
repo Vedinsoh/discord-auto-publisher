@@ -16,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use('/channel', App.Routes.Channel);
 app.use('/crosspost', App.Routes.Crosspost);
+app.use('/guild', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
 app.get('/health', App.Routes.Health);
 

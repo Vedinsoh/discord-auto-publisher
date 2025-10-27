@@ -1,6 +1,14 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
-import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
+import {
+  ChannelType,
+  ContainerBuilder,
+  InteractionContextType,
+  MessageFlags,
+  PermissionFlagsBits,
+  PermissionsBitField,
+} from 'discord.js';
+import { Services } from '../services/index.js';
 
 @ApplyOptions<Subcommand.Options>({
   description: 'Configure publishing in your announcement channels',
@@ -60,14 +68,131 @@ export class APCommand extends Subcommand {
   }
 
   public async chatInputEnable(interaction: Subcommand.ChatInputCommandInteraction) {
-    return interaction.reply({ content: 'Hello world!' }); // TODO
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    // Enable auto-publishing in the channel
+    if (!interaction.guildId) {
+      return interaction.editReply({
+        content: '❌ This command can only be used in a server.',
+      });
+    }
+
+    const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+
+    // Check if the bot has the necessary permissions to enable auto-crossposting in the channel
+    const botMember = await interaction.guild?.members.me?.fetch();
+    const permissionsBitfield = botMember?.permissionsIn(channel);
+
+    const hasViewChannel = permissionsBitfield?.has(PermissionsBitField.Flags.ViewChannel);
+    const hasSendMessages = permissionsBitfield?.has(PermissionsBitField.Flags.SendMessages);
+    const hasManageMessages = permissionsBitfield?.has(PermissionsBitField.Flags.ManageMessages);
+    const hasReadMessageHistory = permissionsBitfield?.has(
+      PermissionsBitField.Flags.ReadMessageHistory
+    );
+    const hasRequiredPermissions =
+      hasViewChannel && hasSendMessages && hasManageMessages && hasReadMessageHistory;
+
+    // Inform the user if the bot is missing any required permissions
+    if (!hasRequiredPermissions) {
+      const permissions = [
+        { name: 'View Channel', has: hasViewChannel },
+        { name: 'Send Messages', has: hasSendMessages },
+        { name: 'Manage Messages', has: hasManageMessages },
+        { name: 'Read Message History', has: hasReadMessageHistory },
+      ].sort((a, b) => Number(a.has) - Number(b.has));
+
+      const title = '### ⚠️ Missing Permissions';
+      const content = `Bot requires the following permissions in <#${channel.id}> channel to enable auto-publishing:`;
+      const permissionsList = permissions
+        .map(perm => `- ${perm.has ? '✅' : '❌'} \`${perm.name}\``)
+        .join('\n');
+      const retryContent = 'Please review the permissions and try enabling auto-publishing again.';
+
+      const errorContainer = new ContainerBuilder()
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(title))
+        .addSeparatorComponents(separator => separator)
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(content))
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(permissionsList))
+        .addSeparatorComponents(separator => separator)
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(retryContent));
+
+      await interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
+      });
+      return;
+    }
+
+    try {
+      await Services.Channel.enable(interaction.guildId, channel.id);
+
+      return interaction.editReply({
+        content: `✅ Auto-publishing has been enabled in <#${channel.id}> channel!`,
+      });
+    } catch (error) {
+      this.container.logger.error('Failed to enable auto-publishing:', error);
+
+      return interaction.editReply({
+        content: `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`,
+      });
+    }
   }
 
   public async chatInputDisable(interaction: Subcommand.ChatInputCommandInteraction) {
-    return interaction.reply({ content: 'Hello world!' }); // TODO
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    if (!interaction.guildId) {
+      return interaction.editReply({
+        content: '❌ This command can only be used in a server.',
+      });
+    }
+
+    const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+
+    try {
+      await Services.Channel.disable(interaction.guildId, channel.id);
+
+      return interaction.editReply({
+        content: `✅ Auto-publishing has been disabled in <#${channel.id}> channel!`,
+      });
+    } catch (error) {
+      this.container.logger.error('Failed to disable auto-publishing:', error);
+
+      return interaction.editReply({
+        content: `❌ Failed to disable auto-publishing in <#${channel.id}>. Please try again later.`,
+      });
+    }
   }
 
   public async chatInputStatus(interaction: Subcommand.ChatInputCommandInteraction) {
-    return interaction.reply({ content: 'Hello world!' }); // TODO
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    if (!interaction.guildId) {
+      return interaction.editReply({
+        content: '❌ This command can only be used in a server.',
+      });
+    }
+
+    const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+
+    try {
+      const channelInfo = await Services.Channel.getStatus(interaction.guildId, channel.id);
+
+      if (!channelInfo) {
+        return interaction.editReply({
+          content: `❌ Auto-publishing is **disabled** in <#${channel.id}> channel.`,
+        });
+      }
+
+      return interaction.editReply({
+        content: `✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`,
+      });
+    } catch (error) {
+      this.container.logger.error('Failed to check auto-publishing status:', error);
+
+      return interaction.editReply({
+        content: `❌ Failed to check auto-publishing status for <#${channel.id}>. Please try again later.`,
+      });
+    }
   }
 }

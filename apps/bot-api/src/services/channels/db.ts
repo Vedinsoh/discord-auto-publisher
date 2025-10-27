@@ -49,7 +49,7 @@ const create = async (guildId: Snowflake, channelId: Snowflake) => {
 /**
  * Remove channel from channels DB & cache
  * @param channelId ID of the channel
- * @returns Redis response
+ * @returns Channel ID
  */
 const remove = async (channelId: Snowflake) => {
   try {
@@ -61,6 +61,39 @@ const remove = async (channelId: Snowflake) => {
     Services.Logger.error(error);
   }
   return channelId;
+};
+
+/**
+ * Remove all channels for a guild from DB & cache
+ * Uses a single deleteMany query for efficiency
+ * @param guildId ID of the guild
+ * @returns Array of removed channel IDs
+ */
+const removeByGuildId = async (guildId: Snowflake) => {
+  try {
+    // First, get all channel IDs for this guild to remove from cache
+    const guildChannels = await db.channels.findMany({
+      where: { guildId },
+      select: { channelId: true },
+    });
+
+    const channelIds = guildChannels.map(c => c.channelId);
+
+    // Delete all channels for this guild in a single query
+    await db.channels.deleteMany({
+      where: { guildId },
+    });
+
+    // Remove all channels from cache in a single operation
+    if (channelIds.length > 0) {
+      await Data.Repo.ChannelsCache.removeMany(channelIds);
+    }
+
+    return channelIds;
+  } catch (error) {
+    Services.Logger.error(error);
+    throw error;
+  }
 };
 
 /**
@@ -141,6 +174,7 @@ export const DB = {
   findCached,
   create,
   remove,
+  removeByGuildId,
   getSize,
   countByGuild,
   syncCache,

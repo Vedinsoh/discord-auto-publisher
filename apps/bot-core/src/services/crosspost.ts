@@ -14,8 +14,14 @@ const handle = async (message: Message, channel: NewsChannel) => {
   const permissionsBitfield = botMember?.permissionsIn(channel);
 
   // Check necessary permissions
-  if (!permissionsBitfield?.has(PermissionsBitField.Flags.ManageMessages)) return;
-  if (!permissionsBitfield?.has(PermissionsBitField.Flags.SendMessages)) return;
+  if (
+    !permissionsBitfield?.has([
+      PermissionsBitField.Flags.ManageMessages,
+      PermissionsBitField.Flags.SendMessages,
+    ])
+  ) {
+    return;
+  }
 
   // If message has no text content, crosspost immediately
   if (!message.content) {

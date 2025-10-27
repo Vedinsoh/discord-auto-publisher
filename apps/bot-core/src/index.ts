@@ -1,6 +1,6 @@
-import 'utils/process.js';
 import { env } from 'lib/config/env.js';
 import { ClusterManager } from 'lib/structures/clusterManager.js';
+import { logger } from 'utils/logger.js';
 
 const manager = new ClusterManager({
   totalShards: env.BOT_SHARDS,
@@ -10,3 +10,5 @@ const manager = new ClusterManager({
 });
 
 manager.start();
+
+process.on('unhandledRejection', ({ stack }: Error) => logger.error(stack));
