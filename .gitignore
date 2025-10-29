@@ -29,6 +29,8 @@ dist
 .DS_Store
 *.pem
 *.bkp
+*.local
+*.local.*
 
 # Logs
 logs
