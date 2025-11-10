@@ -72,12 +72,19 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
       if (errorCode === ErrorCodes.ThisMessageWasAlreadyCrossposted) {
         Services.Crosspost.Counter.increment(channelId);
       }
-      // TODO Handle missing permissions error
+
+      // Handle missing permissions error - remove channel from cache and DB
       if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
+        Services.Logger.info(`Bot lost access to channel ${channelId}, removing from cache and DB`);
+        Services.Channels.DB.remove(channelId);
+        return;
       }
 
-      // TODO Handle unknown channel error (channel deleted)
+      // Handle unknown channel error (channel deleted) - remove from cache and DB
       if (errorCode === ErrorCodes.UnknownChannel) {
+        Services.Logger.info(`Channel ${channelId} no longer exists, removing from cache and DB`);
+        Services.Channels.DB.remove(channelId);
+        return;
       }
 
       // Check if the error code is safe to ignore
@@ -99,6 +106,24 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
  */
 export const push = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
+    // Check if channel is in cache (i.e., enabled for auto-publishing)
+    const isChannelEnabled = await Data.Repo.ChannelsCache.get(channelId);
+
+    if (!isChannelEnabled) {
+      Services.Logger.debug(
+        `Channel ${channelId} not enabled for auto-publishing, skipping message ${messageId}`
+      );
+
+      return new ServiceResponse(
+        ResponseStatus.Failed,
+        'Channel not enabled for auto-publishing',
+        {
+          pushed: false,
+        },
+        StatusCodes.NOT_FOUND
+      );
+    }
+
     Services.Crosspost.Queue.add(channelId, messageId);
 
     Services.Logger.debug(`Message ${messageId} pushed to crosspost queue`);

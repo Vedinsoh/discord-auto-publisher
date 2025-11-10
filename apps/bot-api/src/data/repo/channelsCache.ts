@@ -68,7 +68,19 @@ const get = async (channelId: Snowflake) => {
  */
 const getAll = async (): Promise<Snowflake[]> => {
   const keyPattern = `${Keys.Channel}:*`;
-  const keys = await client.keys(keyPattern);
+  const keys: string[] = [];
+  let cursor = 0;
+
+  // Use SCAN instead of KEYS for production safety (non-blocking)
+  do {
+    const result = await client.scan(cursor, {
+      MATCH: keyPattern,
+      COUNT: 100, // Scan 100 keys at a time
+    });
+    cursor = result.cursor;
+    keys.push(...result.keys);
+  } while (cursor !== 0);
+
   return keys.map(key => key.replace(`${Keys.Channel}:`, '') as Snowflake);
 };
 
@@ -77,7 +89,21 @@ const getAll = async (): Promise<Snowflake[]> => {
  * @returns Size of the list
  */
 const getSize = async () => {
-  return await client.dbSize();
+  const keyPattern = `${Keys.Channel}:*`;
+  const keys: string[] = [];
+  let cursor = 0;
+
+  // Use SCAN instead of KEYS for production safety (non-blocking)
+  do {
+    const result = await client.scan(cursor, {
+      MATCH: keyPattern,
+      COUNT: 100, // Scan 100 keys at a time
+    });
+    cursor = result.cursor;
+    keys.push(...result.keys);
+  } while (cursor !== 0);
+
+  return keys.length;
 };
 
 export const ChannelsCache = { set, setMany, remove, removeMany, get, getAll, getSize };

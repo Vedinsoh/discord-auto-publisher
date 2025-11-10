@@ -1,5 +1,4 @@
 import { App } from 'app/index.js';
-import { CronJob } from 'cron';
 import express from 'express';
 import { env } from 'lib/config/env.js';
 import errorHandler from 'middlewares/errorHandler.js';
@@ -23,17 +22,8 @@ app.get('/health', App.Routes.Health);
 // Error handlers
 app.use(errorHandler());
 
-// TODO check if this is good
-// Sync cache on startup and every 30 minutes
+// Sync cache on startup to ensure consistency between DB and cache
 await Services.Channels.DB.syncCache();
-new CronJob(
-  '*/30 * * * *', // Every 30 minutes
-  async () => {
-    await Services.Channels.DB.syncCache();
-  },
-  null,
-  true
-);
 
 // Start the server
 const server = app.listen('8080', async () => {

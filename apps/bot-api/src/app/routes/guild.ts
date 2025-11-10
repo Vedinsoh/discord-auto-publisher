@@ -1,6 +1,7 @@
 import express, { type Request, type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
-import { handleServiceResponse } from 'utils/httpHandlers.js';
+import { handleServiceResponse, validateRequest } from 'utils/httpHandlers.js';
+import { GuildReqSchema } from 'utils/validations.js';
 
 export const Guild: Router = (() => {
   const router = express.Router();
@@ -9,13 +10,17 @@ export const Guild: Router = (() => {
    * Deletes a guild and all its associated channels
    * Removes the guild and channels from both the DB and Redis cache
    */
-  router.delete('/:guildId', async (req: Request, res: Response) => {
-    const { guildId } = req.params;
+  router.delete(
+    '/:guildId',
+    validateRequest(GuildReqSchema),
+    async (req: Request, res: Response) => {
+      const { guildId } = req.params;
 
-    const serviceResponse = await Services.Guilds.Handler.remove(guildId as string);
+      const serviceResponse = await Services.Guilds.Handler.remove(guildId as string);
 
-    handleServiceResponse(serviceResponse, res);
-  });
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
 
   return router;
 })();

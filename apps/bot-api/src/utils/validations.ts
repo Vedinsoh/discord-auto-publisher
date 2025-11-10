@@ -20,6 +20,19 @@ export const CrosspostReqSchema = z.object({
   }),
 });
 
+export const ChannelReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+});
+
+export const GuildReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+});
+
 export const PresenceReqSchema = z.object({
   params: z.object({
     appId: Validations.snowflakeId,

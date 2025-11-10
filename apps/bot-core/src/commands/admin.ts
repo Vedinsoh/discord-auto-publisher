@@ -75,6 +75,7 @@ export class AdminCommand extends Subcommand {
     const infoContent = [
       '### Bot info:',
       `> Guilds: ${guildsCount}`,
+      `> Enabled channels: ${data?.cache?.channels ?? 'N/A'}`,
       `> Channel queues size: ${data?.channelQueues}`,
       `> Rate limits cache size: ${data?.rateLimitsSize}`,
     ].join('\n');

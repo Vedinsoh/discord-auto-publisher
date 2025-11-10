@@ -9,6 +9,7 @@ const get = async () => {
   try {
     const info = Services.Crosspost.Queue.getInfo();
     const rateLimitsSize = await Services.RateLimitsCache.getSize();
+    const channelsCacheSize = await Services.Channels.DB.getSize();
 
     return new ServiceResponse(
       ResponseStatus.Success,
@@ -16,6 +17,9 @@ const get = async () => {
       {
         ...info,
         rateLimitsSize,
+        cache: {
+          channels: channelsCacheSize,
+        },
       },
       StatusCodes.OK
     );

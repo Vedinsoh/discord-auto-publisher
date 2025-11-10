@@ -6,6 +6,9 @@ type InfoData = {
   channelQueues: number;
   paused: boolean;
   rateLimitsSize: number;
+  cache?: {
+    channels: number;
+  };
 };
 
 const get = async (): Promise<InfoData | null> => {

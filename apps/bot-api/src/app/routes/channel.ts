@@ -1,7 +1,7 @@
 import express, { type Request, type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
 import { handleServiceResponse, validateRequest } from 'utils/httpHandlers.js';
-import { CrosspostReqSchema } from 'utils/validations.js';
+import { ChannelReqSchema } from 'utils/validations.js';
 
 export const Channel: Router = (() => {
   const router = express.Router();
@@ -12,17 +12,16 @@ export const Channel: Router = (() => {
    */
   router.put(
     '/:guildId/:channelId',
-    validateRequest(CrosspostReqSchema),
+    validateRequest(ChannelReqSchema),
     async (req: Request, res: Response) => {
-      // TODO check types
       const { guildId, channelId } = req.params;
 
       // TODO
       // Check if updates channel is configured
 
       const serviceResponse = await Services.Channels.Handler.add(
-        guildId as string, // TODO check types
-        channelId as string // TODO check types
+        guildId as string,
+        channelId as string
       );
 
       handleServiceResponse(serviceResponse, res);
@@ -33,13 +32,17 @@ export const Channel: Router = (() => {
    * Disables auto-publishing in a specific channel
    * Removes the channel from the Redis cache and DB
    */
-  router.delete('/:guildId/:channelId', async (req: Request, res: Response) => {
-    const { channelId } = req.params;
+  router.delete(
+    '/:guildId/:channelId',
+    validateRequest(ChannelReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId } = req.params;
 
-    const serviceResponse = await Services.Channels.Handler.remove(channelId as string);
+      const serviceResponse = await Services.Channels.Handler.remove(channelId as string);
 
-    handleServiceResponse(serviceResponse, res);
-  });
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
 
   /**
    * Gets all channels enabled for auto-publishing in a guild
