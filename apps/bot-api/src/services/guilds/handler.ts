@@ -4,6 +4,21 @@ import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
 
 /**
+ * Ensure guild exists in DB (creates if not exists)
+ * @param guildId ID of the guild
+ * @returns void
+ */
+const ensureExists = async (guildId: Snowflake) => {
+  try {
+    await Services.Guilds.DB.upsert(guildId);
+    Services.Logger.debug(`Ensured guild ${guildId} exists in DB`);
+  } catch (error) {
+    Services.Logger.error(error);
+    throw error;
+  }
+};
+
+/**
  * Remove guild and all its channels
  * @param guildId ID of the guild
  * @returns Service response
@@ -36,5 +51,6 @@ const remove = async (guildId: Snowflake) => {
 };
 
 export const Handler = {
+  ensureExists,
   remove,
 };

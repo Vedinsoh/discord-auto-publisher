@@ -13,7 +13,7 @@ import { Data } from '../data/index.js';
  * @param channel The channel to fetch
  * @returns Channel data
  */
-const fetch = async (channel: DiscordChannel | GuildChannel) => {
+const fetchChannel = async (channel: DiscordChannel | GuildChannel) => {
   // Get the channel data if it's partial
   if (channel.partial) {
     return await channel.fetch();
@@ -28,7 +28,7 @@ const fetch = async (channel: DiscordChannel | GuildChannel) => {
  * @returns News channel data or null if not a news channel
  */
 const fetchNewsChannel = async (channel: DiscordChannel | GuildChannel) => {
-  const fetchedChannel = await fetch(channel);
+  const fetchedChannel = await fetchChannel(channel);
 
   if (fetchedChannel.type !== ChannelType.GuildAnnouncement) {
     return null;
@@ -91,7 +91,7 @@ const remove = async (guildId: Snowflake, channelId: Snowflake) => {
 };
 
 export const Channel = {
-  fetch,
+  fetchChannel,
   fetchNewsChannel,
   enable,
   disable,

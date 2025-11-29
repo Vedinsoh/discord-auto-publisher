@@ -54,6 +54,9 @@ const add = async (guildId: Snowflake, channelId: Snowflake) => {
   }
 
   try {
+    // Ensure guild exists before adding channel
+    await Services.Guilds.Handler.ensureExists(guildId);
+
     await Services.Channels.DB.create(guildId, channelId);
     Services.Logger.debug(`Added channel ${channelId} for guild ${guildId}`);
 
