@@ -119,7 +119,7 @@ Channels {
 ```
 NODE_ENV: development|production|test
 DISCORD_TOKEN
-APP_EDITION: free|pro
+APP_EDITION: free|premium
 BOT_SHARDS
 BOT_SHARDS_PER_CLUSTER
 MONGO_URI

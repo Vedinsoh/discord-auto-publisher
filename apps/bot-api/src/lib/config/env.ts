@@ -12,7 +12,7 @@ export const env = cleanEnv(process.env, {
 
   // Common
   DISCORD_TOKEN: str({ default: '' }),
-  APP_EDITION: str({ default: 'free', choices: ['free', 'pro'] }),
+  APP_EDITION: str({ default: 'free', choices: ['free', 'premium'] }),
 
   // Bot API
   MONGO_URI: url({ default: 'mongodb://bot:27017' }),

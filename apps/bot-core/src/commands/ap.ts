@@ -153,7 +153,7 @@ export class APCommand extends Subcommand {
           const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
             textDisplay.setContent(
               `${emojis.crossmark} You have reached the maximum number of channels (3) for auto-publishing.\n\n` +
-                '✨ Upgrade to **Pro** at <https://auto-publisher.gg> to enable unlimited channels and gain extra benefits!'
+                '✨ Upgrade to **Premium** at <https://auto-publisher.gg> to enable unlimited channels and gain extra benefits!'
             )
           );
 
