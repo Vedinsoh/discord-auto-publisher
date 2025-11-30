@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle } from 'discord.js';
-import { links } from 'lib/consts/index.js';
+import { emojis, links } from 'lib/consts/index.js';
 
 export const website = new ButtonBuilder()
   .setLabel('Website')
@@ -7,6 +7,7 @@ export const website = new ButtonBuilder()
   .setStyle(ButtonStyle.Link);
 
 export const botInvite = new ButtonBuilder()
+  .setEmoji(emojis.botFree)
   .setLabel('Invite the bot!')
   .setURL(links.botInvite)
   .setStyle(ButtonStyle.Link);

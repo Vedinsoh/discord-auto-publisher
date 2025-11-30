@@ -7,6 +7,7 @@ export const links = {
 };
 
 export const emojis = {
+  botFree: '<:auto_publisher:1444800510489264298>',
   checkmark: '<:ap_check_mark:1444784796470612089>',
   crossmark: '<:ap_cross_mark:1444785716348321933>',
   info: '<:ap_info:1444787324310519899>',
