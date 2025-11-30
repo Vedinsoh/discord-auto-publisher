@@ -124,6 +124,14 @@ export class APCommand extends Subcommand {
           });
         }
 
+        if (response.status === 400) {
+          return interaction.editReply({
+            content:
+              '❌ You have reached the maximum number of channels (3) for auto-publishing.\n\n' +
+              '✨ Upgrade to **Pro** at <https://auto-publisher.gg> to enable unlimited channels and gain extra benefits!',
+          });
+        }
+
         this.container.logger.error(
           `Failed to enable auto-publishing: ${response.status} ${response.statusText}`
         );
