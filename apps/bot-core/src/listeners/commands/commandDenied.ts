@@ -6,6 +6,7 @@ import {
   type UserError,
 } from '@sapphire/framework';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
+import { emojis } from 'lib/consts/index.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.ChatInputCommandDenied,
@@ -13,7 +14,7 @@ import { ContainerBuilder, MessageFlags } from 'discord.js';
 export class CommandDeniedListener extends Listener {
   public run(error: UserError, { interaction }: ChatInputCommandDeniedPayload) {
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(error.message)
+      textDisplay.setContent(`${emojis.crossmark} ${error.message}`)
     );
 
     interaction.reply({

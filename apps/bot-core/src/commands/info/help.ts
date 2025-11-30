@@ -7,6 +7,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
+import { emojis } from 'lib/consts/index.js';
 import { logger } from 'utils/logger.js';
 
 @ApplyOptions<Command.Options>({
@@ -33,18 +34,18 @@ export class HelpCommand extends Command {
       .addTextDisplayComponents(textDisplay => textDisplay.setContent('**How to use the bot:**'))
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `🟢  Use </ap enable:${apCommandId}> to enable auto-publishing in a channel.`
+          `${emojis.greenCircle}  Use </ap enable:${apCommandId}> to enable auto-publishing in a channel.`
         )
       )
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `🔴  Use </ap disable:${apCommandId}> to stop auto-publishing in a channel.`
+          `${emojis.redCircle}  Use </ap disable:${apCommandId}> to stop auto-publishing in a channel.`
         )
       )
       .addSeparatorComponents(separator => separator)
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `ℹ️  Use </ap status:${apCommandId}> to check if auto-publishing is enabled.`
+          `${emojis.info}  Use </ap status:${apCommandId}> to check if auto-publishing is enabled.`
         )
       )
       .addSeparatorComponents(separator => separator)

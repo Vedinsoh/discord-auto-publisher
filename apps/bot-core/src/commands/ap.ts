@@ -7,6 +7,7 @@ import {
   MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
+import { emojis, messages } from 'lib/consts/index.js';
 import { Services } from '../services/index.js';
 import { checkChannelPermissions } from '../utils/permissions.js';
 
@@ -77,7 +78,7 @@ export class APCommand extends Subcommand {
     // Enable auto-publishing in the channel
     if (!interaction.guildId) {
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent('❌ This command can only be used in a server.')
+        textDisplay.setContent(`${emojis.crossmark} This command can only be used in a server.`)
       );
 
       return interaction.editReply({
@@ -95,7 +96,7 @@ export class APCommand extends Subcommand {
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
+          `${emojis.crossmark} Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
         )
       );
 
@@ -109,10 +110,10 @@ export class APCommand extends Subcommand {
 
     // Inform the user if the bot is missing any required permissions
     if (!permissionCheck.hasAll) {
-      const title = '### ⚠️ Missing Permissions';
+      const title = `### ${emojis.warning} Missing Permissions`;
       const content = `Bot requires the following permissions in <#${channel.id}> channel to enable auto-publishing:`;
       const permissionsList = permissionCheck.permissions
-        .map(perm => `- ${perm.has ? '✅' : '❌'} \`${perm.name}\``)
+        .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
         .join('\n');
       const retryContent = 'Please review the permissions and try enabling auto-publishing again.';
 
@@ -138,7 +139,7 @@ export class APCommand extends Subcommand {
         if (response.status === 409) {
           const infoContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
             textDisplay.setContent(
-              `ℹ️ Auto-publishing is already enabled in <#${channel.id}> channel.`
+              `${emojis.info} Auto-publishing is already enabled in <#${channel.id}> channel.`
             )
           );
 
@@ -151,7 +152,7 @@ export class APCommand extends Subcommand {
         if (response.status === 400) {
           const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
             textDisplay.setContent(
-              '❌ You have reached the maximum number of channels (3) for auto-publishing.\n\n' +
+              `${emojis.crossmark} You have reached the maximum number of channels (3) for auto-publishing.\n\n` +
                 '✨ Upgrade to **Pro** at <https://auto-publisher.gg> to enable unlimited channels and gain extra benefits!'
             )
           );
@@ -168,7 +169,7 @@ export class APCommand extends Subcommand {
 
         const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
+            `${emojis.crossmark} Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
           )
         );
 
@@ -178,14 +179,10 @@ export class APCommand extends Subcommand {
         });
       }
 
-      const successMessage = `✅ Auto-publishing has been enabled in <#${channel.id}> channel!`;
-      const delayNote =
-        process.env.APP_EDITION === 'free'
-          ? '\n\n*Note: Messages might have delays in publishing due to Discord API limits.*'
-          : '';
+      const successMessage = `${emojis.checkmark} Auto-publishing has been enabled in <#${channel.id}> channel!`;
 
       const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(successMessage + delayNote)
+        textDisplay.setContent(successMessage + messages.delayNote)
       );
 
       return interaction.editReply({
@@ -197,7 +194,7 @@ export class APCommand extends Subcommand {
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
+          `${emojis.crossmark} Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
         )
       );
 
@@ -213,7 +210,7 @@ export class APCommand extends Subcommand {
 
     if (!interaction.guildId) {
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent('❌ This command can only be used in a server.')
+        textDisplay.setContent(`${emojis.crossmark} This command can only be used in a server.`)
       );
 
       return interaction.editReply({
@@ -228,7 +225,9 @@ export class APCommand extends Subcommand {
       await Services.Channel.disable(interaction.guildId, channel.id);
 
       const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(`✅ Auto-publishing has been disabled in <#${channel.id}> channel!`)
+        textDisplay.setContent(
+          `${emojis.checkmark} Auto-publishing has been disabled in <#${channel.id}> channel!`
+        )
       );
 
       return interaction.editReply({
@@ -240,7 +239,7 @@ export class APCommand extends Subcommand {
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `❌ Failed to disable auto-publishing in <#${channel.id}>. Please try again later.`
+          `${emojis.crossmark} Failed to disable auto-publishing in <#${channel.id}>. Please try again later.`
         )
       );
 
@@ -256,7 +255,7 @@ export class APCommand extends Subcommand {
 
     if (!interaction.guildId) {
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent('❌ This command can only be used in a server.')
+        textDisplay.setContent(`${emojis.crossmark} This command can only be used in a server.`)
       );
 
       return interaction.editReply({
@@ -275,7 +274,7 @@ export class APCommand extends Subcommand {
         if (!channelIds || channelIds.length === 0) {
           const noChannelsContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
             textDisplay.setContent(
-              '❌ No channels are currently enabled for auto-publishing in this server.'
+              `${emojis.crossmark} No channels are currently enabled for auto-publishing in this server.`
             )
           );
 
@@ -290,7 +289,7 @@ export class APCommand extends Subcommand {
 
         const listContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `✅ Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}`
+            `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${messages.delayNote}`
           )
         );
 
@@ -303,7 +302,7 @@ export class APCommand extends Subcommand {
 
         const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            '❌ Failed to retrieve auto-publishing channels. Please try again later.'
+            `${emojis.crossmark} Failed to retrieve auto-publishing channels. Please try again later.`
           )
         );
 
@@ -320,7 +319,9 @@ export class APCommand extends Subcommand {
 
       if (!channelStatus || !channelStatus.enabled) {
         const disabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(`❌ Auto-publishing is **disabled** in <#${channel.id}> channel.`)
+          textDisplay.setContent(
+            `${emojis.crossmark} Auto-publishing is **disabled** in <#${channel.id}> channel.`
+          )
         );
 
         return interaction.editReply({
@@ -335,7 +336,9 @@ export class APCommand extends Subcommand {
         this.container.logger.error('Failed to fetch bot member information for permission check');
 
         const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(`✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`)
+          textDisplay.setContent(
+            `${emojis.checkmark} Auto-publishing is **enabled** in <#${channel.id}> channel.`
+          )
         );
 
         return interaction.editReply({
@@ -348,10 +351,10 @@ export class APCommand extends Subcommand {
 
       // If enabled but missing permissions, show warning
       if (!permissionCheck.hasAll) {
-        const title = '### ⚠️ Auto-publishing enabled with missing permissions';
+        const title = `### ${emojis.warning} Auto-publishing enabled with missing permissions`;
         const content = `Auto-publishing is currently **enabled** in <#${channel.id}>, but the bot is missing required permissions:`;
         const permissionsList = permissionCheck.permissions
-          .map(perm => `- ${perm.has ? '✅' : '❌'} \`${perm.name}\``)
+          .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
           .join('\n');
         const warningContent =
           '**Warning:** The channel will be automatically disabled from auto-publishing within 7 days if permissions are not fixed.';
@@ -374,7 +377,9 @@ export class APCommand extends Subcommand {
       }
 
       const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(`✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`)
+        textDisplay.setContent(
+          `${emojis.checkmark} Auto-publishing is **enabled** in <#${channel.id}> channel.${messages.delayNote}`
+        )
       );
 
       return interaction.editReply({
@@ -386,7 +391,7 @@ export class APCommand extends Subcommand {
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `❌ Failed to check auto-publishing status for <#${channel.id}>. Please try again later.`
+          `${emojis.crossmark} Failed to check auto-publishing status for <#${channel.id}>. Please try again later.`
         )
       );
 
