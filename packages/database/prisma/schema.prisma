@@ -8,17 +8,17 @@ datasource db {
   url      = env("MONGO_URI")
 }
 
-model Guilds {
+model guilds {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   guildId   String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  channels Channels[]
+  channels channels[]
 }
 
-model Channels {
+model channels {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   channelId String   @unique
   guildId   String
@@ -26,7 +26,7 @@ model Channels {
   updatedAt DateTime @updatedAt
 
   // Relations
-  guild Guilds @relation(fields: [guildId], references: [guildId])
+  guild guilds @relation(fields: [guildId], references: [guildId])
 
   @@index([guildId])
 }

@@ -115,7 +115,22 @@ export class APCommand extends Subcommand {
     }
 
     try {
-      await Services.Channel.enable(interaction.guildId, channel.id);
+      const response = await Services.Channel.enable(interaction.guildId, channel.id);
+
+      if (!response.ok) {
+        if (response.status === 409) {
+          return interaction.editReply({
+            content: `ℹ️ Auto-publishing is already enabled in <#${channel.id}> channel.`,
+          });
+        }
+
+        this.container.logger.error(
+          `Failed to enable auto-publishing: ${response.status} ${response.statusText}`
+        );
+        return interaction.editReply({
+          content: `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`,
+        });
+      }
 
       return interaction.editReply({
         content: `✅ Auto-publishing has been enabled in <#${channel.id}> channel!`,
@@ -167,9 +182,9 @@ export class APCommand extends Subcommand {
     const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
     try {
-      const channelInfo = await Services.Channel.getStatus(interaction.guildId, channel.id);
+      const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
 
-      if (!channelInfo) {
+      if (!channelStatus || !channelStatus.enabled) {
         return interaction.editReply({
           content: `❌ Auto-publishing is **disabled** in <#${channel.id}> channel.`,
         });
@@ -194,8 +209,9 @@ export class APCommand extends Subcommand {
           .map(perm => `- ${perm.has ? '✅' : '❌'} \`${perm.name}\``)
           .join('\n');
         const warningContent =
-          '**Warning:** The channel will be automatically removed from auto-publishing within 7 days if permissions are not fixed.';
-        const actionContent = 'Please grant the missing permissions to ensure auto-publishing continues working.';
+          '**Warning:** The channel will be automatically disabled from auto-publishing within 7 days if permissions are not fixed.';
+        const actionContent =
+          'Please grant the missing permissions to ensure auto-publishing continues working.';
 
         const warningContainer = new ContainerBuilder()
           .addTextDisplayComponents(textDisplay => textDisplay.setContent(title))

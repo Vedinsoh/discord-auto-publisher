@@ -61,10 +61,20 @@ const disable = async (guildId: Snowflake, channelId: Snowflake) => {
  * Get status of a channel
  * @param guildId The guild ID
  * @param channelId The channel ID
- * @returns Channel info from API
+ * @returns Channel status object with enabled flag, or null if request fails
  */
 const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
-  return await Data.API.Bot.getChannel(guildId, channelId);
+  const response = await Data.API.Bot.getChannel(guildId, channelId);
+
+  if (!response.ok) {
+    container.logger.error(
+      `Failed to get channel status ${channelId}: ${response.status} ${response.statusText}`
+    );
+    return null;
+  }
+
+  const data = (await response.json()) as { enabled: boolean; channelId?: string };
+  return data;
 };
 
 /**
