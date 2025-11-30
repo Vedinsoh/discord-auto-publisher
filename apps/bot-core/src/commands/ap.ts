@@ -6,9 +6,9 @@ import {
   InteractionContextType,
   MessageFlags,
   PermissionFlagsBits,
-  PermissionsBitField,
 } from 'discord.js';
 import { Services } from '../services/index.js';
+import { checkChannelPermissions } from '../utils/permissions.js';
 
 @ApplyOptions<Subcommand.Options>({
   description: 'Configure publishing in your announcement channels',
@@ -81,29 +81,20 @@ export class APCommand extends Subcommand {
 
     // Check if the bot has the necessary permissions to enable auto-crossposting in the channel
     const botMember = await interaction.guild?.members.me?.fetch();
-    const permissionsBitfield = botMember?.permissionsIn(channel);
+    if (!botMember) {
+      this.container.logger.error('Failed to fetch bot member information');
+      return interaction.editReply({
+        content: `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`,
+      });
+    }
 
-    const hasViewChannel = permissionsBitfield?.has(PermissionsBitField.Flags.ViewChannel);
-    const hasSendMessages = permissionsBitfield?.has(PermissionsBitField.Flags.SendMessages);
-    const hasManageMessages = permissionsBitfield?.has(PermissionsBitField.Flags.ManageMessages);
-    const hasReadMessageHistory = permissionsBitfield?.has(
-      PermissionsBitField.Flags.ReadMessageHistory
-    );
-    const hasRequiredPermissions =
-      hasViewChannel && hasSendMessages && hasManageMessages && hasReadMessageHistory;
+    const permissionCheck = checkChannelPermissions(botMember, channel);
 
     // Inform the user if the bot is missing any required permissions
-    if (!hasRequiredPermissions) {
-      const permissions = [
-        { name: 'View Channel', has: hasViewChannel },
-        { name: 'Send Messages', has: hasSendMessages },
-        { name: 'Manage Messages', has: hasManageMessages },
-        { name: 'Read Message History', has: hasReadMessageHistory },
-      ].sort((a, b) => Number(a.has) - Number(b.has));
-
+    if (!permissionCheck.hasAll) {
       const title = '### ⚠️ Missing Permissions';
       const content = `Bot requires the following permissions in <#${channel.id}> channel to enable auto-publishing:`;
-      const permissionsList = permissions
+      const permissionsList = permissionCheck.permissions
         .map(perm => `- ${perm.has ? '✅' : '❌'} \`${perm.name}\``)
         .join('\n');
       const retryContent = 'Please review the permissions and try enabling auto-publishing again.';
@@ -181,6 +172,43 @@ export class APCommand extends Subcommand {
       if (!channelInfo) {
         return interaction.editReply({
           content: `❌ Auto-publishing is **disabled** in <#${channel.id}> channel.`,
+        });
+      }
+
+      // Check bot permissions in the channel
+      const botMember = await interaction.guild?.members.me?.fetch();
+      if (!botMember) {
+        this.container.logger.error('Failed to fetch bot member information for permission check');
+        return interaction.editReply({
+          content: `✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`,
+        });
+      }
+
+      const permissionCheck = checkChannelPermissions(botMember, channel);
+
+      // If enabled but missing permissions, show warning
+      if (!permissionCheck.hasAll) {
+        const title = '### ⚠️ Auto-publishing enabled with missing permissions';
+        const content = `Auto-publishing is currently **enabled** in <#${channel.id}>, but the bot is missing required permissions:`;
+        const permissionsList = permissionCheck.permissions
+          .map(perm => `- ${perm.has ? '✅' : '❌'} \`${perm.name}\``)
+          .join('\n');
+        const warningContent =
+          '**Warning:** The channel will be automatically removed from auto-publishing within 7 days if permissions are not fixed.';
+        const actionContent = 'Please grant the missing permissions to ensure auto-publishing continues working.';
+
+        const warningContainer = new ContainerBuilder()
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(title))
+          .addSeparatorComponents(separator => separator)
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(content))
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(permissionsList))
+          .addSeparatorComponents(separator => separator)
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(warningContent))
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(actionContent));
+
+        return interaction.editReply({
+          flags: [MessageFlags.IsComponentsV2],
+          components: [warningContainer],
         });
       }
 

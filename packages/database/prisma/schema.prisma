@@ -9,12 +9,10 @@ datasource db {
 }
 
 model Guilds {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  guildId          String   @unique
-  updatesChannelId String?
-  isMigrated       Boolean? @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  guildId   String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
   channels Channels[]

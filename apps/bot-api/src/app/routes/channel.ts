@@ -1,4 +1,5 @@
 import express, { type Request, type Response, type Router } from 'express';
+import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
 import { handleServiceResponse, validateRequest } from 'utils/httpHandlers.js';
 import { ChannelReqSchema } from 'utils/validations.js';
@@ -15,9 +16,6 @@ export const Channel: Router = (() => {
     validateRequest(ChannelReqSchema),
     async (req: Request, res: Response) => {
       const { guildId, channelId } = req.params;
-
-      // TODO
-      // Check if updates channel is configured
 
       const serviceResponse = await Services.Channels.Handler.add(
         guildId as string,
@@ -45,17 +43,29 @@ export const Channel: Router = (() => {
   );
 
   /**
-   * Gets all channels enabled for auto-publishing in a guild
-   * Returns a list of channel IDs
+   * Checks if a specific channel is enabled for auto-publishing
+   * Returns channel status
    */
-  router.get('/:guildId/:channelId', async (req: Request, res: Response) => {
-    const { guildId, channelId } = req.params;
+  router.get(
+    '/:guildId/:channelId',
+    validateRequest(ChannelReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId } = req.params;
 
-    // TODO
-    // const serviceResponse = await Services.Channel.Handler.getAll(guildId as string);
+      const channel = await Services.Channels.Handler.get(channelId as string);
 
-    // handleServiceResponse(serviceResponse, res);
-  });
+      if (channel) {
+        res.status(StatusCodes.OK).json({
+          enabled: true,
+          channelId: channel,
+        });
+      } else {
+        res.status(StatusCodes.OK).json({
+          enabled: false,
+        });
+      }
+    }
+  );
 
   return router;
 })();

@@ -100,7 +100,7 @@ bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
 ### Database schema (Prisma + MongoDB)
 ```
 Guilds {
-  guildId, updatesChannelId, isMigrated
+  guildId
   channels[] (relation)
 }
 
