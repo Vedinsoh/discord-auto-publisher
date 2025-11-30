@@ -55,11 +55,15 @@ export class APCommand extends Subcommand {
         .addSubcommand(subcommand =>
           subcommand //
             .setName('status')
-            .setDescription('Check auto-publishing status for a channel or list all enabled channels')
+            .setDescription(
+              'Check auto-publishing status for a channel or list all enabled channels'
+            )
             .addChannelOption(option =>
               option //
                 .setName('channel')
-                .setDescription('The announcement channel to check (leave empty to list all enabled channels)')
+                .setDescription(
+                  'The announcement channel to check (leave empty to list all enabled channels)'
+                )
                 .setRequired(false)
                 .addChannelTypes([ChannelType.GuildAnnouncement])
             )
@@ -72,8 +76,13 @@ export class APCommand extends Subcommand {
 
     // Enable auto-publishing in the channel
     if (!interaction.guildId) {
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent('❌ This command can only be used in a server.')
+      );
+
       return interaction.editReply({
-        content: '❌ This command can only be used in a server.',
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
 
@@ -83,8 +92,16 @@ export class APCommand extends Subcommand {
     const botMember = await interaction.guild?.members.me?.fetch();
     if (!botMember) {
       this.container.logger.error('Failed to fetch bot member information');
+
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
+        )
+      );
+
       return interaction.editReply({
-        content: `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
 
@@ -119,35 +136,74 @@ export class APCommand extends Subcommand {
 
       if (!response.ok) {
         if (response.status === 409) {
+          const infoContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent(
+              `ℹ️ Auto-publishing is already enabled in <#${channel.id}> channel.`
+            )
+          );
+
           return interaction.editReply({
-            content: `ℹ️ Auto-publishing is already enabled in <#${channel.id}> channel.`,
+            flags: [MessageFlags.IsComponentsV2],
+            components: [infoContainer],
           });
         }
 
         if (response.status === 400) {
-          return interaction.editReply({
-            content:
+          const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent(
               '❌ You have reached the maximum number of channels (3) for auto-publishing.\n\n' +
-              '✨ Upgrade to **Pro** at <https://auto-publisher.gg> to enable unlimited channels and gain extra benefits!',
+                '✨ Upgrade to **Pro** at <https://auto-publisher.gg> to enable unlimited channels and gain extra benefits!'
+            )
+          );
+
+          return interaction.editReply({
+            flags: [MessageFlags.IsComponentsV2],
+            components: [limitContainer],
           });
         }
 
         this.container.logger.error(
           `Failed to enable auto-publishing: ${response.status} ${response.statusText}`
         );
+
+        const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
+          )
+        );
+
         return interaction.editReply({
-          content: `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`,
+          flags: [MessageFlags.IsComponentsV2],
+          components: [errorContainer],
         });
       }
 
+      const successMessage = `✅ Auto-publishing has been enabled in <#${channel.id}> channel!`;
+      const delayNote =
+        process.env.APP_EDITION === 'free'
+          ? '\n\n*Note: Messages might have delays in publishing due to Discord API limits.*'
+          : '';
+
+      const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(successMessage + delayNote)
+      );
+
       return interaction.editReply({
-        content: `✅ Auto-publishing has been enabled in <#${channel.id}> channel!`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [successContainer],
       });
     } catch (error) {
       this.container.logger.error('Failed to enable auto-publishing:', error);
 
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
+        )
+      );
+
       return interaction.editReply({
-        content: `❌ Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
   }
@@ -156,8 +212,13 @@ export class APCommand extends Subcommand {
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     if (!interaction.guildId) {
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent('❌ This command can only be used in a server.')
+      );
+
       return interaction.editReply({
-        content: '❌ This command can only be used in a server.',
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
 
@@ -166,14 +227,26 @@ export class APCommand extends Subcommand {
     try {
       await Services.Channel.disable(interaction.guildId, channel.id);
 
+      const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(`✅ Auto-publishing has been disabled in <#${channel.id}> channel!`)
+      );
+
       return interaction.editReply({
-        content: `✅ Auto-publishing has been disabled in <#${channel.id}> channel!`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [successContainer],
       });
     } catch (error) {
       this.container.logger.error('Failed to disable auto-publishing:', error);
 
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `❌ Failed to disable auto-publishing in <#${channel.id}>. Please try again later.`
+        )
+      );
+
       return interaction.editReply({
-        content: `❌ Failed to disable auto-publishing in <#${channel.id}>. Please try again later.`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
   }
@@ -182,8 +255,13 @@ export class APCommand extends Subcommand {
     await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     if (!interaction.guildId) {
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent('❌ This command can only be used in a server.')
+      );
+
       return interaction.editReply({
-        content: '❌ This command can only be used in a server.',
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
 
@@ -195,22 +273,43 @@ export class APCommand extends Subcommand {
         const channelIds = await Services.Channel.getGuildChannels(interaction.guildId);
 
         if (!channelIds || channelIds.length === 0) {
+          const noChannelsContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent(
+              '❌ No channels are currently enabled for auto-publishing in this server.'
+            )
+          );
+
           return interaction.editReply({
-            content: '❌ No channels are currently enabled for auto-publishing in this server.',
+            flags: [MessageFlags.IsComponentsV2],
+            components: [noChannelsContainer],
           });
         }
 
         const channelList = channelIds.map(id => `- <#${id}>`).join('\n');
         const count = channelIds.length;
 
+        const listContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `✅ Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}`
+          )
+        );
+
         return interaction.editReply({
-          content: `✅ Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}`,
+          flags: [MessageFlags.IsComponentsV2],
+          components: [listContainer],
         });
       } catch (error) {
         this.container.logger.error('Failed to get guild channels:', error);
 
+        const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            '❌ Failed to retrieve auto-publishing channels. Please try again later.'
+          )
+        );
+
         return interaction.editReply({
-          content: '❌ Failed to retrieve auto-publishing channels. Please try again later.',
+          flags: [MessageFlags.IsComponentsV2],
+          components: [errorContainer],
         });
       }
     }
@@ -220,8 +319,13 @@ export class APCommand extends Subcommand {
       const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
 
       if (!channelStatus || !channelStatus.enabled) {
+        const disabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(`❌ Auto-publishing is **disabled** in <#${channel.id}> channel.`)
+        );
+
         return interaction.editReply({
-          content: `❌ Auto-publishing is **disabled** in <#${channel.id}> channel.`,
+          flags: [MessageFlags.IsComponentsV2],
+          components: [disabledContainer],
         });
       }
 
@@ -229,8 +333,14 @@ export class APCommand extends Subcommand {
       const botMember = await interaction.guild?.members.me?.fetch();
       if (!botMember) {
         this.container.logger.error('Failed to fetch bot member information for permission check');
+
+        const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(`✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`)
+        );
+
         return interaction.editReply({
-          content: `✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`,
+          flags: [MessageFlags.IsComponentsV2],
+          components: [enabledContainer],
         });
       }
 
@@ -263,14 +373,26 @@ export class APCommand extends Subcommand {
         });
       }
 
+      const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(`✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`)
+      );
+
       return interaction.editReply({
-        content: `✅ Auto-publishing is **enabled** in <#${channel.id}> channel.`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [enabledContainer],
       });
     } catch (error) {
       this.container.logger.error('Failed to check auto-publishing status:', error);
 
+      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `❌ Failed to check auto-publishing status for <#${channel.id}>. Please try again later.`
+        )
+      );
+
       return interaction.editReply({
-        content: `❌ Failed to check auto-publishing status for <#${channel.id}>. Please try again later.`,
+        flags: [MessageFlags.IsComponentsV2],
+        components: [errorContainer],
       });
     }
   }
