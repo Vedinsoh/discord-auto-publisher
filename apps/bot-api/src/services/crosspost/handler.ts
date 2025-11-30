@@ -106,6 +106,10 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
  */
 export const push = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
+    // TODO: MIGRATION MODE - Remove this comment block after migration period ends
+    // During migration: Allow all announcement channels to auto-publish regardless of cache
+    // After migration: Uncomment the cache check below to enforce enabled-channels-only
+    /*
     // Check if channel is in cache (i.e., enabled for auto-publishing)
     const isChannelEnabled = await Data.Repo.ChannelsCache.get(channelId);
 
@@ -123,6 +127,7 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
         StatusCodes.NOT_FOUND
       );
     }
+    */
 
     Services.Crosspost.Queue.add(channelId, messageId);
 
