@@ -55,12 +55,12 @@ export class APCommand extends Subcommand {
         .addSubcommand(subcommand =>
           subcommand //
             .setName('status')
-            .setDescription('Check if auto-publishing is enabled in announcement channel')
+            .setDescription('Check auto-publishing status for a channel or list all enabled channels')
             .addChannelOption(option =>
               option //
                 .setName('channel')
-                .setDescription('The announcement channel to check status for')
-                .setRequired(true)
+                .setDescription('The announcement channel to check (leave empty to list all enabled channels)')
+                .setRequired(false)
                 .addChannelTypes([ChannelType.GuildAnnouncement])
             )
         )
@@ -187,8 +187,35 @@ export class APCommand extends Subcommand {
       });
     }
 
-    const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+    const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', false);
 
+    // If no channel is provided, list all enabled channels in the guild
+    if (!channel) {
+      try {
+        const channelIds = await Services.Channel.getGuildChannels(interaction.guildId);
+
+        if (!channelIds || channelIds.length === 0) {
+          return interaction.editReply({
+            content: '❌ No channels are currently enabled for auto-publishing in this server.',
+          });
+        }
+
+        const channelList = channelIds.map(id => `- <#${id}>`).join('\n');
+        const count = channelIds.length;
+
+        return interaction.editReply({
+          content: `✅ Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}`,
+        });
+      } catch (error) {
+        this.container.logger.error('Failed to get guild channels:', error);
+
+        return interaction.editReply({
+          content: '❌ Failed to retrieve auto-publishing channels. Please try again later.',
+        });
+      }
+    }
+
+    // If channel is provided, check status for that specific channel
     try {
       const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
 

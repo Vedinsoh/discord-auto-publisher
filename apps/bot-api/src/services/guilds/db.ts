@@ -21,6 +21,25 @@ const upsert = async (guildId: Snowflake) => {
 };
 
 /**
+ * Get all channels for a guild from DB
+ * @param guildId ID of the guild
+ * @returns Array of channel IDs
+ */
+const getChannels = async (guildId: Snowflake) => {
+  try {
+    const channels = await db.channels.findMany({
+      where: { guildId },
+      select: { channelId: true },
+    });
+
+    return channels.map(c => c.channelId);
+  } catch (error) {
+    Services.Logger.error(error);
+    throw error;
+  }
+};
+
+/**
  * Delete guild and all its associated channels from DB & cache
  * @param guildId ID of the guild
  * @returns void
@@ -46,5 +65,6 @@ const remove = async (guildId: Snowflake) => {
 
 export const DB = {
   upsert,
+  getChannels,
   remove,
 };

@@ -78,6 +78,30 @@ const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
 };
 
 /**
+ * Get all channels enabled for auto-publishing in a guild
+ * @param guildId The guild ID
+ * @returns Array of channel IDs, or null if request fails
+ */
+const getGuildChannels = async (guildId: Snowflake) => {
+  const response = await Data.API.Bot.getGuildChannels(guildId);
+
+  if (!response.ok) {
+    container.logger.error(
+      `Failed to get guild channels ${guildId}: ${response.status} ${response.statusText}`
+    );
+    return null;
+  }
+
+  const result = (await response.json()) as {
+    success: boolean;
+    message: string;
+    data: { channelIds: string[] };
+    statusCode: number;
+  };
+  return result.data.channelIds;
+};
+
+/**
  * Remove a channel from auto-publishing (with error handling)
  * @param guildId The guild ID
  * @param channelId The channel ID
@@ -106,5 +130,6 @@ export const Channel = {
   enable,
   disable,
   getStatus,
+  getGuildChannels,
   remove,
 };

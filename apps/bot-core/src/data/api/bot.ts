@@ -23,6 +23,12 @@ const getChannel = async (guildId: Snowflake, channelId: Snowflake) => {
 };
 
 // Guilds
+const getGuildChannels = async (guildId: Snowflake) => {
+  return fetch(`${baseUrl}/guild/${guildId}/channels`, {
+    method: RequestMethod.Get,
+  });
+};
+
 const deleteGuild = async (guildId: Snowflake) => {
   return fetch(`${baseUrl}/guild/${guildId}`, {
     method: RequestMethod.Delete,
@@ -47,5 +53,6 @@ export const Bot = {
   addChannel,
   removeChannel,
   getChannel,
+  getGuildChannels,
   deleteGuild,
 };

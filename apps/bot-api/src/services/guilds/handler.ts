@@ -19,6 +19,38 @@ const ensureExists = async (guildId: Snowflake) => {
 };
 
 /**
+ * Get all channels for a guild
+ * @param guildId ID of the guild
+ * @returns Service response with channel IDs
+ */
+const getChannels = async (guildId: Snowflake) => {
+  try {
+    const channelIds = await Services.Guilds.DB.getChannels(guildId);
+    Services.Logger.debug(`Retrieved ${channelIds.length} channels for guild ${guildId}`);
+
+    return new ServiceResponse(
+      ResponseStatus.Success,
+      'Channels retrieved successfully',
+      {
+        channelIds,
+      },
+      StatusCodes.OK
+    );
+  } catch (error) {
+    Services.Logger.error(error);
+
+    return new ServiceResponse(
+      ResponseStatus.Failed,
+      'Failed to retrieve channels',
+      {
+        channelIds: [],
+      },
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
+/**
  * Remove guild and all its channels
  * @param guildId ID of the guild
  * @returns Service response
@@ -52,5 +84,6 @@ const remove = async (guildId: Snowflake) => {
 
 export const Handler = {
   ensureExists,
+  getChannels,
   remove,
 };
