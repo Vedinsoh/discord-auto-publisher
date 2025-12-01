@@ -13,6 +13,7 @@ export const emojis = {
   info: '<:ap_info:1444787324310519899>',
   warning: '<:ap_warning:1444787044110041230>',
   greenCircle: '<:ap_green_circle_dot:1444788894913532128>',
+  yellowCircle: '<:ap_yellow_circle_dot:1445046944140628073>',
   redCircle: '<:ap_red_circle_dot:1444789399966715955>',
 };
 
