@@ -1,6 +1,6 @@
 import { secToMin } from '@ap/utils';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
+import { ChannelCounter } from 'services/caches.js';
 import { Services } from 'services/index.js';
 
 /**
@@ -11,13 +11,13 @@ import { Services } from 'services/index.js';
  */
 export const set = async (channelId: Snowflake, options?: { count?: number; expiry?: number }) => {
   try {
-    await Data.Repo.ChannelCrosspostsCache.set(channelId, {
+    const channel = await ChannelCounter.set(channelId, {
       ttl: options?.expiry,
       count: options?.count,
     });
 
     Services.Logger.debug(
-      `Crossposts counter set for channel ${channelId}, count: ${options?.count || 0}, expiry: ${options?.expiry ? Math.round(secToMin(options?.expiry)) : 'default'}`
+      `Crossposts counter set for channel ${channelId}, count: ${channel.count || 0}, expiry: ${channel.expiry ? Math.round(secToMin(channel.expiry)) : 'default'}`
     );
   } catch (error) {
     Services.Logger.error(error);
@@ -30,7 +30,7 @@ export const set = async (channelId: Snowflake, options?: { count?: number; expi
  * @returns Number of crossposts
  */
 export const getCount = (channelId: Snowflake) => {
-  return Data.Repo.ChannelCrosspostsCache.getCount(channelId);
+  return ChannelCounter.getCount(channelId);
 };
 
 /**
@@ -38,7 +38,7 @@ export const getCount = (channelId: Snowflake) => {
  * @returns Size of the counter
  */
 export const getChannelsCount = () => {
-  return Data.Repo.ChannelCrosspostsCache.getSize();
+  return ChannelCounter.getSize();
 };
 
 /**
@@ -48,7 +48,7 @@ export const getChannelsCount = () => {
  */
 export const increment = async (channelId: Snowflake, expiry?: number) => {
   // Get previous crosspots count for the channel
-  const prevCount = await Data.Repo.ChannelCrosspostsCache.getCount(channelId);
+  const prevCount = await ChannelCounter.getCount(channelId);
 
   // Add the channel crossposts counter if it does not exist
   if (!prevCount) {
@@ -56,7 +56,7 @@ export const increment = async (channelId: Snowflake, expiry?: number) => {
   }
 
   // Get previous expiration time
-  const prevExpiry = await Data.Repo.ChannelCrosspostsCache.getExpiration(channelId);
+  const prevExpiry = await ChannelCounter.getExpiration(channelId);
 
   // Fallback to add if the key expired or does not exist
   if (!prevExpiry) {
@@ -71,9 +71,6 @@ export const increment = async (channelId: Snowflake, expiry?: number) => {
     count: updatedCount,
     expiry: prevExpiry,
   });
-  Services.Logger.debug(
-    `Channel ${channelId} incremented in the crossposts counter (count: ${updatedCount})`
-  );
 };
 
 /**

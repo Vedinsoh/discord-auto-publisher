@@ -1,0 +1,30 @@
+# Development Dockerfile for backend with hot reloading
+FROM oven/bun:1.2.22-alpine
+
+# Create app user for security
+RUN adduser -S app -u 1001
+
+WORKDIR /app
+
+# Copy workspace configuration and package files
+COPY --chown=app:app package.json bun.lock turbo.json ./
+COPY --chown=app:app packages/ ./packages/
+COPY --chown=app:app apps/backend/package.json ./apps/backend/package.json
+
+# Install all dependencies (including dev dependencies)
+RUN bun install --no-optional
+
+# Copy remaining source code with proper ownership for watch mode
+COPY --chown=app:app . .
+
+# Generate Prisma client for the target platform
+RUN bun run db:generate
+
+# Switch to non-root user for security and watch compatibility
+USER app
+
+# Expose port
+EXPOSE 8080
+
+# Start in development mode (without built-in watch since Docker Compose handles it)
+WORKDIR /app/apps/backend

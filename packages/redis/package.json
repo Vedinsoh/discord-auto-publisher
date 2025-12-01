@@ -1,0 +1,24 @@
+{
+  "name": "@ap/redis",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "check-types": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@ap/logger": "workspace:*",
+    "discord-api-types": "^0.38.26",
+    "redis": "^4.7.0"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*",
+    "@types/node": "^22.14.0",
+    "typescript": "^5.8.3"
+  }
+}

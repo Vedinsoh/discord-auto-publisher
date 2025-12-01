@@ -1,18 +1,17 @@
+import { invalidRequestCodes, safeErrorCodes } from '@ap/discord-api';
+import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
 import { msToSec, sleep } from '@ap/utils';
 import { DiscordAPIError, RateLimitError } from '@discordjs/rest';
-import { Constants } from 'constants/index.js';
-import { Data } from 'data/index.js';
-import { ResponseStatus, ServiceResponse } from 'data/models/serviceResponse.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
 import { StatusCodes } from 'http-status-codes';
-import { Services } from 'services/index.js';
-
-/**
+import { Backend } from 'services/backend.js'; /**
  * Submit message for crossposting
  * @param channelId ID of the channel
  * @param messageId ID of the message
  */
+import { Discord } from 'services/discord.js';
+import { Services } from 'services/index.js';
 export const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) => {
   // Check if the message has reached the max retries
   if (retries >= 10) {
@@ -25,7 +24,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
     if (isOverLimit) return;
 
     // Crosspost the message & increment the counter for the channel
-    await Data.API.Discord.crosspost(channelId, messageId);
+    await Discord.crosspost(channelId, messageId);
     await Services.Crosspost.Counter.increment(channelId);
 
     Services.Logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
@@ -64,7 +63,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
       const errorCode = typeof error.code === 'string' ? parseInt(error.code, 10) : error.code;
 
       // Cache the invalid request status codes
-      if (Constants.API.Discord.invalidRequestCodes.includes(error.status)) {
+      if (invalidRequestCodes.includes(error.status)) {
         Services.RateLimitsCache.add(error.status);
       }
 
@@ -73,22 +72,26 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
         Services.Crosspost.Counter.increment(channelId);
       }
 
-      // Handle missing permissions error - notify api to cleanup channel
+      // Handle missing permissions error - notify backend to cleanup channel
       if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
-        Services.Logger.info(`Bot lost access to channel ${channelId}, notifying api for cleanup`);
-        await Data.API.BotApi.cleanupChannel(channelId);
+        Services.Logger.debug(
+          `Bot lost access to channel ${channelId}, notifying backend for cleanup`
+        );
+        await Backend.cleanupChannel(channelId);
         return;
       }
 
-      // Handle unknown channel error (channel deleted) - notify api to cleanup channel
+      // Handle unknown channel error (channel deleted) - notify backend to cleanup channel
       if (errorCode === ErrorCodes.UnknownChannel) {
-        Services.Logger.info(`Channel ${channelId} no longer exists, notifying api for cleanup`);
-        await Data.API.BotApi.cleanupChannel(channelId);
+        Services.Logger.debug(
+          `Channel ${channelId} no longer exists, notifying backend for cleanup`
+        );
+        await Backend.cleanupChannel(channelId);
         return;
       }
 
       // Check if the error code is safe to ignore
-      if (Constants.API.Discord.safeErrorCodes.crosspost?.includes(errorCode)) {
+      if (safeErrorCodes.crosspost?.includes(errorCode)) {
         return;
       }
     }
@@ -111,14 +114,14 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
     // After migration: Uncomment the cache check below to enforce enabled-channels-only
     /*
     // Check if channel is in cache (i.e., enabled for auto-publishing)
-    const isChannelEnabled = await Data.Repo.ChannelsCache.get(channelId);
+    const isChannelEnabled = await ChannelsCache.get(channelId);
 
     if (!isChannelEnabled) {
       Services.Logger.debug(
         `Channel ${channelId} not enabled for auto-publishing, skipping message ${messageId}`
       );
 
-      return new ServiceResponse(
+      return new ServiceResponseImpl(
         ResponseStatus.Failed,
         'Channel not enabled for auto-publishing',
         {
@@ -133,7 +136,7 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
 
     Services.Logger.debug(`Message ${messageId} pushed to crosspost queue`);
 
-    return new ServiceResponse(
+    return new ServiceResponseImpl(
       ResponseStatus.Success,
       'Message pushed to crosspost queue',
       {
@@ -144,7 +147,7 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
   } catch (error) {
     Services.Logger.error(error);
 
-    return new ServiceResponse(
+    return new ServiceResponseImpl(
       ResponseStatus.Failed,
       'Error pushing message to crosspost queue',
       {

@@ -7,7 +7,7 @@ import {
   PermissionFlagsBits,
 } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
-import { emojis } from 'lib/consts/index.js';
+import { emojis } from 'lib/constants/index.js';
 import { logger } from 'utils/logger.js';
 
 @ApplyOptions<Command.Options>({

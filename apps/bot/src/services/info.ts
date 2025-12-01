@@ -12,7 +12,7 @@ type InfoData = {
 };
 
 const get = async (): Promise<InfoData | null> => {
-  const res = await Data.API.Bot.getInfo();
+  const res = await Data.API.Backend.getInfo();
   const body = (await res.json()) as { data?: InfoData };
 
   if (!body.data) return null;

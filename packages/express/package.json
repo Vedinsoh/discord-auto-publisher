@@ -1,0 +1,28 @@
+{
+  "name": "@ap/express",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "check-types": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@ap/types": "workspace:*",
+    "express": "^4.19.2",
+    "http-status-codes": "^2.3.0",
+    "pino": "^9.11.0",
+    "pino-http": "^10.4.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "typescript": "^5.8.3"
+  }
+}

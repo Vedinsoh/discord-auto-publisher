@@ -1,4 +1,3 @@
-import { RESTJSONErrorCodes as ErrorCodes, Routes } from 'discord-api-types/v10';
 import { getReasonPhrase, StatusCodes } from 'http-status-codes';
 
 export { StatusCodes, getReasonPhrase };
@@ -7,29 +6,6 @@ export { StatusCodes, getReasonPhrase };
 export const RestApiRoutes = {
   crosspost: '/crosspost/:channelId/:messageId',
   info: '/info',
-};
-
-// Discord API constants
-export const DiscordApi = {
-  routes: {
-    crosspost: Routes.channelMessageCrosspost(':id', ':id'),
-  },
-  safeErrorCodes: {
-    crosspost: [
-      ErrorCodes.UnknownChannel,
-      ErrorCodes.UnknownGuild,
-      ErrorCodes.UnknownMessage,
-      ErrorCodes.ThisMessageWasAlreadyCrossposted,
-      ErrorCodes.MissingAccess,
-      ErrorCodes.MissingPermissions,
-      ErrorCodes.InvalidMessageType,
-    ],
-  },
-  invalidRequestCodes: [
-    StatusCodes.UNAUTHORIZED, // 401
-    StatusCodes.FORBIDDEN, // 403
-    StatusCodes.TOO_MANY_REQUESTS, // 429
-  ],
 };
 
 // Bot service API client helper

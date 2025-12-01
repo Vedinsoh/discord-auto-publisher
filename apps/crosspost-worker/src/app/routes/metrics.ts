@@ -1,6 +1,6 @@
+import { handleServiceResponse } from '@ap/express';
 import express, { type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
-import { handleServiceResponse } from 'utils/httpHandlers.js';
 
 export const Metrics: Router = (() => {
   const router = express.Router();

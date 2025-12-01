@@ -1,5 +1,5 @@
 import { ButtonBuilder, ButtonStyle } from 'discord.js';
-import { emojis, links } from 'lib/consts/index.js';
+import { emojis, links } from 'lib/constants/index.js';
 
 export const website = new ButtonBuilder()
   .setLabel('Website')

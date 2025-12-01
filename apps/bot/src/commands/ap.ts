@@ -7,7 +7,7 @@ import {
   MessageFlags,
   PermissionFlagsBits,
 } from 'discord.js';
-import { emojis, messages } from 'lib/consts/index.js';
+import { emojis, messages } from 'lib/constants/index.js';
 import { Services } from '../services/index.js';
 import { checkChannelPermissions } from '../utils/permissions.js';
 
@@ -325,7 +325,7 @@ export class APCommand extends Subcommand {
       if (!channelStatus || !channelStatus.enabled) {
         const disabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.crossmark} Auto-publishing is **disabled** in <#${channel.id}> channel.`
+            `${emojis.crossmark} Auto-publishing is **not enabled** in <#${channel.id}> channel.\n\n-# Use </ap enable:${interaction.commandId}> to enable auto-publishing in this channel.`
           )
         );
 

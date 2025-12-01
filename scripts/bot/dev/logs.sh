@@ -10,4 +10,4 @@ is_docker_running
 is_docker_services_running "dev" "$BOT_COMPOSE_FILES_DEV"
 
 # Show continuous logs for bot services
-docker compose $BOT_COMPOSE_FILES_DEV logs -f bot api crosspost-worker
+docker compose $BOT_COMPOSE_FILES_DEV logs -f bot backend crosspost-worker

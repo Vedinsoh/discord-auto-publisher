@@ -24,7 +24,7 @@ services:
     depends_on:
       discord-proxy:
         condition: service_started
-      api:
+      backend :
         condition: service_started
       redis:
         condition: service_started
@@ -70,7 +70,7 @@ services:
     depends_on:
       discord-proxy:
         condition: service_started
-      api:
+      backend :
         condition: service_started
       crosspost-worker:
         condition: service_started
@@ -102,12 +102,12 @@ services:
         - action: rebuild
           path: ../../bun.lock
 
-  api:
+  backend :
     extends:
       file: docker-compose.base.yml
-      service: api
+      service: backend 
     build:
-      dockerfile: apps/api/Dockerfile.dev
+      dockerfile: apps/backend/Dockerfile.dev
     env_file:
       - ../../.env.local
     environment:
@@ -126,8 +126,8 @@ services:
     develop:
       watch:
         - action: sync+restart
-          path: ../../apps/api/src
-          target: /app/apps/api/src
+          path: ../../apps/backend/src
+          target: /app/apps/backend/src
           ignore:
             - "**/*.test.ts"
             - "**/*.spec.ts"
@@ -140,7 +140,7 @@ services:
             - "**/*.test.ts"
             - "**/*.spec.ts"
         - action: rebuild
-          path: ../../apps/api/package.json
+          path: ../../apps/backend/package.json
         - action: rebuild
           path: ../../package.json
         - action: rebuild

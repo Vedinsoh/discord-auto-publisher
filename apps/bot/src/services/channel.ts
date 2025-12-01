@@ -44,7 +44,7 @@ const fetchNewsChannel = async (channel: DiscordChannel | GuildChannel) => {
  * @returns API response
  */
 const enable = async (guildId: Snowflake, channelId: Snowflake) => {
-  return await Data.API.Bot.addChannel(guildId, channelId);
+  return await Data.API.Backend.addChannel(guildId, channelId);
 };
 
 /**
@@ -54,7 +54,7 @@ const enable = async (guildId: Snowflake, channelId: Snowflake) => {
  * @returns API response
  */
 const disable = async (guildId: Snowflake, channelId: Snowflake) => {
-  return await Data.API.Bot.removeChannel(guildId, channelId);
+  return await Data.API.Backend.removeChannel(guildId, channelId);
 };
 
 /**
@@ -64,7 +64,7 @@ const disable = async (guildId: Snowflake, channelId: Snowflake) => {
  * @returns Channel status object with enabled flag, or null if request fails
  */
 const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
-  const response = await Data.API.Bot.getChannel(guildId, channelId);
+  const response = await Data.API.Backend.getChannel(guildId, channelId);
 
   if (!response.ok) {
     container.logger.error(
@@ -83,7 +83,7 @@ const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
  * @returns Array of channel IDs, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
-  const response = await Data.API.Bot.getGuildChannels(guildId);
+  const response = await Data.API.Backend.getGuildChannels(guildId);
 
   if (!response.ok) {
     container.logger.error(
@@ -109,7 +109,7 @@ const getGuildChannels = async (guildId: Snowflake) => {
  */
 const remove = async (guildId: Snowflake, channelId: Snowflake) => {
   try {
-    const response = await Data.API.Bot.removeChannel(guildId, channelId);
+    const response = await Data.API.Backend.removeChannel(guildId, channelId);
 
     if (!response.ok) {
       container.logger.error(

@@ -1,4 +1,4 @@
-import { ResponseStatus, ServiceResponse } from 'data/models/serviceResponse.js';
+import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
 import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
 
@@ -10,7 +10,7 @@ const get = async () => {
     const queueInfo = Services.Crosspost.Queue.getInfo();
     const rateLimitsSize = await Services.RateLimitsCache.getSize();
 
-    return new ServiceResponse(
+    return new ServiceResponseImpl(
       ResponseStatus.Success,
       'Metrics',
       {
@@ -26,7 +26,7 @@ const get = async () => {
   } catch (error) {
     Services.Logger.error(error);
 
-    return new ServiceResponse(
+    return new ServiceResponseImpl(
       ResponseStatus.Failed,
       'Error getting metrics',
       null,

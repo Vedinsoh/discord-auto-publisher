@@ -1,7 +1,7 @@
-import { Bot } from './bot.js';
+import { Backend } from './backend.js';
 import { CrosspostWorker } from './crosspost-worker.js';
 
 export const API = {
-  Bot,
+  Backend,
   CrosspostWorker,
 };

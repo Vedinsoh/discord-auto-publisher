@@ -9,7 +9,7 @@ import { Data } from '../data/index.js';
  */
 const remove = async (guildId: Snowflake) => {
   try {
-    const response = await Data.API.Bot.deleteGuild(guildId);
+    const response = await Data.API.Backend.deleteGuild(guildId);
 
     if (!response.ok) {
       container.logger.error(

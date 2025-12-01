@@ -1,22 +1,12 @@
-import { Data } from 'data/index.js';
+import { RateLimitsCache as Cache } from 'services/caches.js';
 
-/**
- * Add request to rate limits cache
- * @param statusCode Status code of the request
- */
-const add = async (statusCode: number) => {
-  return Data.Repo.RateLimitsCache.set(statusCode);
+const add = (code: number) => {
+  return Cache.incr(`rate_limit:${code}`);
 };
 
-/**
- * Get size of the rate limits cache
- * @returns Size of the cache
- */
 const getSize = async () => {
-  return Data.Repo.RateLimitsCache.getSize();
+  const keys = await Cache.keys('rate_limit:*');
+  return keys.length;
 };
 
-export const RateLimitsCache = {
-  add,
-  getSize,
-};
+export const RateLimitsCache = { add, getSize };

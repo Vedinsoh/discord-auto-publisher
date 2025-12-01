@@ -1,24 +1,23 @@
+import { createErrorHandler, createHealthRoute, createRequestLogger } from '@ap/express';
 import { App } from 'app/index.js';
 import express from 'express';
 import { env } from 'lib/config/env.js';
-import errorHandler from 'middlewares/errorHandler.js';
-import requestLogger from 'middlewares/requestLogger.js';
 import { Services } from 'services/index.js';
 
 // Create the Express app
 const app = express();
 
 // Middlewares
-app.use(requestLogger);
+app.use(...createRequestLogger(env.isDevelopment));
 app.use(express.json());
 
 // Routes
 app.use('/enqueue', App.Routes.Enqueue);
 app.use('/metrics', App.Routes.Metrics);
-app.get('/health', App.Routes.Health);
+app.get('/health', createHealthRoute);
 
 // Error handlers
-app.use(errorHandler());
+app.use(...createErrorHandler());
 
 // Start the server
 const server = app.listen('8082', async () => {

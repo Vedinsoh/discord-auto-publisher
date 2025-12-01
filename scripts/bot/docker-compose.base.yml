@@ -3,7 +3,7 @@ services:
     image: discordjs/proxy:latest
     restart: unless-stopped
     networks:
-      - bot-network
+      - ap-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -19,11 +19,11 @@ services:
     env_file:
       - ../../.env.local
     networks:
-      - bot-network
+      - ap-network
     depends_on:
       discord-proxy:
         condition: service_healthy
-      api:
+      backend :
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -42,26 +42,26 @@ services:
     env_file:
       - ../../.env.local
     networks:
-      - bot-network
+      - ap-network
     depends_on:
       discord-proxy:
         condition: service_healthy
-      api:
+      backend :
         condition: service_healthy
       crosspost-worker:
         condition: service_healthy
       redis:
         condition: service_healthy
         
-  api:
+  backend :
     build:
       context: ../..
-      dockerfile: apps/api/Dockerfile
+      dockerfile: apps/backend/Dockerfile
     restart: unless-stopped
     env_file:
       - ../../.env.local
     networks:
-      - bot-network
+      - ap-network
     depends_on:
       discord-proxy:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
       --appendonly yes 
       --appendfsync everysec 
     networks:
-      - bot-network
+      - ap-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -96,7 +96,7 @@ services:
       start_period: 10s
 
 networks:
-  bot-network:
+  ap-network:
     driver: bridge
     internal: false  # Allow external access for Discord API
 
