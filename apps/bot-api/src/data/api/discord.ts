@@ -4,10 +4,11 @@ import { Routes } from 'discord-api-types/v10';
 import { env } from 'lib/config/env.js';
 import { Services } from 'services/index.js';
 
-// Initialize Discord REST client
+// Initialize Discord REST client with proxy
 const rest = new REST({
   version: '10',
-  globalRequestsPerSecond: 35, // TODO adjust this parameter
+  api: 'http://discord-proxy:8080/api',
+  globalRequestsPerSecond: 45,
   rejectOnRateLimit: data => {
     // Reject crosspost requests on rate limit to obtain sublimit data
     const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;

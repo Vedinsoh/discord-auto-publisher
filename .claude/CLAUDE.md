@@ -47,7 +47,17 @@ bun run db:generate      # Generate Prisma client
 ### Multi-service design
 ```
 bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
+                  \                       /
+                   \                     /
+                    --> discord-proxy <--
+                         (Discord API)
 ```
+
+**discord-proxy**:
+- Discord API proxy container (@discordjs/proxy-container https://github.com/discordjs/discord.js/tree/main/packages/proxy-container)
+- Routes all Discord API requests through centralized proxy
+- Runs on port 8080 (internal), exposed on 8081 in dev mode
+- Shared by both bot-core and bot-api
 
 **bot-core** (apps/bot-core):
 - Discord bot app for receiving events and running commands
@@ -57,6 +67,7 @@ bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
 - Listens for messageCreate in announcement channels
 - Validates permissions, detects URLs (5s delay for embed loading)
 - **Calls bot-api as internal API** - bot-core does NOT make direct Discord API requests for crossposting
+- **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
 - Listens for guildDelete/channelDelete for cleanup
 - Tech stack: discord.js (https://discord.js.org/docs/packages/discord.js/main & https://discordjs.guide/), Sapphire, discord-hybrid-sharding (https://github.com/meister03/discord-hybrid-sharding/blob/ts-rewrite/README.md)
 
@@ -68,6 +79,7 @@ bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
 - p-queue based crossposting with priority (timestamp-based)
 - Two-tier queue: per-channel queues → global queue
 - Rate limit management (10/hour per channel Discord limit)
+- **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
 - Auto-cleanup on permission/deletion errors
 - Cache sync on startup (reconciles Redis/MongoDB)
 - Tech stack: Express, discord.js, redis, zod (https://v3.zod.dev/)
@@ -94,6 +106,8 @@ bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
 **Aggressive Discord cache minimization**: Bot only caches bot member (for permission checks). Reduces memory footprint for high-guild-count scenarios. Uses Intents: Guilds, GuildMessages, MessageContent.
 
 **Rate limit strategy**: Tracks 429 responses in Redis cache. Pauses global queue when >1000 rate limits detected. Resumes when <8000 rate limits AND queue empty. Per-channel counters enforce Discord's 10/hour limit.
+
+**Discord API proxy**: Uses @discordjs/proxy-container to centralize Discord API requests. Provides single point for request management.
 
 **Rollback attempts**: Maintains cache/DB consistency during partial failures. Prevents orphaned cache entries or DB records. Catches & logs rollback failures gracefully.
 
@@ -139,9 +153,9 @@ MONGO_URI
 - Base config: scripts/bot/docker-compose.base.yml
 - Dev config: scripts/bot/dev/docker-compose.yml (extends base)
 - Prod config: scripts/bot/prod/docker-compose.yml
-- Service dependencies: bot-core → bot-api → bot-api-cache (Redis)
-- Health checks on bot-api & Redis
-- Development: File sync with restart, exposed ports (3000:8080, 6379:6379)
+- Service dependencies: bot-core → discord-proxy, bot-api → discord-proxy, bot-api-cache (Redis)
+- Health checks on discord-proxy, bot-api & Redis
+- Development: File sync with restart, exposed ports (3000:8080 bot-api, 8081:8080 proxy, 6379:6379 redis)
 - Production: No port exposure, health checks enabled
 
 ## Import conventions
@@ -155,6 +169,7 @@ MONGO_URI
 - Partials: Channel, GuildMember
 - Uses discord-hybrid-sharding for horizontal scaling
 - Aggressive cache limits (only caches bot member)
+- REST API requests routed through @discordjs/proxy-container (discord-proxy service)
 
 ## Rate limits & queue management
 - Discord limit: 10 crosspost/hour per channel

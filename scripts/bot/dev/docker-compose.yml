@@ -1,6 +1,15 @@
 name: auto-publisher-dev
 
 services:
+  discord-proxy:
+    extends:
+      file: docker-compose.base.yml
+      service: discord-proxy
+    ports:
+      - 8081:8080 # Expose proxy for local debugging
+    healthcheck:
+      disable: true # Remove healthcheck for faster development startup
+
   bot-core:
     extends:
       file: docker-compose.base.yml
@@ -13,6 +22,8 @@ services:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
+      discord-proxy:
+        condition: service_started
       bot-api:
         condition: service_started
       bot-api-cache:
@@ -55,6 +66,8 @@ services:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
+      discord-proxy:
+        condition: service_started
       bot-api-cache:
         condition: service_started
     ports:

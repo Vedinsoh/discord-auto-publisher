@@ -1,4 +1,16 @@
 services:
+  discord-proxy:
+    image: discordjs/proxy:latest
+    restart: unless-stopped
+    networks:
+      - bot-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
   bot-core:
     build:
       context: ../..
@@ -9,6 +21,8 @@ services:
     networks:
       - bot-network
     depends_on:
+      discord-proxy:
+        condition: service_healthy
       bot-api:
         condition: service_healthy
       bot-api-cache:
@@ -24,6 +38,8 @@ services:
     networks:
       - bot-network
     depends_on:
+      discord-proxy:
+        condition: service_healthy
       bot-api-cache:
         condition: service_healthy
     healthcheck:

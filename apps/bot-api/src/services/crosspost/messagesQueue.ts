@@ -10,7 +10,7 @@ import { ChannelQueue } from './channelQueue.js';
  */
 export class Queue {
   private _queue = new PQueue({
-    intervalCap: 35, // TODO
+    intervalCap: 45,
     concurrency: 20,
     interval: secToMs(1),
     timeout: minToMs(5),
