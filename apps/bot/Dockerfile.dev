@@ -1,0 +1,26 @@
+FROM oven/bun:1.2.22-alpine
+
+# Create app user for security
+RUN adduser -S app -u 1001
+
+WORKDIR /app
+
+# Copy workspace configuration and package files
+COPY --chown=app:app package.json bun.lock turbo.json ./
+COPY --chown=app:app packages/ ./packages/
+COPY --chown=app:app apps/bot/package.json ./apps/bot/package.json
+
+# Install all dependencies (skip optional native deps for faster builds)
+RUN bun install --no-optional
+
+# Copy source code with proper ownership for watch mode
+COPY --chown=app:app . .
+
+# Generate Prisma client for the target platform
+RUN bun run db:generate
+
+# Switch to non-root user for security and watch compatibility
+USER app
+
+# Start in development mode (without built-in watch since Docker Compose handles it)
+WORKDIR /app/apps/bot

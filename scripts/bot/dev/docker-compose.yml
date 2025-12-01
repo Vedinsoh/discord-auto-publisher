@@ -10,12 +10,12 @@ services:
     healthcheck:
       disable: true # Remove healthcheck for faster development startup
 
-  bot-core:
+  crosspost-worker:
     extends:
       file: docker-compose.base.yml
-      service: bot-core
+      service: crosspost-worker
     build:
-      dockerfile: apps/bot-core/Dockerfile.dev
+      dockerfile: apps/crosspost-worker/Dockerfile.dev
     env_file:
       - ../../.env.local
     environment:
@@ -24,18 +24,20 @@ services:
     depends_on:
       discord-proxy:
         condition: service_started
-      bot-api:
+      api:
         condition: service_started
-      bot-api-cache:
+      redis:
         condition: service_started
-    healthcheck: 
+    ports:
+      - 8082:8082 # Expose worker for local debugging
+    healthcheck:
       disable: true # Remove healthcheck for faster development startup
     command: ["bun", "run", "start"]
     develop:
       watch:
         - action: sync+restart
-          path: ../../apps/bot-core/src
-          target: /app/apps/bot-core/src
+          path: ../../apps/crosspost-worker/src
+          target: /app/apps/crosspost-worker/src
           ignore:
             - "**/*.test.ts"
             - "**/*.spec.ts"
@@ -48,18 +50,18 @@ services:
             - "**/*.test.ts"
             - "**/*.spec.ts"
         - action: rebuild
-          path: ../../apps/bot-core/package.json
+          path: ../../apps/crosspost-worker/package.json
         - action: rebuild
           path: ../../package.json
         - action: rebuild
           path: ../../bun.lock
 
-  bot-api:
+  bot:
     extends:
       file: docker-compose.base.yml
-      service: bot-api
+      service: bot
     build:
-      dockerfile: apps/bot-api/Dockerfile.dev
+      dockerfile: apps/bot/Dockerfile.dev
     env_file:
       - ../../.env.local
     environment:
@@ -68,7 +70,53 @@ services:
     depends_on:
       discord-proxy:
         condition: service_started
-      bot-api-cache:
+      api:
+        condition: service_started
+      crosspost-worker:
+        condition: service_started
+      redis:
+        condition: service_started
+    healthcheck:
+      disable: true # Remove healthcheck for faster development startup
+    command: ["bun", "run", "start"]
+    develop:
+      watch:
+        - action: sync+restart
+          path: ../../apps/bot/src
+          target: /app/apps/bot/src
+          ignore:
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+        - action: sync+restart
+          path: ../../packages
+          target: /app/packages
+          ignore:
+            - "**/node_modules/"
+            - "**/dist/"
+            - "**/*.test.ts"
+            - "**/*.spec.ts"
+        - action: rebuild
+          path: ../../apps/bot/package.json
+        - action: rebuild
+          path: ../../package.json
+        - action: rebuild
+          path: ../../bun.lock
+
+  api:
+    extends:
+      file: docker-compose.base.yml
+      service: api
+    build:
+      dockerfile: apps/api/Dockerfile.dev
+    env_file:
+      - ../../.env.local
+    environment:
+      - NODE_ENV=development
+      - LOGGER_LEVEL=debug
+    depends_on:
+      discord-proxy:
+        condition: service_started
+      redis:
         condition: service_started
     ports:
       - 3000:8080 # Expose API for local development
@@ -78,8 +126,8 @@ services:
     develop:
       watch:
         - action: sync+restart
-          path: ../../apps/bot-api/src
-          target: /app/apps/bot-api/src
+          path: ../../apps/api/src
+          target: /app/apps/api/src
           ignore:
             - "**/*.test.ts"
             - "**/*.spec.ts"
@@ -92,15 +140,15 @@ services:
             - "**/*.test.ts"
             - "**/*.spec.ts"
         - action: rebuild
-          path: ../../apps/bot-api/package.json
+          path: ../../apps/api/package.json
         - action: rebuild
           path: ../../package.json
         - action: rebuild
           path: ../../bun.lock
 
-  bot-api-cache:
+  redis:
     extends:
       file: docker-compose.base.yml
-      service: bot-api-cache
+      service: redis
     ports:
       - 6379:6379 # Expose Redis for local development

@@ -46,7 +46,7 @@ bun run db:generate      # Generate Prisma client
 
 ### Multi-service design
 ```
-bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
+bot (Discord Gateway) <--HTTP--> api (REST API) <--> MongoDB + Redis
                   \                       /
                    \                     /
                     --> discord-proxy <--
@@ -57,23 +57,23 @@ bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
 - Discord API proxy container (@discordjs/proxy-container https://github.com/discordjs/discord.js/tree/main/packages/proxy-container)
 - Routes all Discord API requests through centralized proxy
 - Runs on port 8080 (internal), exposed on 8081 in dev mode
-- Shared by both bot-core and bot-api
+- Shared by both bot and api
 
-**bot-core** (apps/bot-core):
+**bot** (apps/bot):
 - Discord bot app for receiving events and running commands
 - Uses Sapphire Framework (https://sapphirejs.dev/docs/General/Welcome) built on discord.js
 - Uses discord-hybrid-sharding for horizontal scaling across multiple shards & clusters
 - Entry: ClusterManager spawns sharded workers
 - Listens for messageCreate in announcement channels
 - Validates permissions, detects URLs (5s delay for embed loading)
-- **Calls bot-api as internal API** - bot-core does NOT make direct Discord API requests for crossposting
+- **Calls api as internal API** - bot does NOT make direct Discord API requests for crossposting
 - **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
 - Listens for guildDelete/channelDelete for cleanup
 - Tech stack: discord.js (https://discord.js.org/docs/packages/discord.js/main & https://discordjs.guide/), Sapphire, discord-hybrid-sharding (https://github.com/meister03/discord-hybrid-sharding/blob/ts-rewrite/README.md)
 
-**bot-api** (apps/bot-api):
-- **Backend app used as internal API for bot-core** - central place for sending Discord API requests
-- Why centralized: bot-core has multiple processes (shards/clusters), bot-api centralizes Discord API calls
+**api** (apps/api):
+- **Backend app used as internal API for bot** - central place for sending Discord API requests
+- Why centralized: bot has multiple processes (shards/clusters), api centralizes Discord API calls
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
 - Manages MongoDB persistence (Prisma) & Redis cache (https://redis.io/docs/latest/develop/clients/nodejs/)
 - p-queue based crossposting with priority (timestamp-based)
@@ -99,7 +99,7 @@ bot-core (Discord Gateway) <--HTTP--> bot-api (REST API) <--> MongoDB + Redis
 
 **Two-tier queue system**: Per-channel queues prevent spam channels from monopolizing global queue. Global queue with priority ensures fairness. Older messages prioritized by timestamp.
 
-**Redis channel cache**: Sub-millisecond "is channel enabled" checks. Shared state across multiple bot-api instances. Built-in TTL for rate limit counters. Startup sync ensures cache/DB consistency.
+**Redis channel cache**: Sub-millisecond "is channel enabled" checks. Shared state across multiple api instances. Built-in TTL for rate limit counters. Startup sync ensures cache/DB consistency.
 
 **5s URL delay**: Discord needs time to generate link previews. Publishing before embeds load causes followers to miss rich content. Uses advanced URL detection algorithm.
 
@@ -141,9 +141,9 @@ MONGO_URI
 
 ## Message publishing flow
 1. Discord message posted in announcement channel
-2. bot-core messageCreate listener validates & delays (if URL detected)
-3. HTTP POST to bot-api /crosspost/{channelId}/{messageId}
-4. bot-api checks channel cache, adds to queue
+2. bot messageCreate listener validates & delays (if URL detected)
+3. HTTP POST to api /crosspost/{channelId}/{messageId}
+4. api checks channel cache, adds to queue
 5. Per-channel queue → global queue (priority by timestamp)
 6. Discord crosspost API call with error handling
 7. Counter increment, rate limit tracking
@@ -153,9 +153,9 @@ MONGO_URI
 - Base config: scripts/bot/docker-compose.base.yml
 - Dev config: scripts/bot/dev/docker-compose.yml (extends base)
 - Prod config: scripts/bot/prod/docker-compose.yml
-- Service dependencies: bot-core → discord-proxy, bot-api → discord-proxy, bot-api-cache (Redis)
-- Health checks on discord-proxy, bot-api & Redis
-- Development: File sync with restart, exposed ports (3000:8080 bot-api, 8081:8080 proxy, 6379:6379 redis)
+- Service dependencies: bot → discord-proxy, api → discord-proxy, redis (Redis)
+- Health checks on discord-proxy, api & Redis
+- Development: File sync with restart, exposed ports (3000:8080 api, 8081:8080 proxy, 6379:6379 redis)
 - Production: No port exposure, health checks enabled
 
 ## Import conventions

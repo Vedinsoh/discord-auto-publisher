@@ -28,7 +28,7 @@ else
   echo "✅ Development environment started!"
 
   # Show continuous logs after starting
-  docker compose $BOT_COMPOSE_FILES_DEV logs -f bot-core bot-api
+  docker compose $BOT_COMPOSE_FILES_DEV logs -f bot api crosspost-worker
 fi
 
 

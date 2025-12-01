@@ -1,7 +1,7 @@
 name: auto-publisher
 
 services:
-  bot-api-cache:
+  redis:
     command: >
       redis-server 
       --appendonly yes 
@@ -17,7 +17,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  bot-api:
+  api:
     env_file:
       - ../../.env.production
     environment:
@@ -37,7 +37,7 @@ services:
           memory: 256M
           cpus: '0.25'
 
-  bot-core:
+  bot:
     env_file:
       - ../../.env.production
     environment:

@@ -28,7 +28,7 @@ is_docker_services_running() {
     local ENV_NAME="$1"
     local FILES="$2"
 
-    if ! docker compose $FILES ps --services --filter "status=running" | grep -q "bot-core\|bot-api"; then
+    if ! docker compose $FILES ps --services --filter "status=running" | grep -q "bot\|api"; then
         echo "⚠️  Bot services are not running. Start them first with: bun run $ENV_NAME:start"
         exit 1
     fi

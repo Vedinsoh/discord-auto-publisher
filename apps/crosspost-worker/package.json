@@ -1,0 +1,30 @@
+{
+  "name": "crosspost-worker",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit",
+    "dev": "bun --watch run .",
+    "start": "bun run ."
+  },
+  "dependencies": {
+    "@ap/logger": "workspace:*",
+    "@ap/utils": "workspace:*",
+    "@discordjs/rest": "^2.4.0",
+    "@sapphire/snowflake": "^3.5.3",
+    "discord-api-types": "^0.37.100",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "express": "^4.19.2",
+    "http-status-codes": "^2.3.0",
+    "p-queue": "^8.0.1",
+    "pino-http": "^10.3.0",
+    "redis": "^4.7.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}
