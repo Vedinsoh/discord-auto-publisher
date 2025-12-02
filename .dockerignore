@@ -57,9 +57,6 @@ docker-compose*.yml
 # Test coverage
 coverage/
 
-# Diagrams and assets
-diagrams/
-
 # Development scripts (not needed in containers)
 scripts/
 

@@ -12,6 +12,29 @@ export const Validations = {
   }),
 };
 
+// Filter validation schemas
+export const FilterType = z.enum(['keyword', 'mention', 'author', 'regex']);
+export const FilterMode = z.enum(['include', 'exclude']);
+
+export const FilterSchema = z.object({
+  id: z.string(),
+  type: FilterType,
+  mode: FilterMode,
+  value: z.string().min(1).max(200),
+  createdAt: z.date(),
+});
+
+export const CreateFilterSchema = z.object({
+  type: FilterType,
+  mode: FilterMode,
+  value: z.string().min(1).max(200),
+});
+
+export type Filter = z.infer<typeof FilterSchema>;
+export type CreateFilter = z.infer<typeof CreateFilterSchema>;
+export type FilterType = z.infer<typeof FilterType>;
+export type FilterMode = z.infer<typeof FilterMode>;
+
 // Request validation schemas
 export const CrosspostReqSchema = z.object({
   params: z.object({
@@ -26,6 +49,29 @@ export const PresenceReqSchema = z.object({
   }),
   body: z.object({
     count: z.number(),
+  }),
+});
+
+export const FilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+});
+
+export const AddFilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+  body: CreateFilterSchema,
+});
+
+export const RemoveFilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+    filterId: z.string(),
   }),
 });
 

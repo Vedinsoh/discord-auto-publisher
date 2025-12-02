@@ -1,4 +1,5 @@
 import { db } from '@ap/database';
+import type { Filter } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Services } from 'services/index.js';
 import { ChannelsCache } from 'services/redis.js';
@@ -34,9 +35,10 @@ const create = async (guildId: Snowflake, channelId: Snowflake) => {
       data: {
         channelId,
         guildId,
+        filters: [],
       },
     });
-    await ChannelsCache.set(channelId);
+    await ChannelsCache.set(channelId, []);
   } catch (error) {
     // Attempt to rollback both DB and cache
     await db.channels.deleteMany({ where: { channelId, guildId } }).catch(() => {});
@@ -57,7 +59,7 @@ const remove = async (channelId: Snowflake) => {
     await ChannelsCache.remove(channelId);
   } catch (error) {
     // Attempt to rollback the cache
-    await ChannelsCache.set(channelId).catch(() => {});
+    await ChannelsCache.set(channelId, []).catch(() => {});
     Services.Logger.error(error);
   }
   return channelId;
@@ -116,6 +118,68 @@ const countByGuild = async (guildId: Snowflake) => {
 };
 
 /**
+ * Add filter to channel
+ * @param channelId ID of the channel
+ * @param filter Filter data
+ * @returns void
+ */
+const addFilter = async (channelId: Snowflake, filter: Filter) => {
+  try {
+    const channel = await db.channels.findUnique({
+      where: { channelId },
+    });
+
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    await db.channels.update({
+      where: { channelId },
+      data: {
+        filters: [...channel.filters, filter],
+      },
+    });
+
+    await ChannelsCache.updateFilters(channelId, [...channel.filters, filter]);
+  } catch (error) {
+    Services.Logger.error(error);
+    throw error;
+  }
+};
+
+/**
+ * Remove filter from channel
+ * @param channelId ID of the channel
+ * @param filterId ID of the filter
+ * @returns void
+ */
+const removeFilter = async (channelId: Snowflake, filterId: string) => {
+  try {
+    const channel = await db.channels.findUnique({
+      where: { channelId },
+    });
+
+    if (!channel) {
+      throw new Error('Channel not found');
+    }
+
+    const updatedFilters = channel.filters.filter((f: Filter) => f.id !== filterId);
+
+    await db.channels.update({
+      where: { channelId },
+      data: {
+        filters: updatedFilters,
+      },
+    });
+
+    await ChannelsCache.updateFilters(channelId, updatedFilters);
+  } catch (error) {
+    Services.Logger.error(error);
+    throw error;
+  }
+};
+
+/**
  * Sync all channels from DB to cache by comparing and updating differences
  * @returns void
  */
@@ -126,7 +190,7 @@ const syncCache = async () => {
     // Get channels from both DB and cache
     const [dbChannels, cachedChannelIds] = await Promise.all([
       db.channels.findMany({
-        select: { channelId: true },
+        select: { channelId: true, filters: true },
       }),
       ChannelsCache.getAll(),
     ]);
@@ -135,14 +199,16 @@ const syncCache = async () => {
     const cacheChannelIds = new Set(cachedChannelIds);
 
     // Find channels to add to cache (in DB but not in cache)
-    const channelsToAdd = [...dbChannelIds].filter(id => !cacheChannelIds.has(id));
+    const channelsToAdd = dbChannels.filter(c => !cacheChannelIds.has(c.channelId));
 
     // Find channels to remove from cache (in cache but not in DB)
     const channelsToRemove = [...cacheChannelIds].filter(id => !dbChannelIds.has(id));
 
-    // Add missing channels to cache
+    // Add missing channels to cache with filters
     if (channelsToAdd.length > 0) {
-      await ChannelsCache.setMany(channelsToAdd);
+      for (const channel of channelsToAdd) {
+        await ChannelsCache.set(channel.channelId, channel.filters);
+      }
       Services.Logger.info(`Added ${channelsToAdd.length} channels to cache`);
     }
 
@@ -173,5 +239,7 @@ export const DB = {
   removeByGuildId,
   getSize,
   countByGuild,
+  addFilter,
+  removeFilter,
   syncCache,
 };

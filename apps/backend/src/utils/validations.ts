@@ -1,3 +1,4 @@
+import { CreateFilterSchema } from '@ap/validations';
 import { z } from 'zod';
 
 export const RegExPatterns = {
@@ -39,5 +40,28 @@ export const PresenceReqSchema = z.object({
   }),
   body: z.object({
     count: z.number(),
+  }),
+});
+
+export const FilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+});
+
+export const AddFilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+  body: CreateFilterSchema,
+});
+
+export const RemoveFilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+    filterId: z.string(),
   }),
 });

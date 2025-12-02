@@ -1,3 +1,4 @@
+import { isPremiumEdition } from '@ap/utils';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import {
@@ -31,7 +32,7 @@ export class HelpCommand extends Command {
       .catch(logger.error);
 
     const usageContainer = new ContainerBuilder()
-      .addTextDisplayComponents(textDisplay => textDisplay.setContent('**How to use the bot:**'))
+      .addTextDisplayComponents(textDisplay => textDisplay.setContent('### How to use the bot:'))
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
           `${emojis.greenCircle}  Use </ap enable:${apCommandId}> to enable auto-publishing in a channel.`
@@ -45,9 +46,31 @@ export class HelpCommand extends Command {
       .addSeparatorComponents(separator => separator)
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.info}  Use </ap status:${apCommandId}> to check if auto-publishing is enabled.`
+          `${emojis.info}  Use </ap status:${apCommandId}> to get status of a channel or list all enabled channels.`
         )
-      )
+      );
+
+    if (isPremiumEdition()) {
+      usageContainer
+        .addSeparatorComponents(separator => separator)
+        .addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `${emojis.filter}  Use </ap filter add:${apCommandId}> to add a filter to a channel.`
+          )
+        )
+        .addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `${emojis.filter}  Use </ap filter remove:${apCommandId}> to remove a filter from a channel.`
+          )
+        )
+        .addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `${emojis.filter}  Use </ap filter list:${apCommandId}> to list all filters in a channel.`
+          )
+        );
+    }
+
+    usageContainer
       .addSeparatorComponents(separator => separator)
       .addSectionComponents(section =>
         section

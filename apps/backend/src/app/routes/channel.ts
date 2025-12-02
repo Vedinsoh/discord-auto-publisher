@@ -2,7 +2,12 @@ import { handleServiceResponse, validateRequest } from '@ap/express';
 import express, { type Request, type Response, type Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
-import { ChannelReqSchema } from 'utils/validations.js';
+import {
+  AddFilterReqSchema,
+  ChannelReqSchema,
+  FilterReqSchema,
+  RemoveFilterReqSchema,
+} from 'utils/validations.js';
 
 export const Channel: Router = (() => {
   const router = express.Router();
@@ -44,7 +49,7 @@ export const Channel: Router = (() => {
 
   /**
    * Checks if a specific channel is enabled for auto-publishing
-   * Returns channel status
+   * Returns channel status with filters
    */
   router.get(
     '/:guildId/:channelId',
@@ -52,18 +57,72 @@ export const Channel: Router = (() => {
     async (req: Request, res: Response) => {
       const { channelId } = req.params;
 
-      const channel = await Services.Channels.Handler.get(channelId as string);
+      const channelData = await Services.Channels.Handler.get(channelId as string);
 
-      if (channel) {
+      if (channelData) {
         res.status(StatusCodes.OK).json({
           enabled: true,
-          channelId: channel,
+          channelId,
+          filters: channelData.filters || [],
         });
       } else {
         res.status(StatusCodes.OK).json({
           enabled: false,
         });
       }
+    }
+  );
+
+  /**
+   * Add filter to channel
+   */
+  router.post(
+    '/:guildId/:channelId/filters',
+    validateRequest(AddFilterReqSchema),
+    async (req: Request, res: Response) => {
+      const { guildId, channelId } = req.params;
+      const filterData = req.body;
+
+      const serviceResponse = await Services.Filters.Handler.add(
+        guildId as string,
+        channelId as string,
+        filterData
+      );
+
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
+
+  /**
+   * Remove filter from channel
+   */
+  router.delete(
+    '/:guildId/:channelId/filters/:filterId',
+    validateRequest(RemoveFilterReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId, filterId } = req.params;
+
+      const serviceResponse = await Services.Filters.Handler.remove(
+        channelId as string,
+        filterId as string
+      );
+
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
+
+  /**
+   * Get filters for channel
+   */
+  router.get(
+    '/:guildId/:channelId/filters',
+    validateRequest(FilterReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId } = req.params;
+
+      const serviceResponse = await Services.Filters.Handler.list(channelId as string);
+
+      handleServiceResponse(serviceResponse, res);
     }
   );
 

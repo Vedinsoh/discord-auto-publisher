@@ -1,3 +1,4 @@
+import type { Prisma } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
 import type { RedisClientType } from 'redis';
 import type { Keys } from './constants.js';
@@ -5,13 +6,15 @@ import type { Keys } from './constants.js';
 export const createChannelsCache = (client: RedisClientType, channelKey: Keys) => {
   const _createKey = (channelId: Snowflake) => `${channelKey}:${channelId}`;
 
-  const set = async (channelId: Snowflake) => {
-    return await client.set(_createKey(channelId), '1');
+  const set = async (channelId: Snowflake, filters: Prisma.FilterCreateInput[] = []) => {
+    const value = JSON.stringify({ filters });
+    return await client.set(_createKey(channelId), value);
   };
 
   const setMany = async (channelIds: Snowflake[]) => {
     if (channelIds.length === 0) return;
-    const channelIdKeys = channelIds.flatMap(id => [_createKey(id), '1']);
+    const value = JSON.stringify({ filters: [] });
+    const channelIdKeys = channelIds.flatMap(id => [_createKey(id), value]);
     return await client.mSet(channelIdKeys);
   };
 
@@ -24,8 +27,18 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   };
 
   const get = async (channelId: Snowflake) => {
-    const exists = await client.exists(_createKey(channelId));
-    return exists === 1 ? channelId : null;
+    const data = await client.get(_createKey(channelId));
+    if (!data) return null;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  };
+
+  const updateFilters = async (channelId: Snowflake, filters: unknown[]) => {
+    const value = JSON.stringify({ filters });
+    return await client.set(_createKey(channelId), value);
   };
 
   const getAll = async (): Promise<Snowflake[]> => {
@@ -62,5 +75,5 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
     return keys.length;
   };
 
-  return { set, setMany, remove, removeMany, get, getAll, getSize };
+  return { set, setMany, remove, removeMany, get, getAll, getSize, updateFilters };
 };

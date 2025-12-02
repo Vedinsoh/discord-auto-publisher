@@ -7,11 +7,15 @@ import { Services } from 'services/index.js';
 /**
  * Get channel from channels cache
  * @param channelId ID of the channel
- * @returns Channel ID or null if not found
+ * @returns Channel data with filters or null if not found
  */
 const getCached = async (channelId: Snowflake) => {
   try {
-    return await Services.Channels.DB.findCached(channelId);
+    const cached = await Services.Channels.DB.findCached(channelId);
+    if (!cached) return null;
+
+    // Cached data is { filters: [...] }, return it directly
+    return cached;
   } catch (error) {
     Services.Logger.error(error);
     return null;

@@ -5,13 +5,15 @@ import { DiscordAPIError, RateLimitError } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
 import { StatusCodes } from 'http-status-codes';
-import { Backend } from 'services/backend.js'; /**
+import { Backend } from 'services/backend.js';
+import { Discord } from 'services/discord.js';
+import { Services } from 'services/index.js';
+
+/**
  * Submit message for crossposting
  * @param channelId ID of the channel
  * @param messageId ID of the message
  */
-import { Discord } from 'services/discord.js';
-import { Services } from 'services/index.js';
 export const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) => {
   // Check if the message has reached the max retries
   if (retries >= 10) {
@@ -77,6 +79,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
         Services.Logger.debug(
           `Bot lost access to channel ${channelId}, notifying backend for cleanup`
         );
+        // TODO don't immediately cleanup, instead mark channel as incorrect for later disable
         await Backend.cleanupChannel(channelId);
         return;
       }

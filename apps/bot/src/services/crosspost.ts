@@ -2,6 +2,7 @@ import { RegExPatterns, secToMs, sleep } from '@ap/utils';
 import { Data } from 'data/index.js';
 import { type Message, type NewsChannel, PermissionsBitField } from 'discord.js';
 import type { ReceivedMessage } from 'lib/types/MessageTypes.js';
+import { Services } from './index.js';
 
 /**
  * Handles the message for crossposting
@@ -20,6 +21,12 @@ const handle = async (message: Message, channel: NewsChannel) => {
       PermissionsBitField.Flags.SendMessages,
     ])
   ) {
+    return;
+  }
+
+  // Check if message passes filters
+  const passesFilters = await Services.Filter.evaluate(message, channel.id);
+  if (!passesFilters) {
     return;
   }
 

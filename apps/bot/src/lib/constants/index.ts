@@ -1,5 +1,8 @@
+const hostname = 'auto-publisher.gg';
+
 export const links = {
-  website: 'https://auto-publisher.gg',
+  hostname: hostname,
+  website: `https://${hostname}`,
   supportGuildInvite: 'https://discord.gg/xcEeJkdQX8',
   botInvite: `https://discord.com/oauth2/authorize?client_id=739823232651100180&permissions=10240&integration_type=0&scope=bot+applications.commands`,
 };
@@ -10,14 +13,17 @@ export const emojis = {
   crossmark: '<:ap_cross_mark:1444785716348321933>',
   info: '<:ap_info:1444787324310519899>',
   warning: '<:ap_warning:1444787044110041230>',
+  filter: '<:ap_filter:1445407254550679613>',
   greenCircle: '<:ap_green_circle_dot:1444788894913532128>',
   yellowCircle: '<:ap_yellow_circle_dot:1445046944140628073>',
   redCircle: '<:ap_red_circle_dot:1444789399966715955>',
 };
 
 export const messages = {
+  rateLimitNote:
+    '\n\n-# Note: Discord allows up to 10 messages to be published per hour per channel!',
   delayNote:
     process.env.APP_EDITION === 'free'
-      ? '\n\n-# Note: Messages might have delays in publishing due to Discord API limits.'
+      ? '\n\n-# Note: Messages might have delays in publishing due to Discord API limiting the bot.'
       : '',
 };
