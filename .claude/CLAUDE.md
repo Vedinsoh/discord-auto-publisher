@@ -89,7 +89,6 @@ bot (Discord Gateway) <--HTTP--> backend (REST API) <--> MongoDB + Redis
 - **@ap/logger**: Pino logging utilities (REST & Bot loggers)
 - **@ap/utils**: Common utilities (time, regex, discord helpers)
 - **@ap/validations**: Zod schemas for validation
-- **@ap/http**: HTTP utilities
 - **@ap/types**: Shared TypeScript types
 - **@ap/tsconfig**: Shared TypeScript configurations
 
