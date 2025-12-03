@@ -1,4 +1,3 @@
-import { CreateFilterSchema } from '@ap/validations';
 import { z } from 'zod';
 
 export const RegExPatterns = {
@@ -55,7 +54,11 @@ export const AddFilterReqSchema = z.object({
     guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
   }),
-  body: CreateFilterSchema,
+  body: z.object({
+    type: z.enum(['keyword', 'mention', 'author', 'regex']),
+    mode: z.enum(['include', 'exclude']),
+    value: z.string().min(1).max(200),
+  }),
 });
 
 export const RemoveFilterReqSchema = z.object({

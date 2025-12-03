@@ -24,10 +24,6 @@
         "dotenv": "^16.4.5",
         "envalid": "^8.0.0",
         "express": "^4.19.2",
-        "p-queue": "^8.0.1",
-      },
-      "devDependencies": {
-        "@types/express": "^4.17.21",
       },
     },
     "apps/bot": {
@@ -67,9 +63,6 @@
         "envalid": "^8.0.0",
         "express": "^4.19.2",
         "p-queue": "^8.0.1",
-      },
-      "devDependencies": {
-        "@types/express": "^4.17.21",
       },
     },
     "packages/database": {
