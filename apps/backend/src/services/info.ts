@@ -1,6 +1,7 @@
 import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
 import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Get info from backend  and crosspost-worker
@@ -33,7 +34,7 @@ const get = async () => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,

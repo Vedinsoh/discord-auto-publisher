@@ -1,8 +1,8 @@
 import { createChannelsCache, DatabaseIDs, Keys, RedisClient } from '@ap/redis';
-import { Logger } from './logger.js';
+import { logger } from 'utils/logger.js';
 
 // Initialize Redis client
-const redisClient = new RedisClient(DatabaseIDs.Channels, Logger);
+const redisClient = new RedisClient(DatabaseIDs.Channels, logger);
 await redisClient.connect();
 
 // Create channels cache

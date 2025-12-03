@@ -2,6 +2,7 @@ import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
 import type { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Ensure guild exists in DB (creates if not exists)
@@ -11,9 +12,9 @@ import { Services } from 'services/index.js';
 const ensureExists = async (guildId: Snowflake) => {
   try {
     await Services.Guilds.DB.upsert(guildId);
-    Services.Logger.debug(`Ensured guild ${guildId} exists in DB`);
+    logger.debug(`Ensured guild ${guildId} exists in DB`);
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };
@@ -26,7 +27,7 @@ const ensureExists = async (guildId: Snowflake) => {
 const getChannels = async (guildId: Snowflake) => {
   try {
     const channelIds = await Services.Guilds.DB.getChannels(guildId);
-    Services.Logger.debug(`Retrieved ${channelIds.length} channels for guild ${guildId}`);
+    logger.debug(`Retrieved ${channelIds.length} channels for guild ${guildId}`);
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,
@@ -37,7 +38,7 @@ const getChannels = async (guildId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
@@ -58,7 +59,7 @@ const getChannels = async (guildId: Snowflake) => {
 const remove = async (guildId: Snowflake) => {
   try {
     await Services.Guilds.DB.remove(guildId);
-    Services.Logger.debug(`Removed guild ${guildId} and all associated channels`);
+    logger.debug(`Removed guild ${guildId} and all associated channels`);
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,
@@ -69,7 +70,7 @@ const remove = async (guildId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,

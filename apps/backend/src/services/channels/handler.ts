@@ -3,6 +3,7 @@ import type { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
 import { PlanLimits } from 'lib/constants/app.js';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Get channel from channels cache
@@ -17,7 +18,7 @@ const getCached = async (channelId: Snowflake) => {
     // Cached data is { filters: [...] }, return it directly
     return cached;
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     return null;
   }
 };
@@ -59,7 +60,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake) => {
     await Services.Guilds.Handler.ensureExists(guildId);
 
     await Services.Channels.DB.create(guildId, channelId);
-    Services.Logger.debug(`Added channel ${channelId} for guild ${guildId}`);
+    logger.debug(`Added channel ${channelId} for guild ${guildId}`);
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,
@@ -70,7 +71,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
@@ -91,7 +92,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake) => {
 const remove = async (channelId: Snowflake) => {
   try {
     await Services.Channels.DB.remove(channelId);
-    Services.Logger.debug(`Removed channel ${channelId}`);
+    logger.debug(`Removed channel ${channelId}`);
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,
@@ -102,7 +103,7 @@ const remove = async (channelId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,

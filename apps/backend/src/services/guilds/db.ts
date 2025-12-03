@@ -1,6 +1,7 @@
 import { db } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Create or update guild in DB
@@ -15,7 +16,7 @@ const upsert = async (guildId: Snowflake) => {
       update: {},
     });
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };
@@ -34,7 +35,7 @@ const getChannels = async (guildId: Snowflake) => {
 
     return channels.map(c => c.channelId);
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };
@@ -54,11 +55,11 @@ const remove = async (guildId: Snowflake) => {
       where: { guildId },
     });
 
-    Services.Logger.debug(
+    logger.debug(
       `Deleted guild ${guildId} and ${removedChannelIds.length} associated channels`
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };

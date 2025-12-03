@@ -1,6 +1,6 @@
-import { MessagesQueue } from '../queue/messagesQueue.js';
-import { Counter } from './counter.js';
-import { Handler } from './handler.js';
+import { Counter } from 'services/crosspost/counter.js';
+import { Handler } from 'services/crosspost/handler.js';
+import { MessagesQueue } from 'services/queue/messagesQueue.js';
 
 export const Crosspost = {
   Counter,

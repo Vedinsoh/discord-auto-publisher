@@ -1,11 +1,11 @@
 import { DatabaseIDs, RedisClient } from '@ap/redis';
 import { minToSec } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
-import { Logger } from './logger.js';
+import { logger } from 'utils/logger.js';
 
 // Initialize Redis clients
-const channelCounterClient = new RedisClient(DatabaseIDs.ChannelsCrosspostsCount, Logger);
-const rateLimitsClient = new RedisClient(DatabaseIDs.RateLimitsCache, Logger);
+const channelCounterClient = new RedisClient(DatabaseIDs.ChannelsCrosspostsCount, logger);
+const rateLimitsClient = new RedisClient(DatabaseIDs.RateLimitsCache, logger);
 
 await channelCounterClient.connect();
 await rateLimitsClient.connect();

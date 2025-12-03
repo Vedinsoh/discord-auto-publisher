@@ -1,6 +1,6 @@
+import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord.js';
-import { Data } from '../data/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Delete a guild and all its associated channels
@@ -12,9 +12,7 @@ const remove = async (guildId: Snowflake) => {
     const response = await Data.API.Backend.deleteGuild(guildId);
 
     if (!response.ok) {
-      logger.error(
-        `Failed to delete guild ${guildId}: ${response.status} ${response.statusText}`
-      );
+      logger.error(`Failed to delete guild ${guildId}: ${response.status} ${response.statusText}`);
       return;
     }
 

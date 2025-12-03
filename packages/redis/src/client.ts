@@ -9,7 +9,6 @@ export class RedisClient {
   constructor(databaseId: number, logger: Logger, url = 'redis://redis:6379') {
     this._databaseId = databaseId;
     this._logger = logger;
-    this._url = url;
     this.client = createClient({
       database: databaseId,
       url,

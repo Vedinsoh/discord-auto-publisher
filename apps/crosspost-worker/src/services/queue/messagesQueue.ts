@@ -3,6 +3,7 @@ import { DiscordSnowflake } from '@sapphire/snowflake';
 import type { Snowflake } from 'discord-api-types/v10';
 import PQueue from 'p-queue';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 import { ChannelQueue } from './channelQueue.js';
 
 /**
@@ -46,7 +47,7 @@ export class Queue {
 
     // Check if the message has reached the max retries
     if (retries >= 10) {
-      Services.Logger.debug(`Message ${messageId} has reached the max retries`);
+      logger.debug(`Message ${messageId} has reached the max retries`);
       return;
     }
 
@@ -95,7 +96,7 @@ export class Queue {
   private _newChannelQueue = (channelId: Snowflake) => {
     if (this._channelQueues.has(channelId)) return;
     this._channelQueues.set(channelId, new ChannelQueue());
-    Services.Logger.debug(`Created queue for channel ${channelId}`);
+    logger.debug(`Created queue for channel ${channelId}`);
   };
 
   /**
@@ -111,7 +112,7 @@ export class Queue {
    * Sweep inactive channel queues
    */
   private _sweepInactiveChannels() {
-    Services.Logger.debug('Sweeping inactive channel queues...');
+    logger.debug('Sweeping inactive channel queues...');
     let count = 0;
     this._channelQueues.forEach((channel, channelId) => {
       if (channel.isInactive) {
@@ -119,7 +120,7 @@ export class Queue {
         count++;
       }
     });
-    Services.Logger.debug(`Sweeped ${count} inactive channel queues`);
+    logger.debug(`Sweeped ${count} inactive channel queues`);
   }
 
   /**
@@ -164,7 +165,7 @@ export class Queue {
     this._timeout = setTimeout(() => {
       this.resume();
     }, duration);
-    Services.Logger.debug(`Messages queue paused for ${msToSec(duration)}s`);
+    logger.debug(`Messages queue paused for ${msToSec(duration)}s`);
   }
 
   /**
@@ -176,7 +177,7 @@ export class Queue {
       clearTimeout(this._timeout);
       this._timeout = null;
     }
-    Services.Logger.debug('Messages queue resumed');
+    logger.debug('Messages queue resumed');
   }
 }
 

@@ -2,7 +2,7 @@ import { createErrorHandler, createHealthRoute, createRequestLogger } from '@ap/
 import { App } from 'app/index.js';
 import express from 'express';
 import { env } from 'lib/config/env.js';
-import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 // Create the Express app
 const app = express();
@@ -22,16 +22,16 @@ app.use(...createErrorHandler());
 // Start the server
 const server = app.listen('8082', async () => {
   const { NODE_ENV } = env;
-  Services.Logger.info(`Crosspost Worker (${NODE_ENV}) running on port http://localhost:8082`);
+  logger.info(`Crosspost Worker (${NODE_ENV}) running on port http://localhost:8082`);
 });
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {
   server.close(() => {
-    Services.Logger.info('Server closed');
+    logger.info('Server closed');
     process.exit();
   });
-  setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
+  setTimeout(() => process.exit(1), 20000).unref(); // Force shutdown after 20s
 };
 
 // Handle close signals

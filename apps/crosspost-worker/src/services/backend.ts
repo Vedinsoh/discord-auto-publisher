@@ -1,5 +1,5 @@
 import type { Snowflake } from 'discord-api-types/globals';
-import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 const BACKEND_URL = 'http://backend:8080';
 
@@ -8,9 +8,9 @@ const cleanupChannel = async (channelId: Snowflake) => {
     const response = await fetch(`${BACKEND_URL}/channel/${channelId}`, {
       method: 'DELETE',
     });
-    Services.Logger.debug(`Cleanup channel ${channelId} from backend, status: ${response.status}`);
+    logger.debug(`Cleanup channel ${channelId} from backend, status: ${response.status}`);
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
   }
 };
 

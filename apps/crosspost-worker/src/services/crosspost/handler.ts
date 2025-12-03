@@ -8,6 +8,7 @@ import { StatusCodes } from 'http-status-codes';
 import { Backend } from 'services/backend.js';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Submit message for crossposting
@@ -29,7 +30,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
     await Discord.crosspost(channelId, messageId);
     await Services.Crosspost.Counter.increment(channelId);
 
-    Services.Logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
+    logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
   } catch (error: unknown) {
     // Handle Discord rate limit errors
     if (error instanceof RateLimitError) {
@@ -76,7 +77,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
       // Handle missing permissions error - notify backend to cleanup channel
       if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
-        Services.Logger.debug(
+        logger.debug(
           `Bot lost access to channel ${channelId}, notifying backend for cleanup`
         );
         // TODO don't immediately cleanup, instead mark channel as incorrect for later disable
@@ -86,7 +87,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
       // Handle unknown channel error (channel deleted) - notify backend to cleanup channel
       if (errorCode === ErrorCodes.UnknownChannel) {
-        Services.Logger.debug(
+        logger.debug(
           `Channel ${channelId} no longer exists, notifying backend for cleanup`
         );
         await Backend.cleanupChannel(channelId);
@@ -100,7 +101,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
     }
 
     // Log the error if it's not handled above
-    Services.Logger.error(error);
+    logger.error(error);
   }
 };
 
@@ -120,7 +121,7 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
     const isChannelEnabled = await ChannelsCache.get(channelId);
 
     if (!isChannelEnabled) {
-      Services.Logger.debug(
+      logger.debug(
         `Channel ${channelId} not enabled for auto-publishing, skipping message ${messageId}`
       );
 
@@ -137,7 +138,7 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
 
     Services.Crosspost.Queue.add(channelId, messageId);
 
-    Services.Logger.debug(`Message ${messageId} pushed to crosspost queue`);
+    logger.debug(`Message ${messageId} pushed to crosspost queue`);
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,
@@ -148,7 +149,7 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,

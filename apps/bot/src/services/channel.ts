@@ -1,3 +1,4 @@
+import { Data } from 'data/index.js';
 import {
   ChannelType,
   type Channel as DiscordChannel,
@@ -5,8 +6,7 @@ import {
   type NewsChannel,
   type Snowflake,
 } from 'discord.js';
-import { Data } from '../data/index.js';
-import { logger } from '../utils/logger.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Fetches complete channel data

@@ -2,7 +2,7 @@ import { REST, RequestMethod } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Routes } from 'discord-api-types/v10';
 import { env } from 'lib/config/env.js';
-import { Logger } from './logger.js';
+import { logger } from 'utils/logger.js';
 
 const rest = new REST({
   api: 'http://discord-proxy:8080/api',
@@ -17,10 +17,10 @@ const rest = new REST({
 
 const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
-    Logger.debug(`Crossposting message ${messageId} in channel ${channelId}`);
+    logger.debug(`Crossposting message ${messageId} in channel ${channelId}`);
     return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
   } catch (error) {
-    Logger.error(error);
+    logger.error(error);
   }
 };
 

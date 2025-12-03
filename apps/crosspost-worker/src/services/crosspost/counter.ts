@@ -1,7 +1,7 @@
 import { secToMin } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
 import { ChannelCounter } from 'services/caches.js';
-import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Add channel to crossposts counter
@@ -16,11 +16,11 @@ export const set = async (channelId: Snowflake, options?: { count?: number; expi
       count: options?.count,
     });
 
-    Services.Logger.debug(
+    logger.debug(
       `Crossposts counter set for channel ${channelId}, count: ${channel.count || 0}, expiry: ${channel.expiry ? Math.round(secToMin(channel.expiry)) : 'default'}`
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
   }
 };
 
@@ -83,7 +83,7 @@ export const isOverLimit = async (channelId: Snowflake) => {
   const isOverLimit = count >= 10;
 
   if (isOverLimit) {
-    Services.Logger.debug(`Channel ${channelId} is over the crossposts limit`);
+    logger.debug(`Channel ${channelId} is over the crossposts limit`);
   }
 
   return isOverLimit;

@@ -1,8 +1,8 @@
 import { db } from '@ap/database';
 import type { Filter } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
-import { Services } from 'services/index.js';
 import { ChannelsCache } from 'services/redis.js';
+import { logger } from 'utils/logger.js';
 
 /**
  * Get channel from DB
@@ -43,7 +43,7 @@ const create = async (guildId: Snowflake, channelId: Snowflake) => {
     // Attempt to rollback both DB and cache
     await db.channels.deleteMany({ where: { channelId, guildId } }).catch(() => {});
     await ChannelsCache.remove(channelId).catch(() => {});
-    Services.Logger.error(error);
+    logger.error(error);
   }
   return channelId;
 };
@@ -60,7 +60,7 @@ const remove = async (channelId: Snowflake) => {
   } catch (error) {
     // Attempt to rollback the cache
     await ChannelsCache.set(channelId, []).catch(() => {});
-    Services.Logger.error(error);
+    logger.error(error);
   }
   return channelId;
 };
@@ -93,7 +93,7 @@ const removeByGuildId = async (guildId: Snowflake) => {
 
     return channelIds;
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };
@@ -142,7 +142,7 @@ const addFilter = async (channelId: Snowflake, filter: Filter) => {
 
     await ChannelsCache.updateFilters(channelId, [...channel.filters, filter]);
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };
@@ -174,7 +174,7 @@ const removeFilter = async (channelId: Snowflake, filterId: string) => {
 
     await ChannelsCache.updateFilters(channelId, updatedFilters);
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };
@@ -185,7 +185,7 @@ const removeFilter = async (channelId: Snowflake, filterId: string) => {
  */
 const syncCache = async () => {
   try {
-    Services.Logger.info('Starting cache sync with DB');
+    logger.info('Starting cache sync with DB');
 
     // Get channels from both DB and cache
     const [dbChannels, cachedChannelIds] = await Promise.all([
@@ -209,24 +209,24 @@ const syncCache = async () => {
       for (const channel of channelsToAdd) {
         await ChannelsCache.set(channel.channelId, channel.filters);
       }
-      Services.Logger.info(`Added ${channelsToAdd.length} channels to cache`);
+      logger.info(`Added ${channelsToAdd.length} channels to cache`);
     }
 
     // Remove extra channels from cache
     if (channelsToRemove.length > 0) {
       await ChannelsCache.removeMany(channelsToRemove);
-      Services.Logger.info(`Removed ${channelsToRemove.length} channels from cache`);
+      logger.info(`Removed ${channelsToRemove.length} channels from cache`);
     }
 
     if (channelsToAdd.length === 0 && channelsToRemove.length === 0) {
-      Services.Logger.debug('Cache and DB are in sync');
+      logger.debug('Cache and DB are in sync');
     } else {
-      Services.Logger.info(
+      logger.info(
         `Cache sync completed: added ${channelsToAdd.length}, removed ${channelsToRemove.length}`
       );
     }
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
     throw error;
   }
 };

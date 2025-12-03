@@ -3,6 +3,7 @@ import { App } from 'app/index.js';
 import express from 'express';
 import { env } from 'lib/config/env.js';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 // Create the Express app
 const app = express();
@@ -26,13 +27,13 @@ await Services.Channels.DB.syncCache();
 // Start the server
 const server = app.listen('8080', async () => {
   const { NODE_ENV } = env;
-  Services.Logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
+  logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
 });
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {
   server.close(() => {
-    Services.Logger.info('Server closed');
+    logger.info('Server closed');
     process.exit();
   });
   setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s

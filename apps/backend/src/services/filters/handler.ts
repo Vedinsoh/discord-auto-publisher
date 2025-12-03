@@ -5,6 +5,7 @@ import type { CreateFilter } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 const MAX_FILTERS_PER_CHANNEL = 5;
 
@@ -56,7 +57,7 @@ const add = async (_guildId: Snowflake, channelId: Snowflake, filterData: Create
 
     await Services.Channels.DB.addFilter(channelId, filter);
 
-    Services.Logger.debug(
+    logger.debug(
       `Added ${filterData.type} filter to channel ${channelId}: ${filterData.value}`
     );
 
@@ -67,7 +68,7 @@ const add = async (_guildId: Snowflake, channelId: Snowflake, filterData: Create
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
@@ -97,7 +98,7 @@ const remove = async (channelId: Snowflake, filterId: string) => {
   try {
     await Services.Channels.DB.removeFilter(channelId, filterId);
 
-    Services.Logger.debug(`Removed filter ${filterId} from channel ${channelId}`);
+    logger.debug(`Removed filter ${filterId} from channel ${channelId}`);
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,
@@ -106,7 +107,7 @@ const remove = async (channelId: Snowflake, filterId: string) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
@@ -151,7 +152,7 @@ const list = async (channelId: Snowflake) => {
       StatusCodes.OK
     );
   } catch (error) {
-    Services.Logger.error(error);
+    logger.error(error);
 
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
