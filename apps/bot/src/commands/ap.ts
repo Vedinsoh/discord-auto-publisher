@@ -129,8 +129,14 @@ export class APCommand extends Subcommand {
                     )
                     .setRequired(true)
                     .addChoices(
-                      { name: 'Include (whitelist)', value: 'include' },
-                      { name: 'Exclude (blacklist)', value: 'exclude' }
+                      {
+                        name: 'Include (publish messages that contain this value)',
+                        value: 'include',
+                      },
+                      {
+                        name: "Exclude (publish messages that don't contain this value)",
+                        value: 'exclude',
+                      }
                     )
                 )
             )

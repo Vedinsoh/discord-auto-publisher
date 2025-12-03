@@ -185,7 +185,7 @@ const removeFilter = async (channelId: Snowflake, filterId: string) => {
     throw new Error('Channel not found');
   }
 
-  const updatedFilters = channel.filters.filter((f) => f.id !== filterId);
+  const updatedFilters = channel.filters.filter(f => f.id !== filterId);
   let dbUpdated = false;
 
   try {

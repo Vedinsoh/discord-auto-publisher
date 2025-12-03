@@ -33,7 +33,7 @@ model channels {
 }
 
 type Filter {
-  id        String   @db.ObjectId
+  id        String
   type      String
   mode      String
   value     String

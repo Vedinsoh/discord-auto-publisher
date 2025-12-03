@@ -87,7 +87,7 @@ export async function chatInputFilterAdd(
 
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `${emojis.checkmark} Filter added to <#${channel.id}>!\\n\\n**Type:** ${type}\\n**Mode:** ${mode}\\n**Value:** \`${value}\``
+        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Type:** ${type}\n**Mode:** ${mode}\n**Value:** \`${value}\``
       )
     );
 
