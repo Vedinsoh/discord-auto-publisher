@@ -2,6 +2,7 @@ import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
+import { Services } from 'services/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
 import { logger } from 'utils/logger.js';
 
@@ -21,6 +22,21 @@ export async function chatInputFilterList(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
+    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+
+    if (!channelStatus?.enabled) {
+      const notEnabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `${emojis.crossmark} Auto-publishing is not enabled in <#${channel.id}> channel.\n\n-# Use </ap enable:${interaction.commandId}> to enable auto-publishing in this channel.`
+        )
+      );
+
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
+        components: [notEnabledContainer],
+      });
+    }
+
     const response = await Data.API.Backend.getFilters(interaction.guildId, channel.id);
 
     if (!response.ok) {

@@ -25,7 +25,7 @@ export class LinksCommand extends Command {
         .setButtonAccessory(Buttons.botInvite)
     );
 
-    if (isPremiumInstance) {
+    if (!isPremiumInstance) {
       replyContainer.addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>
