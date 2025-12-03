@@ -30,6 +30,8 @@ const findCached = async (channelId: Snowflake) => {
  * @returns Channel ID
  */
 const create = async (guildId: Snowflake, channelId: Snowflake) => {
+  let dbCreated = false;
+
   try {
     await db.channels.create({
       data: {
@@ -38,12 +40,15 @@ const create = async (guildId: Snowflake, channelId: Snowflake) => {
         filters: [],
       },
     });
+    dbCreated = true;
     await ChannelsCache.set(channelId, []);
   } catch (error) {
-    // Attempt to rollback both DB and cache
-    await db.channels.deleteMany({ where: { channelId, guildId } }).catch(() => {});
-    await ChannelsCache.remove(channelId).catch(() => {});
+    // If DB creation succeeded but cache failed, rollback DB
+    if (dbCreated) {
+      await db.channels.deleteMany({ where: { channelId, guildId } }).catch(() => {});
+    }
     logger.error(error);
+    throw error;
   }
   return channelId;
 };
@@ -54,13 +59,19 @@ const create = async (guildId: Snowflake, channelId: Snowflake) => {
  * @returns Channel ID
  */
 const remove = async (channelId: Snowflake) => {
+  let dbDeleted = false;
+
   try {
     await db.channels.deleteMany({ where: { channelId } });
+    dbDeleted = true;
     await ChannelsCache.remove(channelId);
   } catch (error) {
-    // Attempt to rollback the cache
-    await ChannelsCache.set(channelId, []).catch(() => {});
+    // If DB deletion succeeded but cache removal failed, retry cache removal
+    if (dbDeleted) {
+      await ChannelsCache.remove(channelId).catch(() => {});
+    }
     logger.error(error);
+    throw error;
   }
   return channelId;
 };
@@ -124,24 +135,36 @@ const countByGuild = async (guildId: Snowflake) => {
  * @returns void
  */
 const addFilter = async (channelId: Snowflake, filter: Filter) => {
+  const channel = await db.channels.findUnique({
+    where: { channelId },
+  });
+
+  if (!channel) {
+    throw new Error('Channel not found');
+  }
+
+  const updatedFilters = [...channel.filters, filter];
+  let dbUpdated = false;
+
   try {
-    const channel = await db.channels.findUnique({
-      where: { channelId },
-    });
-
-    if (!channel) {
-      throw new Error('Channel not found');
-    }
-
     await db.channels.update({
       where: { channelId },
       data: {
-        filters: [...channel.filters, filter],
+        filters: updatedFilters,
       },
     });
-
-    await ChannelsCache.updateFilters(channelId, [...channel.filters, filter]);
+    dbUpdated = true;
+    await ChannelsCache.updateFilters(channelId, updatedFilters);
   } catch (error) {
+    // If DB update succeeded but cache update failed, rollback DB
+    if (dbUpdated) {
+      await db.channels
+        .update({
+          where: { channelId },
+          data: { filters: channel.filters },
+        })
+        .catch(() => {});
+    }
     logger.error(error);
     throw error;
   }
@@ -154,26 +177,36 @@ const addFilter = async (channelId: Snowflake, filter: Filter) => {
  * @returns void
  */
 const removeFilter = async (channelId: Snowflake, filterId: string) => {
+  const channel = await db.channels.findUnique({
+    where: { channelId },
+  });
+
+  if (!channel) {
+    throw new Error('Channel not found');
+  }
+
+  const updatedFilters = channel.filters.filter((f) => f.id !== filterId);
+  let dbUpdated = false;
+
   try {
-    const channel = await db.channels.findUnique({
-      where: { channelId },
-    });
-
-    if (!channel) {
-      throw new Error('Channel not found');
-    }
-
-    const updatedFilters = channel.filters.filter((f) => f.id !== filterId);
-
     await db.channels.update({
       where: { channelId },
       data: {
         filters: updatedFilters,
       },
     });
-
+    dbUpdated = true;
     await ChannelsCache.updateFilters(channelId, updatedFilters);
   } catch (error) {
+    // If DB update succeeded but cache update failed, rollback DB
+    if (dbUpdated) {
+      await db.channels
+        .update({
+          where: { channelId },
+          data: { filters: channel.filters },
+        })
+        .catch(() => {});
+    }
     logger.error(error);
     throw error;
   }
