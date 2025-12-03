@@ -2,8 +2,8 @@ import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, messages } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
-import { checkChannelPermissions } from 'utils/permissions.js';
 import { logger } from 'utils/logger.js';
+import { checkChannelPermissions } from 'utils/permissions.js';
 
 export async function chatInputStatus(
   this: Subcommand,

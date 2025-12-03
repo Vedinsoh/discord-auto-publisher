@@ -115,16 +115,6 @@
         "typescript": "^5.8.3",
       },
     },
-    "packages/http": {
-      "name": "@ap/http",
-      "dependencies": {
-        "discord-api-types": "^0.38.26",
-        "http-status-codes": "^2.3.0",
-      },
-      "devDependencies": {
-        "@ap/tsconfig": "workspace:*",
-      },
-    },
     "packages/logger": {
       "name": "@ap/logger",
       "dependencies": {
@@ -139,6 +129,7 @@
       "name": "@ap/redis",
       "version": "1.0.0",
       "dependencies": {
+        "@ap/database": "workspace:*",
         "@ap/logger": "workspace:*",
         "discord-api-types": "^0.38.26",
         "redis": "^4.7.0",
@@ -187,8 +178,6 @@
     "@ap/discord-api": ["@ap/discord-api@workspace:packages/discord-api"],
 
     "@ap/express": ["@ap/express@workspace:packages/express"],
-
-    "@ap/http": ["@ap/http@workspace:packages/http"],
 
     "@ap/logger": ["@ap/logger@workspace:packages/logger"],
 

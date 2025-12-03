@@ -57,9 +57,7 @@ export async function chatInputFilterAdd(
         });
       }
 
-      logger.error(
-        `Failed to add filter: ${response.status} ${response.statusText}`
-      );
+      logger.error(`Failed to add filter: ${response.status} ${response.statusText}`);
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(`${emojis.crossmark} Failed to add filter. Please try again later.`)

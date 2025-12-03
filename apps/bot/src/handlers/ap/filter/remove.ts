@@ -25,9 +25,7 @@ export async function chatInputFilterRemove(
     const response = await Data.API.Backend.removeFilter(interaction.guildId, channel.id, filterId);
 
     if (!response.ok) {
-      logger.error(
-        `Failed to remove filter: ${response.status} ${response.statusText}`
-      );
+      logger.error(`Failed to remove filter: ${response.status} ${response.statusText}`);
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(

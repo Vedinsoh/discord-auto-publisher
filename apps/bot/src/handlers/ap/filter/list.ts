@@ -24,9 +24,7 @@ export async function chatInputFilterList(
     const response = await Data.API.Backend.getFilters(interaction.guildId, channel.id);
 
     if (!response.ok) {
-      logger.error(
-        `Failed to get filters: ${response.status} ${response.statusText}`
-      );
+      logger.error(`Failed to get filters: ${response.status} ${response.statusText}`);
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(

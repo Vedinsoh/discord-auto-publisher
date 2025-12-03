@@ -55,9 +55,7 @@ const remove = async (guildId: Snowflake) => {
       where: { guildId },
     });
 
-    logger.debug(
-      `Deleted guild ${guildId} and ${removedChannelIds.length} associated channels`
-    );
+    logger.debug(`Deleted guild ${guildId} and ${removedChannelIds.length} associated channels`);
   } catch (error) {
     logger.error(error);
     throw error;

@@ -2,8 +2,8 @@ import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links, messages } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
-import { checkChannelPermissions } from 'utils/permissions.js';
 import { logger } from 'utils/logger.js';
+import { checkChannelPermissions } from 'utils/permissions.js';
 
 export async function chatInputEnable(
   this: Subcommand,
@@ -89,9 +89,7 @@ export async function chatInputEnable(
         });
       }
 
-      logger.error(
-        `Failed to enable auto-publishing: ${response.status} ${response.statusText}`
-      );
+      logger.error(`Failed to enable auto-publishing: ${response.status} ${response.statusText}`);
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(

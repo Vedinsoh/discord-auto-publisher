@@ -77,9 +77,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
       // Handle missing permissions error - notify backend to cleanup channel
       if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
-        logger.debug(
-          `Bot lost access to channel ${channelId}, notifying backend for cleanup`
-        );
+        logger.debug(`Bot lost access to channel ${channelId}, notifying backend for cleanup`);
         // TODO don't immediately cleanup, instead mark channel as incorrect for later disable
         await Backend.cleanupChannel(channelId);
         return;
@@ -87,9 +85,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
       // Handle unknown channel error (channel deleted) - notify backend to cleanup channel
       if (errorCode === ErrorCodes.UnknownChannel) {
-        logger.debug(
-          `Channel ${channelId} no longer exists, notifying backend for cleanup`
-        );
+        logger.debug(`Channel ${channelId} no longer exists, notifying backend for cleanup`);
         await Backend.cleanupChannel(channelId);
         return;
       }
