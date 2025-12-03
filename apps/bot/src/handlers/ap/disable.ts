@@ -3,6 +3,7 @@ import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
+import { logger } from 'utils/logger.js';
 
 export async function chatInputDisable(
   this: Subcommand,
@@ -47,7 +48,7 @@ export async function chatInputDisable(
       components: [successContainer],
     });
   } catch (error) {
-    this.container.logger.error('Failed to disable auto-publishing:', error);
+    logger.error(error, 'Failed to disable auto-publishing');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(

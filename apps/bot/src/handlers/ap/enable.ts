@@ -3,6 +3,7 @@ import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links, messages } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
+import { logger } from 'utils/logger.js';
 
 export async function chatInputEnable(
   this: Subcommand,
@@ -18,7 +19,7 @@ export async function chatInputEnable(
 
   const botMember = await interaction.guild?.members.me?.fetch();
   if (!botMember) {
-    this.container.logger.error('Failed to fetch bot member information');
+    logger.error('Failed to fetch bot member information');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
@@ -88,7 +89,7 @@ export async function chatInputEnable(
         });
       }
 
-      this.container.logger.error(
+      logger.error(
         `Failed to enable auto-publishing: ${response.status} ${response.statusText}`
       );
 
@@ -117,7 +118,7 @@ export async function chatInputEnable(
       components: [successContainer],
     });
   } catch (error) {
-    this.container.logger.error('Failed to enable auto-publishing:', error);
+    logger.error(error, 'Failed to enable auto-publishing');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(

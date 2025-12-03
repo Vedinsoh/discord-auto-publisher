@@ -1,6 +1,6 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
-import { Events } from 'discord.js';
+import { type CloseEvent, Events } from 'discord.js';
 import { logger } from 'utils/logger.js';
 
 @ApplyOptions<Listener.Options>({

@@ -3,6 +3,7 @@ import { Data } from 'data/index.js';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
+import { logger } from 'utils/logger.js';
 
 export async function chatInputFilterRemove(
   this: Subcommand,
@@ -24,7 +25,7 @@ export async function chatInputFilterRemove(
     const response = await Data.API.Backend.removeFilter(interaction.guildId, channel.id, filterId);
 
     if (!response.ok) {
-      this.container.logger.error(
+      logger.error(
         `Failed to remove filter: ${response.status} ${response.statusText}`
       );
 
@@ -49,7 +50,7 @@ export async function chatInputFilterRemove(
       components: [successContainer],
     });
   } catch (error) {
-    this.container.logger.error('Failed to remove filter:', error);
+    logger.error(error, 'Failed to remove filter');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(`${emojis.crossmark} Failed to remove filter. Please try again later.`)

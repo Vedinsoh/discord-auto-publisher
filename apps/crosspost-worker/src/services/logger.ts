@@ -1,6 +1,5 @@
-import { createRestLogger } from '@ap/logger';
-import { env } from 'lib/config/env.js';
+import { createLogger } from '@ap/logger';
 
-const Logger = createRestLogger(env.LOGGER_LEVEL);
+const Logger = createLogger('CW');
 
 export { Logger };

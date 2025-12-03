@@ -3,6 +3,7 @@ import { Data } from 'data/index.js';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
+import { logger } from 'utils/logger.js';
 
 export async function chatInputFilterAdd(
   this: Subcommand,
@@ -56,7 +57,7 @@ export async function chatInputFilterAdd(
         });
       }
 
-      this.container.logger.error(
+      logger.error(
         `Failed to add filter: ${response.status} ${response.statusText}`
       );
 
@@ -81,7 +82,7 @@ export async function chatInputFilterAdd(
       components: [successContainer],
     });
   } catch (error) {
-    this.container.logger.error('Failed to add filter:', error);
+    logger.error(error, 'Failed to add filter');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(`${emojis.crossmark} Failed to add filter. Please try again later.`)

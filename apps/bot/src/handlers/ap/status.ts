@@ -3,6 +3,7 @@ import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, messages } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
+import { logger } from 'utils/logger.js';
 
 export async function chatInputStatus(
   this: Subcommand,
@@ -25,7 +26,7 @@ export async function chatInputStatus(
         const apCommandId = await interaction.client.application.commands
           .fetch()
           .then(commands => commands.findKey(command => command.name === 'ap'))
-          .catch(this.container.logger.error);
+          .catch(logger.error);
 
         const noChannelsContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
@@ -53,7 +54,7 @@ export async function chatInputStatus(
         components: [listContainer],
       });
     } catch (error) {
-      this.container.logger.error('Failed to get guild channels:', error);
+      logger.error(error, 'Failed to get guild channels');
 
       const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
@@ -87,7 +88,7 @@ export async function chatInputStatus(
 
     const botMember = await interaction.guild?.members.me?.fetch();
     if (!botMember) {
-      this.container.logger.error('Failed to fetch bot member information for permission check');
+      logger.error('Failed to fetch bot member information for permission check');
 
       const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
@@ -141,7 +142,7 @@ export async function chatInputStatus(
       components: [enabledContainer],
     });
   } catch (error) {
-    this.container.logger.error('Failed to check auto-publishing status:', error);
+    logger.error(error, 'Failed to check auto-publishing status');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(

@@ -1,4 +1,3 @@
-import { container } from '@sapphire/framework';
 import {
   ChannelType,
   type Channel as DiscordChannel,
@@ -7,6 +6,7 @@ import {
   type Snowflake,
 } from 'discord.js';
 import { Data } from '../data/index.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Fetches complete channel data
@@ -67,7 +67,7 @@ const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
   const response = await Data.API.Backend.getChannel(guildId, channelId);
 
   if (!response.ok) {
-    container.logger.error(
+    logger.error(
       `Failed to get channel status ${channelId}: ${response.status} ${response.statusText}`
     );
     return null;
@@ -90,7 +90,7 @@ const getGuildChannels = async (guildId: Snowflake) => {
   const response = await Data.API.Backend.getGuildChannels(guildId);
 
   if (!response.ok) {
-    container.logger.error(
+    logger.error(
       `Failed to get guild channels ${guildId}: ${response.status} ${response.statusText}`
     );
     return null;
@@ -116,15 +116,15 @@ const remove = async (guildId: Snowflake, channelId: Snowflake) => {
     const response = await Data.API.Backend.removeChannel(guildId, channelId);
 
     if (!response.ok) {
-      container.logger.error(
+      logger.error(
         `Failed to delete channel ${channelId}: ${response.status} ${response.statusText}`
       );
       return;
     }
 
-    container.logger.info(`Successfully deleted channel ${channelId}`);
+    logger.info(`Successfully deleted channel ${channelId}`);
   } catch (error) {
-    container.logger.error(`Error deleting channel ${channelId}:`, error);
+    logger.error(error, `Error deleting channel ${channelId}`);
   }
 };
 

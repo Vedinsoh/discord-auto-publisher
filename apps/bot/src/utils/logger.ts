@@ -1,8 +1,7 @@
-import { createBotLogger } from '@ap/logger';
-import { env } from 'lib/config/env.js';
+import { createLogger as createBaseLogger } from '@ap/logger';
 
 export const createLogger = (pid?: string) => {
-  return createBotLogger(env.LOGGER_LEVEL ?? 'info', pid);
+  return createBaseLogger('BOT', pid);
 };
 
 export const logger = createLogger();

@@ -3,6 +3,7 @@ import { Data } from 'data/index.js';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
+import { logger } from 'utils/logger.js';
 
 export async function chatInputFilterList(
   this: Subcommand,
@@ -23,7 +24,7 @@ export async function chatInputFilterList(
     const response = await Data.API.Backend.getFilters(interaction.guildId, channel.id);
 
     if (!response.ok) {
-      this.container.logger.error(
+      logger.error(
         `Failed to get filters: ${response.status} ${response.statusText}`
       );
 
@@ -75,7 +76,7 @@ export async function chatInputFilterList(
       components: [listContainer],
     });
   } catch (error) {
-    this.container.logger.error('Failed to get filters:', error);
+    logger.error(error, 'Failed to get filters');
 
     const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
