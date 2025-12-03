@@ -1,3 +1,4 @@
+import { isPremiumInstance } from '@ap/utils';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
@@ -16,14 +17,25 @@ export class LinksCommand extends Command {
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-    const buttonsContainer = new ContainerBuilder()
-      .addSectionComponents(section =>
+    const replyContainer = new ContainerBuilder().addSectionComponents(section =>
+      section
+        .addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent('✨ **Add bot to your server** ✨')
+        )
+        .setButtonAccessory(Buttons.botInvite)
+    );
+
+    if (isPremiumInstance) {
+      replyContainer.addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent('✨ **Add bot to your server** ✨')
+            textDisplay.setContent('**Upgrade to Premium for more features!**')
           )
-          .setButtonAccessory(Buttons.botInvite)
-      )
+          .setButtonAccessory(Buttons.getPremium)
+      );
+    }
+
+    replyContainer
       .addSeparatorComponents(separator => separator)
       .addSectionComponents(section =>
         section
@@ -42,7 +54,7 @@ export class LinksCommand extends Command {
 
     return interaction.reply({
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      components: [buttonsContainer],
+      components: [replyContainer],
     });
   }
 }

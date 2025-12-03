@@ -10,8 +10,10 @@ import {
   chatInputUptime,
 } from '../handlers/admin/index.js';
 
+const prefix = '[BOT ADMIN]';
+
 @ApplyOptions<Subcommand.Options>({
-  description: '[BOT ADMIN] Utility command for bot admins',
+  description: `${prefix} Utility command for bot admins`,
   requiredUserPermissions: [PermissionFlagsBits.Administrator],
   preconditions: ['SupportGuild'],
   subcommands: [
@@ -34,27 +36,27 @@ export class AdminCommand extends Subcommand {
           .addSubcommand(subcommand =>
             subcommand //
               .setName('info')
-              .setDescription('[BOT ADMIN] Get information about the bot')
+              .setDescription(`${prefix} Get information about the bot`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('ping')
-              .setDescription("[BOT ADMIN] Check the bot's latency")
+              .setDescription(`${prefix} Check the bot's latency`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('respawn')
-              .setDescription('[BOT ADMIN] Respawn the bot')
+              .setDescription(`${prefix} Respawn the bot`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('shutdown')
-              .setDescription('[BOT ADMIN] Shutdown the bot')
+              .setDescription(`${prefix} Shutdown the bot`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('uptime')
-              .setDescription('[BOT ADMIN] Check how long the bot has been online')
+              .setDescription(`${prefix} Check how long the bot has been online`)
           ),
       {
         guildIds: [env.BOT_SUPPORT_GUILD_ID],

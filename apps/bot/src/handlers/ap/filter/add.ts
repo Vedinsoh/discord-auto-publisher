@@ -1,4 +1,4 @@
-import { isPremiumEdition } from '@ap/utils';
+import { isPremiumInstance } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
@@ -10,18 +10,11 @@ export async function chatInputFilterAdd(
 ) {
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-  if (!interaction.guildId) {
-    const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(`${emojis.crossmark} This command can only be used in a server.`)
-    );
+  // This is handled by the GuildOnly precondition
+  if (!interaction.inGuild()) return;
 
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
-  }
-
-  if (isPremiumEdition() === false) {
+  // Check for premium instance
+  if (!isPremiumInstance) {
     const premiumContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
         `${emojis.warning} Filters are only available in **Premium** edition.\\n\\nUpgrade at [${links.hostname}](<${links.website}>) to unlock filters and other premium features!`
@@ -34,6 +27,7 @@ export async function chatInputFilterAdd(
     });
   }
 
+  // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
   const type = interaction.options.getString('type', true);
   const mode = interaction.options.getString('matching', true);

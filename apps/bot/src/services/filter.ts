@@ -1,4 +1,4 @@
-import { isPremiumEdition } from '@ap/utils';
+import { isPremiumInstance } from '@ap/utils';
 import type { Filter } from '@ap/validations';
 import type { Message } from 'discord.js';
 import { Services } from './index.js';
@@ -11,7 +11,7 @@ import { Services } from './index.js';
  */
 const evaluate = async (message: Message, channelId: string): Promise<boolean> => {
   // Skip filter check if not premium
-  if (!isPremiumEdition()) {
+  if (!isPremiumInstance) {
     return true;
   }
 

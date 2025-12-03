@@ -3,15 +3,9 @@ import { REST, RequestMethod } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Routes } from 'discord-api-types/v10';
 
-export const createDiscordClient = (
-  token: string,
-  logger: Logger,
-  proxyUrl = 'http://discord-proxy:8080/api'
-) => {
+export const createDiscordClient = (token: string, logger: Logger) => {
   const rest = new REST({
-    version: '10',
-    api: proxyUrl,
-    globalRequestsPerSecond: 45,
+    api: 'http://discord-proxy:8080/api',
     rejectOnRateLimit: data => {
       const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;
       const isCrosspostRoute = Routes.channelMessageCrosspost(':id', ':id') === data.route;

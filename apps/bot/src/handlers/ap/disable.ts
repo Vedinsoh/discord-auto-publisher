@@ -1,4 +1,4 @@
-import { isPremiumEdition } from '@ap/utils';
+import { isPremiumInstance } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
@@ -10,21 +10,14 @@ export async function chatInputDisable(
 ) {
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-  if (!interaction.guildId) {
-    const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(`${emojis.crossmark} This command can only be used in a server.`)
-    );
+  // This is handled by the GuildOnly precondition
+  if (!interaction.inGuild()) return;
 
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
-  }
-
+  // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
-    if (isPremiumEdition()) {
+    if (isPremiumInstance) {
       const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
       const filters = channelStatus?.filters;
       if (filters && filters.length > 0) {

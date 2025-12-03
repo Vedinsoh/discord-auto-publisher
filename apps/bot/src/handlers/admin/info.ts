@@ -29,13 +29,13 @@ export async function chatInputInfo(
     `> Paused: ${data?.paused}`,
   ].join('\n');
 
-  const infoContainer = new ContainerBuilder()
+  const replyContainer = new ContainerBuilder()
     .addTextDisplayComponents(textDisplay => textDisplay.setContent(infoContent))
     .addSeparatorComponents(separator => separator)
     .addTextDisplayComponents(textDisplay => textDisplay.setContent(messagesQueueContent));
 
   return interaction.editReply({
     flags: [MessageFlags.IsComponentsV2],
-    components: [infoContainer],
+    components: [replyContainer],
   });
 }

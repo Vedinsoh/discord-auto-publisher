@@ -1,4 +1,4 @@
-import { isPremiumEdition } from '@ap/utils';
+import { isPremiumInstance } from '@ap/utils';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
@@ -15,11 +15,12 @@ import {
   description: 'Configure publishing in your announcement channels',
   requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
   runIn: ['GUILD_ANY'],
+  preconditions: ['GuildOnly'],
   subcommands: [
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
     { name: 'status', chatInputRun: 'chatInputStatus' },
-    ...(isPremiumEdition()
+    ...(isPremiumInstance
       ? [
           {
             name: 'filter',
@@ -83,7 +84,7 @@ export class APCommand extends Subcommand {
             )
         );
 
-      if (isPremiumEdition()) {
+      if (isPremiumInstance) {
         command.addSubcommandGroup(group =>
           group //
             .setName('filter')

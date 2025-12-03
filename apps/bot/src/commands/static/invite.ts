@@ -16,12 +16,11 @@ export class InviteCommand extends Command {
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction) {
-    const buttonRow = new ActionRowBuilder<ButtonBuilder>() //
-      .addComponents(Buttons.botInvite);
+    const replyButtons = new ActionRowBuilder<ButtonBuilder>().addComponents(Buttons.botInvite);
 
     return interaction.reply({
       flags: [MessageFlags.Ephemeral],
-      components: [buttonRow],
+      components: [replyButtons],
     });
   }
 }

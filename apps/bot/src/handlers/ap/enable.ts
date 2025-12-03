@@ -10,17 +10,10 @@ export async function chatInputEnable(
 ) {
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-  if (!interaction.guildId) {
-    const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(`${emojis.crossmark} This command can only be used in a server.`)
-    );
+  // This is handled by the GuildOnly precondition
+  if (!interaction.inGuild()) return;
 
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
-  }
-
+  // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   const botMember = await interaction.guild?.members.me?.fetch();

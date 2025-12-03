@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
-import { isPremiumEdition } from '@ap/utils';
+import { isPremiumInstance } from '@ap/utils';
 import type { CreateFilter } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
 import { StatusCodes } from 'http-status-codes';
@@ -16,7 +16,7 @@ const MAX_FILTERS_PER_CHANNEL = 5;
  * @returns ServiceResponse
  */
 const add = async (_guildId: Snowflake, channelId: Snowflake, filterData: CreateFilter) => {
-  if (!isPremiumEdition()) {
+  if (!isPremiumInstance) {
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
       'Filters are only available in premium edition',
@@ -85,7 +85,7 @@ const add = async (_guildId: Snowflake, channelId: Snowflake, filterData: Create
  * @returns ServiceResponse
  */
 const remove = async (channelId: Snowflake, filterId: string) => {
-  if (!isPremiumEdition()) {
+  if (!isPremiumInstance) {
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
       'Filters are only available in premium edition',
@@ -123,7 +123,7 @@ const remove = async (channelId: Snowflake, filterId: string) => {
  * @returns Array of filters
  */
 const list = async (channelId: Snowflake) => {
-  if (!isPremiumEdition()) {
+  if (!isPremiumInstance) {
     return new ServiceResponseImpl(
       ResponseStatus.Failed,
       'Filters are only available in premium edition',

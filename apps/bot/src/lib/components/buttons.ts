@@ -6,6 +6,11 @@ export const website = new ButtonBuilder()
   .setURL(links.website)
   .setStyle(ButtonStyle.Link);
 
+export const getPremium = new ButtonBuilder()
+  .setLabel('Get Premium')
+  .setURL(links.premumPage)
+  .setStyle(ButtonStyle.Link);
+
 export const botInvite = new ButtonBuilder()
   .setEmoji(emojis.botFree)
   .setLabel('Invite the bot!')
@@ -19,6 +24,7 @@ export const supportServer = new ButtonBuilder()
 
 export const Buttons = {
   website,
+  getPremium,
   botInvite,
   supportServer,
 };

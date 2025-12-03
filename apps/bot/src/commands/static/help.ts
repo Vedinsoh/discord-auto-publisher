@@ -1,4 +1,4 @@
-import { isPremiumEdition } from '@ap/utils';
+import { isPremiumInstance } from '@ap/utils';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import {
@@ -31,7 +31,7 @@ export class HelpCommand extends Command {
       .then(commands => commands.findKey(command => command.name === 'ap'))
       .catch(logger.error);
 
-    const usageContainer = new ContainerBuilder()
+    const replyContainer = new ContainerBuilder()
       .addTextDisplayComponents(textDisplay => textDisplay.setContent('### How to use the bot:'))
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
@@ -50,8 +50,8 @@ export class HelpCommand extends Command {
         )
       );
 
-    if (isPremiumEdition()) {
-      usageContainer
+    if (isPremiumInstance) {
+      replyContainer
         .addSeparatorComponents(separator => separator)
         .addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
@@ -70,7 +70,7 @@ export class HelpCommand extends Command {
         );
     }
 
-    usageContainer
+    replyContainer
       .addSeparatorComponents(separator => separator)
       .addSectionComponents(section =>
         section
@@ -82,7 +82,7 @@ export class HelpCommand extends Command {
 
     return interaction.reply({
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      components: [usageContainer],
+      components: [replyContainer],
     });
   }
 }
