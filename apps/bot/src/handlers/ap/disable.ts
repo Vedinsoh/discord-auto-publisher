@@ -18,9 +18,23 @@ export async function chatInputDisable(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
+    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+
+    if (!channelStatus?.enabled) {
+      const infoContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `${emojis.crossmark} Auto-publishing is not enabled in <#${channel.id}> channel.`
+        )
+      );
+
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
+        components: [infoContainer],
+      });
+    }
+
     if (isPremiumInstance) {
-      const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
-      const filters = channelStatus?.filters;
+      const filters = channelStatus.filters;
       if (filters && filters.length > 0) {
         const warningContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(

@@ -17,7 +17,7 @@ export const set = async (channelId: Snowflake, options?: { count?: number; expi
     });
 
     logger.debug(
-      `Crossposts counter set for channel ${channelId}, count: ${channel.count || 0}, expiry: ${channel.expiry ? Math.round(secToMin(channel.expiry)) : 'default'}`
+      `Crossposts counter set for channel ${channelId}, count: ${channel.count || 0}, expiry: ${channel.expiry ? `${Math.round(secToMin(channel.expiry))}s` : 'default'}`
     );
   } catch (error) {
     logger.error(error);

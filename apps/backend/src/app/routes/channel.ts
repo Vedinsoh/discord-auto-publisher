@@ -13,6 +13,32 @@ export const Channel: Router = (() => {
   const router = express.Router();
 
   /**
+   * Checks if a specific channel is enabled for auto-publishing
+   * Returns channel status with filters
+   */
+  router.get(
+    '/:guildId/:channelId',
+    validateRequest(ChannelReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId } = req.params;
+
+      const channelData = await Services.Channels.Handler.get(channelId as string);
+
+      if (channelData) {
+        res.status(StatusCodes.OK).json({
+          enabled: true,
+          channelId,
+          filters: channelData.filters || [],
+        });
+      } else {
+        res.status(StatusCodes.OK).json({
+          enabled: false,
+        });
+      }
+    }
+  );
+
+  /**
    * Enables auto-publishing in a specific channel
    * Adds the channel to the Redis cache and stores it in DB
    */
@@ -44,32 +70,6 @@ export const Channel: Router = (() => {
       const serviceResponse = await Services.Channels.Handler.remove(channelId as string);
 
       handleServiceResponse(serviceResponse, res);
-    }
-  );
-
-  /**
-   * Checks if a specific channel is enabled for auto-publishing
-   * Returns channel status with filters
-   */
-  router.get(
-    '/:guildId/:channelId',
-    validateRequest(ChannelReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId } = req.params;
-
-      const channelData = await Services.Channels.Handler.get(channelId as string);
-
-      if (channelData) {
-        res.status(StatusCodes.OK).json({
-          enabled: true,
-          channelId,
-          filters: channelData.filters || [],
-        });
-      } else {
-        res.status(StatusCodes.OK).json({
-          enabled: false,
-        });
-      }
     }
   );
 
