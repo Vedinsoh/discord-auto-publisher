@@ -1,5 +1,8 @@
-import { createDiscordClient } from '@ap/discord-api';
+import { REST } from '@discordjs/rest';
 import { env } from 'lib/config/env.js';
-import { Logger } from './logger.js';
 
-export const Discord = createDiscordClient(env.DISCORD_TOKEN, Logger);
+const rest = new REST({
+  api: 'http://discord-proxy:8080/api',
+}).setToken(env.DISCORD_TOKEN);
+
+export const Discord = { rest };
