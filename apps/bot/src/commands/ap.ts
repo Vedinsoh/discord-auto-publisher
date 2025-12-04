@@ -124,14 +124,6 @@ export class APCommand extends Subcommand {
                     .setRequired(true)
                     .addChannelTypes([ChannelType.GuildAnnouncement])
                 )
-                .addStringOption(option =>
-                  option //
-                    .setName('filter_id')
-                    .setDescription(
-                      'The ID of the filter to remove (use /ap filter list to see IDs)'
-                    )
-                    .setRequired(true)
-                )
             )
             .addSubcommand(subcommand =>
               subcommand //

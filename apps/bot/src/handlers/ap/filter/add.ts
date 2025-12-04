@@ -418,7 +418,9 @@ function extractModalValues(
           return {
             valid: false,
             error:
-              type === 'author' ? 'Please select at least one user or bot' : 'Please select at least one user or role',
+              type === 'author'
+                ? 'Please select at least one user or bot'
+                : 'Please select at least one user or role',
           };
         }
 
