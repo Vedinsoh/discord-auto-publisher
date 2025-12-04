@@ -339,7 +339,7 @@ function buildFilterModal(
  * Extract and validate values from modal submission
  */
 function extractModalValues(
-  modalSubmit: ModalSubmitInteraction<'cached' | 'raw'>,
+  modalSubmit: ModalSubmitInteraction,
   type: string
 ): { valid: true; values: string[]; mode: 'allow' | 'block' } | { valid: false; error: string } {
   try {

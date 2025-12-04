@@ -7,6 +7,7 @@ import {
   ChannelReqSchema,
   FilterReqSchema,
   RemoveFilterReqSchema,
+  UpdateFilterReqSchema,
 } from 'utils/validations.js';
 
 export const Channel: Router = (() => {
@@ -121,6 +122,26 @@ export const Channel: Router = (() => {
       const { channelId } = req.params;
 
       const serviceResponse = await Services.Filters.Handler.list(channelId as string);
+
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
+
+  /**
+   * Update filter in channel
+   */
+  router.put(
+    '/:guildId/:channelId/filters/:filterId',
+    validateRequest(UpdateFilterReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId, filterId } = req.params;
+      const filterData = req.body;
+
+      const serviceResponse = await Services.Filters.Handler.update(
+        channelId as string,
+        filterId as string,
+        filterData
+      );
 
       handleServiceResponse(serviceResponse, res);
     }

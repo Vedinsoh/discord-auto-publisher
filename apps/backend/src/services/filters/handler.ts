@@ -163,8 +163,77 @@ const list = async (channelId: Snowflake) => {
   }
 };
 
+/**
+ * Update filter in channel
+ * @param channelId ID of the channel
+ * @param filterId ID of the filter
+ * @param filterData Updated filter data
+ * @returns ServiceResponse
+ */
+const update = async (channelId: Snowflake, filterId: string, filterData: CreateFilter) => {
+  if (!isPremiumInstance) {
+    return new ServiceResponseImpl(
+      ResponseStatus.Failed,
+      'Filters are only available in premium edition',
+      { success: false },
+      StatusCodes.FORBIDDEN
+    );
+  }
+
+  try {
+    const channel = await Services.Channels.DB.find(channelId);
+
+    if (!channel) {
+      return new ServiceResponseImpl(
+        ResponseStatus.Failed,
+        'Channel not found',
+        { success: false },
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    const filterExists = channel.filters.some(f => f.id === filterId);
+
+    if (!filterExists) {
+      return new ServiceResponseImpl(
+        ResponseStatus.Failed,
+        'Filter not found',
+        { success: false },
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    await Services.Channels.DB.updateFilter(channelId, filterId, {
+      type: filterData.type,
+      mode: filterData.mode,
+      values: filterData.values,
+    });
+
+    logger.debug(
+      `Updated filter ${filterId} in channel ${channelId}: ${filterData.type} - ${filterData.mode}`
+    );
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Success,
+      'Filter updated successfully',
+      { success: true },
+      StatusCodes.OK
+    );
+  } catch (error) {
+    logger.error(error);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Failed,
+      'Failed to update filter',
+      { success: false },
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
 export const Handler = {
   add,
   remove,
+  update,
   list,
 };

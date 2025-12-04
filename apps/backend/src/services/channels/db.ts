@@ -213,6 +213,69 @@ const removeFilter = async (channelId: Snowflake, filterId: string) => {
 };
 
 /**
+ * Update filter in channel
+ * @param channelId ID of the channel
+ * @param filterId ID of the filter
+ * @param filterData Updated filter data
+ * @returns void
+ */
+const updateFilter = async (
+  channelId: Snowflake,
+  filterId: string,
+  filterData: Partial<Omit<Filter, 'id' | 'createdAt'>>
+) => {
+  const channel = await db.channels.findUnique({
+    where: { channelId },
+  });
+
+  if (!channel) {
+    throw new Error('Channel not found');
+  }
+
+  const filterIndex = channel.filters.findIndex(f => f.id === filterId);
+
+  const existingFilter = channel.filters[filterIndex];
+
+  if (!existingFilter) {
+    throw new Error('Filter not found');
+  }
+
+  const updatedFilters = [...channel.filters];
+  updatedFilters[filterIndex] = {
+    id: existingFilter.id,
+    type: filterData.type ?? existingFilter.type,
+    mode: filterData.mode ?? existingFilter.mode,
+    values: filterData.values ?? existingFilter.values,
+    createdAt: existingFilter.createdAt,
+  };
+
+  let dbUpdated = false;
+
+  try {
+    await db.channels.update({
+      where: { channelId },
+      data: {
+        filters: updatedFilters,
+      },
+    });
+    dbUpdated = true;
+    await ChannelsCache.updateFilters(channelId, updatedFilters);
+  } catch (error) {
+    // If DB update succeeded but cache update failed, rollback DB
+    if (dbUpdated) {
+      await db.channels
+        .update({
+          where: { channelId },
+          data: { filters: channel.filters },
+        })
+        .catch(() => {});
+    }
+    logger.error(error);
+    throw error;
+  }
+};
+
+/**
  * Sync all channels from DB to cache by comparing and updating differences
  * @returns void
  */
@@ -274,5 +337,6 @@ export const DB = {
   countByGuild,
   addFilter,
   removeFilter,
+  updateFilter,
   syncCache,
 };

@@ -6,6 +6,7 @@ import {
   chatInputDisable,
   chatInputEnable,
   chatInputFilterAdd,
+  chatInputFilterEdit,
   chatInputFilterRemove,
   chatInputFilterView,
   chatInputStatus,
@@ -27,6 +28,7 @@ import {
             type: 'group' as const,
             entries: [
               { name: 'add', chatInputRun: 'chatInputFilterAdd' },
+              { name: 'edit', chatInputRun: 'chatInputFilterEdit' },
               { name: 'remove', chatInputRun: 'chatInputFilterRemove' },
               { name: 'view', chatInputRun: 'chatInputFilterView' },
             ],
@@ -115,6 +117,18 @@ export class APCommand extends Subcommand {
             )
             .addSubcommand(subcommand =>
               subcommand //
+                .setName('edit')
+                .setDescription('Edit a filter in a channel')
+                .addChannelOption(option =>
+                  option //
+                    .setName('channel')
+                    .setDescription('The announcement channel to edit filter in')
+                    .setRequired(true)
+                    .addChannelTypes([ChannelType.GuildAnnouncement])
+                )
+            )
+            .addSubcommand(subcommand =>
+              subcommand //
                 .setName('remove')
                 .setDescription('Remove a filter from a channel')
                 .addChannelOption(option =>
@@ -149,6 +163,7 @@ export class APCommand extends Subcommand {
   public chatInputDisable = chatInputDisable;
   public chatInputStatus = chatInputStatus;
   public chatInputFilterAdd = chatInputFilterAdd;
+  public chatInputFilterEdit = chatInputFilterEdit;
   public chatInputFilterRemove = chatInputFilterRemove;
   public chatInputFilterView = chatInputFilterView;
 }

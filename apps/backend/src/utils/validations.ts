@@ -95,3 +95,43 @@ export const RemoveFilterReqSchema = z.object({
     filterId: z.string(),
   }),
 });
+
+export const UpdateFilterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+    filterId: z.string(),
+  }),
+  body: z
+    .object({
+      type: z.enum(['keyword', 'mention', 'author', 'webhook']),
+      mode: z.enum(['allow', 'block']),
+      values: z.array(z.string().min(1).max(200)),
+    })
+    .refine(
+      data => {
+        // Max values per type
+        const maxValues = {
+          keyword: 20,
+          mention: 10,
+          author: 10,
+          webhook: 10,
+        };
+        return data.values.length <= maxValues[data.type];
+      },
+      data => {
+        const maxValues = {
+          keyword: 20,
+          mention: 10,
+          author: 10,
+          webhook: 10,
+        };
+        return {
+          message: `Maximum ${maxValues[data.type]} values allowed for ${data.type} filters`,
+        };
+      }
+    )
+    .refine(data => data.values.length >= 1, {
+      message: 'At least one value is required',
+    }),
+});
