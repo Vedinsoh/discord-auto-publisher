@@ -51,13 +51,15 @@ const add = async (_guildId: Snowflake, channelId: Snowflake, filterData: Create
       id: randomUUID(),
       type: filterData.type,
       mode: filterData.mode,
-      value: filterData.value,
+      values: filterData.values,
       createdAt: new Date(),
     };
 
     await Services.Channels.DB.addFilter(channelId, filter);
 
-    logger.debug(`Added ${filterData.type} filter to channel ${channelId}: ${filterData.value}`);
+    logger.debug(
+      `Added ${filterData.type} filter to channel ${channelId}: ${filterData.values.join(', ')}`
+    );
 
     return new ServiceResponseImpl(
       ResponseStatus.Success,

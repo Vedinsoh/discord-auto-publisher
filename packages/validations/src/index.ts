@@ -20,15 +20,31 @@ export const FilterSchema = z.object({
   id: z.string(),
   type: FilterType,
   mode: FilterMode,
-  value: z.string().min(1).max(200),
+  values: z.array(z.string().min(1).max(200)),
   createdAt: z.date(),
 });
 
-export const CreateFilterSchema = z.object({
-  type: FilterType,
-  mode: FilterMode,
-  value: z.string().min(1).max(200),
-});
+export const CreateFilterSchema = z
+  .object({
+    type: FilterType,
+    mode: FilterMode,
+    values: z.array(z.string().min(1).max(200)).min(1, 'At least one value is required'),
+  })
+  .refine(
+    data => {
+      // Max values per type
+      const maxValues: Record<'keyword' | 'mention' | 'author' | 'webhook', number> = {
+        keyword: 20,
+        mention: 10,
+        author: 10,
+        webhook: 10,
+      };
+      return data.values.length <= maxValues[data.type];
+    },
+    {
+      message: 'Maximum values exceeded for filter type',
+    }
+  );
 
 export type Filter = z.infer<typeof FilterSchema>;
 export type CreateFilter = z.infer<typeof CreateFilterSchema>;

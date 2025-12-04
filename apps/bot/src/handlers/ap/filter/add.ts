@@ -95,13 +95,13 @@ export async function chatInputFilterAdd(
       return;
     }
 
-    const { value, mode } = extractResult;
+    const { values, mode } = extractResult;
 
     // Submit to backend
     const response = await Data.API.Backend.addFilter(interaction.guildId, channel.id, {
       type,
       mode,
-      value,
+      values,
     });
 
     if (!response.ok) {
@@ -163,22 +163,24 @@ export async function chatInputFilterAdd(
       return;
     }
 
-    // Format value for display
+    // Format values for display
     const displayValues =
       type === 'author' || type === 'mention'
-        ? `<@${value}>`
+        ? values.map(v => `<@${v}>`).join(', ')
         : type === 'webhook'
-          ? `\`${value}\``
-          : `\`${value}\``;
+          ? values.map(v => `\`${v}\``).join(', ')
+          : values.map(v => `\`${v}\``).join(', ');
 
     const modeText =
       mode === 'allow'
         ? 'Only messages matching this filter will be published'
         : 'Messages matching this filter will NOT be published';
 
+    const valueCount = values.length > 1 ? ` (${values.length})` : '';
+
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Type:** ${type}\n**Mode:** ${mode}\n**Values:** ${displayValues}\n\n-# ${modeText}`
+        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Type:** ${type}${valueCount}\n**Mode:** ${mode}\n**Values:** ${displayValues}\n\n-# ${modeText}`
       )
     );
 
@@ -258,14 +260,14 @@ function buildFilterModal(
     case 'keyword': {
       const keywordInput = new TextInputBuilder()
         .setCustomId('value')
-        .setStyle(TextInputStyle.Short)
+        .setStyle(TextInputStyle.Paragraph)
         .setPlaceholder('announcement, giveaway, update')
         .setMinLength(1)
-        .setMaxLength(200)
+        .setMaxLength(1000)
         .setRequired(true);
 
       const keywordLabel = new LabelBuilder()
-        .setLabel('Keywords')
+        .setLabel('Keywords (max 20)')
         .setDescription(
           'Enter words to look for in messages. Use commas to separate multiple keywords.'
         )
@@ -278,14 +280,14 @@ function buildFilterModal(
     case 'author': {
       const authorSelect = new UserSelectMenuBuilder()
         .setCustomId('value')
-        .setPlaceholder('Select user or bot')
+        .setPlaceholder('Select users or bots')
         .setMinValues(1)
-        .setMaxValues(1)
+        .setMaxValues(10)
         .setRequired(true);
 
       const authorLabel = new LabelBuilder()
-        .setLabel('Message Author')
-        .setDescription('Select the user or bot whose messages will be filtered.')
+        .setLabel('Message Authors (max 10)')
+        .setDescription('Select the users or bots whose messages will be filtered.')
         .setUserSelectMenuComponent(authorSelect);
 
       modal.addLabelComponents(authorLabel, modeLabel);
@@ -295,14 +297,14 @@ function buildFilterModal(
     case 'mention': {
       const mentionSelect = new MentionableSelectMenuBuilder()
         .setCustomId('value')
-        .setPlaceholder('Select user or role')
+        .setPlaceholder('Select users or roles')
         .setMinValues(1)
-        .setMaxValues(1)
+        .setMaxValues(10)
         .setRequired(true);
 
       const mentionLabel = new LabelBuilder()
-        .setLabel('User or role ')
-        .setDescription('Select the user or role mentioned in messages to be filtered.')
+        .setLabel('Users or Roles (max 10)')
+        .setDescription('Select the users or roles mentioned in messages to be filtered.')
         .setMentionableSelectMenuComponent(mentionSelect);
 
       modal.addLabelComponents(mentionLabel, modeLabel);
@@ -312,16 +314,16 @@ function buildFilterModal(
     case 'webhook': {
       const webhookInput = new TextInputBuilder()
         .setCustomId('value')
-        .setStyle(TextInputStyle.Short)
-        .setPlaceholder('1234567890123456789')
+        .setStyle(TextInputStyle.Paragraph)
+        .setPlaceholder('1234567890123456789, 9876543210987654321')
         .setMinLength(17)
-        .setMaxLength(20)
+        .setMaxLength(500)
         .setRequired(true);
 
       const webhookLabel = new LabelBuilder()
-        .setLabel('Webhook ID')
+        .setLabel('Webhook IDs (max 10)')
         .setDescription(
-          "You can copy ID from webhook message (Copy User ID) or find it in webhook URL after the '/webhooks/'"
+          'Enter webhook IDs separated by commas. Copy from webhook message or find in webhook URL.'
         )
         .setTextInputComponent(webhookInput);
 
@@ -339,7 +341,7 @@ function buildFilterModal(
 function extractModalValues(
   modalSubmit: ModalSubmitInteraction<'cached' | 'raw'>,
   type: string
-): { valid: true; value: string; mode: 'allow' | 'block' } | { valid: false; error: string } {
+): { valid: true; values: string[]; mode: 'allow' | 'block' } | { valid: false; error: string } {
   try {
     // Get mode from StringSelectMenu - need to access components directly since
     // ModalSubmitFields only provides getTextInputValue() and getField() for text inputs
@@ -363,8 +365,8 @@ function extractModalValues(
       return { valid: false, error: 'Please select a filter mode (Allow or Block)' };
     }
 
-    // Get value based on type
-    let value: string;
+    // Get values based on type
+    let values: string[];
 
     switch (type) {
       case 'keyword': {
@@ -381,7 +383,11 @@ function extractModalValues(
           return { valid: false, error: 'At least one keyword is required' };
         }
 
-        value = keywords.join(',');
+        if (keywords.length > 20) {
+          return { valid: false, error: 'Maximum 20 keywords allowed' };
+        }
+
+        values = keywords;
         break;
       }
 
@@ -403,36 +409,62 @@ function extractModalValues(
 
         const valueComponent = valueLabel.component;
         // Type guard: check if component has values property (select menus)
-        const values =
+        const selectedValues =
           'values' in valueComponent && Array.isArray(valueComponent.values)
             ? valueComponent.values
             : [];
 
-        if (values.length === 0) {
+        if (selectedValues.length === 0) {
           return {
             valid: false,
             error:
-              type === 'author' ? 'Please select a user or bot' : 'Please select a user or role',
+              type === 'author' ? 'Please select at least one user or bot' : 'Please select at least one user or role',
           };
         }
 
-        value = values[0];
+        if (selectedValues.length > 10) {
+          return {
+            valid: false,
+            error: type === 'author' ? 'Maximum 10 users allowed' : 'Maximum 10 mentions allowed',
+          };
+        }
+
+        values = selectedValues;
         break;
       }
 
       case 'webhook': {
         // TextInput value using proper getter
-        const webhookId = modalSubmit.fields.getTextInputValue('value').trim();
+        const rawWebhookIds = modalSubmit.fields.getTextInputValue('value').trim();
 
-        // Validate snowflake format (17-20 digits)
-        if (!/^\d{17,20}$/.test(webhookId)) {
+        // Process webhook IDs: split by comma, trim, filter empty
+        const webhookIds = rawWebhookIds
+          .split(',')
+          .map((id: string) => id.trim())
+          .filter((id: string) => id.length > 0);
+
+        if (webhookIds.length === 0) {
           return {
             valid: false,
-            error: 'Invalid webhook ID format. Must be 17-20 digits.',
+            error: 'At least one webhook ID is required',
           };
         }
 
-        value = webhookId;
+        if (webhookIds.length > 10) {
+          return { valid: false, error: 'Maximum 10 webhook IDs allowed' };
+        }
+
+        // Validate each webhook ID snowflake format (17-20 digits)
+        for (const webhookId of webhookIds) {
+          if (!/^\d{17,20}$/.test(webhookId)) {
+            return {
+              valid: false,
+              error: `Invalid webhook ID format: ${webhookId}. Must be 17-20 digits.`,
+            };
+          }
+        }
+
+        values = webhookIds;
         break;
       }
 
@@ -440,7 +472,7 @@ function extractModalValues(
         return { valid: false, error: 'Unknown filter type' };
     }
 
-    return { valid: true, value, mode };
+    return { valid: true, values, mode };
   } catch (error) {
     logger.error(error, 'Failed to extract modal values');
     return { valid: false, error: 'Failed to process modal submission' };

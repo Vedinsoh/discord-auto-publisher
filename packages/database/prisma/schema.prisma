@@ -36,6 +36,6 @@ type Filter {
   id        String
   type      String
   mode      String
-  value     String
+  values    String[]
   createdAt DateTime @default(now())
 }

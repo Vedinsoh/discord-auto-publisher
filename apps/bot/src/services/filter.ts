@@ -65,24 +65,29 @@ const matchesFilter = (
   authorId: string,
   message: Message
 ): boolean => {
-  const value = filter.value.toLowerCase();
-
   switch (filter.type) {
-    case 'keyword':
-      return content.includes(value);
+    case 'keyword': {
+      // Check if content contains any of the keywords
+      const contentLower = content.toLowerCase();
+      return filter.values.some(keyword => contentLower.includes(keyword.toLowerCase()));
+    }
 
     case 'mention': {
-      // Check if message mentions the specified user or role
-      return (
-        message.mentions.users.has(filter.value) || message.mentions.roles.has(filter.value)
+      // Check if message mentions any of the specified users or roles
+      return filter.values.some(
+        id => message.mentions.users.has(id) || message.mentions.roles.has(id)
       );
     }
 
-    case 'author':
-      return authorId === filter.value;
+    case 'author': {
+      // Check if author matches any of the specified author IDs
+      return filter.values.includes(authorId);
+    }
 
-    case 'webhook':
-      return message.webhookId === filter.value;
+    case 'webhook': {
+      // Check if webhook ID matches any of the specified webhook IDs
+      return message.webhookId ? filter.values.includes(message.webhookId) : false;
+    }
 
     default:
       return false;
