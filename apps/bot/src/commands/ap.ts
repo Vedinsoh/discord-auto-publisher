@@ -6,8 +6,8 @@ import {
   chatInputDisable,
   chatInputEnable,
   chatInputFilterAdd,
-  chatInputFilterList,
   chatInputFilterRemove,
+  chatInputFilterView,
   chatInputStatus,
 } from '../handlers/ap/index.js';
 
@@ -28,7 +28,7 @@ import {
             entries: [
               { name: 'add', chatInputRun: 'chatInputFilterAdd' },
               { name: 'remove', chatInputRun: 'chatInputFilterRemove' },
-              { name: 'list', chatInputRun: 'chatInputFilterList' },
+              { name: 'view', chatInputRun: 'chatInputFilterView' },
             ],
           },
         ]
@@ -127,12 +127,12 @@ export class APCommand extends Subcommand {
             )
             .addSubcommand(subcommand =>
               subcommand //
-                .setName('list')
-                .setDescription('List all filters for a channel')
+                .setName('view')
+                .setDescription('View filters for a channel')
                 .addChannelOption(option =>
                   option //
                     .setName('channel')
-                    .setDescription('The announcement channel to list filters for')
+                    .setDescription('The announcement channel to view filters for')
                     .setRequired(true)
                     .addChannelTypes([ChannelType.GuildAnnouncement])
                 )
@@ -150,5 +150,5 @@ export class APCommand extends Subcommand {
   public chatInputStatus = chatInputStatus;
   public chatInputFilterAdd = chatInputFilterAdd;
   public chatInputFilterRemove = chatInputFilterRemove;
-  public chatInputFilterList = chatInputFilterList;
+  public chatInputFilterView = chatInputFilterView;
 }
