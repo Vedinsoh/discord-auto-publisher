@@ -27,23 +27,23 @@ const evaluate = async (message: Message, channelId: string): Promise<boolean> =
     const content = message.content.toLowerCase();
     const authorId = message.author.id;
 
-    // Separate include and exclude filters
-    const includeFilters = filters.filter(f => f.mode === 'include');
-    const excludeFilters = filters.filter(f => f.mode === 'exclude');
+    // Separate allow and block filters
+    const allowFilters = filters.filter(f => f.mode === 'allow');
+    const blockFilters = filters.filter(f => f.mode === 'block');
 
-    // Check exclude filters first (if any match, block message)
-    for (const filter of excludeFilters) {
+    // Check block filters first (if any match, block message)
+    for (const filter of blockFilters) {
       if (matchesFilter(filter, content, authorId, message)) {
         return false;
       }
     }
 
-    // If there are include filters, message must match at least one
-    if (includeFilters.length > 0) {
-      return includeFilters.some(filter => matchesFilter(filter, content, authorId, message));
+    // If there are allow filters, message must match at least one
+    if (allowFilters.length > 0) {
+      return allowFilters.some(filter => matchesFilter(filter, content, authorId, message));
     }
 
-    // No include filters or all passed
+    // No allow filters or all passed
     return true;
   } catch {
     // On error, allow publishing (fail open)
@@ -72,21 +72,17 @@ const matchesFilter = (
       return content.includes(value);
 
     case 'mention': {
-      // Check if the message mentions the specified user ID
-      return message.mentions.users.has(filter.value);
+      // Check if message mentions the specified user or role
+      return (
+        message.mentions.users.has(filter.value) || message.mentions.roles.has(filter.value)
+      );
     }
 
     case 'author':
       return authorId === filter.value;
 
-    case 'regex':
-      try {
-        const regex = new RegExp(filter.value, 'i');
-        return regex.test(message.content);
-      } catch {
-        // Invalid regex, ignore filter
-        return false;
-      }
+    case 'webhook':
+      return message.webhookId === filter.value;
 
     default:
       return false;

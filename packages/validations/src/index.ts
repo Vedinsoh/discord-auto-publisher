@@ -13,8 +13,8 @@ export const Validations = {
 };
 
 // Filter validation schemas
-export const FilterType = z.enum(['keyword', 'mention', 'author', 'regex']);
-export const FilterMode = z.enum(['include', 'exclude']);
+export const FilterType = z.enum(['keyword', 'mention', 'author', 'webhook']);
+export const FilterMode = z.enum(['allow', 'block']);
 
 export const FilterSchema = z.object({
   id: z.string(),

@@ -13,7 +13,6 @@ export class ClusterManager extends BaseClusterManager {
    * Start the cluster manager
    */
   public start() {
-    this.registerEvents();
     this.registerListeners();
     this.spawn({ timeout: -1 }).then(() => {
       logger.info('Clustering complete!');
@@ -25,12 +24,6 @@ export class ClusterManager extends BaseClusterManager {
    */
   private registerListeners() {
     this.on('clusterCreate', cluster => logger.info(`[Cluster ${cluster.id}] Created!`));
-  }
-
-  /**
-   * Register cluster events
-   */
-  private registerEvents() {
     this.on('debug', value => logger.debug(value));
   }
 }

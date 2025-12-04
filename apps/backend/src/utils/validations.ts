@@ -55,8 +55,8 @@ export const AddFilterReqSchema = z.object({
     channelId: Validations.snowflakeId,
   }),
   body: z.object({
-    type: z.enum(['keyword', 'mention', 'author', 'regex']),
-    mode: z.enum(['include', 'exclude']),
+    type: z.enum(['keyword', 'mention', 'author', 'webhook']),
+    mode: z.enum(['allow', 'block']),
     value: z.string().min(1).max(200),
   }),
 });

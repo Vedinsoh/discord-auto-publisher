@@ -18,7 +18,7 @@
     "@sapphire/plugin-subcommands": "^7.0.1",
     "@sapphire/utilities": "^3.18.2",
     "discord-hybrid-sharding": "^3.0.1",
-    "discord.js": "14.22.1",
+    "discord.js": "^14.25.1",
     "dotenv": "^17.2.2",
     "envalid": "^8.1.0"
   },

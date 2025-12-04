@@ -107,36 +107,9 @@ export class APCommand extends Subcommand {
                     .setRequired(true)
                     .addChoices(
                       { name: 'Keyword', value: 'keyword' },
-                      { name: 'Mention', value: 'mention' },
                       { name: 'Author', value: 'author' },
-                      { name: 'Regex', value: 'regex' }
-                    )
-                )
-                .addStringOption(option =>
-                  option //
-                    .setName('value')
-                    .setDescription(
-                      'Filter value (user ID for mention/author, text for keyword/regex)'
-                    )
-                    .setRequired(true)
-                    .setMaxLength(200)
-                )
-                .addStringOption(option =>
-                  option //
-                    .setName('matching')
-                    .setDescription(
-                      'Whether to publish messages that match or do not match this filter'
-                    )
-                    .setRequired(true)
-                    .addChoices(
-                      {
-                        name: 'Include (publish messages that contain this value)',
-                        value: 'include',
-                      },
-                      {
-                        name: "Exclude (publish messages that don't contain this value)",
-                        value: 'exclude',
-                      }
+                      { name: 'Mention', value: 'mention' },
+                      { name: 'Webhook', value: 'webhook' }
                     )
                 )
             )
