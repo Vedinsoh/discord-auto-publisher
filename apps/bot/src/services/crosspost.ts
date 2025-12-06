@@ -25,7 +25,7 @@ const handle = async (message: Message, channel: NewsChannel) => {
   }
 
   // Check if message passes filters
-  const passesFilters = await Services.Filter.evaluate(message, channel.id);
+  const passesFilters = await Services.Filter.evaluate(message, channel);
   if (!passesFilters) {
     return;
   }

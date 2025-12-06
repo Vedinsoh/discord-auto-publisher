@@ -135,3 +135,13 @@ export const UpdateFilterReqSchema = z.object({
       message: 'At least one value is required',
     }),
 });
+
+export const UpdateFilterModeReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    mode: z.enum(['any', 'all']),
+  }),
+});

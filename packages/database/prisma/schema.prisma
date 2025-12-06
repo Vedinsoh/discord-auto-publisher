@@ -19,12 +19,13 @@ model guilds {
 }
 
 model channels {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  channelId String   @unique
-  guildId   String
-  filters   Filter[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  channelId  String   @unique
+  guildId    String
+  filters    Filter[]
+  filterMode String   @default("any")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
   guild guilds @relation(fields: [guildId], references: [guildId])

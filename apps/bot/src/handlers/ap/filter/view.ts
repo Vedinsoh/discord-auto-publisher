@@ -1,3 +1,4 @@
+import { capitalize } from '@ap/utils';
 import type { Filter } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
@@ -7,6 +8,7 @@ import {
   ComponentType,
   ContainerBuilder,
   MessageFlags,
+  type SelectMenuComponentOptionData,
   StringSelectMenuBuilder,
   type StringSelectMenuInteraction,
 } from 'discord.js';
@@ -92,14 +94,15 @@ export async function chatInputFilterView(
     }
 
     // Build dropdown with filters
-    const options = filters.map(filter => {
+    const options: SelectMenuComponentOptionData[] = filters.map(filter => {
       const valuePreview =
         filter.values.length > 1
           ? `${filter.values[0]} (+${filter.values.length - 1} more)`
           : filter.values[0];
 
       return {
-        label: `${filter.type} - ${filter.mode}`,
+        emoji: filter.mode === 'allow' ? emojis.checkmark : emojis.crossmark,
+        label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
       };
@@ -112,9 +115,22 @@ export async function chatInputFilterView(
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
-    const selectContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(`Select a filter to view from <#${channel.id}>:`)
-    );
+    const filterMode = (channelStatus.filterMode as 'any' | 'all') || 'any';
+    const modeDescription =
+      filterMode === 'any'
+        ? 'Messages pass if **at least one** allow filter matches'
+        : 'Messages pass only if **all** allow filters match';
+
+    const selectContainer = new ContainerBuilder()
+      .addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          `**Filter mode:** ${filterMode === 'any' ? 'Any (OR)' : 'All (AND)'}\n-# ${modeDescription}`
+        )
+      )
+      .addSeparatorComponents(separator => separator)
+      .addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(`Select a filter to view from <#${channel.id}>:`)
+      );
 
     const reply = await interaction.editReply({
       flags: [MessageFlags.IsComponentsV2],
@@ -160,7 +176,7 @@ export async function chatInputFilterView(
       // Show filter details
       const detailsContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `### Filter Details for <#${channel.id}>\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${selectedFilter.mode}\n**Values:** ${displayValues}\n**Created:** <t:${Math.floor(new Date(selectedFilter.createdAt).getTime() / 1000)}:R>`
+          `### Filter Details for <#${channel.id}>\n\n**Type:** ${capitalize(selectedFilter.type)}${valueCount}\n**Mode:** ${selectedFilter.mode === 'allow' ? emojis.checkmark : emojis.crossmark} ${capitalize(selectedFilter.mode)}\n**Values:** ${displayValues}`
         )
       );
 

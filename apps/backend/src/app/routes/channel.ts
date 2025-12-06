@@ -7,6 +7,7 @@ import {
   ChannelReqSchema,
   FilterReqSchema,
   RemoveFilterReqSchema,
+  UpdateFilterModeReqSchema,
   UpdateFilterReqSchema,
 } from 'utils/validations.js';
 
@@ -15,7 +16,7 @@ export const Channel: Router = (() => {
 
   /**
    * Checks if a specific channel is enabled for auto-publishing
-   * Returns channel status with filters
+   * Returns channel status with filters and filter mode
    */
   router.get(
     '/:guildId/:channelId',
@@ -23,13 +24,15 @@ export const Channel: Router = (() => {
     async (req: Request, res: Response) => {
       const { channelId } = req.params;
 
-      const channelData = await Services.Channels.Handler.get(channelId as string);
+      // Get full channel data from DB (includes filterMode)
+      const channelData = await Services.Channels.DB.find(channelId as string);
 
       if (channelData) {
         res.status(StatusCodes.OK).json({
           enabled: true,
           channelId,
           filters: channelData.filters || [],
+          filterMode: channelData.filterMode || 'any',
         });
       } else {
         res.status(StatusCodes.OK).json({
@@ -141,6 +144,25 @@ export const Channel: Router = (() => {
         channelId as string,
         filterId as string,
         filterData
+      );
+
+      handleServiceResponse(serviceResponse, res);
+    }
+  );
+
+  /**
+   * Update filter mode for channel
+   */
+  router.put(
+    '/:guildId/:channelId/filter-mode',
+    validateRequest(UpdateFilterModeReqSchema),
+    async (req: Request, res: Response) => {
+      const { channelId } = req.params;
+      const { mode } = req.body;
+
+      const serviceResponse = await Services.Channels.Handler.updateFilterMode(
+        channelId as string,
+        mode
       );
 
       handleServiceResponse(serviceResponse, res);

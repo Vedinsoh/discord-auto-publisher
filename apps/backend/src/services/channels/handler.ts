@@ -116,8 +116,51 @@ const remove = async (channelId: Snowflake) => {
   }
 };
 
+/**
+ * Update filter mode for channel
+ * @param channelId ID of the channel
+ * @param mode Filter mode ('any' or 'all')
+ * @returns ServiceResponse
+ */
+const updateFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
+  try {
+    // Check if channel exists
+    const channel = await Services.Channels.DB.find(channelId);
+
+    if (!channel) {
+      return new ServiceResponseImpl(
+        ResponseStatus.Failed,
+        'Channel not found',
+        { success: false },
+        StatusCodes.NOT_FOUND
+      );
+    }
+
+    await Services.Channels.DB.updateFilterMode(channelId, mode);
+
+    logger.debug(`Updated filter mode for channel ${channelId} to ${mode}`);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Success,
+      'Filter mode updated successfully',
+      { success: true, mode },
+      StatusCodes.OK
+    );
+  } catch (error) {
+    logger.error(error);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Failed,
+      'Failed to update filter mode',
+      { success: false },
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
 export const Handler = {
   get: getCached,
   add,
   remove,
+  updateFilterMode,
 };

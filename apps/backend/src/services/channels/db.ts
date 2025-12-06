@@ -276,6 +276,48 @@ const updateFilter = async (
 };
 
 /**
+ * Update filter mode for channel
+ * @param channelId ID of the channel
+ * @param mode Filter mode ('any' or 'all')
+ * @returns void
+ */
+const updateFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
+  const channel = await db.channels.findUnique({
+    where: { channelId },
+  });
+
+  if (!channel) {
+    throw new Error('Channel not found');
+  }
+
+  let dbUpdated = false;
+
+  try {
+    await db.channels.update({
+      where: { channelId },
+      data: {
+        filterMode: mode,
+      },
+    });
+    dbUpdated = true;
+    // Note: Redis cache doesn't store filterMode separately, it's fetched from DB
+    await ChannelsCache.set(channelId, channel.filters);
+  } catch (error) {
+    // If DB update succeeded but cache update failed, rollback DB
+    if (dbUpdated) {
+      await db.channels
+        .update({
+          where: { channelId },
+          data: { filterMode: channel.filterMode },
+        })
+        .catch(() => {});
+    }
+    logger.error(error);
+    throw error;
+  }
+};
+
+/**
  * Sync all channels from DB to cache by comparing and updating differences
  * @returns void
  */
@@ -338,5 +380,6 @@ export const DB = {
   addFilter,
   removeFilter,
   updateFilter,
+  updateFilterMode,
   syncCache,
 };

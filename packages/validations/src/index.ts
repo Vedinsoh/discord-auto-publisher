@@ -15,6 +15,7 @@ export const Validations = {
 // Filter validation schemas
 export const FilterType = z.enum(['keyword', 'mention', 'author', 'webhook']);
 export const FilterMode = z.enum(['allow', 'block']);
+export const FilterMatchMode = z.enum(['any', 'all']);
 
 export const FilterSchema = z.object({
   id: z.string(),
@@ -50,6 +51,7 @@ export type Filter = z.infer<typeof FilterSchema>;
 export type CreateFilter = z.infer<typeof CreateFilterSchema>;
 export type FilterType = z.infer<typeof FilterType>;
 export type FilterMode = z.infer<typeof FilterMode>;
+export type FilterMatchMode = z.infer<typeof FilterMatchMode>;
 
 // Request validation schemas
 export const CrosspostReqSchema = z.object({
@@ -88,6 +90,16 @@ export const RemoveFilterReqSchema = z.object({
     guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
     filterId: z.string(),
+  }),
+});
+
+export const UpdateFilterModeReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    mode: FilterMatchMode,
   }),
 });
 

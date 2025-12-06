@@ -1,6 +1,6 @@
 import { isPremiumInstance } from '@ap/utils';
 import type { Filter } from '@ap/validations';
-import type { Message } from 'discord.js';
+import type { Message, NewsChannel } from 'discord.js';
 import { Services } from './index.js';
 
 /**
@@ -9,21 +9,21 @@ import { Services } from './index.js';
  * @param channelId Channel ID
  * @returns true if message should be published, false otherwise
  */
-const evaluate = async (message: Message, channelId: string): Promise<boolean> => {
+const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean> => {
   // Skip filter check if not premium
   if (!isPremiumInstance) {
     return true;
   }
 
   try {
-    // Get channel status including filters from backend
-    const channelStatus = await Services.Channel.getStatus(message.guildId!, channelId);
+    const channelStatus = await Services.Channel.getStatus(channel.guildId, channel.id);
 
     if (!channelStatus || !channelStatus.filters || channelStatus.filters.length === 0) {
       return true;
     }
 
     const filters = channelStatus.filters as Filter[];
+    const filterMode = (channelStatus.filterMode as 'any' | 'all') || 'any';
     const content = message.content.toLowerCase();
     const authorId = message.author.id;
 
@@ -31,19 +31,25 @@ const evaluate = async (message: Message, channelId: string): Promise<boolean> =
     const allowFilters = filters.filter(f => f.mode === 'allow');
     const blockFilters = filters.filter(f => f.mode === 'block');
 
-    // Check block filters first (if any match, block message)
+    // Check block filters first (always use OR logic - block if any matches)
     for (const filter of blockFilters) {
       if (matchesFilter(filter, content, authorId, message)) {
         return false;
       }
     }
 
-    // If there are allow filters, message must match at least one
+    // If there are allow filters, apply mode logic
     if (allowFilters.length > 0) {
-      return allowFilters.some(filter => matchesFilter(filter, content, authorId, message));
+      if (filterMode === 'all') {
+        // All allow filters must match
+        return allowFilters.every(filter => matchesFilter(filter, content, authorId, message));
+      } else {
+        // At least one allow filter must match (default)
+        return allowFilters.some(filter => matchesFilter(filter, content, authorId, message));
+      }
     }
 
-    // No allow filters or all passed
+    // No allow filters - default allow
     return true;
   } catch {
     // On error, allow publishing (fail open)

@@ -1,4 +1,4 @@
-import { isPremiumInstance } from '@ap/utils';
+import { capitalize, isPremiumInstance } from '@ap/utils';
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links } from '../lib/constants/index.js';
@@ -15,7 +15,7 @@ export async function handlePremiumCheck(
 
   const premiumContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
     textDisplay.setContent(
-      `${emojis.warning} ${featureName.charAt(0).toUpperCase() + featureName.slice(1)} is only available in **Premium** edition.\n\nUpgrade at [${links.hostname}](<${links.website}>) to unlock ${featureName} and other premium features!`
+      `${emojis.warning} ${capitalize(featureName)} is only available in **Premium** edition.\n\nUpgrade at [${links.hostname}](<${links.website}>) to unlock ${featureName} and other premium features!`
     )
   );
 

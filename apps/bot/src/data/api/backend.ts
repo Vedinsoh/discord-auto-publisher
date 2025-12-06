@@ -77,6 +77,16 @@ const updateFilter = async (
   });
 };
 
+const updateFilterMode = async (guildId: Snowflake, channelId: Snowflake, mode: 'any' | 'all') => {
+  return fetch(`${baseUrl}/channel/${guildId}/${channelId}/filter-mode`, {
+    method: RequestMethod.Put,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ mode }),
+  });
+};
+
 export const Backend = {
   getInfo,
   addChannel,
@@ -88,4 +98,5 @@ export const Backend = {
   removeFilter,
   getFilters,
   updateFilter,
+  updateFilterMode,
 };

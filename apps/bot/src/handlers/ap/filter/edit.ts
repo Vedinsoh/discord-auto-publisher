@@ -1,3 +1,4 @@
+import { capitalize } from '@ap/utils';
 import type { Filter } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
@@ -262,9 +263,10 @@ export async function chatInputFilterEdit(
 
         const valueCount = values.length > 1 ? ` (${values.length})` : '';
 
+        const modeEmoji = mode === 'allow' ? emojis.checkmark : emojis.crossmark;
         const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.checkmark} Filter updated in <#${channel.id}>!\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${mode}\n**Values:** ${displayValues}\n\n-# ${modeText}`
+            `${emojis.checkmark} Filter updated in <#${channel.id}>!\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${modeEmoji} ${mode}\n**Values:** ${displayValues}\n\n-# ${modeText}`
           )
         );
 
@@ -320,7 +322,7 @@ export async function chatInputFilterEdit(
 function buildEditFilterModal(filter: Filter): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(`filter_edit_${filter.id}`)
-    .setTitle(`Edit ${filter.type.charAt(0).toUpperCase() + filter.type.slice(1)} Filter`);
+    .setTitle(`Edit ${capitalize(filter.type)} Filter`);
 
   // Mode selection (common to all types)
   const modeSelect = new StringSelectMenuBuilder()

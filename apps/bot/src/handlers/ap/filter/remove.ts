@@ -176,9 +176,11 @@ export async function chatInputFilterRemove(
         cancelButton
       );
 
+      const modeEmoji = selectedFilter.mode === 'allow' ? emojis.checkmark : emojis.crossmark;
+
       const confirmContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `Are you sure you want to remove this filter from <#${channel.id}>?\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${selectedFilter.mode}\n**Values:** ${displayValues}`
+          `Are you sure you want to remove this filter from <#${channel.id}>?\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${modeEmoji} ${selectedFilter.mode}\n**Values:** ${displayValues}`
         )
       );
 
