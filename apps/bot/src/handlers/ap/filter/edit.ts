@@ -1,4 +1,4 @@
-import { capitalize } from '@ap/utils';
+import { capitalize, normalizeFilterValues } from '@ap/utils';
 import type { Filter } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
@@ -183,6 +183,9 @@ export async function chatInputFilterEdit(
 
         const { values, mode } = extractResult;
 
+        // Normalize values (keywords are converted to lowercase for case-insensitive matching)
+        const normalizedValues = normalizeFilterValues(values, selectedFilter.type);
+
         // Submit update to backend
         const response = await Data.API.Backend.updateFilter(
           interaction.guildId,
@@ -191,7 +194,7 @@ export async function chatInputFilterEdit(
           {
             type: selectedFilter.type,
             mode,
-            values,
+            values: normalizedValues,
           }
         );
 
@@ -248,20 +251,20 @@ export async function chatInputFilterEdit(
           return;
         }
 
-        // Format values for display
+        // Format values for display (use normalized values to show what's actually stored)
         const displayValues =
           selectedFilter.type === 'author' || selectedFilter.type === 'mention'
-            ? values.map(v => `<@${v}>`).join(', ')
+            ? normalizedValues.map(v => `<@${v}>`).join(', ')
             : selectedFilter.type === 'webhook'
-              ? values.map(v => `\`${v}\``).join(', ')
-              : values.map(v => `\`${v}\``).join(', ');
+              ? normalizedValues.map(v => `\`${v}\``).join(', ')
+              : normalizedValues.map(v => `\`${v}\``).join(', ');
 
         const modeText =
           mode === 'allow'
             ? 'Only messages matching this filter will be published'
             : 'Messages matching this filter will NOT be published';
 
-        const valueCount = values.length > 1 ? ` (${values.length})` : '';
+        const valueCount = normalizedValues.length > 1 ? ` (${normalizedValues.length})` : '';
 
         const modeEmoji = mode === 'allow' ? emojis.checkmark : emojis.crossmark;
         const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>

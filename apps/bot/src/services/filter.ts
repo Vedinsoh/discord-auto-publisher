@@ -73,9 +73,8 @@ const matchesFilter = (
 ): boolean => {
   switch (filter.type) {
     case 'keyword': {
-      // Check if content contains any of the keywords
-      const contentLower = content.toLowerCase();
-      return filter.values.some(keyword => contentLower.includes(keyword.toLowerCase()));
+      // Check if content contains any of the keywords (keywords are stored in lowercase)
+      return filter.values.some(keyword => content.includes(keyword));
     }
 
     case 'mention': {
