@@ -1,4 +1,4 @@
-import { Channel } from './channel.js';
+import { Channel } from './channel/index.js';
 import { Guild } from './guild.js';
 import { Info } from './info.js';
 

@@ -13,7 +13,7 @@ app.use(...createRequestLogger(env.isDevelopment));
 app.use(express.json());
 
 // Routes
-app.use('/channel', App.Routes.Channel);
+app.use('/channel/:guildId/:channelId', App.Routes.Channel);
 app.use('/guild', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
 app.get('/health', createHealthRoute);
