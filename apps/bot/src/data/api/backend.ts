@@ -76,19 +76,13 @@ const updateFilter = async (channelId: Snowflake, filterId: string, filterData: 
   });
 };
 
-const updateFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
+const setFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
   return fetch(`${baseUrl}/channel/${channelId}/filter-mode`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ mode }),
-  });
-};
-
-const flagChannel = async (channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${channelId}/flag`, {
-    method: RequestMethod.Post,
   });
 };
 
@@ -103,6 +97,5 @@ export const Backend = {
   removeFilter,
   getFilters,
   updateFilter,
-  updateFilterMode,
-  flagChannel,
+  setFilterMode,
 };

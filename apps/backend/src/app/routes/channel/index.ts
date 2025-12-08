@@ -5,7 +5,7 @@ import { Services } from 'services/index.js';
 import {
   ChannelEnableReqSchema,
   ChannelReqSchema,
-  UpdateFilterModeReqSchema,
+  SetFilterModeReqSchema,
 } from 'utils/validations.js';
 import { Filter } from './filter.js';
 
@@ -72,12 +72,12 @@ export const Channel: Router = (() => {
    */
   router.put(
     '/filter-mode',
-    validateRequest(UpdateFilterModeReqSchema),
+    validateRequest(SetFilterModeReqSchema),
     async (req: Request, res: Response) => {
       const { channelId } = req.params;
       const { mode } = req.body;
 
-      const serviceResponse = await Services.Channels.Handler.updateFilterMode(
+      const serviceResponse = await Services.Channels.Handler.setFilterMode(
         channelId as string,
         mode
       );
@@ -85,28 +85,6 @@ export const Channel: Router = (() => {
       handleServiceResponse(serviceResponse, res);
     }
   );
-
-  /**
-   * Flag channel as invalid
-   */
-  router.post('/flag', async (req: Request, res: Response) => {
-    const { channelId } = req.params;
-
-    const serviceResponse = await Services.Channels.Handler.flagChannel(channelId as string);
-
-    handleServiceResponse(serviceResponse, res);
-  });
-
-  /**
-   * Unflag channel (clear invalid status)
-   */
-  router.post('/unflag', async (req: Request, res: Response) => {
-    const { channelId } = req.params;
-
-    const serviceResponse = await Services.Channels.Handler.unflagChannel(channelId as string);
-
-    handleServiceResponse(serviceResponse, res);
-  });
 
   return router;
 })();

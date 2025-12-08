@@ -93,7 +93,7 @@ export const RemoveFilterReqSchema = z.object({
   }),
 });
 
-export const UpdateFilterModeReqSchema = z.object({
+export const SetFilterModeReqSchema = z.object({
   params: z.object({
     guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,

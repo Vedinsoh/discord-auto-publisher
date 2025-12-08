@@ -98,7 +98,7 @@ export async function chatInputFilterMode(
 
       const selectedMode = selectInteraction.values[0] as 'any' | 'all';
 
-      const response = await Data.API.Backend.updateFilterMode(channel.id, selectedMode);
+      const response = await Data.API.Backend.setFilterMode(channel.id, selectedMode);
 
       if (!response.ok) {
         logger.error(`Failed to update filter mode: ${response.status} ${response.statusText}`);
