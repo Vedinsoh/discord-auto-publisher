@@ -379,7 +379,7 @@ const flag = async (channelId: Snowflake) => {
   // Check if channel exists in cache (enabled channels are always cached)
   const cached = await ChannelsCache.get(channelId);
   if (!cached) {
-    throw new Error('Channel not found');
+    return; // Channel not enabled, skip silently
   }
 
   // Use updateMany with conditional where clause to only update if invalidatedAt is null
@@ -432,12 +432,11 @@ const unflag = async (channelId: Snowflake) => {
 };
 
 /**
- * Disable all channels with expired grace periods
- * Uses batch operations for efficiency
+ * Disable all invalid channels with expired grace periods
  * @returns Array of disabled channel IDs
  */
 const invalidCleanup = async () => {
-  const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const cutoffDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days
 
   const expiredChannels = await db.channels.findMany({
     where: {

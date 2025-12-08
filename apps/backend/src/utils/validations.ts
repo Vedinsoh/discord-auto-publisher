@@ -24,6 +24,12 @@ export const ChannelReqSchema = z.object({
   params: z.object({
     channelId: Validations.snowflakeId,
   }),
+});
+
+export const ChannelEnableReqSchema = z.object({
+  params: z.object({
+    channelId: Validations.snowflakeId,
+  }),
   body: z.object({
     guildId: Validations.snowflakeId,
   }),

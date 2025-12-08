@@ -2,7 +2,11 @@ import { handleServiceResponse, validateRequest } from '@ap/express';
 import express, { type Request, type Response, type Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
-import { ChannelReqSchema, UpdateFilterModeReqSchema } from 'utils/validations.js';
+import {
+  ChannelEnableReqSchema,
+  ChannelReqSchema,
+  UpdateFilterModeReqSchema,
+} from 'utils/validations.js';
 import { Filter } from './filter.js';
 
 export const Channel: Router = (() => {
@@ -39,7 +43,7 @@ export const Channel: Router = (() => {
    * Enables auto-publishing in a specific channel
    * Adds the channel to the Redis cache and stores it in DB
    */
-  router.put('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
+  router.put('/', validateRequest(ChannelEnableReqSchema), async (req: Request, res: Response) => {
     const { channelId } = req.params;
     const { guildId } = req.body;
 

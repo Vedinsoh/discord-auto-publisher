@@ -3,7 +3,7 @@ import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
 /**
- * Daily cron job to disable channels that have been flagged for more than 7 days
+ * Daily cron job to disable flagged channels
  * Runs at midnight UTC (00:00)
  */
 export const invalidChannelsCleanup = new CronJob(

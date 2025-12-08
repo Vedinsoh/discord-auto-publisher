@@ -111,7 +111,7 @@ export async function chatInputStatus(
         .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
         .join('\n');
       const warningContent =
-        '**Warning:** The channel will be automatically disabled from auto-publishing within 7 days if permissions are not fixed.';
+        '**Warning:** The channel will be automatically disabled from auto-publishing after an extended period if permissions are not fixed.';
       const actionContent =
         'Please grant the missing permissions to ensure auto-publishing continues working.';
 

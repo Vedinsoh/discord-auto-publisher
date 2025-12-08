@@ -21,6 +21,8 @@ const handle = async (message: Message, channel: NewsChannel) => {
       PermissionsBitField.Flags.SendMessages,
     ])
   ) {
+    // Flag channel as invalid - missing permissions
+    Data.API.Backend.flagChannel(channel.id).catch(() => {});
     return;
   }
 

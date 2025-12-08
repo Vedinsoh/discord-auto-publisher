@@ -86,6 +86,12 @@ const updateFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
   });
 };
 
+const flagChannel = async (channelId: Snowflake) => {
+  return fetch(`${baseUrl}/channel/${channelId}/flag`, {
+    method: RequestMethod.Post,
+  });
+};
+
 export const Backend = {
   getInfo,
   addChannel,
@@ -98,4 +104,5 @@ export const Backend = {
   getFilters,
   updateFilter,
   updateFilterMode,
+  flagChannel,
 };
