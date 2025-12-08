@@ -16,7 +16,7 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
   }
 
   try {
-    const channelStatus = await Services.Channel.getStatus(channel.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus || !channelStatus.filters || channelStatus.filters.length === 0) {
       return true;

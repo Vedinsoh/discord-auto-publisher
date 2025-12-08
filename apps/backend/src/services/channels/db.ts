@@ -369,6 +369,113 @@ const syncCache = async () => {
   }
 };
 
+/**
+ * Flag channel as invalid (sets invalidatedAt if not already set)
+ * Uses cache check to minimize DB queries
+ * @param channelId ID of the channel
+ * @returns void
+ */
+const flag = async (channelId: Snowflake) => {
+  // Check if channel exists in cache (enabled channels are always cached)
+  const cached = await ChannelsCache.get(channelId);
+  if (!cached) {
+    throw new Error('Channel not found');
+  }
+
+  // Use updateMany with conditional where clause to only update if invalidatedAt is null
+  // This avoids a separate read query and ensures atomicity
+  const result = await db.channels.updateMany({
+    where: {
+      channelId,
+      invalidatedAt: null, // Only update if not already flagged
+    },
+    data: {
+      invalidatedAt: new Date(),
+    },
+  });
+
+  // Log only if channel was actually flagged (count > 0)
+  if (result.count > 0) {
+    logger.debug(`Channel ${channelId} flagged as invalid`);
+  }
+};
+
+/**
+ * Unflag channel (clears invalidatedAt)
+ * Optimized for high-volume calls - uses cache check and conditional update
+ * @param channelId ID of the channel
+ * @returns void
+ */
+const unflag = async (channelId: Snowflake) => {
+  // Check if channel exists in cache (enabled channels are always cached)
+  const cached = await ChannelsCache.get(channelId);
+  if (!cached) {
+    return; // Channel not enabled, skip silently
+  }
+
+  // Use updateMany with conditional where clause to only update if invalidatedAt is set
+  // This avoids a separate read query and is a no-op if already unflagged
+  const result = await db.channels.updateMany({
+    where: {
+      channelId,
+      invalidatedAt: { not: null }, // Only update if flagged
+    },
+    data: {
+      invalidatedAt: null,
+    },
+  });
+
+  // Log only if channel was actually unflagged (count > 0)
+  if (result.count > 0) {
+    logger.debug(`Channel ${channelId} unflagged (permissions restored)`);
+  }
+};
+
+/**
+ * Disable all channels with expired grace periods
+ * Uses batch operations for efficiency
+ * @returns Array of disabled channel IDs
+ */
+const invalidCleanup = async () => {
+  const cutoffDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const expiredChannels = await db.channels.findMany({
+    where: {
+      invalidatedAt: {
+        lt: cutoffDate,
+      },
+    },
+    select: { channelId: true },
+  });
+
+  if (expiredChannels.length === 0) {
+    return [];
+  }
+
+  const channelIds = expiredChannels.map(c => c.channelId);
+
+  try {
+    // Batch delete from DB
+    await db.channels.deleteMany({
+      where: {
+        channelId: { in: channelIds },
+      },
+    });
+
+    // Batch delete from cache
+    await ChannelsCache.removeMany(channelIds);
+
+    logger.debug(
+      `Auto-disabled ${channelIds.length} channels (grace period expired): ${channelIds.join(', ')}`
+    );
+
+    return channelIds;
+  } catch (error) {
+    logger.error(error, `Failed to batch disable ${channelIds.length} expired channels`);
+    throw error;
+  }
+};
+
 export const DB = {
   find,
   findCached,
@@ -382,4 +489,7 @@ export const DB = {
   updateFilter,
   updateFilterMode,
   syncCache,
+  flag,
+  unflag,
+  invalidCleanup,
 };

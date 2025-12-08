@@ -15,64 +15,53 @@ export const Channel: Router = (() => {
    * Checks if a specific channel is enabled for auto-publishing
    * Returns channel status with filters and filter mode
    */
-  router.get(
-    '/',
-    validateRequest(ChannelReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId } = req.params;
+  router.get('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
+    const { channelId } = req.params;
 
-      // Get full channel data from DB (includes filterMode)
-      const channelData = await Services.Channels.DB.find(channelId as string);
+    // Get full channel data from DB (includes filterMode)
+    const channelData = await Services.Channels.DB.find(channelId as string);
 
-      if (channelData) {
-        res.status(StatusCodes.OK).json({
-          enabled: true,
-          channelId,
-          filters: channelData.filters || [],
-          filterMode: channelData.filterMode || 'any',
-        });
-      } else {
-        res.status(StatusCodes.OK).json({
-          enabled: false,
-        });
-      }
+    if (channelData) {
+      res.status(StatusCodes.OK).json({
+        enabled: true,
+        channelId,
+        filters: channelData.filters || [],
+        filterMode: channelData.filterMode || 'any',
+      });
+    } else {
+      res.status(StatusCodes.OK).json({
+        enabled: false,
+      });
     }
-  );
+  });
 
   /**
    * Enables auto-publishing in a specific channel
    * Adds the channel to the Redis cache and stores it in DB
    */
-  router.put(
-    '/',
-    validateRequest(ChannelReqSchema),
-    async (req: Request, res: Response) => {
-      const { guildId, channelId } = req.params;
+  router.put('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
+    const { channelId } = req.params;
+    const { guildId } = req.body;
 
-      const serviceResponse = await Services.Channels.Handler.add(
-        guildId as string,
-        channelId as string
-      );
+    const serviceResponse = await Services.Channels.Handler.add(
+      guildId as string,
+      channelId as string
+    );
 
-      handleServiceResponse(serviceResponse, res);
-    }
-  );
+    handleServiceResponse(serviceResponse, res);
+  });
 
   /**
    * Disables auto-publishing in a specific channel
    * Removes the channel from the Redis cache and DB
    */
-  router.delete(
-    '/',
-    validateRequest(ChannelReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId } = req.params;
+  router.delete('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
+    const { channelId } = req.params;
 
-      const serviceResponse = await Services.Channels.Handler.remove(channelId as string);
+    const serviceResponse = await Services.Channels.Handler.remove(channelId as string);
 
-      handleServiceResponse(serviceResponse, res);
-    }
-  );
+    handleServiceResponse(serviceResponse, res);
+  });
 
   /**
    * Update filter mode for channel
@@ -94,15 +83,25 @@ export const Channel: Router = (() => {
   );
 
   /**
-   * Cleanup endpoint for crosspost-worker
-   * Removes channel from cache and DB when permission errors occur
+   * Flag channel as invalid
    */
-  router.delete('/:channelId/cleanup', async (req: Request, res: Response) => {
+  router.post('/flag', async (req: Request, res: Response) => {
     const { channelId } = req.params;
 
-    await Services.Channels.DB.remove(channelId as string);
+    const serviceResponse = await Services.Channels.Handler.flagChannel(channelId as string);
 
-    res.status(StatusCodes.NO_CONTENT).send();
+    handleServiceResponse(serviceResponse, res);
+  });
+
+  /**
+   * Unflag channel (clear invalid status)
+   */
+  router.post('/unflag', async (req: Request, res: Response) => {
+    const { channelId } = req.params;
+
+    const serviceResponse = await Services.Channels.Handler.unflagChannel(channelId as string);
+
+    handleServiceResponse(serviceResponse, res);
   });
 
   return router;

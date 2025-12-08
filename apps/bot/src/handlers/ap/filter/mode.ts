@@ -31,7 +31,7 @@ export async function chatInputFilterMode(
 
   try {
     // Check if channel is enabled for auto-publishing
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
       const notEnabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
@@ -98,11 +98,7 @@ export async function chatInputFilterMode(
 
       const selectedMode = selectInteraction.values[0] as 'any' | 'all';
 
-      const response = await Data.API.Backend.updateFilterMode(
-        interaction.guildId,
-        channel.id,
-        selectedMode
-      );
+      const response = await Data.API.Backend.updateFilterMode(channel.id, selectedMode);
 
       if (!response.ok) {
         logger.error(`Failed to update filter mode: ${response.status} ${response.statusText}`);

@@ -39,7 +39,7 @@ export async function chatInputFilterAdd(
     | 'webhook';
 
   try {
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
       const notEnabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
@@ -102,7 +102,7 @@ export async function chatInputFilterAdd(
     const normalizedValues = normalizeFilterValues(values, type);
 
     // Submit to backend
-    const response = await Data.API.Backend.addFilter(interaction.guildId, channel.id, {
+    const response = await Data.API.Backend.addFilter(channel.id, {
       type,
       mode,
       values: normalizedValues,

@@ -3,15 +3,37 @@ import { logger } from 'utils/logger.js';
 
 const BACKEND_URL = 'http://backend:8080';
 
-const cleanupChannel = async (channelId: Snowflake) => {
+const disableChannel = async (channelId: Snowflake) => {
   try {
     const response = await fetch(`${BACKEND_URL}/channel/${channelId}`, {
       method: 'DELETE',
     });
-    logger.debug(`Cleanup channel ${channelId} from backend, status: ${response.status}`);
+    logger.debug(`Disable channel ${channelId} on backend, status: ${response.status}`);
   } catch (error) {
     logger.error(error);
   }
 };
 
-export const Backend = { cleanupChannel };
+const flagChannel = async (channelId: Snowflake) => {
+  try {
+    const response = await fetch(`${BACKEND_URL}/channel/${channelId}/flag`, {
+      method: 'POST',
+    });
+    logger.debug(`Flag channel ${channelId}, status: ${response.status}`);
+  } catch (error) {
+    logger.error(error);
+  }
+};
+
+const unflagChannel = async (channelId: Snowflake) => {
+  try {
+    // Fire-and-forget: don't wait for response
+    fetch(`${BACKEND_URL}/channel/${channelId}/unflag`, {
+      method: 'POST',
+    }).catch(() => {});
+  } catch {
+    // Silently ignore errors for unflag (fire-and-forget)
+  }
+};
+
+export const Backend = { disableChannel, flagChannel, unflagChannel };

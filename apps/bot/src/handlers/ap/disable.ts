@@ -27,7 +27,7 @@ export async function chatInputDisable(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
       const infoContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
@@ -81,7 +81,7 @@ export async function chatInputDisable(
           });
 
           if (confirmation.customId === 'confirm_disable') {
-            await Services.Channel.disable(interaction.guildId, channel.id);
+            await Services.Channel.disable(channel.id);
 
             const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
               textDisplay.setContent(
@@ -126,7 +126,7 @@ export async function chatInputDisable(
       }
     }
 
-    await Services.Channel.disable(interaction.guildId, channel.id);
+    await Services.Channel.disable(channel.id);
 
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(

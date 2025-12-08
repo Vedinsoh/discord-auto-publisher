@@ -16,7 +16,7 @@ const MAX_FILTERS_PER_CHANNEL = 5;
  * @param filterData Filter data
  * @returns ServiceResponse
  */
-const add = async (_guildId: Snowflake, channelId: Snowflake, filterData: CreateFilter) => {
+const add = async (channelId: Snowflake, filterData: CreateFilter) => {
   if (!isPremiumInstance) {
     return new ServiceResponseImpl(
       ResponseStatus.Failed,

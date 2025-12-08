@@ -34,7 +34,7 @@ export async function chatInputFilterRemove(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
       const notEnabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
@@ -51,7 +51,7 @@ export async function chatInputFilterRemove(
     }
 
     // Fetch filters from backend
-    const filtersResponse = await Data.API.Backend.getFilters(interaction.guildId, channel.id);
+    const filtersResponse = await Data.API.Backend.getFilters(channel.id);
 
     if (!filtersResponse.ok) {
       logger.error(
@@ -214,11 +214,7 @@ export async function chatInputFilterRemove(
         }
 
         // Remove the filter
-        const removeResponse = await Data.API.Backend.removeFilter(
-          interaction.guildId,
-          channel.id,
-          selectedFilterId
-        );
+        const removeResponse = await Data.API.Backend.removeFilter(channel.id, selectedFilterId);
 
         if (!removeResponse.ok) {
           logger.error(

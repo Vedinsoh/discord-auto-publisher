@@ -158,9 +158,65 @@ const updateFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
   }
 };
 
+/**
+ * Flag channel as invalid
+ * @param channelId ID of the channel
+ * @returns ServiceResponse
+ */
+const flagChannel = async (channelId: Snowflake) => {
+  try {
+    await Services.Channels.DB.flag(channelId);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Success,
+      'Channel flagged successfully',
+      { success: true },
+      StatusCodes.OK
+    );
+  } catch (error) {
+    logger.error(error);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Failed,
+      'Failed to flag channel',
+      { success: false },
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
+/**
+ * Unflag channel (clear invalid status)
+ * @param channelId ID of the channel
+ * @returns ServiceResponse
+ */
+const unflagChannel = async (channelId: Snowflake) => {
+  try {
+    await Services.Channels.DB.unflag(channelId);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Success,
+      'Channel unflagged successfully',
+      { success: true },
+      StatusCodes.OK
+    );
+  } catch (error) {
+    logger.error(error);
+
+    return new ServiceResponseImpl(
+      ResponseStatus.Failed,
+      'Failed to unflag channel',
+      { success: false },
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
 export const Handler = {
   get: getCached,
   add,
   remove,
   updateFilterMode,
+  flagChannel,
+  unflagChannel,
 };

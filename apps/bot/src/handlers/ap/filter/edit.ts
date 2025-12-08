@@ -40,7 +40,7 @@ export async function chatInputFilterEdit(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
       const notEnabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
@@ -57,7 +57,7 @@ export async function chatInputFilterEdit(
     }
 
     // Fetch filters from backend
-    const filtersResponse = await Data.API.Backend.getFilters(interaction.guildId, channel.id);
+    const filtersResponse = await Data.API.Backend.getFilters(channel.id);
 
     if (!filtersResponse.ok) {
       logger.error(
@@ -187,16 +187,11 @@ export async function chatInputFilterEdit(
         const normalizedValues = normalizeFilterValues(values, selectedFilter.type);
 
         // Submit update to backend
-        const response = await Data.API.Backend.updateFilter(
-          interaction.guildId,
-          channel.id,
-          selectedFilterId,
-          {
-            type: selectedFilter.type,
-            mode,
-            values: normalizedValues,
-          }
-        );
+        const response = await Data.API.Backend.updateFilter(channel.id, selectedFilterId, {
+          type: selectedFilter.type,
+          mode,
+          values: normalizedValues,
+        });
 
         if (!response.ok) {
           if (response.status === 400) {

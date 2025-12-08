@@ -22,8 +22,10 @@ export const CrosspostReqSchema = z.object({
 
 export const ChannelReqSchema = z.object({
   params: z.object({
-    guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    guildId: Validations.snowflakeId,
   }),
 });
 
@@ -44,14 +46,12 @@ export const PresenceReqSchema = z.object({
 
 export const FilterReqSchema = z.object({
   params: z.object({
-    guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
   }),
 });
 
 export const AddFilterReqSchema = z.object({
   params: z.object({
-    guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
   }),
   body: z
@@ -90,7 +90,6 @@ export const AddFilterReqSchema = z.object({
 
 export const RemoveFilterReqSchema = z.object({
   params: z.object({
-    guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
     filterId: z.string(),
   }),
@@ -98,7 +97,6 @@ export const RemoveFilterReqSchema = z.object({
 
 export const UpdateFilterReqSchema = z.object({
   params: z.object({
-    guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
     filterId: z.string(),
   }),
@@ -138,7 +136,6 @@ export const UpdateFilterReqSchema = z.object({
 
 export const UpdateFilterModeReqSchema = z.object({
   params: z.object({
-    guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
   }),
   body: z.object({

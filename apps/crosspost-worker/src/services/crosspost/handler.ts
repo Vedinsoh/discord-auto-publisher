@@ -29,6 +29,8 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
     // Crosspost the message & increment the counter for the channel
     await Discord.crosspost(channelId, messageId);
     await Services.Crosspost.Counter.increment(channelId);
+    // Unflag channel after successful crosspost
+    await Backend.unflagChannel(channelId);
 
     logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
   } catch (error: unknown) {
@@ -75,18 +77,17 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
         Services.Crosspost.Counter.increment(channelId);
       }
 
-      // Handle missing permissions error - notify backend to cleanup channel
+      // Handle missing permissions error - flag channel for grace period
       if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
-        logger.debug(`Bot lost access to channel ${channelId}, notifying backend for cleanup`);
-        // TODO don't immediately cleanup, instead mark channel as incorrect for later disable
-        await Backend.cleanupChannel(channelId);
+        logger.debug(`Channel ${channelId} invalid, flagging for grace period`);
+        await Backend.flagChannel(channelId);
         return;
       }
 
-      // Handle unknown channel error (channel deleted) - notify backend to cleanup channel
+      // Handle unknown channel error (channel deleted) - notify backend to disable channel
       if (errorCode === ErrorCodes.UnknownChannel) {
-        logger.debug(`Channel ${channelId} no longer exists, notifying backend for cleanup`);
-        await Backend.cleanupChannel(channelId);
+        logger.debug(`Channel ${channelId} no longer exists, notifying backend to disable`);
+        await Backend.disableChannel(channelId);
         return;
       }
 

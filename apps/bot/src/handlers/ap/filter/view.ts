@@ -33,7 +33,7 @@ export async function chatInputFilterView(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   try {
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
       const notEnabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
@@ -50,7 +50,7 @@ export async function chatInputFilterView(
     }
 
     // Fetch filters from backend
-    const filtersResponse = await Data.API.Backend.getFilters(interaction.guildId, channel.id);
+    const filtersResponse = await Data.API.Backend.getFilters(channel.id);
 
     if (!filtersResponse.ok) {
       logger.error(

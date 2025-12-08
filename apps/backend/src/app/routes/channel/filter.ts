@@ -14,37 +14,25 @@ export const Filter: Router = (() => {
   /**
    * Add filter to channel
    */
-  router.post(
-    '/',
-    validateRequest(AddFilterReqSchema),
-    async (req: Request, res: Response) => {
-      const { guildId, channelId } = req.params;
-      const filterData = req.body;
+  router.post('/', validateRequest(AddFilterReqSchema), async (req: Request, res: Response) => {
+    const { channelId } = req.params;
+    const filterData = req.body;
 
-      const serviceResponse = await Services.Filters.Handler.add(
-        guildId as string,
-        channelId as string,
-        filterData
-      );
+    const serviceResponse = await Services.Filters.Handler.add(channelId as string, filterData);
 
-      handleServiceResponse(serviceResponse, res);
-    }
-  );
+    handleServiceResponse(serviceResponse, res);
+  });
 
   /**
    * Get filters for channel
    */
-  router.get(
-    '/',
-    validateRequest(FilterReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId } = req.params;
+  router.get('/', validateRequest(FilterReqSchema), async (req: Request, res: Response) => {
+    const { channelId } = req.params;
 
-      const serviceResponse = await Services.Filters.Handler.list(channelId as string);
+    const serviceResponse = await Services.Filters.Handler.list(channelId as string);
 
-      handleServiceResponse(serviceResponse, res);
-    }
-  );
+    handleServiceResponse(serviceResponse, res);
+  });
 
   /**
    * Update filter in channel

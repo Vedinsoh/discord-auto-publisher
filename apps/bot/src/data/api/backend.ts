@@ -4,19 +4,23 @@ const baseUrl = 'http://backend:8080';
 
 // Channels
 const addChannel = async (guildId: Snowflake, channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}`, {
+  return fetch(`${baseUrl}/channel/${channelId}`, {
     method: RequestMethod.Put,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ guildId }),
   });
 };
 
-const removeChannel = async (guildId: Snowflake, channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}`, {
+const removeChannel = async (channelId: Snowflake) => {
+  return fetch(`${baseUrl}/channel/${channelId}`, {
     method: RequestMethod.Delete,
   });
 };
 
-const getChannel = async (guildId: Snowflake, channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}`, {
+const getChannel = async (channelId: Snowflake) => {
+  return fetch(`${baseUrl}/channel/${channelId}`, {
     method: RequestMethod.Get,
   });
 };
@@ -40,8 +44,8 @@ const getInfo = async () => {
 };
 
 // Filters
-const addFilter = async (guildId: Snowflake, channelId: Snowflake, filterData: unknown) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}/filters`, {
+const addFilter = async (channelId: Snowflake, filterData: unknown) => {
+  return fetch(`${baseUrl}/channel/${channelId}/filter`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
@@ -50,25 +54,20 @@ const addFilter = async (guildId: Snowflake, channelId: Snowflake, filterData: u
   });
 };
 
-const removeFilter = async (guildId: Snowflake, channelId: Snowflake, filterId: string) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}/filters/${filterId}`, {
+const removeFilter = async (channelId: Snowflake, filterId: string) => {
+  return fetch(`${baseUrl}/channel/${channelId}/filter/${filterId}`, {
     method: RequestMethod.Delete,
   });
 };
 
-const getFilters = async (guildId: Snowflake, channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}/filters`, {
+const getFilters = async (channelId: Snowflake) => {
+  return fetch(`${baseUrl}/channel/${channelId}/filter`, {
     method: RequestMethod.Get,
   });
 };
 
-const updateFilter = async (
-  guildId: Snowflake,
-  channelId: Snowflake,
-  filterId: string,
-  filterData: unknown
-) => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}/filters/${filterId}`, {
+const updateFilter = async (channelId: Snowflake, filterId: string, filterData: unknown) => {
+  return fetch(`${baseUrl}/channel/${channelId}/filter/${filterId}`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
@@ -77,8 +76,8 @@ const updateFilter = async (
   });
 };
 
-const updateFilterMode = async (guildId: Snowflake, channelId: Snowflake, mode: 'any' | 'all') => {
-  return fetch(`${baseUrl}/channel/${guildId}/${channelId}/filter-mode`, {
+const updateFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
+  return fetch(`${baseUrl}/channel/${channelId}/filter-mode`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',

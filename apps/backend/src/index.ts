@@ -1,6 +1,7 @@
 import { createErrorHandler, createHealthRoute, createRequestLogger } from '@ap/express';
 import { App } from 'app/index.js';
 import express from 'express';
+import { Jobs } from 'jobs/index.js';
 import { env } from 'lib/config/env.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
@@ -13,7 +14,7 @@ app.use(...createRequestLogger(env.isDevelopment));
 app.use(express.json());
 
 // Routes
-app.use('/channel/:guildId/:channelId', App.Routes.Channel);
+app.use('/channel/:channelId', App.Routes.Channel);
 app.use('/guild', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
 app.get('/health', createHealthRoute);
@@ -23,6 +24,10 @@ app.use(...createErrorHandler());
 
 // Sync cache on startup to ensure consistency between DB and cache
 await Services.Channels.DB.syncCache();
+
+// Start invalid channels cleanup cron job
+Jobs.invalidChannelsCleanup.start();
+logger.info('Invalid channels cleanup cron job started (daily at 00:00 UTC)');
 
 // Start the server
 const server = app.listen('8080', async () => {

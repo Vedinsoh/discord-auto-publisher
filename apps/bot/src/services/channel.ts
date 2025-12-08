@@ -41,7 +41,7 @@ const fetchNewsChannel = async (channel: DiscordChannel | GuildChannel) => {
  * Enable auto-publishing for a channel
  * @param guildId The guild ID
  * @param channelId The channel ID
- * @returns API response
+ * @returns API response with status codes for handler to process
  */
 const enable = async (guildId: Snowflake, channelId: Snowflake) => {
   return await Data.API.Backend.addChannel(guildId, channelId);
@@ -49,37 +49,55 @@ const enable = async (guildId: Snowflake, channelId: Snowflake) => {
 
 /**
  * Disable auto-publishing for a channel
- * @param guildId The guild ID
  * @param channelId The channel ID
- * @returns API response
+ * @returns true if successful, false otherwise
  */
-const disable = async (guildId: Snowflake, channelId: Snowflake) => {
-  return await Data.API.Backend.removeChannel(guildId, channelId);
+const disable = async (channelId: Snowflake) => {
+  try {
+    const response = await Data.API.Backend.removeChannel(channelId);
+
+    if (!response.ok) {
+      logger.error(
+        `Failed to disable channel ${channelId}: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+
+    logger.info(`Disabled channel ${channelId}`);
+    return true;
+  } catch (error) {
+    logger.error(error, `Error disabling channel ${channelId}`);
+    return false;
+  }
 };
 
 /**
  * Get status of a channel
- * @param guildId The guild ID
  * @param channelId The channel ID
  * @returns Channel status object with enabled flag, filters, and filter mode, or null if request fails
  */
-const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
-  const response = await Data.API.Backend.getChannel(guildId, channelId);
+const getStatus = async (channelId: Snowflake) => {
+  try {
+    const response = await Data.API.Backend.getChannel(channelId);
 
-  if (!response.ok) {
-    logger.error(
-      `Failed to get channel status ${channelId}: ${response.status} ${response.statusText}`
-    );
+    if (!response.ok) {
+      logger.error(
+        `Failed to get channel status ${channelId}: ${response.status} ${response.statusText}`
+      );
+      return null;
+    }
+
+    const data = (await response.json()) as {
+      enabled: boolean;
+      channelId?: string;
+      filters?: unknown[];
+      filterMode?: string;
+    };
+    return data;
+  } catch (error) {
+    logger.error(error, `Error getting channel status ${channelId}`);
     return null;
   }
-
-  const data = (await response.json()) as {
-    enabled: boolean;
-    channelId?: string;
-    filters?: unknown[];
-    filterMode?: string;
-  };
-  return data;
 };
 
 /**
@@ -88,44 +106,26 @@ const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
  * @returns Array of channel IDs, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
-  const response = await Data.API.Backend.getGuildChannels(guildId);
-
-  if (!response.ok) {
-    logger.error(
-      `Failed to get guild channels ${guildId}: ${response.status} ${response.statusText}`
-    );
-    return null;
-  }
-
-  const result = (await response.json()) as {
-    success: boolean;
-    message: string;
-    data: { channelIds: string[] };
-    statusCode: number;
-  };
-  return result.data.channelIds;
-};
-
-/**
- * Remove a channel from auto-publishing (with error handling)
- * @param guildId The guild ID
- * @param channelId The channel ID
- * @returns void
- */
-const remove = async (guildId: Snowflake, channelId: Snowflake) => {
   try {
-    const response = await Data.API.Backend.removeChannel(guildId, channelId);
+    const response = await Data.API.Backend.getGuildChannels(guildId);
 
     if (!response.ok) {
       logger.error(
-        `Failed to delete channel ${channelId}: ${response.status} ${response.statusText}`
+        `Failed to get guild channels ${guildId}: ${response.status} ${response.statusText}`
       );
-      return;
+      return null;
     }
 
-    logger.info(`Successfully deleted channel ${channelId}`);
+    const result = (await response.json()) as {
+      success: boolean;
+      message: string;
+      data: { channelIds: string[] };
+      statusCode: number;
+    };
+    return result.data.channelIds;
   } catch (error) {
-    logger.error(error, `Error deleting channel ${channelId}`);
+    logger.error(error, `Error getting guild channels ${guildId}`);
+    return null;
   }
 };
 
@@ -136,5 +136,4 @@ export const Channel = {
   disable,
   getStatus,
   getGuildChannels,
-  remove,
 };

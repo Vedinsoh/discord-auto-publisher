@@ -71,7 +71,7 @@ export async function chatInputStatus(
 
   // If a specific channel is provided, check its status
   try {
-    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
+    const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus || !channelStatus.enabled) {
       const disabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>

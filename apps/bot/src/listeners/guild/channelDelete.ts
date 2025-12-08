@@ -15,7 +15,7 @@ export class ChannelDeleteListener extends Listener {
 
     logger.info(`Channel deleted: ${channel.id} in guild ${channel.guildId}`);
 
-    // Delete channel from DB & cache
-    await Services.Channel.remove(channel.guildId, channel.id);
+    // Disable channel in DB & cache
+    await Services.Channel.disable(channel.id);
   }
 }
