@@ -1,42 +1,48 @@
-import { handleServiceResponse, validateRequest } from '@ap/express';
+import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import express, { type Request, type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
 import { GuildReqSchema } from 'utils/validations.js';
 
 export const Guild: Router = (() => {
-  const router = express.Router();
+  const router = express.Router({ mergeParams: true });
 
   /**
    * Get all channels enabled for auto-publishing in a guild
    * Returns array of channel IDs
    */
-  router.get(
-    '/:guildId/channels',
-    validateRequest(GuildReqSchema),
-    async (req: Request, res: Response) => {
-      const { guildId } = req.params;
+  router.get('/channels', validateRequest(GuildReqSchema), async (req: Request, res: Response) => {
+    const { guildId } = req.params;
 
-      const serviceResponse = await Services.Guilds.Handler.getChannels(guildId as string);
-
-      handleServiceResponse(serviceResponse, res);
+    try {
+      const channelIds = await Services.Guilds.getChannels(guildId as string);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { channelIds },
+        message: 'Channels retrieved successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to retrieve channels');
     }
-  );
+  });
 
   /**
    * Deletes a guild and all its associated channels
    * Removes the guild and channels from both the DB and Redis cache
    */
-  router.delete(
-    '/:guildId',
-    validateRequest(GuildReqSchema),
-    async (req: Request, res: Response) => {
-      const { guildId } = req.params;
+  router.delete('/', validateRequest(GuildReqSchema), async (req: Request, res: Response) => {
+    const { guildId } = req.params;
 
-      const serviceResponse = await Services.Guilds.Handler.remove(guildId as string);
-
-      handleServiceResponse(serviceResponse, res);
+    try {
+      await Services.Guilds.remove(guildId as string);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Guild removed successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to remove guild');
     }
-  );
+  });
 
   return router;
 })();

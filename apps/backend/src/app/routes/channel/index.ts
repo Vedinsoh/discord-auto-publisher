@@ -1,6 +1,5 @@
-import { handleServiceResponse, validateRequest } from '@ap/express';
+import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import express, { type Request, type Response, type Router } from 'express';
-import { StatusCodes } from 'http-status-codes';
 import { Services } from 'services/index.js';
 import {
   ChannelEnableReqSchema,
@@ -22,20 +21,20 @@ export const Channel: Router = (() => {
   router.get('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
     const { channelId } = req.params;
 
-    // Get full channel data from DB (includes filterMode)
-    const channelData = await Services.Channels.DB.find(channelId as string);
+    const channelData = await Services.Channels.get(channelId as string);
 
     if (channelData) {
       res.status(StatusCodes.OK).json({
-        enabled: true,
-        channelId,
-        filters: channelData.filters || [],
-        filterMode: channelData.filterMode || 'any',
-      });
+        status: StatusCodes.OK,
+        data: channelData,
+        message: 'Channel status retrieved successfully',
+      } as APIResponse);
     } else {
       res.status(StatusCodes.OK).json({
-        enabled: false,
-      });
+        status: StatusCodes.OK,
+        data: { enabled: false },
+        message: 'Channel not found',
+      } as APIResponse);
     }
   });
 
@@ -47,12 +46,16 @@ export const Channel: Router = (() => {
     const { channelId } = req.params;
     const { guildId } = req.body;
 
-    const serviceResponse = await Services.Channels.Handler.add(
-      guildId as string,
-      channelId as string
-    );
-
-    handleServiceResponse(serviceResponse, res);
+    try {
+      await Services.Channels.add(guildId as string, channelId as string);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Channel enabled successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to add channel');
+    }
   });
 
   /**
@@ -62,9 +65,16 @@ export const Channel: Router = (() => {
   router.delete('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
     const { channelId } = req.params;
 
-    const serviceResponse = await Services.Channels.Handler.remove(channelId as string);
-
-    handleServiceResponse(serviceResponse, res);
+    try {
+      await Services.Channels.remove(channelId as string);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Channel disabled successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to remove channel');
+    }
   });
 
   /**
@@ -77,12 +87,16 @@ export const Channel: Router = (() => {
       const { channelId } = req.params;
       const { mode } = req.body;
 
-      const serviceResponse = await Services.Channels.Handler.setFilterMode(
-        channelId as string,
-        mode
-      );
-
-      handleServiceResponse(serviceResponse, res);
+      try {
+        await Services.Channels.setFilterMode(channelId as string, mode);
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: { success: true, mode },
+          message: 'Filter mode updated successfully',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to update filter mode');
+      }
     }
   );
 

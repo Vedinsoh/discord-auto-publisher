@@ -1,4 +1,4 @@
-import { handleServiceResponse } from '@ap/express';
+import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
 import express, { type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
 
@@ -9,9 +9,16 @@ export const Metrics: Router = (() => {
    * Get queue metrics
    */
   router.get('/', async (_, res: Response) => {
-    const serviceResponse = await Services.Metrics.get();
-
-    handleServiceResponse(serviceResponse, res);
+    try {
+      const data = await Services.Metrics.get();
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data,
+        message: 'Metrics retrieved successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Error getting metrics');
+    }
   });
 
   return router;

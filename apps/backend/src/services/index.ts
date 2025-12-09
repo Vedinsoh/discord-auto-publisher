@@ -1,11 +1,9 @@
 import { Channels } from './channels/index.js';
-import { Filters } from './filters/index.js';
-import { Guilds } from './guilds/index.js';
+import { Guilds } from './guilds.js';
 import { Info } from './info.js';
 
 export const Services = {
   Channels,
-  Filters,
   Guilds,
   Info,
 };

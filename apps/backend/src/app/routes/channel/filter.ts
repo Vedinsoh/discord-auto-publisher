@@ -1,4 +1,10 @@
-import { handleServiceResponse, validateRequest } from '@ap/express';
+import {
+  type APIResponse,
+  requirePremium,
+  StatusCodes,
+  sendErrorResponse,
+  validateRequest,
+} from '@ap/express';
 import express, { type Request, type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
 import {
@@ -11,17 +17,8 @@ import {
 export const Filter: Router = (() => {
   const router = express.Router({ mergeParams: true });
 
-  /**
-   * Add filter to channel
-   */
-  router.post('/', validateRequest(AddFilterReqSchema), async (req: Request, res: Response) => {
-    const { channelId } = req.params;
-    const filterData = req.body;
-
-    const serviceResponse = await Services.Filters.Handler.add(channelId as string, filterData);
-
-    handleServiceResponse(serviceResponse, res);
-  });
+  // All filter routes require premium
+  router.use(requirePremium);
 
   /**
    * Get filters for channel
@@ -29,9 +26,35 @@ export const Filter: Router = (() => {
   router.get('/', validateRequest(FilterReqSchema), async (req: Request, res: Response) => {
     const { channelId } = req.params;
 
-    const serviceResponse = await Services.Filters.Handler.list(channelId as string);
+    try {
+      const filters = await Services.Channels.Filters.list(channelId as string);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { filters },
+        message: 'Filters retrieved successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to get filters');
+    }
+  });
 
-    handleServiceResponse(serviceResponse, res);
+  /**
+   * Add filter to channel
+   */
+  router.post('/', validateRequest(AddFilterReqSchema), async (req: Request, res: Response) => {
+    const { channelId } = req.params;
+    const filterData = req.body;
+
+    try {
+      const filter = await Services.Channels.Filters.add(channelId as string, filterData);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true, filter },
+        message: 'Filter added successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to add filter');
+    }
   });
 
   /**
@@ -44,13 +67,16 @@ export const Filter: Router = (() => {
       const { channelId, filterId } = req.params;
       const filterData = req.body;
 
-      const serviceResponse = await Services.Filters.Handler.update(
-        channelId as string,
-        filterId as string,
-        filterData
-      );
-
-      handleServiceResponse(serviceResponse, res);
+      try {
+        await Services.Channels.Filters.update(channelId as string, filterId as string, filterData);
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: { success: true },
+          message: 'Filter updated successfully',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to update filter');
+      }
     }
   );
 
@@ -63,12 +89,16 @@ export const Filter: Router = (() => {
     async (req: Request, res: Response) => {
       const { channelId, filterId } = req.params;
 
-      const serviceResponse = await Services.Filters.Handler.remove(
-        channelId as string,
-        filterId as string
-      );
-
-      handleServiceResponse(serviceResponse, res);
+      try {
+        await Services.Channels.Filters.remove(channelId as string, filterId as string);
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: { success: true },
+          message: 'Filter removed successfully',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to remove filter');
+      }
     }
   );
 

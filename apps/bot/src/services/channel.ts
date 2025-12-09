@@ -87,13 +87,17 @@ const getStatus = async (channelId: Snowflake) => {
       return null;
     }
 
-    const data = (await response.json()) as {
-      enabled: boolean;
-      channelId?: string;
-      filters?: unknown[];
-      filterMode?: string;
+    const result = (await response.json()) as {
+      status: number;
+      data: {
+        enabled: boolean;
+        channelId?: string;
+        filters?: unknown[];
+        filterMode?: string;
+      };
+      message: string;
     };
-    return data;
+    return result.data;
   } catch (error) {
     logger.error(error, `Error getting channel status ${channelId}`);
     return null;
@@ -117,10 +121,9 @@ const getGuildChannels = async (guildId: Snowflake) => {
     }
 
     const result = (await response.json()) as {
-      success: boolean;
-      message: string;
+      status: number;
       data: { channelIds: string[] };
-      statusCode: number;
+      message: string;
     };
     return result.data.channelIds;
   } catch (error) {

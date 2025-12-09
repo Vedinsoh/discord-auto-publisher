@@ -108,7 +108,8 @@ export async function chatInputFilterEdit(
           : filter.values[0];
 
       return {
-        label: `${filter.type} - ${filter.mode}`,
+        emoji: filter.mode === 'allow' ? emojis.checkmark : emojis.crossmark,
+        label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
       };

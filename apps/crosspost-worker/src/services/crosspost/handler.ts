@@ -1,10 +1,8 @@
 import { invalidRequestCodes, safeErrorCodes } from '@ap/discord-api';
-import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
 import { msToSec, sleep } from '@ap/utils';
 import { DiscordAPIError, RateLimitError } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
-import { StatusCodes } from 'http-status-codes';
 import { Backend } from 'services/backend.js';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
@@ -106,9 +104,8 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
  * Push message to crosspost queue
  * @param channelId ID of the channel
  * @param messageId ID of the message
- * @returns ServiceResponse
  */
-export const push = async (channelId: Snowflake, messageId: Snowflake) => {
+export const push = async (channelId: Snowflake, messageId: Snowflake): Promise<void> => {
   try {
     // TODO: MIGRATION MODE - Remove this comment block after migration period ends
     // During migration: Allow all announcement channels to auto-publish regardless of cache
@@ -122,40 +119,18 @@ export const push = async (channelId: Snowflake, messageId: Snowflake) => {
         `Channel ${channelId} not enabled for auto-publishing, skipping message ${messageId}`
       );
 
-      return new ServiceResponseImpl(
-        ResponseStatus.Failed,
-        'Channel not enabled for auto-publishing',
-        {
-          pushed: false,
-        },
-        StatusCodes.NOT_FOUND
-      );
+      const error: Error & { statusCode?: number } = new Error('Channel not enabled for auto-publishing');
+      error.statusCode = StatusCodes.NOT_FOUND;
+      throw error;
     }
     */
 
     Services.Crosspost.Queue.add(channelId, messageId);
 
     logger.debug(`Message ${messageId} pushed to crosspost queue`);
-
-    return new ServiceResponseImpl(
-      ResponseStatus.Success,
-      'Message pushed to crosspost queue',
-      {
-        pushed: true,
-      },
-      StatusCodes.OK
-    );
   } catch (error) {
     logger.error(error);
-
-    return new ServiceResponseImpl(
-      ResponseStatus.Failed,
-      'Error pushing message to crosspost queue',
-      {
-        pushed: false,
-      },
-      StatusCodes.INTERNAL_SERVER_ERROR
-    );
+    throw new Error('Error pushing message to crosspost queue');
   }
 };
 

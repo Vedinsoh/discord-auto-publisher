@@ -6,16 +6,29 @@ import type { Keys } from './constants.js';
 export const createChannelsCache = (client: RedisClientType, channelKey: Keys) => {
   const _createKey = (channelId: Snowflake) => `${channelKey}:${channelId}`;
 
-  const set = async (channelId: Snowflake, filters: Prisma.FilterCreateInput[] = []) => {
-    const value = JSON.stringify({ filters });
+  const isEnabled = async (channelId: Snowflake): Promise<boolean> => {
+    return (await client.exists(_createKey(channelId))) === 1;
+  };
+
+  const set = async (
+    channelId: Snowflake,
+    filters: Prisma.FilterCreateInput[] = [],
+    filterMode: 'any' | 'all' = 'any'
+  ) => {
+    const value = JSON.stringify({ filters, filterMode });
     return await client.set(_createKey(channelId), value);
   };
 
-  const setMany = async (channelIds: Snowflake[]) => {
-    if (channelIds.length === 0) return;
-    const value = JSON.stringify({ filters: [] });
-    const channelIdKeys = channelIds.flatMap(id => [_createKey(id), value]);
-    return await client.mSet(channelIdKeys);
+  const setMany = async (
+    channels: { channelId: Snowflake; filters: Prisma.FilterCreateInput[]; filterMode: string }[]
+  ) => {
+    if (channels.length === 0) return;
+    const pipeline = client.multi();
+    for (const ch of channels) {
+      const value = JSON.stringify({ filters: ch.filters, filterMode: ch.filterMode });
+      pipeline.set(_createKey(ch.channelId), value);
+    }
+    await pipeline.exec();
   };
 
   const remove = async (channelId: Snowflake) => {
@@ -36,8 +49,12 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
     }
   };
 
-  const updateFilters = async (channelId: Snowflake, filters: unknown[]) => {
-    const value = JSON.stringify({ filters });
+  const updateFilters = async (
+    channelId: Snowflake,
+    filters: unknown[],
+    filterMode: 'any' | 'all' = 'any'
+  ) => {
+    const value = JSON.stringify({ filters, filterMode });
     return await client.set(_createKey(channelId), value);
   };
 
@@ -75,5 +92,5 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
     return keys.length;
   };
 
-  return { set, setMany, remove, removeMany, get, getAll, getSize, updateFilters };
+  return { isEnabled, set, setMany, remove, removeMany, get, getAll, getSize, updateFilters };
 };

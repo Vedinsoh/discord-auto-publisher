@@ -1,3 +1,4 @@
+import { capitalize } from '@ap/utils';
 import type { Filter } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
@@ -102,7 +103,8 @@ export async function chatInputFilterRemove(
           : filter.values[0];
 
       return {
-        label: `${filter.type} - ${filter.mode}`,
+        emoji: filter.mode === 'allow' ? emojis.checkmark : emojis.crossmark,
+        label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
       };
@@ -180,7 +182,7 @@ export async function chatInputFilterRemove(
 
       const confirmContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `Are you sure you want to remove this filter from <#${channel.id}>?\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${modeEmoji} ${selectedFilter.mode}\n**Values:** ${displayValues}`
+          `Are you sure you want to remove this filter from <#${channel.id}>?\n\n**Type:** ${capitalize(selectedFilter.type)}${valueCount}\n**Mode:** ${modeEmoji} ${capitalize(selectedFilter.mode)}\n**Values:** ${displayValues}`
         )
       );
 

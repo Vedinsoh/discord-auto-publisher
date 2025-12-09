@@ -1,16 +1,15 @@
-import { ResponseStatus, ServiceResponseImpl } from '@ap/types';
-import { StatusCodes } from 'http-status-codes';
+import type { InfoResponse } from '@ap/types';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
 /**
- * Get info from backend  and crosspost-worker
+ * Get info from backend and crosspost-worker
  * Proxies queue metrics from crosspost-worker
  */
-const get = async () => {
+const get = async (): Promise<InfoResponse> => {
   try {
     // Get channels cache size from backend
-    const channelsCacheSize = await Services.Channels.DB.getSize();
+    const channelsCacheSize = await Services.Channels.getSize();
 
     // Fetch queue metrics from crosspost-worker
     const workerResponse = await fetch('http://crosspost-worker:8082/metrics');
@@ -21,27 +20,16 @@ const get = async () => {
 
     const workerData = await workerResponse.json();
 
-    return new ServiceResponseImpl(
-      ResponseStatus.Success,
-      'Info',
-      {
-        queue: workerData.data.queue,
-        cache: {
-          channels: channelsCacheSize,
-          rateLimits: workerData.data.cache.rateLimits,
-        },
-      },
-      StatusCodes.OK
-    );
+    return {
+      size: channelsCacheSize,
+      pending: workerData.data.queue.pending,
+      channelQueues: workerData.data.queue.channelQueues,
+      paused: workerData.data.queue.paused,
+      rateLimitsSize: workerData.data.cache.rateLimits,
+    };
   } catch (error) {
     logger.error(error);
-
-    return new ServiceResponseImpl(
-      ResponseStatus.Failed,
-      'Error getting info',
-      null,
-      StatusCodes.INTERNAL_SERVER_ERROR
-    );
+    throw new Error('Error getting info');
   }
 };
 

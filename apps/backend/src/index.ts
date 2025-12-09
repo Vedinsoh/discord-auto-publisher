@@ -14,7 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use('/channel/:channelId', App.Routes.Channel);
-app.use('/guild', App.Routes.Guild);
+app.use('/guild/:guildId', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
 app.get('/health', createHealthRoute);
 
@@ -22,7 +22,7 @@ app.get('/health', createHealthRoute);
 app.use(...createErrorHandler());
 
 // Sync cache on startup to ensure consistency between DB and cache
-await Services.Channels.DB.syncCache();
+await Services.Channels.initialize();
 
 // Start the server
 const server = app.listen('8080', async () => {

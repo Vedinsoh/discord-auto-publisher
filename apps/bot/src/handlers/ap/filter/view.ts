@@ -71,10 +71,9 @@ export async function chatInputFilterView(
     }
 
     const filtersData = (await filtersResponse.json()) as {
-      success: boolean;
-      message: string;
+      status: number;
       data: { filters: Filter[] };
-      statusCode: number;
+      message: string;
     };
 
     const filters = filtersData.data.filters;

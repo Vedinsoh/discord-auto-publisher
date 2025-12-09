@@ -1,5 +1,5 @@
+import { StatusCodes } from '@ap/express';
 import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
-import { StatusCodes } from 'http-status-codes';
 
 const safeErrorCodes: { [key: string]: ErrorCodes[] } = {
   crosspost: [
