@@ -109,7 +109,7 @@ export const validateRequest =
       next();
     } catch (err) {
       const zodError = err as ZodError<any>;
-      const errorMessage = `Invalid input: ${zodError.errors.map((e: any) => e.message).join(', ')}`;
+      const errorMessage = `Invalid input: ${zodError.issues.map((e: any) => e.message).join(', ')}`;
       res.status(StatusCodes.BAD_REQUEST).json({
         status: StatusCodes.BAD_REQUEST,
         message: errorMessage,

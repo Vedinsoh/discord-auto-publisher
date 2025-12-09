@@ -1,4 +1,4 @@
-import type { InfoResponse } from '@ap/types';
+import type { InfoResponse } from '@ap/express';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 

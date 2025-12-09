@@ -5,12 +5,9 @@ export const RegExPatterns = {
 };
 
 export const Validations = {
-  snowflakeId: z.string().refine(
-    (value: string) => RegExPatterns.snowflake.test(value),
-    value => ({
-      message: `${value} is not a valid snowflake ID`,
-    })
-  ),
+  snowflakeId: z.string().refine((value: string) => RegExPatterns.snowflake.test(value), {
+    message: 'Invalid snowflake ID',
+  }),
 };
 
 export const CrosspostReqSchema = z.object({
@@ -68,7 +65,6 @@ export const AddFilterReqSchema = z.object({
     })
     .refine(
       data => {
-        // Max values per type
         const maxValues = {
           keyword: 20,
           mention: 10,
@@ -77,16 +73,8 @@ export const AddFilterReqSchema = z.object({
         };
         return data.values.length <= maxValues[data.type];
       },
-      data => {
-        const maxValues = {
-          keyword: 20,
-          mention: 10,
-          author: 10,
-          webhook: 10,
-        };
-        return {
-          message: `Maximum ${maxValues[data.type]} values allowed for ${data.type} filters`,
-        };
+      {
+        message: 'Too many filter values',
       }
     )
     .refine(data => data.values.length >= 1, {
@@ -114,7 +102,6 @@ export const UpdateFilterReqSchema = z.object({
     })
     .refine(
       data => {
-        // Max values per type
         const maxValues = {
           keyword: 20,
           mention: 10,
@@ -123,16 +110,8 @@ export const UpdateFilterReqSchema = z.object({
         };
         return data.values.length <= maxValues[data.type];
       },
-      data => {
-        const maxValues = {
-          keyword: 20,
-          mention: 10,
-          author: 10,
-          webhook: 10,
-        };
-        return {
-          message: `Maximum ${maxValues[data.type]} values allowed for ${data.type} filters`,
-        };
+      {
+        message: 'Too many filter values',
       }
     )
     .refine(data => data.values.length >= 1, {

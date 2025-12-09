@@ -12,12 +12,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@ap/types": "workspace:*",
+    "discord-api-types": "^0.38.26",
     "express": "^4.19.2",
     "http-status-codes": "^2.3.0",
     "pino": "^9.11.0",
     "pino-http": "^10.4.0",
-    "zod": "^3.23.8"
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*",

@@ -15,7 +15,6 @@
     "@ap/express": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/redis": "workspace:*",
-    "@ap/types": "workspace:*",
     "@ap/utils": "workspace:*",
     "@sapphire/snowflake": "^3.5.3",
     "cron": "^4.3.5",

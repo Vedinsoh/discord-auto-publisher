@@ -7,9 +7,9 @@ export const RegExPatterns = {
 export const Validations = {
   snowflakeId: z.string().refine(
     (value: string) => RegExPatterns.snowflake.test(value),
-    value => ({
-      message: `${value} is not a valid snowflake ID`,
-    })
+    {
+      message: 'Invalid snowflake ID',
+    }
   ),
 };
 
