@@ -12,43 +12,64 @@ export const Validations = {
   }),
 };
 
+// Filter enums (using const objects for Bun ES module compatibility)
+export const FilterType = {
+  Keyword: 'keyword',
+  Mention: 'mention',
+  Author: 'author',
+  Webhook: 'webhook',
+} as const;
+
+export const FilterMode = {
+  Allow: 'allow',
+  Block: 'block',
+} as const;
+
+export const FilterMatchMode = {
+  Any: 'any',
+  All: 'all',
+} as const;
+
+// Type exports for type-checking
+export type FilterType = (typeof FilterType)[keyof typeof FilterType];
+export type FilterMode = (typeof FilterMode)[keyof typeof FilterMode];
+export type FilterMatchMode = (typeof FilterMatchMode)[keyof typeof FilterMatchMode];
+
 // Filter validation schemas
-export const FilterType = z.enum(['keyword', 'mention', 'author', 'webhook']);
-export const FilterMode = z.enum(['allow', 'block']);
-export const FilterMatchMode = z.enum(['any', 'all']);
+export const FilterTypeSchema = z.enum(Object.values(FilterType));
+export const FilterModeSchema = z.enum(Object.values(FilterMode));
+export const FilterMatchModeSchema = z.enum(Object.values(FilterMatchMode));
 
 export const FilterSchema = z.object({
   id: z.string(),
-  type: FilterType,
-  mode: FilterMode,
+  type: FilterTypeSchema,
+  mode: FilterModeSchema,
   values: z.array(z.string().min(1).max(200)),
   createdAt: z.date(),
 });
 
 export const CreateFilterSchema = z
   .object({
-    type: FilterType,
-    mode: FilterMode,
+    type: FilterTypeSchema,
+    mode: FilterModeSchema,
     values: z.array(z.string().min(1).max(200)).min(1, 'At least one value is required'),
   })
   .refine(
-    data => {
+    filter => {
       // Max values per type
-      const maxValues: Record<'keyword' | 'mention' | 'author' | 'webhook', number> = {
+      const maxValues: Record<string, number> = {
         keyword: 20,
         mention: 10,
         author: 10,
         webhook: 10,
       };
-      return data.values.length <= maxValues[data.type];
+      const max = maxValues[filter.type];
+      return max !== undefined && filter.values.length <= max;
     },
     {
-      message: 'Maximum values exceeded for filter type',
+      message: 'Maximum amount of values exceeded for filter type',
     }
   );
 
 export type Filter = z.infer<typeof FilterSchema>;
 export type CreateFilter = z.infer<typeof CreateFilterSchema>;
-export type FilterType = z.infer<typeof FilterType>;
-export type FilterMode = z.infer<typeof FilterMode>;
-export type FilterMatchMode = z.infer<typeof FilterMatchMode>;

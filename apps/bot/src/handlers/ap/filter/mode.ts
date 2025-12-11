@@ -1,3 +1,4 @@
+import { FilterMatchMode } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -47,7 +48,7 @@ export async function chatInputFilterMode(
       return;
     }
 
-    const currentMode = (channelStatus.filterMode as 'any' | 'all') || 'any';
+    const currentMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.Any;
 
     // Create mode selection menu
     const selectMenu = new StringSelectMenuBuilder()
@@ -56,28 +57,28 @@ export async function chatInputFilterMode(
       .addOptions([
         {
           label: 'Any (OR)',
-          value: 'any',
+          value: FilterMatchMode.Any,
           description: 'Message passes if at least one allow filter matches',
-          default: currentMode === 'any',
+          default: currentMode === FilterMatchMode.Any,
         },
         {
           label: 'All (AND)',
-          value: 'all',
+          value: FilterMatchMode.All,
           description: 'Message passes only if all allow filters match',
-          default: currentMode === 'all',
+          default: currentMode === FilterMatchMode.All,
         },
       ]);
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
     const modeDescription =
-      currentMode === 'any'
+      currentMode === FilterMatchMode.Any
         ? '- Messages pass if **at least one** allow filter matches\n- Block filters always block if **any** matches'
         : '- Messages pass only if **all** allow filters match\n- Block filters always block if **any** matches';
 
     const selectContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `**Current filter mode:** ${currentMode === 'any' ? 'Any (OR)' : 'All (AND)'}\n\n${modeDescription}\n\nSelect a new mode for <#${channel.id}>:`
+        `**Current filter mode:** ${currentMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}\n\n${modeDescription}\n\nSelect a new mode for <#${channel.id}>:`
       )
     );
 
@@ -96,7 +97,7 @@ export async function chatInputFilterMode(
     selectCollector.on('collect', async (selectInteraction: StringSelectMenuInteraction) => {
       await selectInteraction.deferUpdate();
 
-      const selectedMode = selectInteraction.values[0] as 'any' | 'all';
+      const selectedMode = selectInteraction.values[0] as FilterMatchMode;
 
       const response = await Data.API.Backend.setFilterMode(channel.id, selectedMode);
 
@@ -117,13 +118,13 @@ export async function chatInputFilterMode(
       }
 
       const newModeDescription =
-        selectedMode === 'any'
+        selectedMode === FilterMatchMode.Any
           ? '- Messages will pass if **at least one** allow filter matches\n- Block filters will block if **any** matches'
           : '- Messages will pass only if **all** allow filters match\n- Block filters will block if **any** matches';
 
       const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.checkmark} Filter mode updated to **${selectedMode === 'any' ? 'Any (OR)' : 'All (AND)'}** for <#${channel.id}>!\n\n${newModeDescription}`
+          `${emojis.checkmark} Filter mode updated to **${selectedMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}** for <#${channel.id}>!\n\n${newModeDescription}`
         )
       );
 

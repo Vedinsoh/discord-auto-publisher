@@ -1,5 +1,5 @@
 import { db } from '@ap/database';
-import type { Filter } from '@ap/validations';
+import { type Filter, FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
@@ -44,7 +44,7 @@ export const addFilter = async (channelId: Snowflake, filter: Filter) => {
     await Data.Channels.Cache.updateFilters(
       channelId,
       updatedFilters,
-      (channel.filterMode as 'any' | 'all') || 'any'
+      (channel.filterMode as FilterMatchMode) || FilterMatchMode.Any
     );
   } catch (error) {
     // If DB update succeeded but cache update failed, rollback DB
@@ -90,7 +90,7 @@ export const removeFilter = async (channelId: Snowflake, filterId: string) => {
     await Data.Channels.Cache.updateFilters(
       channelId,
       updatedFilters,
-      (channel.filterMode as 'any' | 'all') || 'any'
+      (channel.filterMode as FilterMatchMode) || FilterMatchMode.Any
     );
   } catch (error) {
     // If DB update succeeded but cache update failed, rollback DB
@@ -157,7 +157,7 @@ export const updateFilter = async (
     await Data.Channels.Cache.updateFilters(
       channelId,
       updatedFilters,
-      (channel.filterMode as 'any' | 'all') || 'any'
+      (channel.filterMode as FilterMatchMode) || FilterMatchMode.Any
     );
   } catch (error) {
     // If DB update succeeded but cache update failed, rollback DB

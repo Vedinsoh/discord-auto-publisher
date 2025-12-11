@@ -5,6 +5,7 @@ import {
   sendErrorResponse,
   validateRequest,
 } from '@ap/express';
+import type { CreateFilter } from '@ap/validations';
 import express, { type Request, type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
 import {
@@ -43,7 +44,7 @@ export const Filter: Router = (() => {
    */
   router.post('/', validateRequest(AddFilterReqSchema), async (req: Request, res: Response) => {
     const { channelId } = req.params;
-    const filterData = req.body;
+    const filterData: CreateFilter = req.body;
 
     try {
       const filter = await Services.Channels.Filters.add(channelId as string, filterData);
@@ -65,7 +66,7 @@ export const Filter: Router = (() => {
     validateRequest(UpdateFilterReqSchema),
     async (req: Request, res: Response) => {
       const { channelId, filterId } = req.params;
-      const filterData = req.body;
+      const filterData: CreateFilter = req.body;
 
       try {
         await Services.Channels.Filters.update(channelId as string, filterId as string, filterData);

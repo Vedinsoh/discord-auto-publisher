@@ -1,4 +1,5 @@
 import { config } from '@ap/config';
+import { FilterType } from '@ap/validations';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
@@ -110,10 +111,10 @@ export class APCommand extends Subcommand {
                     .setDescription('Filter type')
                     .setRequired(true)
                     .addChoices(
-                      { name: 'Keyword', value: 'keyword' },
-                      { name: 'Author', value: 'author' },
-                      { name: 'Mention', value: 'mention' },
-                      { name: 'Webhook', value: 'webhook' }
+                      { name: 'Keyword', value: FilterType.Keyword },
+                      { name: 'Author', value: FilterType.Author },
+                      { name: 'Mention', value: FilterType.Mention },
+                      { name: 'Webhook', value: FilterType.Webhook }
                     )
                 )
             )

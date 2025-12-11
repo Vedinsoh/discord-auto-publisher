@@ -1,5 +1,5 @@
 import { capitalize, normalizeFilterValues } from '@ap/utils';
-import type { Filter } from '@ap/validations';
+import { type Filter, FilterMode, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -108,7 +108,7 @@ export async function chatInputFilterEdit(
           : filter.values[0];
 
       return {
-        emoji: filter.mode === 'allow' ? emojis.checkmark : emojis.crossmark,
+        emoji: filter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark,
         label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
@@ -249,20 +249,20 @@ export async function chatInputFilterEdit(
 
         // Format values for display (use normalized values to show what's actually stored)
         const displayValues =
-          selectedFilter.type === 'author' || selectedFilter.type === 'mention'
+          selectedFilter.type === FilterType.Author || selectedFilter.type === FilterType.Mention
             ? normalizedValues.map(v => `<@${v}>`).join(', ')
-            : selectedFilter.type === 'webhook'
+            : selectedFilter.type === FilterType.Webhook
               ? normalizedValues.map(v => `\`${v}\``).join(', ')
               : normalizedValues.map(v => `\`${v}\``).join(', ');
 
         const modeText =
-          mode === 'allow'
+          mode === FilterMode.Allow
             ? 'Only messages matching this filter will be published'
             : 'Messages matching this filter will NOT be published';
 
         const valueCount = normalizedValues.length > 1 ? ` (${normalizedValues.length})` : '';
 
-        const modeEmoji = mode === 'allow' ? emojis.checkmark : emojis.crossmark;
+        const modeEmoji = mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark;
         const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
             `${emojis.checkmark} Filter updated in <#${channel.id}>!\n\n**Type:** ${selectedFilter.type}${valueCount}\n**Mode:** ${modeEmoji} ${mode}\n**Values:** ${displayValues}\n\n-# ${modeText}`
@@ -331,16 +331,16 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
     .addOptions(
       new StringSelectMenuOptionBuilder()
         .setLabel('Allow')
-        .setValue('allow')
+        .setValue(FilterMode.Allow)
         .setDescription('Only publish messages matching this filter')
         .setEmoji(emojis.checkmark)
-        .setDefault(filter.mode === 'allow'),
+        .setDefault(filter.mode === FilterMode.Allow),
       new StringSelectMenuOptionBuilder()
         .setLabel('Block')
-        .setValue('block')
+        .setValue(FilterMode.Block)
         .setDescription("Don't publish messages matching this filter")
         .setEmoji(emojis.crossmark)
-        .setDefault(filter.mode === 'block')
+        .setDefault(filter.mode === FilterMode.Block)
     );
 
   const modeLabel = new LabelBuilder()
@@ -348,7 +348,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
     .setStringSelectMenuComponent(modeSelect);
 
   switch (filter.type) {
-    case 'keyword': {
+    case FilterType.Keyword: {
       const keywordInput = new TextInputBuilder()
         .setCustomId('value')
         .setStyle(TextInputStyle.Paragraph)
@@ -369,7 +369,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
       break;
     }
 
-    case 'author': {
+    case FilterType.Author: {
       // Format current values for display in description
       const currentUsers = filter.values.map(id => `<@${id}>`).join(', ');
       const description = `Current: ${currentUsers}\n\nSelect the users or bots whose messages will be filtered.`;
@@ -390,7 +390,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
       break;
     }
 
-    case 'mention': {
+    case FilterType.Mention: {
       // Format current values for display in description
       const currentMentions = filter.values
         .map(v => (v.startsWith('&') ? `<@&${v.slice(1)}>` : `<@${v}>`))
@@ -413,7 +413,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
       break;
     }
 
-    case 'webhook': {
+    case FilterType.Webhook: {
       const webhookInput = new TextInputBuilder()
         .setCustomId('value')
         .setStyle(TextInputStyle.Paragraph)
@@ -444,7 +444,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
 function extractModalValues(
   modalSubmit: ModalSubmitInteraction,
   type: string
-): { valid: true; values: string[]; mode: 'allow' | 'block' } | { valid: false; error: string } {
+): { valid: true; values: string[]; mode: FilterMode } | { valid: false; error: string } {
   try {
     // Get mode from StringSelectMenu
     const modeLabel = modalSubmit.components.find(
@@ -461,7 +461,7 @@ function extractModalValues(
         ? modeComponent.values[0]
         : undefined;
 
-    if (!mode || (mode !== 'allow' && mode !== 'block')) {
+    if (!mode || (mode !== FilterMode.Allow && mode !== FilterMode.Block)) {
       return { valid: false, error: 'Please select a filter mode (Allow or Block)' };
     }
 
@@ -469,7 +469,7 @@ function extractModalValues(
     let values: string[];
 
     switch (type) {
-      case 'keyword': {
+      case FilterType.Keyword: {
         const rawKeywords = modalSubmit.fields.getTextInputValue('value').trim();
         const keywords = rawKeywords
           .split(',')
@@ -488,8 +488,8 @@ function extractModalValues(
         break;
       }
 
-      case 'author':
-      case 'mention': {
+      case FilterType.Author:
+      case FilterType.Mention: {
         const valueLabel = modalSubmit.components.find(
           label => 'component' in label && label.component.customId === 'value'
         );
@@ -498,7 +498,9 @@ function extractModalValues(
           return {
             valid: false,
             error:
-              type === 'author' ? 'User selection is required' : 'Mention selection is required',
+              type === FilterType.Author
+                ? 'User selection is required'
+                : 'Mention selection is required',
           };
         }
 
@@ -512,7 +514,7 @@ function extractModalValues(
           return {
             valid: false,
             error:
-              type === 'author'
+              type === FilterType.Author
                 ? 'Please select at least one user or bot'
                 : 'Please select at least one user or role',
           };
@@ -521,7 +523,10 @@ function extractModalValues(
         if (selectedValues.length > 10) {
           return {
             valid: false,
-            error: type === 'author' ? 'Maximum 10 users allowed' : 'Maximum 10 mentions allowed',
+            error:
+              type === FilterType.Author
+                ? 'Maximum 10 users allowed'
+                : 'Maximum 10 mentions allowed',
           };
         }
 
@@ -529,7 +534,7 @@ function extractModalValues(
         break;
       }
 
-      case 'webhook': {
+      case FilterType.Webhook: {
         const rawWebhookIds = modalSubmit.fields.getTextInputValue('value').trim();
         const webhookIds = rawWebhookIds
           .split(',')

@@ -1,4 +1,4 @@
-import type { FilterType } from '@ap/validations';
+import { FilterType } from '@ap/validations';
 
 /**
  * Sleep for a given amount of time
@@ -25,7 +25,7 @@ export const capitalize = (str: string): string => {
  * @returns Normalized filter values
  */
 export const normalizeFilterValues = (values: string[], filterType: FilterType): string[] => {
-  if (filterType === 'keyword') {
+  if (filterType === FilterType.Keyword) {
     return values.map(value => value.toLowerCase());
   }
   return values;

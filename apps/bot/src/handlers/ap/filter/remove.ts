@@ -1,5 +1,5 @@
 import { capitalize } from '@ap/utils';
-import type { Filter } from '@ap/validations';
+import { type Filter, FilterMode, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -103,7 +103,7 @@ export async function chatInputFilterRemove(
           : filter.values[0];
 
       return {
-        emoji: filter.mode === 'allow' ? emojis.checkmark : emojis.crossmark,
+        emoji: filter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark,
         label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
@@ -153,9 +153,9 @@ export async function chatInputFilterRemove(
 
       // Format values for display
       const displayValues =
-        selectedFilter.type === 'author' || selectedFilter.type === 'mention'
+        selectedFilter.type === FilterType.Author || selectedFilter.type === FilterType.Mention
           ? selectedFilter.values.map(v => `<@${v}>`).join(', ')
-          : selectedFilter.type === 'webhook'
+          : selectedFilter.type === FilterType.Webhook
             ? selectedFilter.values.map(v => `\`${v}\``).join(', ')
             : selectedFilter.values.map(v => `\`${v}\``).join(', ');
 
@@ -178,7 +178,8 @@ export async function chatInputFilterRemove(
         cancelButton
       );
 
-      const modeEmoji = selectedFilter.mode === 'allow' ? emojis.checkmark : emojis.crossmark;
+      const modeEmoji =
+        selectedFilter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark;
 
       const confirmContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(

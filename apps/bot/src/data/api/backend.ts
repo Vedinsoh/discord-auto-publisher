@@ -1,3 +1,4 @@
+import type { CreateFilter, FilterMatchMode } from '@ap/validations';
 import { RequestMethod, type Snowflake } from 'discord.js';
 
 const baseUrl = 'http://backend:8080';
@@ -44,7 +45,7 @@ const getInfo = async () => {
 };
 
 // Filters
-const addFilter = async (channelId: Snowflake, filterData: unknown) => {
+const addFilter = async (channelId: Snowflake, filterData: CreateFilter) => {
   return fetch(`${baseUrl}/channel/${channelId}/filter`, {
     method: RequestMethod.Post,
     headers: {
@@ -66,7 +67,7 @@ const getFilters = async (channelId: Snowflake) => {
   });
 };
 
-const updateFilter = async (channelId: Snowflake, filterId: string, filterData: unknown) => {
+const updateFilter = async (channelId: Snowflake, filterId: string, filterData: CreateFilter) => {
   return fetch(`${baseUrl}/channel/${channelId}/filter/${filterId}`, {
     method: RequestMethod.Put,
     headers: {
@@ -76,7 +77,7 @@ const updateFilter = async (channelId: Snowflake, filterId: string, filterData: 
   });
 };
 
-const setFilterMode = async (channelId: Snowflake, mode: 'any' | 'all') => {
+const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode) => {
   return fetch(`${baseUrl}/channel/${channelId}/filter-mode`, {
     method: RequestMethod.Put,
     headers: {

@@ -1,4 +1,5 @@
 import type { Prisma } from '@ap/database';
+import { FilterMatchMode } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
 import type { RedisClientType } from 'redis';
 import type { Keys } from './constants.js';
@@ -13,7 +14,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   const set = async (
     channelId: Snowflake,
     filters: Prisma.FilterCreateInput[] = [],
-    filterMode: 'any' | 'all' = 'any'
+    filterMode: FilterMatchMode = FilterMatchMode.Any
   ) => {
     const value = JSON.stringify({ filters, filterMode });
     return await client.set(_createKey(channelId), value);
@@ -52,7 +53,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   const updateFilters = async (
     channelId: Snowflake,
     filters: unknown[],
-    filterMode: 'any' | 'all' = 'any'
+    filterMode: FilterMatchMode = FilterMatchMode.Any
   ) => {
     const value = JSON.stringify({ filters, filterMode });
     return await client.set(_createKey(channelId), value);

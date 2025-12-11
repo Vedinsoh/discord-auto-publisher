@@ -1,5 +1,5 @@
 import { config } from '@ap/config';
-import type { Filter } from '@ap/validations';
+import { type Filter, FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
 import type { Message, NewsChannel } from 'discord.js';
 import { Services } from './index.js';
 
@@ -23,13 +23,13 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
     }
 
     const filters = channelStatus.filters as Filter[];
-    const filterMode = (channelStatus.filterMode as 'any' | 'all') || 'any';
+    const filterMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.Any;
     const content = message.content.toLowerCase();
     const authorId = message.author.id;
 
     // Separate allow and block filters
-    const allowFilters = filters.filter(f => f.mode === 'allow');
-    const blockFilters = filters.filter(f => f.mode === 'block');
+    const allowFilters = filters.filter(f => f.mode === FilterMode.Allow);
+    const blockFilters = filters.filter(f => f.mode === FilterMode.Block);
 
     // Check block filters first (always use OR logic - block if any matches)
     for (const filter of blockFilters) {
@@ -40,7 +40,7 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
 
     // If there are allow filters, apply mode logic
     if (allowFilters.length > 0) {
-      if (filterMode === 'all') {
+      if (filterMode === FilterMatchMode.All) {
         // All allow filters must match
         return allowFilters.every(filter => matchesFilter(filter, content, authorId, message));
       } else {
@@ -72,24 +72,24 @@ const matchesFilter = (
   message: Message
 ): boolean => {
   switch (filter.type) {
-    case 'keyword': {
+    case FilterType.Keyword: {
       // Check if content contains any of the keywords (keywords are stored in lowercase)
       return filter.values.some(keyword => content.includes(keyword));
     }
 
-    case 'mention': {
+    case FilterType.Mention: {
       // Check if message mentions any of the specified users or roles
       return filter.values.some(
         id => message.mentions.users.has(id) || message.mentions.roles.has(id)
       );
     }
 
-    case 'author': {
+    case FilterType.Author: {
       // Check if author matches any of the specified author IDs
       return filter.values.includes(authorId);
     }
 
-    case 'webhook': {
+    case FilterType.Webhook: {
       // Check if webhook ID matches any of the specified webhook IDs
       return message.webhookId ? filter.values.includes(message.webhookId) : false;
     }

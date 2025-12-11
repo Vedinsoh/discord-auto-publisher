@@ -13,6 +13,7 @@
     "@ap/config": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/utils": "workspace:*",
+    "@ap/validations": "workspace:*",
     "@sapphire/decorators": "^6.2.0",
     "@sapphire/discord.js-utilities": "^7.3.3",
     "@sapphire/framework": "^5.3.6",

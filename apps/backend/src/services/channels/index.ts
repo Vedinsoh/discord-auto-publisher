@@ -1,5 +1,6 @@
 import { db } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
+import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { PlanLimits } from 'lib/constants/app.js';
@@ -33,7 +34,7 @@ const initialize = async () => {
         batch.map(c => ({
           channelId: c.channelId,
           filters: c.filters,
-          filterMode: c.filterMode || 'any',
+          filterMode: c.filterMode || FilterMatchMode.Any,
         }))
       );
 
@@ -116,7 +117,7 @@ const get = async (channelId: Snowflake) => {
         enabled: true,
         channelId,
         filters: cached.filters || [],
-        filterMode: cached.filterMode || 'any',
+        filterMode: cached.filterMode || FilterMatchMode.Any,
       };
     }
 
@@ -128,14 +129,14 @@ const get = async (channelId: Snowflake) => {
       await Data.Channels.Cache.set(
         channelId,
         dbChannel.filters || [],
-        (dbChannel.filterMode as 'any' | 'all') || 'any'
+        (dbChannel.filterMode as FilterMatchMode) || FilterMatchMode.Any
       );
 
       return {
         enabled: true,
         channelId,
         filters: dbChannel.filters || [],
-        filterMode: dbChannel.filterMode || 'any',
+        filterMode: dbChannel.filterMode || FilterMatchMode.Any,
       };
     }
 
@@ -186,7 +187,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
       },
     });
     dbCreated = true;
-    await Data.Channels.Cache.set(channelId, [], 'any');
+    await Data.Channels.Cache.set(channelId, [], FilterMatchMode.Any);
 
     logger.debug(`Added channel ${channelId} for guild ${guildId}`);
   } catch (error) {
@@ -269,9 +270,9 @@ const countByGuild = async (guildId: Snowflake) => {
 /**
  * Set filter mode for channel
  * @param channelId ID of the channel
- * @param mode Filter mode ('any' or 'all')
+ * @param mode Filter mode (FilterMatchMode.Any or 'all')
  */
-const setFilterMode = async (channelId: Snowflake, mode: 'any' | 'all'): Promise<void> => {
+const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode): Promise<void> => {
   try {
     // Check if channel exists
     const channel = await find(channelId);
