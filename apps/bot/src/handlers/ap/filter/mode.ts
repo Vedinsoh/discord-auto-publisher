@@ -102,6 +102,20 @@ export async function chatInputFilterMode(
       const response = await Data.API.Backend.setFilterMode(channel.id, selectedMode);
 
       if (!response.ok) {
+        if (response.status === 404) {
+          const notFoundContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent(
+              `${emojis.crossmark} Channel not enabled for auto-publishing.\n\n-# Use </ap enable:${interaction.commandId}> to enable auto-publishing in this channel.`
+            )
+          );
+
+          await selectInteraction.editReply({
+            flags: [MessageFlags.IsComponentsV2],
+            components: [notFoundContainer],
+          });
+          return;
+        }
+
         logger.error(`Failed to update filter mode: ${response.status} ${response.statusText}`);
 
         const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>

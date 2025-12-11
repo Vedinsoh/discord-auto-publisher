@@ -23,7 +23,7 @@ export const emojis = {
 
 export const messages = {
   rateLimitNote:
-    '\n\n-# Note: Discord allows up to 10 messages to be published per hour per channel!',
+    '\n\n-# Note: Discord only allows up to 10 messages to be published per hour per channel!',
   delayNote:
     process.env.APP_EDITION === 'free'
       ? '\n\n-# Note: Messages might have delays in publishing due to Discord API limiting the bot.'
