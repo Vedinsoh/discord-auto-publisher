@@ -65,7 +65,17 @@ export class HelpCommand extends Command {
         )
         .addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.filter}  Use </ap filter list:${apCommandId}> to list all filters in a channel.`
+            `${emojis.filter}  Use </ap filter view:${apCommandId}> to view all filters in a channel.`
+          )
+        )
+        .addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `${emojis.filter}  Use </ap filter edit:${apCommandId}> to edit an existing filter in a channel.`
+          )
+        )
+        .addTextDisplayComponents(textDisplay =>
+          textDisplay.setContent(
+            `${emojis.filter}  Use </ap filter mode:${apCommandId}> to set the filter mode for a channel.`
           )
         );
     }
