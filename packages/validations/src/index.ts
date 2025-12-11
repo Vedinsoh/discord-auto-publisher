@@ -8,7 +8,7 @@ export const RegExPatterns = {
 // Base validation schemas
 export const Validations = {
   snowflakeId: z.string().refine((value: string) => RegExPatterns.snowflake.test(value), {
-    error: value => `${value} is not a valid snowflake ID`,
+    message: 'Invalid snowflake ID',
   }),
 };
 
@@ -52,56 +52,3 @@ export type CreateFilter = z.infer<typeof CreateFilterSchema>;
 export type FilterType = z.infer<typeof FilterType>;
 export type FilterMode = z.infer<typeof FilterMode>;
 export type FilterMatchMode = z.infer<typeof FilterMatchMode>;
-
-// Request validation schemas
-export const CrosspostReqSchema = z.object({
-  params: z.object({
-    channelId: Validations.snowflakeId,
-    messageId: Validations.snowflakeId,
-  }),
-});
-
-export const PresenceReqSchema = z.object({
-  params: z.object({
-    appId: Validations.snowflakeId,
-  }),
-  body: z.object({
-    count: z.number(),
-  }),
-});
-
-export const FilterReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-  }),
-});
-
-export const AddFilterReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-  }),
-  body: CreateFilterSchema,
-});
-
-export const RemoveFilterReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-    filterId: z.string(),
-  }),
-});
-
-export const SetFilterModeReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-  }),
-  body: z.object({
-    mode: FilterMatchMode,
-  }),
-});
-
-// HTTP validation utility
-export type ValidationSchema = z.ZodSchema;
