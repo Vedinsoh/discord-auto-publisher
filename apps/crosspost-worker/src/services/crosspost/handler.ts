@@ -1,12 +1,14 @@
-import { invalidRequestCodes, safeErrorCodes } from '@ap/discord-api';
 import { msToSec, sleep } from '@ap/utils';
 import { DiscordAPIError, RateLimitError } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
+import { Discord as DiscordConstants } from 'lib/constants/discord.js';
 import { Backend } from 'services/backend.js';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
+
+const { safeErrorCodes, invalidRequestCodes } = DiscordConstants;
 
 /**
  * Submit message for crossposting

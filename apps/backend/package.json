@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@ap/database": "workspace:*",
-    "@ap/discord-api": "workspace:*",
     "@ap/express": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/redis": "workspace:*",
