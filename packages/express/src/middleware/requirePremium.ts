@@ -1,4 +1,4 @@
-import { isPremiumInstance } from '@ap/utils';
+import { config } from '@ap/config';
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
@@ -7,7 +7,7 @@ import { StatusCodes } from 'http-status-codes';
  * Returns 403 Forbidden if not premium
  */
 export const requirePremium = (_req: Request, res: Response, next: NextFunction): void => {
-  if (!isPremiumInstance) {
+  if (!config.isPremiumInstance) {
     res.status(StatusCodes.FORBIDDEN).json({
       status: StatusCodes.FORBIDDEN,
       message: 'This feature is only available in premium edition',

@@ -10,6 +10,7 @@
     "start": "bun run ."
   },
   "dependencies": {
+    "@ap/config": "workspace:*",
     "@ap/database": "workspace:*",
     "@ap/express": "workspace:*",
     "@ap/logger": "workspace:*",
@@ -17,8 +18,6 @@
     "@ap/utils": "workspace:*",
     "@sapphire/snowflake": "^3.5.3",
     "cron": "^4.3.5",
-    "dotenv": "^16.4.5",
-    "envalid": "^8.0.0",
     "express": "^4.19.2"
   }
 }

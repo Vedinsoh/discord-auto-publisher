@@ -1,7 +1,7 @@
+import { env } from '@ap/config';
 import { REST, RequestMethod } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Routes } from 'discord-api-types/v10';
-import { env } from 'lib/config/env.js';
 import { logger } from 'utils/logger.js';
 
 const rest = new REST({

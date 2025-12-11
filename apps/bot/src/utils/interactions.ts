@@ -1,4 +1,5 @@
-import { capitalize, isPremiumInstance } from '@ap/utils';
+import { config } from '@ap/config';
+import { capitalize } from '@ap/utils';
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links } from '../lib/constants/index.js';
@@ -11,7 +12,7 @@ export async function handlePremiumCheck(
   interaction: ChatInputCommandInteraction,
   featureName = 'this feature'
 ): Promise<boolean> {
-  if (isPremiumInstance) return false;
+  if (config.isPremiumInstance) return false;
 
   const premiumContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
     textDisplay.setContent(

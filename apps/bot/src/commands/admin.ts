@@ -1,7 +1,7 @@
+import { env } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { InteractionContextType, PermissionFlagsBits } from 'discord.js';
-import { env } from 'lib/config/env.js';
 import {
   chatInputInfo,
   chatInputPing,

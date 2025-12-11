@@ -1,4 +1,4 @@
-import { isPremiumInstance } from '@ap/utils';
+import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
@@ -25,7 +25,7 @@ export class LinksCommand extends Command {
         .setButtonAccessory(Buttons.botInvite)
     );
 
-    if (!isPremiumInstance) {
+    if (!config.isPremiumInstance) {
       replyContainer.addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>

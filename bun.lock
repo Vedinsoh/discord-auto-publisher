@@ -13,6 +13,7 @@
     "apps/backend": {
       "name": "backend",
       "dependencies": {
+        "@ap/config": "workspace:*",
         "@ap/database": "workspace:*",
         "@ap/express": "workspace:*",
         "@ap/logger": "workspace:*",
@@ -20,14 +21,13 @@
         "@ap/utils": "workspace:*",
         "@sapphire/snowflake": "^3.5.3",
         "cron": "^4.3.5",
-        "dotenv": "^16.4.5",
-        "envalid": "^8.0.0",
         "express": "^4.19.2",
       },
     },
     "apps/bot": {
       "name": "bot",
       "dependencies": {
+        "@ap/config": "workspace:*",
         "@ap/logger": "workspace:*",
         "@ap/utils": "workspace:*",
         "@sapphire/decorators": "^6.2.0",
@@ -37,8 +37,6 @@
         "@sapphire/utilities": "^3.18.2",
         "discord-hybrid-sharding": "^3.0.1",
         "discord.js": "^14.25.1",
-        "dotenv": "^17.2.2",
-        "envalid": "^8.1.0",
       },
       "devDependencies": {
         "@ap/tsconfig": "*",
@@ -51,6 +49,7 @@
     "apps/crosspost-worker": {
       "name": "crosspost-worker",
       "dependencies": {
+        "@ap/config": "workspace:*",
         "@ap/express": "workspace:*",
         "@ap/logger": "workspace:*",
         "@ap/redis": "workspace:*",
@@ -58,10 +57,19 @@
         "@discordjs/rest": "^2.6.0",
         "@sapphire/snowflake": "^3.5.3",
         "discord-api-types": "^0.38.37",
-        "dotenv": "^16.4.5",
-        "envalid": "^8.0.0",
         "express": "^4.19.2",
         "p-queue": "^8.0.1",
+      },
+    },
+    "packages/config": {
+      "name": "@ap/config",
+      "dependencies": {
+        "@ap/logger": "workspace:*",
+        "dotenv": "^16.4.5",
+        "envalid": "^8.0.0",
+      },
+      "devDependencies": {
+        "@ap/tsconfig": "workspace:*",
       },
     },
     "packages/database": {
@@ -78,6 +86,7 @@
       "name": "@ap/express",
       "version": "1.0.0",
       "dependencies": {
+        "@ap/config": "workspace:*",
         "discord-api-types": "^0.38.26",
         "express": "^4.19.2",
         "http-status-codes": "^2.3.0",
@@ -140,6 +149,8 @@
     },
   },
   "packages": {
+    "@ap/config": ["@ap/config@workspace:packages/config"],
+
     "@ap/database": ["@ap/database@workspace:packages/database"],
 
     "@ap/express": ["@ap/express@workspace:packages/express"],
@@ -635,8 +646,6 @@
     "@sapphire/ts-config/typescript": ["typescript@5.4.5", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ=="],
 
     "@types/serve-static/@types/send": ["@types/send@0.17.6", "", { "dependencies": { "@types/mime": "^1", "@types/node": "*" } }, "sha512-Uqt8rPBE8SY0RK8JB1EzVOIZ32uqy8HwdxCnoCOsYrvnswqmFZ/k+9Ikidlk/ImhsdvBsloHbAlewb2IEBV/Og=="],
-
-    "bot/dotenv": ["dotenv@17.2.3", "", {}, "sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w=="],
 
     "discord.js/@sapphire/snowflake": ["@sapphire/snowflake@3.5.3", "", {}, "sha512-jjmJywLAFoWeBi1W7994zZyiNWPIiqRRNAmSERxyg93xRGzNYvGjlZ0gR6x0F4gPRi2+0O6S71kOZYyr3cxaIQ=="],
 

@@ -1,4 +1,4 @@
-import { isPremiumInstance } from '@ap/utils';
+import { config } from '@ap/config';
 import type { Filter } from '@ap/validations';
 import type { Message, NewsChannel } from 'discord.js';
 import { Services } from './index.js';
@@ -11,7 +11,7 @@ import { Services } from './index.js';
  */
 const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean> => {
   // Skip filter check if not premium
-  if (!isPremiumInstance) {
+  if (!config.isPremiumInstance) {
     return true;
   }
 

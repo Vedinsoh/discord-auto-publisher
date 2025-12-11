@@ -1,3 +1,5 @@
+import type { FilterType } from '@ap/validations';
+
 /**
  * Sleep for a given amount of time
  * @param ms Time in milliseconds
@@ -15,12 +17,6 @@ export const capitalize = (str: string): string => {
 };
 
 /**
- * Check if the application is running in premium edition
- * @returns boolean indicating if premium edition is active
- */
-export const isPremiumInstance = process.env.APP_EDITION === 'premium';
-
-/**
  * Normalize filter values based on filter type
  * - Keyword filters: converted to lowercase for case-insensitive matching
  * - Other filter types: returned as-is
@@ -28,10 +24,7 @@ export const isPremiumInstance = process.env.APP_EDITION === 'premium';
  * @param filterType Type of filter
  * @returns Normalized filter values
  */
-export const normalizeFilterValues = (
-  values: string[],
-  filterType: 'keyword' | 'mention' | 'author' | 'webhook'
-): string[] => {
+export const normalizeFilterValues = (values: string[], filterType: FilterType): string[] => {
   if (filterType === 'keyword') {
     return values.map(value => value.toLowerCase());
   }

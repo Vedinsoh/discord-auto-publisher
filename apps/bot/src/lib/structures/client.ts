@@ -1,5 +1,5 @@
+import { env } from '@ap/config';
 import { SapphireClient } from '@sapphire/framework';
-import { env } from 'lib/config/env.js';
 import { ClusterClient } from './clusterClient.js';
 
 export class BotClient extends SapphireClient {

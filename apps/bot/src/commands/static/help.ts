@@ -1,4 +1,4 @@
-import { isPremiumInstance } from '@ap/utils';
+import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import {
@@ -50,7 +50,7 @@ export class HelpCommand extends Command {
         )
       );
 
-    if (isPremiumInstance) {
+    if (config.isPremiumInstance) {
       replyContainer
         .addSeparatorComponents(separator => separator)
         .addTextDisplayComponents(textDisplay =>

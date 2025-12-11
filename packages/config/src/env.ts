@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { loggerLevels } from '@ap/logger';
-import { cleanEnv, str } from 'envalid';
+import { cleanEnv, num, str, url } from 'envalid';
 
 /**
  * Environment variables
@@ -13,4 +13,12 @@ export const env = cleanEnv(process.env, {
   // Common
   DISCORD_TOKEN: str({ default: '' }),
   APP_EDITION: str({ default: 'free', choices: ['free', 'premium'] }),
+
+  // Backend
+  MONGO_URI: url({ default: 'mongodb://bot:27017' }),
+
+  // Bot core
+  BOT_SUPPORT_GUILD_ID: str({ default: '' }),
+  BOT_SHARDS: num({ default: 1 }),
+  BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 });

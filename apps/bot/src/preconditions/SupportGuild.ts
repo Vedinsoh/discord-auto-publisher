@@ -1,5 +1,5 @@
+import { env } from '@ap/config';
 import { type Command, Precondition } from '@sapphire/framework';
-import { env } from 'lib/config/env.js';
 
 const supportGuildId = env.BOT_SUPPORT_GUILD_ID;
 

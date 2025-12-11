@@ -1,5 +1,5 @@
 {
-  "name": "@ap/utils",
+  "name": "@ap/config",
   "private": true,
   "type": "module",
   "main": "src/index.ts",
@@ -11,7 +11,9 @@
     "start": "bun run ."
   },
   "dependencies": {
-    "@ap/validations": "workspace:*"
+    "@ap/logger": "workspace:*",
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*"

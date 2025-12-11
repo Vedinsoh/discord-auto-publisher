@@ -1,4 +1,4 @@
-import { isPremiumInstance } from '@ap/utils';
+import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
@@ -22,7 +22,7 @@ import {
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
     { name: 'status', chatInputRun: 'chatInputStatus' },
-    ...(isPremiumInstance
+    ...(config.isPremiumInstance
       ? [
           {
             name: 'filter',
@@ -88,7 +88,7 @@ export class APCommand extends Subcommand {
             )
         );
 
-      if (isPremiumInstance) {
+      if (config.isPremiumInstance) {
         command.addSubcommandGroup(group =>
           group //
             .setName('filter')

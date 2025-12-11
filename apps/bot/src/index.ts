@@ -1,4 +1,4 @@
-import { env } from 'lib/config/env.js';
+import { env } from '@ap/config';
 import { ClusterManager } from 'lib/structures/clusterManager.js';
 import { logger } from 'utils/logger.js';
 

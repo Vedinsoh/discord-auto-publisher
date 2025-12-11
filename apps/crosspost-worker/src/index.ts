@@ -1,7 +1,7 @@
+import { env } from '@ap/config';
 import { createErrorHandler, createHealthRoute, createRequestLogger } from '@ap/express';
 import { App } from 'app/index.js';
 import express from 'express';
-import { env } from 'lib/config/env.js';
 import { logger } from 'utils/logger.js';
 
 // Create the Express app
