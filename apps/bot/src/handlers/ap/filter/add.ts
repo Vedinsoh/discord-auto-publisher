@@ -1,3 +1,4 @@
+import { config } from '@ap/config';
 import { capitalize, normalizeFilterValues } from '@ap/utils';
 import { FilterMode, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
@@ -54,10 +55,10 @@ export async function chatInputFilterAdd(
 
     // Check filter count
     const currentFilters = channelStatus.filters?.length ?? 0;
-    if (currentFilters >= 5) {
+    if (currentFilters >= config.limits.filtersPerChannel) {
       const maxFiltersContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.crossmark} Maximum 5 filters per channel. Remove a filter before adding a new one.`
+          `${emojis.crossmark} Maximum ${config.limits.filtersPerChannel} filters per channel. Remove a filter before adding a new one.`
         )
       );
 
@@ -117,7 +118,7 @@ export async function chatInputFilterAdd(
 
         if (errorMessage.includes('Maximum') && errorMessage.includes('filters')) {
           // Max filters error
-          userMessage = `${emojis.crossmark} Maximum 5 filters per channel. Remove a filter before adding a new one.`;
+          userMessage = `${emojis.crossmark} Maximum ${config.limits.filtersPerChannel} filters per channel. Remove a filter before adding a new one.`;
         } else if (errorMessage.startsWith('Invalid input:')) {
           // Validation error - show the specific validation message
           userMessage = `${emojis.crossmark} ${errorMessage}`;
@@ -231,7 +232,9 @@ export async function chatInputFilterAdd(
 function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder {
   const modal = new ModalBuilder()
     .setCustomId(`filter_add_${type}`)
-    .setTitle(`Add ${capitalize(type)} Filter (${currentCount + 1}/5)`);
+    .setTitle(
+      `Add ${capitalize(type)} Filter (${currentCount + 1}/${config.limits.filtersPerChannel})`
+    );
 
   // Mode selection (common to all types)
   const modeSelect = new StringSelectMenuBuilder()

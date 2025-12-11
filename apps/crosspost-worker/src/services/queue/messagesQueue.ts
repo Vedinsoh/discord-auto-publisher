@@ -1,3 +1,4 @@
+import { config } from '@ap/config';
 import { minToMs, msToSec, secToMs } from '@ap/utils';
 import { DiscordSnowflake } from '@sapphire/snowflake';
 import type { Snowflake } from 'discord-api-types/v10';
@@ -11,7 +12,7 @@ import { ChannelQueue } from './channelQueue.js';
  */
 export class Queue {
   private _queue = new PQueue({
-    intervalCap: 45,
+    intervalCap: config.crosspostWorker.requestsPerSecond,
     concurrency: 20,
     interval: secToMs(1),
     timeout: minToMs(5),

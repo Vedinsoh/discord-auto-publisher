@@ -1,4 +1,4 @@
-import { env } from '@ap/config';
+import { config, env } from '@ap/config';
 import { REST, RequestMethod } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { Routes } from 'discord-api-types/v10';
@@ -13,6 +13,7 @@ const rest = new REST({
 
     return isPostMethod && isCrosspostRoute && !isGlobal;
   },
+  globalRequestsPerSecond: config.crosspostWorker.requestsPerSecond,
 }).setToken(env.DISCORD_TOKEN);
 
 const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {

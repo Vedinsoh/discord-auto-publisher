@@ -17,7 +17,7 @@ export const env = cleanEnv(process.env, {
   // Backend
   MONGO_URI: url({ default: 'mongodb://bot:27017' }),
 
-  // Bot core
+  // Bot
   BOT_SUPPORT_GUILD_ID: str({ default: '' }),
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),

@@ -1,4 +1,4 @@
-import { CreateFilterSchema, FilterMatchMode, Validations } from '@ap/validations';
+import { CreateFilterSchema, FilterMatchModeSchema, Validations } from '@ap/validations';
 import { z } from 'zod';
 
 export const ChannelReqSchema = z.object({
@@ -55,6 +55,6 @@ export const SetFilterModeReqSchema = z.object({
     channelId: Validations.snowflakeId,
   }),
   body: z.object({
-    mode: FilterMatchMode,
+    mode: FilterMatchModeSchema,
   }),
 });

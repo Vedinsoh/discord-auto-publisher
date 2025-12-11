@@ -1,3 +1,4 @@
+import { config } from '@ap/config';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links, messages } from 'lib/constants/index.js';
@@ -78,7 +79,7 @@ export async function chatInputEnable(
       if (response.status === 400) {
         const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.crossmark} You have reached the maximum number of channels (3) for auto-publishing.\n\n` +
+            `${emojis.crossmark} You have reached the maximum number of channels (${config.limits.channelsPerGuild}) for auto-publishing.\n\n` +
               `✨ Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`
           )
         );

@@ -1,9 +1,9 @@
+import { config } from '@ap/config';
 import { db } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { PlanLimits } from 'lib/constants/app.js';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
 
@@ -165,7 +165,10 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
     where: { guildId },
   });
 
-  if (PlanLimits.ChannelsPerGuild !== 0 && guildChannelsCount >= PlanLimits.ChannelsPerGuild) {
+  if (
+    config.limits.channelsPerGuild !== 0 &&
+    guildChannelsCount >= config.limits.channelsPerGuild
+  ) {
     throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST);
   }
 

@@ -1,11 +1,10 @@
 import { randomUUID } from 'node:crypto';
+import { config } from '@ap/config';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import type { CreateFilter, Filter } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
 import * as ChannelOps from './operations.js';
-
-const MAX_FILTERS_PER_CHANNEL = 5;
 
 /**
  * Add filter to channel
@@ -21,9 +20,9 @@ const add = async (channelId: Snowflake, filterData: CreateFilter): Promise<Filt
       throw createHttpError('Channel not found', StatusCodes.NOT_FOUND);
     }
 
-    if (channel.filters.length >= MAX_FILTERS_PER_CHANNEL) {
+    if (channel.filters.length >= config.limits.filtersPerChannel) {
       throw createHttpError(
-        `Maximum ${MAX_FILTERS_PER_CHANNEL} filters per channel`,
+        `Maximum ${config.limits.filtersPerChannel} filters per channel`,
         StatusCodes.BAD_REQUEST
       );
     }
