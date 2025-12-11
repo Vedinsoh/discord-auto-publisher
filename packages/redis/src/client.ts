@@ -28,7 +28,7 @@ export class RedisClient {
 
   public async disconnect() {
     try {
-      await this.client.disconnect();
+      await this.client.close();
       this._logger.info(`Disconnected from Redis database ${this._databaseId}`);
     } catch (error) {
       this._logger.error(error);

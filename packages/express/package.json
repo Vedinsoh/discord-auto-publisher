@@ -13,17 +13,16 @@
   },
   "dependencies": {
     "@ap/config": "workspace:*",
-    "discord-api-types": "^0.38.26",
-    "express": "^4.19.2",
+    "discord-api-types": "^0.38.37",
+    "express": "^5.2.1",
     "http-status-codes": "^2.3.0",
-    "pino": "^9.11.0",
-    "pino-http": "^10.4.0",
-    "zod": "^4.1.11"
+    "pino": "^10.1.0",
+    "pino-http": "^11.0.0",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*",
-    "@types/express": "^4.17.21",
-    "@types/node": "^22.14.0",
-    "typescript": "^5.8.3"
+    "@types/express": "^5.0.6",
+    "typescript": "^5.9.3"
   }
 }

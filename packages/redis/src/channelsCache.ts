@@ -62,7 +62,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   const getAll = async (): Promise<Snowflake[]> => {
     const keyPattern = `${channelKey}:*`;
     const keys: string[] = [];
-    let cursor = 0;
+    let cursor = '0';
 
     do {
       const result = await client.scan(cursor, {
@@ -71,7 +71,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
       });
       cursor = result.cursor;
       keys.push(...result.keys);
-    } while (cursor !== 0);
+    } while (cursor !== '0');
 
     return keys.map(key => key.replace(`${channelKey}:`, '') as Snowflake);
   };
@@ -79,7 +79,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   const getSize = async () => {
     const keyPattern = `${channelKey}:*`;
     const keys: string[] = [];
-    let cursor = 0;
+    let cursor = '0';
 
     do {
       const result = await client.scan(cursor, {
@@ -88,7 +88,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
       });
       cursor = result.cursor;
       keys.push(...result.keys);
-    } while (cursor !== 0);
+    } while (cursor !== '0');
 
     return keys.length;
   };

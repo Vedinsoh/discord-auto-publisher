@@ -10,7 +10,7 @@ export class ChannelQueue {
     intervalCap: 1,
     interval: secToMs(10),
     timeout: minToMs(60),
-    carryoverConcurrencyCount: true,
+    carryoverIntervalCount: true,
     autoStart: true,
   });
   private _lastActivity = Date.now();

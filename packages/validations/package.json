@@ -11,7 +11,7 @@
     "start": "bun run ."
   },
   "dependencies": {
-    "zod": "^4.1.11"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*"

@@ -16,14 +16,14 @@
     "@ap/validations": "workspace:*",
     "@sapphire/decorators": "^6.2.0",
     "@sapphire/discord.js-utilities": "^7.3.3",
-    "@sapphire/framework": "^5.3.6",
+    "@sapphire/framework": "^5.4.0",
     "@sapphire/plugin-subcommands": "^7.0.1",
     "@sapphire/utilities": "^3.18.2",
     "discord-hybrid-sharding": "^3.0.1",
     "discord.js": "^14.25.1"
   },
   "optionalDependencies": {
-    "bufferutil": "^4.0.8",
+    "bufferutil": "^4.0.9",
     "zlib-sync": "^0.1.10"
   },
   "devDependencies": {

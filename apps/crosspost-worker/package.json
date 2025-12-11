@@ -16,9 +16,9 @@
     "@ap/redis": "workspace:*",
     "@ap/utils": "workspace:*",
     "@discordjs/rest": "^2.6.0",
-    "@sapphire/snowflake": "^3.5.3",
+    "@sapphire/snowflake": "^3.5.5",
     "discord-api-types": "^0.38.37",
-    "express": "^4.19.2",
-    "p-queue": "^8.0.1"
+    "express": "^5.2.1",
+    "p-queue": "^9.0.1"
   }
 }
