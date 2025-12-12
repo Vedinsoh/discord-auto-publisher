@@ -6,7 +6,6 @@
     "build": "tsc",
     "clean": "rimraf dist",
     "check-types": "tsc --noEmit",
-    "dev": "bun --watch run .",
     "start": "bun run ."
   },
   "dependencies": {
