@@ -2,7 +2,9 @@ import { minToSec } from '@ap/utils';
 import { Drivers } from 'data/drivers/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 
-const createChannelCounter = (client: typeof Drivers.Redis.ChannelCounter) => {
+const client = Drivers.Redis.ChannelCounter;
+
+const createChannelCounter = () => {
   const _createKey = (channelId: Snowflake) => `channel:${channelId}`;
 
   const set = async (channelId: Snowflake, { count = 1, ttl = minToSec(60) }) => {
@@ -42,4 +44,4 @@ const createChannelCounter = (client: typeof Drivers.Redis.ChannelCounter) => {
   return { set, getCount, getExpiration, getSize };
 };
 
-export const Channel = createChannelCounter(Drivers.Redis.ChannelCounter);
+export const Channel = createChannelCounter();

@@ -1,7 +1,6 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: - */
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import type { ZodError, ZodSchema } from 'zod';
+import type { ZodError, ZodType } from 'zod';
 
 /**
  * Standard API response format
@@ -103,13 +102,13 @@ export const sendErrorResponse = (
 };
 
 export const validateRequest =
-  (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
+  (schema: ZodType) => (req: Request, res: Response, next: NextFunction) => {
     try {
       schema.parse({ body: req.body, query: req.query, params: req.params });
       next();
     } catch (err) {
-      const zodError = err as ZodError<any>;
-      const errorMessage = `Invalid input: ${zodError.issues.map((e: any) => e.message).join(', ')}`;
+      const zodError = err as ZodError<unknown>;
+      const errorMessage = `Invalid input: ${zodError.issues.map((e: unknown) => (e as { message: string }).message).join(', ')}`;
       res.status(StatusCodes.BAD_REQUEST).json({
         status: StatusCodes.BAD_REQUEST,
         message: errorMessage,
