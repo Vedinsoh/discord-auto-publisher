@@ -1,17 +1,8 @@
-import { DatabaseIDs, RedisClient } from '@ap/redis';
 import { minToSec } from '@ap/utils';
+import { Drivers } from 'data/drivers/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { logger } from 'utils/logger.js';
 
-// Initialize Redis clients
-const channelCounterClient = new RedisClient(DatabaseIDs.ChannelsCrosspostsCount, logger);
-const rateLimitsClient = new RedisClient(DatabaseIDs.RateLimitsCache, logger);
-
-await channelCounterClient.connect();
-await rateLimitsClient.connect();
-
-// Channel crossposts cache implementation
-const createChannelCounter = (client: typeof channelCounterClient.client) => {
+const createChannelCounter = (client: typeof Drivers.Redis.ChannelCounter) => {
   const _createKey = (channelId: Snowflake) => `channel:${channelId}`;
 
   const set = async (channelId: Snowflake, { count = 1, ttl = minToSec(60) }) => {
@@ -36,7 +27,7 @@ const createChannelCounter = (client: typeof channelCounterClient.client) => {
 
   const getSize = async (): Promise<number> => {
     const keys: string[] = [];
-    let cursor = 0;
+    let cursor = '0';
     do {
       const result = await client.scan(cursor, {
         MATCH: 'channel:*',
@@ -44,12 +35,11 @@ const createChannelCounter = (client: typeof channelCounterClient.client) => {
       });
       cursor = result.cursor;
       keys.push(...result.keys);
-    } while (cursor !== 0);
+    } while (cursor !== '0');
     return keys.length;
   };
 
   return { set, getCount, getExpiration, getSize };
 };
 
-export const ChannelCounter = createChannelCounter(channelCounterClient.client);
-export const RateLimitsCache = rateLimitsClient.client;
+export const Channel = createChannelCounter(Drivers.Redis.ChannelCounter);

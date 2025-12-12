@@ -1,5 +1,6 @@
-import { Services } from 'services/index.js';
+import { Data } from 'data/index.js';
 import { logger } from 'utils/logger.js';
+import { Services } from './index.js';
 
 export interface MetricsResponse {
   queue: {
@@ -18,7 +19,7 @@ export interface MetricsResponse {
 const get = async (): Promise<MetricsResponse> => {
   try {
     const queueInfo = Services.Crosspost.Queue.getInfo();
-    const rateLimitsSize = await Services.RateLimitsCache.getSize();
+    const rateLimitsSize = await Data.Cache.RateLimits.getSize();
 
     return {
       queue: {

@@ -141,7 +141,8 @@ export class Queue {
    * Check rate limits and pause/resume the queue
    */
   private async _rateLimitsCheck() {
-    const rateLimitSize = await Services.RateLimitsCache.getSize();
+    const { Data } = await import('data/index.js');
+    const rateLimitSize = await Data.Cache.RateLimits.getSize();
     if (this._queue.isPaused) {
       if (rateLimitSize < 8000 && this._queue.size === 0) {
         this.resume();

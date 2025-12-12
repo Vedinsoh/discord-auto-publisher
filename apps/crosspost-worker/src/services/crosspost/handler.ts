@@ -1,10 +1,10 @@
 import { msToSec, sleep } from '@ap/utils';
 import { DiscordAPIError, RateLimitError } from '@discordjs/rest';
+import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { RESTJSONErrorCodes as ErrorCodes } from 'discord-api-types/v10';
 import { Discord as DiscordConstants } from 'lib/constants/discord.js';
-import { Backend } from 'services/backend.js';
-import { Discord } from 'services/discord.js';
+import { Clients } from 'services/clients/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
@@ -27,10 +27,10 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
     if (isOverLimit) return;
 
     // Crosspost the message & increment the counter for the channel
-    await Discord.crosspost(channelId, messageId);
+    await Clients.Discord.crosspost(channelId, messageId);
     await Services.Crosspost.Counter.increment(channelId);
     // Unflag channel after successful crosspost
-    await Backend.unflagChannel(channelId);
+    await Clients.Backend.unflagChannel(channelId);
 
     logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
   } catch (error: unknown) {
@@ -39,7 +39,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
       // Add the rate limit to the cache
       // Shared rate limits are not counted against the bot
       if (error.scope !== 'shared') {
-        Services.RateLimitsCache.add(429);
+        Data.Cache.RateLimits.add(429);
       }
 
       // Pause the global queue if the rate limit is global
@@ -69,7 +69,7 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
       // Cache the invalid request status codes
       if (invalidRequestCodes.includes(error.status)) {
-        Services.RateLimitsCache.add(error.status);
+        Data.Cache.RateLimits.add(error.status);
       }
 
       // Increment the counter if the message was already crossposted
@@ -80,14 +80,14 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
       // Handle missing permissions error - flag channel for grace period
       if (errorCode === ErrorCodes.MissingPermissions || errorCode === ErrorCodes.MissingAccess) {
         logger.debug(`Channel ${channelId} invalid, flagging for grace period`);
-        await Backend.flagChannel(channelId);
+        await Clients.Backend.flagChannel(channelId);
         return;
       }
 
       // Handle unknown channel error (channel deleted) - notify backend to disable channel
       if (errorCode === ErrorCodes.UnknownChannel) {
         logger.debug(`Channel ${channelId} no longer exists, notifying backend to disable`);
-        await Backend.disableChannel(channelId);
+        await Clients.Backend.disableChannel(channelId);
         return;
       }
 
