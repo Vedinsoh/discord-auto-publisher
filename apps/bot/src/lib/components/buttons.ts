@@ -8,7 +8,7 @@ export const website = new ButtonBuilder()
 
 export const getPremium = new ButtonBuilder()
   .setLabel('Get Premium')
-  .setURL(links.premumPage)
+  .setURL(links.premiumPage)
   .setStyle(ButtonStyle.Link);
 
 export const botInvite = new ButtonBuilder()

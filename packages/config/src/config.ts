@@ -1,5 +1,7 @@
 import { env } from './env.js';
 
+const IS_PREMIUM = env.APP_EDITION === 'premium';
+
 /**
  * Application configuration
  */
@@ -7,7 +9,7 @@ export const config = {
   /**
    * Check if the application is running in premium edition
    */
-  isPremiumInstance: env.APP_EDITION === 'premium',
+  isPremiumInstance: IS_PREMIUM,
   /**
    * Application limits
    */
@@ -15,7 +17,7 @@ export const config = {
     /**
      * Maximum channels per guild
      */
-    channelsPerGuild: env.APP_EDITION === 'premium' ? 0 : 3,
+    channelsPerGuild: IS_PREMIUM ? 0 : 3,
     /**
      * Maximum filters per channel
      */

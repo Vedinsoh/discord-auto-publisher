@@ -1,10 +1,12 @@
+import { config } from '@ap/config';
+
 const HOSTNAME = 'auto-publisher.gg';
 const WEBSITE = `https://${HOSTNAME}`;
 
 export const links = {
   hostname: HOSTNAME,
   website: WEBSITE,
-  premumPage: `${WEBSITE}/premium`,
+  premiumPage: `${WEBSITE}/premium`,
   supportGuildInvite: 'https://discord.gg/xcEeJkdQX8',
   botInvite: `https://discord.com/oauth2/authorize?client_id=739823232651100180&permissions=10240&integration_type=0&scope=bot+applications.commands`,
 };
@@ -24,8 +26,7 @@ export const emojis = {
 export const messages = {
   rateLimitNote:
     '\n\n-# Note: Discord only allows up to 10 messages to be published per hour per channel!',
-  delayNote:
-    process.env.APP_EDITION === 'free'
-      ? '\n\n-# Note: Messages might have delays in publishing due to Discord API limiting the bot.'
-      : '',
+  delayNote: config.isPremiumInstance
+    ? '\n\n-# Note: Messages might have delays in publishing due to Discord API limiting the bot.'
+    : '',
 };
