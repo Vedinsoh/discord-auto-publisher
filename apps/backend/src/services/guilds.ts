@@ -1,4 +1,5 @@
 import { db } from '@ap/database';
+import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
 import { Channels } from './channels/index.js';
@@ -15,21 +16,6 @@ const upsert = async (guildId: Snowflake) => {
       create: { guildId },
       update: {},
     });
-  } catch (error) {
-    logger.error(error);
-    throw error;
-  }
-};
-
-/**
- * Ensure guild exists in DB (creates if not exists)
- * @param guildId ID of the guild
- * @returns void
- */
-const ensureExists = async (guildId: Snowflake) => {
-  try {
-    await upsert(guildId);
-    logger.debug(`Ensured guild ${guildId} exists in DB`);
   } catch (error) {
     logger.error(error);
     throw error;
@@ -73,6 +59,11 @@ const remove = async (guildId: Snowflake): Promise<void> => {
       where: { guildId },
     });
 
+    // MIGRATION: Remove guild migration marker from cache (also done in removeByGuildId,
+    // but needed here for guilds with 0 channels that were registered via registerNewGuild)
+    // TODO: After transition (6 months), remove this line
+    await Data.Drivers.Redis.MigratedGuilds.del(`migrated_guild:${guildId}`);
+
     logger.debug(`Deleted guild ${guildId} and ${removedChannelIds.length} associated channels`);
   } catch (error) {
     logger.error(error);
@@ -80,9 +71,29 @@ const remove = async (guildId: Snowflake): Promise<void> => {
   }
 };
 
+/**
+ * Register new guild in DB and cache (marks as using new system)
+ * MIGRATION: After transition (6 months), remove this function entirely
+ * @param guildId ID of the guild
+ */
+const registerNewGuild = async (guildId: Snowflake): Promise<void> => {
+  try {
+    // Create guild in DB (source of truth for cache sync)
+    await upsert(guildId);
+
+    // Set migration marker in cache (DB 3)
+    await Data.Drivers.Redis.MigratedGuilds.set(`migrated_guild:${guildId}`, '1');
+
+    logger.debug(`Registered new guild ${guildId} in DB and cache`);
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to register new guild');
+  }
+};
+
 export const Guilds = {
   upsert,
-  ensureExists,
   getChannels,
   remove,
+  registerNewGuild,
 };

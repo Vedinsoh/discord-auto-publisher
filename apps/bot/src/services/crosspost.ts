@@ -53,7 +53,15 @@ const handle = async (message: Message, channel: NewsChannel) => {
  * @param message Message to crosspost
  */
 const push = async (message: ReceivedMessage) => {
-  return await Data.API.CrosspostWorker.pushCrosspost(message.channel.id, message.id);
+  // MIGRATION: Added guildId parameter
+  // TODO: After migration (6 months), remove guildId param
+  if (!message.guildId) return;
+
+  return await Data.API.CrosspostWorker.pushCrosspost(
+    message.guildId,
+    message.channel.id,
+    message.id
+  );
 };
 
 export const Crosspost = { handle, push };

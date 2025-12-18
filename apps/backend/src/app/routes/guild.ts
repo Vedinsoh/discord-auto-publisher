@@ -44,5 +44,24 @@ export const Guild: Router = (() => {
     }
   });
 
+  /**
+   * Register new guild in cache (marks as using new system)
+   * MIGRATION: After transition (6 months), remove this endpoint entirely
+   */
+  router.post('/new', validateRequest(GuildReqSchema), async (req: Request, res: Response) => {
+    const { guildId } = req.params;
+
+    try {
+      await Services.Guilds.registerNewGuild(guildId as string);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Guild registered successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to register new guild');
+    }
+  });
+
   return router;
 })();

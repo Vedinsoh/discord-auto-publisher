@@ -14,9 +14,16 @@ export const Enqueue: Router = (() => {
     validateRequest(EnqueueReqSchema),
     async (req: Request, res: Response) => {
       const { channelId, messageId } = req.params;
+      const { guildId } = req.body; // MIGRATION: Extract guildId from body
 
       try {
-        await Services.Crosspost.Handler.push(channelId as string, messageId as string);
+        // MIGRATION: Pass guildId to push
+        // TODO: After migration (6 months), remove guildId param
+        await Services.Crosspost.Handler.push(
+          guildId as string,
+          channelId as string,
+          messageId as string
+        );
         res.status(StatusCodes.OK).json({
           status: StatusCodes.OK,
           data: { pushed: true },

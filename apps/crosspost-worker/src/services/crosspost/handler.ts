@@ -104,37 +104,79 @@ export const submit = async (channelId: Snowflake, messageId: Snowflake, retries
 
 /**
  * Push message to crosspost queue
+ * @param guildId ID of the guild (MIGRATION: temporary parameter)
  * @param channelId ID of the channel
  * @param messageId ID of the message
  */
-export const push = async (channelId: Snowflake, messageId: Snowflake): Promise<void> => {
+// MIGRATION: Added guildId parameter
+// TODO: After migration (6 months), remove guildId param and revert to simple version
+export const push = async (
+  guildId: Snowflake,
+  channelId: Snowflake,
+  messageId: Snowflake
+): Promise<void> => {
   try {
-    // TODO: MIGRATION MODE - Remove this comment block after migration period ends
-    // During migration: Allow all announcement channels to auto-publish regardless of cache
-    // After migration: Uncomment the cache check below to enforce enabled-channels-only
-    /*
-    // Check if channel is in cache (i.e., enabled for auto-publishing)
-    const isChannelEnabled = await ChannelsCache.get(channelId);
+    // MIGRATION: Check if guild has migrated to new system (DB 3)
+    // TODO: After migration period (6 months), replace with simple version below
+    const isMigrated = await Data.Drivers.Redis.MigratedGuilds.exists(`migrated_guild:${guildId}`);
 
-    if (!isChannelEnabled) {
+    if (isMigrated) {
+      // Migrated guild - enforce enabled-channels-only
+      const isEnabled = await Data.Cache.Channels.isEnabled(channelId);
+
+      if (!isEnabled) {
+        logger.debug(
+          `Channel ${channelId} not enabled (guild ${guildId} migrated), skipping message ${messageId}`
+        );
+        return; // Silently ignore non-enabled channels
+      }
+
       logger.debug(
-        `Channel ${channelId} not enabled for auto-publishing, skipping message ${messageId}`
+        `Migrated guild ${guildId}: channel ${channelId} enabled, queueing message ${messageId}`
       );
-
-      const error: Error & { statusCode?: number } = new Error('Channel not enabled for auto-publishing');
-      error.statusCode = StatusCodes.NOT_FOUND;
-      throw error;
+    } else {
+      // Legacy guild - allow all announcement channels
+      logger.debug(
+        `Legacy guild ${guildId}: auto-publishing channel ${channelId}, message ${messageId}`
+      );
     }
-    */
 
     Services.Crosspost.Queue.add(channelId, messageId);
-
     logger.debug(`Message ${messageId} pushed to crosspost queue`);
   } catch (error) {
     logger.error(error);
     throw new Error('Error pushing message to crosspost queue');
   }
 };
+
+/*
+// MIGRATION: After 6-month period, replace entire push() with this simple version:
+export const push = async (channelId: Snowflake, messageId: Snowflake): Promise<void> => {
+  try {
+    const isEnabled = await Data.Cache.Channels.isEnabled(channelId);
+
+    if (!isEnabled) {
+      logger.debug(
+        `Channel ${channelId} not enabled for auto-publishing, skipping message ${messageId}`
+      );
+
+      const error: Error & { statusCode?: number } = new Error(
+        'Channel not enabled for auto-publishing'
+      );
+      error.statusCode = StatusCodes.NOT_FOUND;
+      throw error;
+    }
+
+    Services.Crosspost.Queue.add(channelId, messageId);
+    logger.debug(`Message ${messageId} pushed to crosspost queue`);
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Error pushing message to crosspost queue');
+  }
+};
+
+// Also revert bot API calls and route to 2-parameter versions
+*/
 
 export const Handler = {
   push,

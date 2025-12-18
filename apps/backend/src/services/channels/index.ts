@@ -52,7 +52,23 @@ const initialize = async () => {
 
     logger.info(`Phase 1 complete: synced ${syncedCount} channels`);
 
-    // Phase 2: Remove stale cache entries (channels deleted during downtime)
+    // MIGRATION: Phase 2 - Cache migrated guild IDs from guilds collection
+    // TODO: Remove this block after migration period (6 months)
+    logger.info('Phase 2: Syncing migrated guilds to cache');
+    const migratedGuilds = await db.guilds.findMany({
+      select: { guildId: true },
+    });
+
+    if (migratedGuilds.length > 0) {
+      const pipeline = Data.Drivers.Redis.MigratedGuilds.multi();
+      for (const guild of migratedGuilds) {
+        pipeline.set(`migrated_guild:${guild.guildId}`, '1');
+      }
+      await pipeline.exec();
+      logger.info(`Phase 2 complete: cached ${migratedGuilds.length} migrated guilds`);
+    }
+
+    // Phase 3: Remove stale cache entries (channels deleted during downtime)
     const cachedIds = await Data.Channels.Cache.getAll();
 
     // Batch DB query for existence check
@@ -192,6 +208,10 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
     dbCreated = true;
     await Data.Channels.Cache.set(channelId, [], FilterMatchMode.Any);
 
+    // MIGRATION: Mark guild as migrated (first channel enable)
+    // TODO: Remove this call after migration period (6 months)
+    await Data.Drivers.Redis.MigratedGuilds.set(`migrated_guild:${guildId}`, '1');
+
     logger.debug(`Added channel ${channelId} for guild ${guildId}`);
   } catch (error) {
     // If DB creation succeeded but cache failed, rollback DB
@@ -240,12 +260,12 @@ const removeByGuildId = async (guildId: Snowflake) => {
       select: { channelId: true },
     });
 
-    const channelIds = guildChannels.map(c => c.channelId);
-
     // Delete all channels for this guild in a single query
     await db.channels.deleteMany({
       where: { guildId },
     });
+
+    const channelIds = guildChannels.map(c => c.channelId);
 
     // Remove all channels from cache in a single operation
     if (channelIds.length > 0) {

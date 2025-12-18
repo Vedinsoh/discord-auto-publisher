@@ -39,6 +39,14 @@ const deleteGuild = async (guildId: Snowflake) => {
   });
 };
 
+// Register new guild in cache (marks as using new system)
+// MIGRATION: After transition (6 months), remove this function
+const registerNewGuild = async (guildId: Snowflake) => {
+  return fetch(`${baseUrl}/guild/${guildId}/new`, {
+    method: RequestMethod.Post,
+  });
+};
+
 // Info
 const getInfo = async () => {
   return fetch(`${baseUrl}/info`);
@@ -94,6 +102,7 @@ export const Backend = {
   getChannel,
   getGuildChannels,
   deleteGuild,
+  registerNewGuild,
   addFilter,
   removeFilter,
   getFilters,
