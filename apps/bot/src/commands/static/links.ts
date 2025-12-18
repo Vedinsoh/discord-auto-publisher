@@ -40,16 +40,14 @@ export class LinksCommand extends Command {
       .addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent('Find out more on the website')
-          )
-          .setButtonAccessory(Buttons.website)
-      )
-      .addSectionComponents(section =>
-        section
-          .addTextDisplayComponents(textDisplay =>
             textDisplay.setContent('Join the support server')
           )
           .setButtonAccessory(Buttons.supportServer)
+      )
+      .addSectionComponents(section =>
+        section
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent('Official website'))
+          .setButtonAccessory(Buttons.website)
       );
 
     return interaction.reply({

@@ -2,7 +2,7 @@ import { ButtonBuilder, ButtonStyle } from 'discord.js';
 import { emojis, links } from 'lib/constants/index.js';
 
 export const website = new ButtonBuilder()
-  .setLabel('Website')
+  .setLabel(links.hostname)
   .setURL(links.website)
   .setStyle(ButtonStyle.Link);
 

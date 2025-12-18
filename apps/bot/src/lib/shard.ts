@@ -16,6 +16,8 @@ export const client = new BotClient({
     ...Options.DefaultMakeCacheSettings,
     AutoModerationRuleManager: 0,
     BaseGuildEmojiManager: 0,
+    DMMessageManager: 0,
+    EntitlementManager: 0,
     GuildBanManager: 0,
     GuildEmojiManager: 0,
     GuildForumThreadManager: 0,
