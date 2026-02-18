@@ -22,7 +22,7 @@
     "p-queue": "^8.0.1",
     "pino": "^9.4.0",
     "pino-pretty": "^11.2.2",
-    "re2": "^1.21.4",
+    "re2": "^1.23.3",
     "tsconfig-paths": "^4.2.0",
     "url-regex-safe": "^4.0.0",
     "utf-8-validate": "^6.0.4",
