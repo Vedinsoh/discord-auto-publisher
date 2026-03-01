@@ -16,7 +16,7 @@ RUN bun install --no-optional
 # Copy source code with proper ownership for watch mode
 COPY --chown=app:app . .
 
-# Generate Prisma client for the target platform
+# Generate database client before building the bot (if needed by the build process)
 RUN bun run db:generate
 
 # Switch to non-root user for security and watch compatibility

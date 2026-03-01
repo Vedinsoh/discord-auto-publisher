@@ -183,7 +183,7 @@ export async function chatInputFilterAdd(
     const modeEmoji = mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark;
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Type:** ${type}${valueCount}\n**Mode:** ${modeEmoji} ${mode}\n**Values:** ${displayValues}\n\n-# ${modeText}`
+        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Type:** ${capitalize(type)}${valueCount}\n**Mode:** ${modeEmoji} ${capitalize(mode)}\n**Values:** ${displayValues}\n\n-# ${modeText}`
       )
     );
 

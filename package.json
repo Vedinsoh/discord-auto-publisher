@@ -11,6 +11,7 @@
     "check": "bunx @biomejs/biome check .",
     "check:fix": "bunx @biomejs/biome check . --write",
     "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
     "dev:start": "sh ./scripts/bot/dev/start.sh",
     "dev:watch": "sh ./scripts/bot/dev/start.sh --watch",
     "dev:stop": "sh ./scripts/bot/dev/stop.sh",

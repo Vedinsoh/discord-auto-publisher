@@ -60,5 +60,6 @@ coverage/
 # Development scripts (not needed in containers)
 scripts/
 
-# Prisma generated files
-**/prisma/generated
+# Supabase
+supabase/.branches
+supabase/.temp

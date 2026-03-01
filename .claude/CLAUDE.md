@@ -39,14 +39,22 @@ bun run clean            # Clean build artifacts
 bun run check-types      # Type check all packages
 bun run check            # Lint/format check (Biome)
 bun run check:fix        # Lint/format auto-fix
-bun run db:generate      # Generate Prisma client
+bun run db:generate      # Generate Drizzle SQL migration files
+bun run db:migrate       # Apply pending migrations to database
+```
+
+### Supabase (local dev)
+```bash
+supabase start           # Start local Supabase (PostgreSQL on localhost:54322)
+supabase stop            # Stop local Supabase
+supabase status          # Show local Supabase status and connection info
 ```
 
 ## Architecture overview
 
 ### Multi-service design
 ```
-bot (Discord Gateway) <--HTTP--> backend (REST API) <--> MongoDB + Redis
+bot (Discord Gateway) <--HTTP--> backend (REST API) <--> PostgreSQL (Supabase) + Redis
                   \                       /
                    \                     /
                     --> discord-proxy <--
@@ -75,17 +83,17 @@ bot (Discord Gateway) <--HTTP--> backend (REST API) <--> MongoDB + Redis
 - **Backend app used as internal API for bot** - central place for sending Discord API requests
 - Why centralized: bot has multiple processes (shards/clusters), backend centralizes Discord API calls
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
-- Manages MongoDB persistence (Prisma) & Redis cache (https://redis.io/docs/latest/develop/clients/nodejs/)
+- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis cache (https://redis.io/docs/latest/develop/clients/nodejs/)
 - p-queue based crossposting with priority (timestamp-based)
 - Two-tier queue: per-channel queues → global queue
 - Rate limit management (10/hour per channel Discord limit)
 - **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
 - Auto-cleanup on permission/deletion errors
-- Cache sync on startup (reconciles Redis/MongoDB)
-- Tech stack: Express, discord.js, redis, zod (https://v3.zod.dev/)
+- Cache sync on startup (reconciles Redis/PostgreSQL)
+- Tech stack: Express, discord.js, Drizzle ORM (https://orm.drizzle.team), redis, zod (https://v3.zod.dev/)
 
 **Shared packages** (packages/*):
-- **@ap/database**: Prisma client for MongoDB with generated types
+- **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guilds`, `channels`). Migrations in `packages/database/migrations/`.
 - **@ap/logger**: Pino logging utilities (REST & Bot loggers)
 - **@ap/utils**: Common utilities (time, regex, discord helpers)
 - **@ap/validations**: Zod schemas for validation
@@ -110,18 +118,31 @@ bot (Discord Gateway) <--HTTP--> backend (REST API) <--> MongoDB + Redis
 
 **Rollback attempts**: Maintains cache/DB consistency during partial failures. Prevents orphaned cache entries or DB records. Catches & logs rollback failures gracefully.
 
-### Database schema (Prisma + MongoDB)
+### Database schema (Drizzle ORM + PostgreSQL)
 ```
-Guilds {
-  guildId
-  channels[] (relation)
+guilds {
+  id (uuid, pk)
+  guildId (text, unique)
+  createdAt, updatedAt
 }
 
-Channels {
-  channelId (unique), guildId
-  guild (relation)
+channels {
+  id (uuid, pk)
+  channelId (text, unique)
+  guildId (text, FK → guilds.guildId, cascade delete)
+  filters (jsonb, array of ChannelFilter)
+  filterMode (text, default 'any')
+  createdAt, updatedAt
 }
 ```
+
+**Supabase setup**:
+- Local dev: `supabase start` (runs PostgreSQL at `localhost:54322`, credentials `postgres/postgres`)
+- Backend Docker containers connect via `DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:54322/postgres`
+- Production: cloud Supabase connection string in `DATABASE_URL`
+- Config: `supabase/config.toml` (committed, no sensitive data)
+- Migrations: `packages/database/migrations/` (committed SQL files, run via `bun run db:migrate`)
+- `runMigrations()` is called automatically at backend startup
 
 ### Redis structure
 - Database 0: Channels cache (`channel:{channelId}` keys)
@@ -135,7 +156,7 @@ DISCORD_TOKEN
 APP_EDITION: free|premium
 BOT_SHARDS
 BOT_SHARDS_PER_CLUSTER
-MONGO_URI
+DATABASE_URL: postgresql://... (Supabase connection string)
 ```
 
 ## Message publishing flow

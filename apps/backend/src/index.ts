@@ -1,4 +1,5 @@
 import { env } from '@ap/config';
+import { runMigrations } from '@ap/database';
 import { createErrorHandler, createHealthRoute, createRequestLogger } from '@ap/express';
 import { App } from 'app/index.js';
 import express from 'express';
@@ -20,6 +21,9 @@ app.get('/health', createHealthRoute);
 
 // Error handlers
 app.use(...createErrorHandler());
+
+// Run DB migrations before starting
+await runMigrations();
 
 // Sync cache on startup to ensure consistency between DB and cache
 await Services.Channels.initialize();

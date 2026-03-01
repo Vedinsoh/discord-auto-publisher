@@ -17,7 +17,7 @@ RUN bun install
 # Copy source code
 COPY . .
 
-# Generate Prisma client for the target platform
+# Generate database client before building the bot (if needed by the build process)
 RUN bun run db:generate
 
 # Build the project

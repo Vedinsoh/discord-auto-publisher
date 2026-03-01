@@ -1,21 +1,17 @@
-import { db } from '@ap/database';
+import { channel, db, guild } from '@ap/database';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
+import { eq } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { Channels } from './channels/index.js';
 
 /**
  * Create or update guild in DB
  * @param guildId ID of the guild
- * @returns Created/updated guild
  */
-const upsert = async (guildId: Snowflake) => {
+const ensureExists = async (guildId: Snowflake) => {
   try {
-    return await db.guilds.upsert({
-      where: { guildId },
-      create: { guildId },
-      update: {},
-    });
+    await db.insert(guild).values({ guildId }).onConflictDoNothing();
   } catch (error) {
     logger.error(error);
     throw error;
@@ -29,12 +25,12 @@ const upsert = async (guildId: Snowflake) => {
  */
 const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   try {
-    const channels = await db.channels.findMany({
-      where: { guildId },
-      select: { channelId: true },
-    });
+    const rows = await db
+      .select({ channelId: channel.channelId })
+      .from(channel)
+      .where(eq(channel.guildId, guildId));
 
-    const channelIds = channels.map(c => c.channelId);
+    const channelIds = rows.map(r => r.channelId);
 
     logger.debug(`Retrieved ${channelIds.length} channels for guild ${guildId}`);
 
@@ -54,10 +50,8 @@ const remove = async (guildId: Snowflake): Promise<void> => {
     // Remove all channels for this guild using efficient single query
     const removedChannelIds = await Channels.removeByGuildId(guildId);
 
-    // Delete guild from DB
-    await db.guilds.deleteMany({
-      where: { guildId },
-    });
+    // Delete guild from DB (channels already deleted above; cascade is a safety net)
+    await db.delete(guild).where(eq(guild.guildId, guildId));
 
     // MIGRATION: Remove guild migration marker from cache (also done in removeByGuildId,
     // but needed here for guilds with 0 channels that were registered via registerNewGuild)
@@ -79,7 +73,7 @@ const remove = async (guildId: Snowflake): Promise<void> => {
 const registerNewGuild = async (guildId: Snowflake): Promise<void> => {
   try {
     // Create guild in DB (source of truth for cache sync)
-    await upsert(guildId);
+    await ensureExists(guildId);
 
     // Set migration marker in cache (DB 3)
     await Data.Drivers.Redis.MigratedGuilds.set(`migrated_guild:${guildId}`, '1');
@@ -92,7 +86,7 @@ const registerNewGuild = async (guildId: Snowflake): Promise<void> => {
 };
 
 export const Guilds = {
-  upsert,
+  ensureExists,
   getChannels,
   remove,
   registerNewGuild,

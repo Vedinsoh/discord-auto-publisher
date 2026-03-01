@@ -49,8 +49,9 @@ yarn-error.log*
 # Output of 'npm pack'
 *.tgz
 
-# Prisma generated files
-**/prisma/generated
-
 # Redis
 *.rdb
+
+# Supabase
+supabase/.branches
+supabase/.temp

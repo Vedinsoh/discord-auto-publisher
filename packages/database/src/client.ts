@@ -1,7 +1,8 @@
-import { PrismaClient } from '../prisma/generated/index.js';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema.js';
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+// biome-ignore lint/style/noNonNullAssertion: DATABASE_URL is required for database connection
+const client = postgres(process.env.DATABASE_URL!);
 
-export const prisma = globalForPrisma.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+export const db = drizzle(client, { schema });

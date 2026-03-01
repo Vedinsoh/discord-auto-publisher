@@ -17,9 +17,6 @@ RUN bun install --no-optional
 # Copy remaining source code with proper ownership for watch mode
 COPY --chown=app:app . .
 
-# Generate Prisma client for the target platform
-RUN bun run db:generate
-
 # Switch to non-root user for security and watch compatibility
 USER app
 

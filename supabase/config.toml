@@ -1,0 +1,33 @@
+project_id = "discord-auto-publisher"
+
+[api]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[storage]
+enabled = false
+
+[auth]
+enabled = false
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

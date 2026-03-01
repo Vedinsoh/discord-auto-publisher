@@ -1,2 +1,3 @@
-export * from '../prisma/generated/index.js'; // exports generated types from prisma
-export { prisma as db } from './client.js'; // exports instance of prisma
+export { db } from './client.js';
+export { runMigrations } from './migrate.js';
+export * from './schema.js';

@@ -8,13 +8,15 @@
     "clean": "rimraf dist",
     "check-types": "tsc --noEmit",
     "start": "bun run .",
-    "db:generate": "prisma generate"
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "@prisma/client": "^6.16.3"
+    "drizzle-orm": "^0.44.2",
+    "postgres": "^3.4.7"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*",
-    "prisma": "^6.16.3"
+    "drizzle-kit": "^0.31.2"
   }
 }

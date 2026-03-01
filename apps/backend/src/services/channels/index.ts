@@ -1,9 +1,10 @@
 import { config } from '@ap/config';
-import { db } from '@ap/database';
+import { channel as channelTable, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
+import { asc, count, eq, gt } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
 
@@ -21,11 +22,17 @@ const initialize = async () => {
 
     // Phase 1: Sync DB → cache (cursor-based batching)
     while (true) {
-      const batch = await db.channels.findMany({
-        take: BATCH_SIZE,
-        ...(cursor && { cursor: { id: cursor }, skip: 1 }),
-        select: { id: true, channelId: true, filters: true, filterMode: true },
-      });
+      const batch = await db
+        .select({
+          id: channelTable.id,
+          channelId: channelTable.channelId,
+          filters: channelTable.filters,
+          filterMode: channelTable.filterMode,
+        })
+        .from(channelTable)
+        .where(cursor ? gt(channelTable.id, cursor) : undefined)
+        .orderBy(asc(channelTable.id))
+        .limit(BATCH_SIZE);
 
       if (batch.length === 0) break;
 
@@ -52,17 +59,15 @@ const initialize = async () => {
 
     logger.info(`Phase 1 complete: synced ${syncedCount} channels`);
 
-    // MIGRATION: Phase 2 - Cache migrated guild IDs from guilds collection
+    // MIGRATION: Phase 2 - Cache migrated guild IDs from guild table
     // TODO: Remove this block after migration period (6 months)
     logger.info('Phase 2: Syncing migrated guilds to cache');
-    const migratedGuilds = await db.guilds.findMany({
-      select: { guildId: true },
-    });
+    const migratedGuilds = await db.select({ guildId: guild.guildId }).from(guild);
 
     if (migratedGuilds.length > 0) {
       const pipeline = Data.Drivers.Redis.MigratedGuilds.multi();
-      for (const guild of migratedGuilds) {
-        pipeline.set(`migrated_guild:${guild.guildId}`, '1');
+      for (const g of migratedGuilds) {
+        pipeline.set(`migrated_guild:${g.guildId}`, '1');
       }
       await pipeline.exec();
       logger.info(`Phase 2 complete: cached ${migratedGuilds.length} migrated guilds`);
@@ -76,11 +81,12 @@ const initialize = async () => {
     let dbCursor: string | undefined;
 
     while (true) {
-      const dbBatch = await db.channels.findMany({
-        take: BATCH_SIZE,
-        ...(dbCursor && { cursor: { id: dbCursor }, skip: 1 }),
-        select: { id: true, channelId: true },
-      });
+      const dbBatch = await db
+        .select({ id: channelTable.id, channelId: channelTable.channelId })
+        .from(channelTable)
+        .where(dbCursor ? gt(channelTable.id, dbCursor) : undefined)
+        .orderBy(asc(channelTable.id))
+        .limit(BATCH_SIZE);
 
       if (dbBatch.length === 0) break;
 
@@ -112,9 +118,12 @@ const initialize = async () => {
  * @returns Channel record or null if not found
  */
 const find = async (channelId: Snowflake) => {
-  return await db.channels.findUnique({
-    where: { channelId },
-  });
+  const result = await db
+    .select()
+    .from(channelTable)
+    .where(eq(channelTable.channelId, channelId))
+    .limit(1);
+  return result[0] ?? null;
 };
 
 /**
@@ -165,7 +174,7 @@ const get = async (channelId: Snowflake) => {
 };
 
 /**
- * Add channel to channels DB & cache
+ * Add channel to channel DB & cache
  * @param guildId ID of the guild
  * @param channelId ID of the channel
  */
@@ -177,9 +186,11 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   }
 
   // Check if guild has hit the channels limit
-  const guildChannelsCount = await db.channels.count({
-    where: { guildId },
-  });
+  const countResult = await db
+    .select({ count: count() })
+    .from(channelTable)
+    .where(eq(channelTable.guildId, guildId));
+  const guildChannelsCount = countResult[0]?.count ?? 0;
 
   if (
     config.limits.channelsPerGuild !== 0 &&
@@ -192,19 +203,9 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
 
   try {
     // Ensure guild exists before adding channel
-    await db.guilds.upsert({
-      where: { guildId },
-      create: { guildId },
-      update: {},
-    });
+    await db.insert(guild).values({ guildId }).onConflictDoNothing();
 
-    await db.channels.create({
-      data: {
-        channelId,
-        guildId,
-        filters: [],
-      },
-    });
+    await db.insert(channelTable).values({ channelId, guildId, filters: [] });
     dbCreated = true;
     await Data.Channels.Cache.set(channelId, [], FilterMatchMode.Any);
 
@@ -216,7 +217,10 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   } catch (error) {
     // If DB creation succeeded but cache failed, rollback DB
     if (dbCreated) {
-      await db.channels.deleteMany({ where: { channelId, guildId } }).catch(() => {});
+      await db
+        .delete(channelTable)
+        .where(eq(channelTable.channelId, channelId))
+        .catch(() => {});
     }
     logger.error(error);
     throw new Error('Failed to add channel');
@@ -224,14 +228,14 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
 };
 
 /**
- * Remove channel from channels DB & cache
+ * Remove channel from channel DB & cache
  * @param channelId ID of the channel
  */
 const remove = async (channelId: Snowflake): Promise<void> => {
   let dbDeleted = false;
 
   try {
-    await db.channels.deleteMany({ where: { channelId } });
+    await db.delete(channelTable).where(eq(channelTable.channelId, channelId));
     dbDeleted = true;
     await Data.Channels.Cache.remove(channelId);
 
@@ -248,22 +252,20 @@ const remove = async (channelId: Snowflake): Promise<void> => {
 
 /**
  * Remove all channels for a guild from DB & cache
- * Uses a single deleteMany query for efficiency
+ * Uses a single delete query for efficiency
  * @param guildId ID of the guild
  * @returns Array of removed channel IDs
  */
 const removeByGuildId = async (guildId: Snowflake) => {
   try {
     // First, get all channel IDs for this guild to remove from cache
-    const guildChannels = await db.channels.findMany({
-      where: { guildId },
-      select: { channelId: true },
-    });
+    const guildChannels = await db
+      .select({ channelId: channelTable.channelId })
+      .from(channelTable)
+      .where(eq(channelTable.guildId, guildId));
 
     // Delete all channels for this guild in a single query
-    await db.channels.deleteMany({
-      where: { guildId },
-    });
+    await db.delete(channelTable).where(eq(channelTable.guildId, guildId));
 
     const channelIds = guildChannels.map(c => c.channelId);
 
@@ -285,9 +287,11 @@ const removeByGuildId = async (guildId: Snowflake) => {
  * @returns Number of channels in the guild
  */
 const countByGuild = async (guildId: Snowflake) => {
-  return await db.channels.count({
-    where: { guildId },
-  });
+  const result = await db
+    .select({ count: count() })
+    .from(channelTable)
+    .where(eq(channelTable.guildId, guildId));
+  return result[0]?.count ?? 0;
 };
 
 /**
@@ -298,33 +302,30 @@ const countByGuild = async (guildId: Snowflake) => {
 const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode): Promise<void> => {
   try {
     // Check if channel exists
-    const channel = await find(channelId);
+    const ch = await find(channelId);
 
-    if (!channel) {
+    if (!ch) {
       throw createHttpError('Channel not found', StatusCodes.NOT_FOUND);
     }
 
     let dbUpdated = false;
 
     try {
-      await db.channels.update({
-        where: { channelId },
-        data: {
-          filterMode: mode,
-        },
-      });
+      await db
+        .update(channelTable)
+        .set({ filterMode: mode })
+        .where(eq(channelTable.channelId, channelId));
       dbUpdated = true;
-      await Data.Channels.Cache.updateFilters(channelId, channel.filters, mode);
+      await Data.Channels.Cache.updateFilters(channelId, ch.filters, mode);
 
       logger.debug(`Updated filter mode for channel ${channelId} to ${mode}`);
     } catch (error) {
       // If DB update succeeded but cache update failed, rollback DB
       if (dbUpdated) {
-        await db.channels
-          .update({
-            where: { channelId },
-            data: { filterMode: channel.filterMode },
-          })
+        await db
+          .update(channelTable)
+          .set({ filterMode: ch.filterMode })
+          .where(eq(channelTable.channelId, channelId))
           .catch(() => {});
       }
       logger.error(error);
