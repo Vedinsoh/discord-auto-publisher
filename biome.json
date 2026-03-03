@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.js", "**/*.ts", "**/*.json"]
+    "includes": ["**/*.js", "**/*.ts", "**/*.tsx", "**/*.jsx", "**/*.json"]
   },
   "assist": {
     "actions": {
@@ -53,6 +53,21 @@
       "arrowParentheses": "asNeeded"
     }
   },
+  "overrides": [
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useImportExtensions": "off"
+          },
+          "a11y": {
+            "useKeyWithClickEvents": "off"
+          }
+        }
+      }
+    }
+  ],
   "json": {
     "formatter": {
       "indentStyle": "space",

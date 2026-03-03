@@ -55,3 +55,6 @@ yarn-error.log*
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# Next.js
+next-env.d.ts

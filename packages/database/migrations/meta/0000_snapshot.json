@@ -78,12 +78,8 @@
           "name": "channel_guild_id_guild_guild_id_fk",
           "tableFrom": "channel",
           "tableTo": "guild",
-          "columnsFrom": [
-            "guild_id"
-          ],
-          "columnsTo": [
-            "guild_id"
-          ],
+          "columnsFrom": ["guild_id"],
+          "columnsTo": ["guild_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -93,9 +89,7 @@
         "channel_channel_id_unique": {
           "name": "channel_channel_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "channel_id"
-          ]
+          "columns": ["channel_id"]
         }
       },
       "policies": {},
@@ -141,9 +135,7 @@
         "guild_guild_id_unique": {
           "name": "guild_guild_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "guild_id"
-          ]
+          "columns": ["guild_id"]
         }
       },
       "policies": {},

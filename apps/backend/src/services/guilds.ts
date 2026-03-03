@@ -85,9 +85,34 @@ const registerNewGuild = async (guildId: Snowflake): Promise<void> => {
   }
 };
 
+/**
+ * Get full channel records for a guild from DB (with filters, filterMode)
+ * @param guildId ID of the guild
+ */
+const getChannelRecords = async (guildId: Snowflake) => {
+  try {
+    const rows = await db
+      .select({
+        channelId: channel.channelId,
+        filters: channel.filters,
+        filterMode: channel.filterMode,
+      })
+      .from(channel)
+      .where(eq(channel.guildId, guildId));
+
+    logger.debug(`Retrieved ${rows.length} channel records for guild ${guildId}`);
+
+    return rows;
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to retrieve channel records');
+  }
+};
+
 export const Guilds = {
   ensureExists,
   getChannels,
+  getChannelRecords,
   remove,
   registerNewGuild,
 };

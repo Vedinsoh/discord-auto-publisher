@@ -17,6 +17,17 @@ export const env = cleanEnv(process.env, {
   // Backend
   DATABASE_URL: str({ default: 'postgresql://postgres:postgres@localhost:54322/postgres' }),
 
+  // Paddle
+  PADDLE_API_KEY: str({ default: '' }),
+  PADDLE_WEBHOOK_SECRET: str({ default: '' }),
+  PADDLE_ENVIRONMENT: str({ default: 'sandbox', choices: ['sandbox', 'production'] }),
+
+  // Web
+  WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),
+
+  // Premium
+  PREMIUM_BOT_CLIENT_ID: str({ default: '' }),
+
   // Bot
   BOT_SUPPORT_GUILD_ID: str({ default: '' }),
   BOT_SHARDS: num({ default: 1 }),

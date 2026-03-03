@@ -3,6 +3,7 @@ export enum DatabaseIDs {
   ChannelsCrosspostsCount,
   RateLimitsCache,
   MigratedGuilds, // MIGRATION: After transition (6 months), remove this line
+  DiscordAuthCache,
 }
 
 export enum Keys {

@@ -1,0 +1,17 @@
+{
+  "name": "@ap/api-types",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ap/validations": "workspace:*"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*"
+  }
+}

@@ -4,7 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".next/**"]
     },
     "clean": {
       "cache": false
@@ -20,6 +20,10 @@
       "cache": false
     },
     "db:migrate": {
+      "cache": false
+    },
+    "dev": {
+      "persistent": true,
       "cache": false
     }
   }

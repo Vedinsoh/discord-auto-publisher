@@ -18,6 +18,8 @@
     "dev:logs": "sh ./scripts/bot/dev/logs.sh",
     "dev:ps": "sh ./scripts/bot/dev/ps.sh",
     "dev:cache": "sh ./scripts/bot/dev/cache.sh",
+    "dev:web": "turbo run dev --filter=web",
+    "build:web": "turbo run build --filter=web",
     "prod:start": "sh ./scripts/bot/prod/start.sh",
     "prod:stop": "sh ./scripts/bot/prod/stop.sh",
     "prod:logs": "sh ./scripts/bot/prod/logs.sh",
