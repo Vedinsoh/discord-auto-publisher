@@ -1,19 +1,30 @@
 name: auto-publisher
 
 services:
+  discord-proxy:
+    extends:
+      file: docker-compose.base.yml
+      service: discord-proxy
+
   bot:
     extends:
       file: docker-compose.base.yml
       service: bot
     depends_on:
-      - rest
+      rest:
+        condition: service_started
+      discord-proxy:
+        condition: service_healthy
 
   rest:
     extends:
       file: docker-compose.base.yml
       service: rest
     depends_on:
-      - rest-cache
+      rest-cache:
+        condition: service_started
+      discord-proxy:
+        condition: service_healthy
 
   rest-cache:
     extends:

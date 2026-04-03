@@ -1,6 +1,15 @@
 name: auto-publisher-dev
 
 services:
+  discord-proxy:
+    extends:
+      file: docker-compose.base.yml
+      service: discord-proxy
+    ports:
+      - 8081:8080
+    healthcheck:
+      disable: true
+
   bot:
     extends:
       file: docker-compose.base.yml
@@ -11,7 +20,10 @@ services:
       - ./services/bot/src:/home/node/app/src
       - /home/node/app/node_modules
     depends_on:
-      - rest
+      rest:
+        condition: service_started
+      discord-proxy:
+        condition: service_started
 
   rest:
     extends:
@@ -25,8 +37,12 @@ services:
       - ./services/rest/src:/home/node/app/src
       - /home/node/app/node_modules
     depends_on:
-      - rest-cache
-      - rest-db
+      rest-cache:
+        condition: service_started
+      rest-db:
+        condition: service_started
+      discord-proxy:
+        condition: service_started
 
   rest-cache:
     extends:

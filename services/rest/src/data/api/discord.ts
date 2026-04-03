@@ -8,6 +8,7 @@ import { env } from '@/utils/config';
 
 // Initialize Discord REST client
 const rest = new REST({
+  api: 'http://discord-proxy:8080/api',
   version: '10',
   globalRequestsPerSecond: 35, // TODO adjust this parameter
   rejectOnRateLimit: (data) => {
