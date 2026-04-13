@@ -1,6 +1,6 @@
 import { RegExPatterns, secToMs, sleep } from '@ap/utils';
 import { Data } from 'data/index.js';
-import { type Message, type NewsChannel, PermissionsBitField } from 'discord.js';
+import { type Message, MessageFlags, type NewsChannel } from 'discord.js';
 import type { ReceivedMessage } from 'lib/types/MessageTypes.js';
 import { Services } from './index.js';
 
@@ -10,17 +10,8 @@ import { Services } from './index.js';
  * @param channel NewsChannel object
  */
 const handle = async (message: Message, channel: NewsChannel) => {
-  // Check if the bot has the necessary permissions to crosspost
-  const botMember = await message.guild?.members.me?.fetch();
-  const permissionsBitfield = botMember?.permissionsIn(channel);
-
-  // Check necessary permissions
-  if (
-    !permissionsBitfield?.has([
-      PermissionsBitField.Flags.ManageMessages,
-      PermissionsBitField.Flags.SendMessages,
-    ])
-  ) {
+  // Skip if message is already crossposted
+  if (message.flags.has(MessageFlags.Crossposted)) {
     return;
   }
 

@@ -144,7 +144,7 @@ export class Queue {
     const { Data } = await import('data/index.js');
     const rateLimitSize = await Data.Cache.RateLimits.getSize();
     if (this._queue.isPaused) {
-      if (rateLimitSize < 8000 && this._queue.size === 0) {
+      if (rateLimitSize < 1000) {
         this.resume();
       }
       return;

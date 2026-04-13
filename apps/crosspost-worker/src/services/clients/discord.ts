@@ -16,13 +16,9 @@ const rest = new REST({
   globalRequestsPerSecond: config.crosspostWorker.requestsPerSecond,
 }).setToken(env.DISCORD_TOKEN);
 
-const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {
-  try {
-    logger.debug(`Crossposting message ${messageId} in channel ${channelId}`);
-    return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
-  } catch (error) {
-    logger.error(error);
-  }
+const crosspost = (channelId: Snowflake, messageId: Snowflake) => {
+  logger.debug(`Crossposting message ${messageId} in channel ${channelId}`);
+  return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
 };
 
 export const Discord = { rest, crosspost };
