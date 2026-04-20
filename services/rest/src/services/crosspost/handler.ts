@@ -7,8 +7,7 @@ import { Constants } from '@/constants';
 import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 import { Services } from '@/services';
-import { sleep } from '@/utils/common';
-import { msToSec } from '@/utils/timeConversions';
+import { minToMs, msToSec } from '@/utils/timeConversions';
 
 /**
  * Submit message for crossposting
@@ -32,6 +31,8 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
 
     Services.Logger.debug(`Crossposted message ${messageId} in channel ${channelId}`);
   } catch (error: DiscordAPIError | RateLimitError | unknown) {
+    Services.Logger.warn(error);
+
     // Handle Discord rate limit errors
     if (error instanceof RateLimitError) {
       // Add the rate limit to the cache
@@ -45,19 +46,21 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
         Services.Crosspost.Queue.pause(error.retryAfter);
       }
 
-      // Handle non-sublimit rate limits
-      if (error.sublimitTimeout === 0) {
-        await sleep(error.retryAfter);
-        Services.Crosspost.Queue.add(channelId, messageId, retries + 1);
+      // Retry after the specified time if it's a short retry
+      // Since sublimitTimeout and retryAfter return the same number, we consider it a sublimit hit if the retryAfter is more than 60 seconds
+      if (error.retryAfter <= minToMs(1)) {
+        setTimeout(() => {
+          Services.Crosspost.Queue.add(channelId, messageId, retries + 1);
+        }, error.retryAfter);
         return;
+      } else {
+        // Sublimit hit means the channel has reached the crosspost limit
+        // We set the counter to 10 with the expiration time equal to the sublimit timeout to prevent further crosspost attempts until the counter expires
+        Services.Crosspost.Counter.set(channelId, {
+          count: 10,
+          expiry: Math.ceil(msToSec(error.sublimitTimeout)) || undefined,
+        });
       }
-
-      // Set the crossposts counter for the channel with the sublimit
-      Services.Crosspost.Counter.set(channelId, {
-        count: 10,
-        expiry: Math.ceil(msToSec(error.sublimitTimeout)) || undefined,
-      });
-
       return;
     }
 

@@ -10,14 +10,12 @@ import { env } from '@/utils/config';
 const rest = new REST({
   api: 'http://discord-proxy:8080/api',
   version: '10',
-  globalRequestsPerSecond: 35, // TODO adjust this parameter
   rejectOnRateLimit: (data) => {
     // Reject crosspost requests on rate limit to obtain sublimit data
     const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;
     const isCrosspostRoute = Constants.API.Discord.routes.crosspost === data.route;
-    const isGlobal = data.global;
 
-    return isPostMethod && isCrosspostRoute && !isGlobal;
+    return isPostMethod && isCrosspostRoute;
   },
 }).setToken(env.DISCORD_TOKEN);
 
@@ -28,12 +26,8 @@ const rest = new REST({
  * @returns Promise
  */
 const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {
-  try {
     Services.Logger.debug(`Crossposting message ${messageId} in channel ${channelId}`);
     return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
-  } catch (error) {
-    Services.Logger.error(error);
-  }
 };
 
 export const Discord = {
