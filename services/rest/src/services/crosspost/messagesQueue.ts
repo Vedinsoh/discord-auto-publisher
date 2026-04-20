@@ -1,9 +1,7 @@
-import { DiscordSnowflake } from '@sapphire/snowflake';
 import { Snowflake } from 'discord-api-types/v10';
 import PQueue from 'p-queue';
 
 import { Services } from '@/services';
-import { minToMs, secToMs } from '@/utils/timeConversions';
 
 /**
  * Messages queue — flow control for crosspost requests.
@@ -12,10 +10,7 @@ import { minToMs, secToMs } from '@/utils/timeConversions';
  */
 class Queue {
   private _queue = new PQueue({
-    intervalCap: 40,
-    interval: secToMs(1),
-    timeout: minToMs(5),
-    autoStart: true,
+    concurrency: 45,
   });
 
   /**
@@ -27,17 +22,7 @@ class Queue {
     const isOverLimit = await Services.Crosspost.Counter.isOverLimit(channelId);
     if (isOverLimit) return;
 
-    return this._queue.add(async () => Services.Crosspost.Handler.submit(channelId, messageId), {
-      priority: this._getMessagePriority(messageId),
-    });
-  }
-
-  /**
-   * Get message priority based on timestamp (older messages first)
-   */
-  private _getMessagePriority(messageId: Snowflake) {
-    const messageTimestamp = DiscordSnowflake.timestampFrom(messageId) || Date.now();
-    return 9999999999999 - messageTimestamp;
+    return this._queue.add(async () => Services.Crosspost.Handler.submit(channelId, messageId));
   }
 
   /**
