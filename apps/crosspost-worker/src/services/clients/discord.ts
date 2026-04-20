@@ -9,9 +9,8 @@ const rest = new REST({
   rejectOnRateLimit: data => {
     const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;
     const isCrosspostRoute = Routes.channelMessageCrosspost(':id', ':id') === data.route;
-    const isGlobal = data.global;
 
-    return isPostMethod && isCrosspostRoute && !isGlobal;
+    return isPostMethod && isCrosspostRoute;
   },
   globalRequestsPerSecond: config.crosspostWorker.requestsPerSecond,
 }).setToken(env.DISCORD_TOKEN);

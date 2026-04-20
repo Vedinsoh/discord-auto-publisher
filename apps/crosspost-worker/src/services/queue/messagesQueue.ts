@@ -13,7 +13,6 @@ import { ChannelQueue } from './channelQueue.js';
 export class Queue {
   private _queue = new PQueue({
     intervalCap: config.crosspostWorker.requestsPerSecond,
-    concurrency: 20,
     interval: secToMs(1),
     timeout: minToMs(5),
     autoStart: true,
