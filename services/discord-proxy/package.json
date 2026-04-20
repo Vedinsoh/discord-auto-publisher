@@ -1,0 +1,19 @@
+{
+  "name": "discord-proxy",
+  "author": "Vedinsoh",
+  "license": "GPL-3.0-or-later",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "start:dev": "tsx watch --clear-screen=false src/index.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "@discordjs/rest": "^2.4.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
+  }
+}

@@ -19,7 +19,6 @@ class Queue {
   });
   private _channelQueues = new Map<Snowflake, ChannelQueue>();
   private _timeout: NodeJS.Timeout | null = null;
-  private _lastPause = 0;
 
   constructor() {
     // Check rate limits every 5 seconds
@@ -46,7 +45,7 @@ class Queue {
     if (isOverLimit) return;
 
     // Check if the message has reached the max retries
-    if (retries >= 10) {
+    if (retries >= 3) {
       Services.Logger.debug(`Message ${messageId} has reached the max retries`);
       return;
     }
@@ -139,14 +138,12 @@ class Queue {
   private async _rateLimitsCheck() {
     const rateLimitSize = await Services.RateLimitsCache.getSize();
     if (this._queue.isPaused) {
-      if (rateLimitSize < 8000 && this._queue.size === 0) {
+      if (rateLimitSize < 100) {
         this.resume();
       }
       return;
     }
-    if (rateLimitSize >= 1000) {
-      // Check if the queue was paused recently
-      if (Date.now() - this._lastPause < minToMs(1)) return;
+    if (rateLimitSize >= 500) {
       this.pause();
       return;
     }
@@ -154,15 +151,20 @@ class Queue {
 
   /**
    * Pause the queue
-   * @param duration Pause duration in milliseconds
+   * @param duration Optional pause duration in milliseconds. If omitted, stays paused until rate limits drop.
    */
-  public pause(duration = secToMs(15)) {
+  public pause(duration?: number) {
     this._queue.pause();
-    this._lastPause = Date.now();
-    this._timeout = setTimeout(() => {
-      this.resume();
-    }, duration);
-    Services.Logger.debug(`Messages queue paused for ${msToSec(duration)}s`);
+    if (this._timeout) {
+      clearTimeout(this._timeout);
+      this._timeout = null;
+    }
+    if (duration) {
+      this._timeout = setTimeout(() => {
+        this.resume();
+      }, duration);
+    }
+    Services.Logger.debug(`Messages queue paused${duration ? ` for ${msToSec(duration)}s` : ''}`);
   }
 
   /**

@@ -16,7 +16,7 @@ import { minToMs, msToSec } from '@/utils/timeConversions';
  */
 const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) => {
   // Check if the message has reached the max retries
-  if (retries >= 10) {
+  if (retries >= 3) {
     return;
   }
 
@@ -58,7 +58,7 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
         // We set the counter to 10 with the expiration time equal to the sublimit timeout to prevent further crosspost attempts until the counter expires
         Services.Crosspost.Counter.set(channelId, {
           count: 10,
-          expiry: Math.ceil(msToSec(error.sublimitTimeout)) || undefined,
+          expiry: Math.ceil(msToSec(error.retryAfter)),
         });
       }
       return;

@@ -1,11 +1,13 @@
 services:
   discord-proxy:
-    image: discordjs/proxy:latest
+    build:
+      context: services/discord-proxy
+      dockerfile: .docker/Dockerfile
     restart: unless-stopped
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/api').catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').catch(()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
