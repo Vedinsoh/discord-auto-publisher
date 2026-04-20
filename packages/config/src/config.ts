@@ -17,7 +17,7 @@ export const config = {
     /**
      * Maximum channels per guild
      */
-    channelsPerGuild: IS_PREMIUM ? 0 : 3,
+    channelsPerGuild: IS_PREMIUM ? 0 : 5, // 0 means unlimited
     /**
      * Maximum filters per channel
      */
