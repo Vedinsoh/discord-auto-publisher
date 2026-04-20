@@ -9,15 +9,17 @@ import { Services } from '.';
  */
 const get = async () => {
   try {
-    const info = Services.Crosspost.Queue.getInfo();
+    const queue = Services.Crosspost.Queue.getInfo();
     const rateLimitsSize = await Services.RateLimitsCache.getSize();
+    const channelsCount = await Services.Crosspost.Counter.getChannelsCount();
 
     return new ServiceResponse(
       ResponseStatus.Success,
       'Info',
       {
-        ...info,
+        queue,
         rateLimitsSize,
+        channelsCount,
       },
       StatusCodes.OK
     );

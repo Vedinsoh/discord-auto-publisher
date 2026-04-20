@@ -7,19 +7,14 @@ import { Constants } from '@/constants';
 import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 import { Services } from '@/services';
-import { minToMs, msToSec } from '@/utils/timeConversions';
+import { msToSec } from '@/utils/timeConversions';
 
 /**
  * Submit message for crossposting
  * @param channelId ID of the channel
  * @param messageId ID of the message
  */
-const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) => {
-  // Check if the message has reached the max retries
-  if (retries >= 3) {
-    return;
-  }
-
+const submit = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
     // Check if the channel is over the crossposts limit
     const isOverLimit = await Services.Crosspost.Counter.isOverLimit(channelId);
@@ -33,34 +28,14 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
   } catch (error: DiscordAPIError | RateLimitError | unknown) {
     Services.Logger.warn(error);
 
-    // Handle Discord rate limit errors
+    // Handle Discord rate limit errors (only shared/sublimit scope reaches here)
+    // Global and route-level rate limits are auto-retried by discord.js
     if (error instanceof RateLimitError) {
-      // Add the rate limit to the cache
-      // Shared rate limits are not counted against the bot
-      if (error.scope !== 'shared') {
-        Services.RateLimitsCache.add(429);
-      }
-
-      // Pause the global queue if the rate limit is global
-      if (error.global) {
-        Services.Crosspost.Queue.pause(error.retryAfter);
-      }
-
-      // Retry after the specified time if it's a short retry
-      // Since sublimitTimeout and retryAfter return the same number, we consider it a sublimit hit if the retryAfter is more than 60 seconds
-      if (error.retryAfter <= minToMs(1)) {
-        setTimeout(() => {
-          Services.Crosspost.Queue.add(channelId, messageId, retries + 1);
-        }, error.retryAfter);
-        return;
-      } else {
-        // Sublimit hit means the channel has reached the crosspost limit
-        // We set the counter to 10 with the expiration time equal to the sublimit timeout to prevent further crosspost attempts until the counter expires
-        Services.Crosspost.Counter.set(channelId, {
-          count: 10,
-          expiry: Math.ceil(msToSec(error.retryAfter)),
-        });
-      }
+      // Set channel counter to max so no further attempts until the sublimit expires
+      Services.Crosspost.Counter.set(channelId, {
+        count: 10,
+        expiry: Math.ceil(msToSec(error.retryAfter)),
+      });
       return;
     }
 
@@ -68,7 +43,7 @@ const submit = async (channelId: Snowflake, messageId: Snowflake, retries = 0) =
     if (error instanceof DiscordAPIError) {
       const code = typeof error.code === 'string' ? parseInt(error.code) : error.code;
 
-      // Cache the invalid request status codes
+      // Cache the invalid request status codes for Cloudflare ban protection
       if (Constants.API.Discord.invalidRequestCodes.includes(error.status)) {
         Services.RateLimitsCache.add(error.status);
       }

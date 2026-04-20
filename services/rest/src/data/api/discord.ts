@@ -11,11 +11,13 @@ const rest = new REST({
   api: 'http://discord-proxy:8080/api',
   version: '10',
   rejectOnRateLimit: (data) => {
-    // Reject crosspost requests on rate limit to obtain sublimit data
+    // Reject only shared scope (per-channel resource limit = 10/hr crosspost sublimit)
+    // User/global scope rate limits are auto-retried by discord.js (route-level ~10s, global ~50ms)
+    // Per Discord docs: shared 429s are NOT counted against Cloudflare ban
     const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;
-    const isCrosspostRoute = Constants.API.Discord.routes.crosspost === data.route;
-
-    return isPostMethod && isCrosspostRoute;
+    const isCrosspostRoute = data.route === Constants.API.Discord.routes.crosspost;
+    const isSublimited = data.scope === 'shared' && data.sublimitTimeout > 0;
+    return isPostMethod && isCrosspostRoute && isSublimited;
   },
 }).setToken(env.DISCORD_TOKEN);
 
