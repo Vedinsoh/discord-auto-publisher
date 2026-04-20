@@ -8,6 +8,7 @@ import {
   Crown,
   ExternalLink,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { useCallback, useState, useTransition } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,16 @@ interface SubscriptionPanelProps {
   guildId: string;
   guildName: string;
   subscription: SubscriptionData | null;
+  premiumBotPresent: boolean;
+  checkoutSuccess?: boolean;
+}
+
+const PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? '';
+const PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY ?? '';
+const PREMIUM_BOT_CLIENT_ID = process.env.NEXT_PUBLIC_PREMIUM_BOT_CLIENT_ID;
+
+function getPremiumBotInviteUrl(guildId: string): string {
+  return `https://discord.com/oauth2/authorize?client_id=${PREMIUM_BOT_CLIENT_ID}&permissions=10240&scope=bot+applications.commands&guild_id=${guildId}`;
 }
 
 const premiumBenefits = [
@@ -39,12 +50,6 @@ const upgradeBenefits = [
 ];
 
 const freePlanFeatures = ['Basic auto-publishing', 'Limited to 3 channels', 'Standard support'];
-
-const PREMIUM_BOT_CLIENT_ID = process.env.NEXT_PUBLIC_PREMIUM_BOT_CLIENT_ID;
-
-function getPremiumBotInviteUrl(guildId: string): string {
-  return `https://discord.com/oauth2/authorize?client_id=${PREMIUM_BOT_CLIENT_ID}&permissions=10240&scope=bot+applications.commands&guild_id=${guildId}`;
-}
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   active: {
@@ -69,11 +74,18 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   },
 };
 
+const intervalLabels: Record<string, string> = {
+  month: 'Monthly',
+  year: 'Yearly',
+};
+
 export function SubscriptionPanel({
   edition,
   guildId,
   guildName,
   subscription,
+  premiumBotPresent,
+  checkoutSuccess,
 }: SubscriptionPanelProps) {
   return (
     <div className="space-y-6">
@@ -81,6 +93,10 @@ export function SubscriptionPanel({
         <h2 className="text-2xl text-white mb-2">Subscription Management</h2>
         <p className="text-slate-400">Manage your premium subscription for this server</p>
       </div>
+
+      {checkoutSuccess && (
+        <CheckoutSuccessCard guildId={guildId} premiumBotPresent={premiumBotPresent} />
+      )}
 
       {subscription && (subscription.status === 'active' || subscription.status === 'trialing') ? (
         <ActiveSubscription subscription={subscription} />
@@ -91,8 +107,49 @@ export function SubscriptionPanel({
   );
 }
 
+function CheckoutSuccessCard({
+  guildId,
+  premiumBotPresent,
+}: {
+  guildId: string;
+  premiumBotPresent: boolean;
+}) {
+  return (
+    <Card className="bg-green-500/10 border-green-500/30 p-6">
+      <div className="flex items-start gap-3">
+        <Sparkles className="w-6 h-6 text-green-400 shrink-0 mt-0.5" />
+        <div>
+          <h3 className="text-white text-lg mb-2">Payment successful!</h3>
+          <p className="text-slate-400 mb-4">
+            Your premium subscription is being activated. This may take a few moments.
+          </p>
+          {!premiumBotPresent && PREMIUM_BOT_CLIENT_ID && (
+            <>
+              <p className="text-slate-400 mb-3">
+                Invite the Premium bot to your server to get started:
+              </p>
+              <Button className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
+                <a href={getPremiumBotInviteUrl(guildId)} target="_blank" rel="noopener noreferrer">
+                  Invite Premium Bot
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </a>
+              </Button>
+              <p className="text-slate-500 text-sm mt-3">
+                After adding the Premium bot, you can remove the free bot from your server settings.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function ActiveSubscription({ subscription }: { subscription: SubscriptionData }) {
   const statusInfo = statusLabels[subscription.status] ?? statusLabels.active;
+  const intervalLabel = subscription.billingInterval
+    ? intervalLabels[subscription.billingInterval]
+    : null;
 
   return (
     <div className="space-y-6">
@@ -106,6 +163,11 @@ function ActiveSubscription({ subscription }: { subscription: SubscriptionData }
               <div className="flex items-center gap-2 mb-2">
                 <h3 className="text-2xl text-white">Premium Plan</h3>
                 <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
+                {intervalLabel && (
+                  <Badge className="bg-slate-500/20 text-slate-400 border-slate-500/30">
+                    {intervalLabel}
+                  </Badge>
+                )}
               </div>
               <p className="text-slate-400">All premium features unlocked</p>
             </div>
@@ -159,6 +221,8 @@ function ActiveSubscription({ subscription }: { subscription: SubscriptionData }
   );
 }
 
+type BillingInterval = 'month' | 'year';
+
 function FreeSubscription({
   edition,
   guildId,
@@ -169,18 +233,23 @@ function FreeSubscription({
   guildName: string;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [checkoutState, setCheckoutState] = useState<'idle' | 'created' | 'error'>('idle');
+  const [error, setError] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
+
+  const priceId = billingInterval === 'year' ? PRICE_YEARLY : PRICE_MONTHLY;
 
   const handleUpgrade = useCallback(() => {
+    if (!priceId) return;
+    setError(false);
     startTransition(async () => {
       try {
-        await createCheckout(edition, guildId);
-        setCheckoutState('created');
+        const { sessionUrl } = await createCheckout(edition, guildId, priceId);
+        window.location.href = sessionUrl;
       } catch {
-        setCheckoutState('error');
+        setError(true);
       }
     });
-  }, [edition, guildId]);
+  }, [edition, guildId, priceId]);
 
   return (
     <div className="space-y-6">
@@ -206,25 +275,7 @@ function FreeSubscription({
         </div>
       </Card>
 
-      {checkoutState === 'created' && PREMIUM_BOT_CLIENT_ID && (
-        <Card className="bg-green-500/10 border-green-500/30 p-6">
-          <h3 className="text-white text-lg mb-2">Almost there!</h3>
-          <p className="text-slate-400 mb-4">
-            After completing checkout, invite the Premium bot to your server:
-          </p>
-          <Button className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
-            <a href={getPremiumBotInviteUrl(guildId)} target="_blank" rel="noopener noreferrer">
-              Invite Premium Bot
-              <ExternalLink className="w-4 h-4 ml-2" />
-            </a>
-          </Button>
-          <p className="text-slate-500 text-sm mt-3">
-            After adding the Premium bot, you can remove the free bot from your server settings.
-          </p>
-        </Card>
-      )}
-
-      {checkoutState === 'error' && (
+      {error && (
         <Card className="bg-red-500/10 border-red-500/30 p-4">
           <p className="text-red-400 text-sm">Failed to create checkout. Please try again.</p>
         </Card>
@@ -238,11 +289,57 @@ function FreeSubscription({
               <Crown className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-3xl text-white mb-2">Upgrade to Premium</h3>
-            <p className="text-slate-400 mb-4">Unlock all features for {guildName}</p>
-            <div className="flex items-baseline justify-center gap-2">
-              <span className="text-5xl text-white">$4.99</span>
-              <span className="text-slate-400 text-xl">/month</span>
+            <p className="text-slate-400 mb-6">Unlock all features for {guildName}</p>
+
+            {/* Billing interval toggle */}
+            <div className="inline-flex items-center bg-slate-900/80 rounded-lg p-1 border border-slate-700 mb-6">
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  billingInterval === 'month'
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+                onClick={() => setBillingInterval('month')}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                  billingInterval === 'year'
+                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+                onClick={() => setBillingInterval('year')}
+              >
+                Yearly
+                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+                  Save 20%
+                </span>
+              </button>
             </div>
+
+            {/* Price display */}
+            <div className="flex items-baseline justify-center gap-2">
+              {billingInterval === 'month' ? (
+                <>
+                  <span className="text-5xl text-white">$4.99</span>
+                  <span className="text-slate-400 text-xl">/month</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-5xl text-white">$3.99</span>
+                  <span className="text-slate-400 text-xl">/month</span>
+                </>
+              )}
+            </div>
+            {billingInterval === 'year' && (
+              <p className="text-slate-500 text-sm mt-2">
+                Billed annually at $47.88
+                <span className="text-green-400 ml-2">(save $12.00/year)</span>
+              </p>
+            )}
           </div>
 
           <ul className="space-y-3 mb-8 max-w-md mx-auto">
@@ -257,18 +354,18 @@ function FreeSubscription({
           <Button
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
             onClick={handleUpgrade}
-            disabled={isPending}
+            disabled={isPending || !priceId}
           >
             {isPending ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : (
               <Crown className="w-5 h-5 mr-2" />
             )}
-            {isPending ? 'Processing...' : 'Upgrade to Premium'}
+            {isPending ? 'Redirecting to checkout...' : 'Upgrade to Premium'}
           </Button>
 
           <p className="text-slate-500 text-sm text-center mt-4">
-            Billed monthly &bull; Cancel anytime &bull; 7-day money-back guarantee
+            Secure payment via Stripe &bull; Cancel anytime &bull; 7-day money-back guarantee
           </p>
         </Card>
       </div>

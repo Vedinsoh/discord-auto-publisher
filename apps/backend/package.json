@@ -16,9 +16,9 @@
     "@ap/redis": "workspace:*",
     "@ap/utils": "workspace:*",
     "@discordjs/rest": "^2.6.0",
-    "@paddle/paddle-node-sdk": "^3.6.0",
     "@sapphire/snowflake": "^3.5.5",
     "cron": "^4.4.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "stripe": "^22.0.2"
   }
 }

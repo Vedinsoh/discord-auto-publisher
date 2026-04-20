@@ -89,20 +89,29 @@ export function Premium() {
             <div className="p-6 sm:p-8 lg:p-12">
               <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
                 <div>
-                  <div className="mb-8">
-                    <div className="flex items-baseline gap-2 mb-2">
+                  <div className="mb-4">
+                    <div className="flex items-baseline gap-2 mb-1">
                       <span className="text-4xl lg:text-5xl font-bold text-white">$4.99</span>
                       <span className="text-slate-400">/month</span>
                     </div>
                     <p className="text-slate-400">per server</p>
                   </div>
 
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2 mb-6">
+                    <p className="text-green-400 text-sm">
+                      Or <span className="font-semibold">$3.99/month</span> billed yearly — save 20%
+                    </p>
+                  </div>
+
                   <Button
                     size="lg"
                     className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-6 text-lg shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 border-0 mb-6"
+                    asChild
                   >
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Upgrade to Premium
+                    <a href="/dashboard">
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Upgrade to Premium
+                    </a>
                   </Button>
 
                   <p className="text-slate-500 text-sm text-center">

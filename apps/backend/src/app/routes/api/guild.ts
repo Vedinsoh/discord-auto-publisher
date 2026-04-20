@@ -1,4 +1,4 @@
-import { config } from '@ap/config';
+import { config, env } from '@ap/config';
 import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
 import { type APIChannel, ChannelType, Routes } from 'discord-api-types/v10';
 import express, { type Request, type Response, type Router } from 'express';
@@ -151,15 +151,10 @@ export const GuildApi: Router = (() => {
       let portalUrl: string | undefined;
 
       // Only provide portal URL if the requester is the subscriber
-      if (
-        userId === sub.subscriberDiscordUserId &&
-        sub.paddleCustomerId &&
-        sub.paddleSubscriptionId
-      ) {
+      if (userId === sub.subscriberDiscordUserId && sub.stripeCustomerId) {
         try {
-          portalUrl = await Services.Paddle.getCustomerPortalUrl(sub.paddleCustomerId, [
-            sub.paddleSubscriptionId,
-          ]);
+          const returnUrl = `${env.WEB_APP_ORIGIN}/dashboard/${guildId}/subscription`;
+          portalUrl = await Services.Stripe.createPortalSession(sub.stripeCustomerId, returnUrl);
         } catch {
           // Non-fatal: portal URL is optional
         }
@@ -169,6 +164,7 @@ export const GuildApi: Router = (() => {
         status: StatusCodes.OK,
         data: {
           status: sub.status,
+          billingInterval: sub.billingInterval,
           currentPeriodEndsAt: sub.currentPeriodEndsAt,
           cancelledAt: sub.cancelledAt,
           portalUrl,
@@ -182,7 +178,7 @@ export const GuildApi: Router = (() => {
 
   /**
    * POST /api/guild/:guildId/subscription/checkout
-   * Create a Paddle checkout transaction
+   * Create a Stripe Checkout Session
    */
   router.post('/subscription/checkout', async (req: Request, res: Response) => {
     if (!config.isPremiumInstance) {
@@ -225,17 +221,38 @@ export const GuildApi: Router = (() => {
         return;
       }
 
-      const result = await Services.Paddle.createTransaction(
-        guildId as string,
-        userId,
+      // Look up or create Stripe Customer
+      let stripeCustomerId: string | undefined;
+      const existingCustomer = await Services.StripeCustomers.getByDiscordUserId(userId);
+
+      if (existingCustomer) {
+        stripeCustomerId = existingCustomer.stripeCustomerId;
+      } else {
+        const newCustomer = await Services.Stripe.createCustomer({
+          email,
+          discordUserId: userId,
+        });
+        await Services.StripeCustomers.upsert(userId, newCustomer.id, email);
+        stripeCustomerId = newCustomer.id;
+      }
+
+      const successUrl = `${env.WEB_APP_ORIGIN}/dashboard/${guildId}/subscription?success=true`;
+      const cancelUrl = `${env.WEB_APP_ORIGIN}/dashboard/${guildId}/subscription`;
+
+      const result = await Services.Stripe.createCheckoutSession({
+        guildId: guildId as string,
+        discordUserId: userId,
         email,
-        priceId
-      );
+        priceId,
+        stripeCustomerId,
+        successUrl,
+        cancelUrl,
+      });
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: result,
-        message: 'Checkout transaction created',
+        message: 'Checkout session created',
       } as APIResponse);
     } catch (error) {
       sendErrorResponse(res, error, 'Failed to create checkout');

@@ -47,9 +47,10 @@ export interface GuildChannel {
 export interface SubscriptionData {
   id: string;
   guildId: string;
-  paddleSubscriptionId: string | null;
+  stripeSubscriptionId: string | null;
   subscriberDiscordUserId: string;
   status: 'active' | 'cancelled' | 'past_due' | 'paused' | 'trialing';
+  billingInterval: 'month' | 'year' | null;
   currentPeriodEndsAt: string | null;
   cancelledAt: string | null;
   portalUrl: string | null;
@@ -63,5 +64,5 @@ export interface GuildDashboardData {
 
 /** Checkout session response */
 export interface CheckoutResponse {
-  transactionId: string;
+  sessionUrl: string;
 }

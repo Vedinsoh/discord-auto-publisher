@@ -15,6 +15,13 @@
       "when": 1772441095947,
       "tag": "0001_equal_iron_lad",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1745107200000,
+      "tag": "0002_replace_paddle_with_stripe",
+      "breakpoints": true
     }
   ]
 }

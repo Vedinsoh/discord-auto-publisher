@@ -21,10 +21,10 @@
         "@ap/redis": "workspace:*",
         "@ap/utils": "workspace:*",
         "@discordjs/rest": "^2.6.0",
-        "@paddle/paddle-node-sdk": "^3.6.0",
         "@sapphire/snowflake": "^3.5.5",
         "cron": "^4.4.0",
         "express": "^5.2.1",
+        "stripe": "^22.0.2",
       },
     },
     "apps/bot": {
@@ -70,7 +70,6 @@
       "version": "0.1.0",
       "dependencies": {
         "@ap/api-types": "workspace:*",
-        "@paddle/paddle-js": "^1.6.2",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-slot": "^1.2.4",
         "class-variance-authority": "^0.7.1",
@@ -477,10 +476,6 @@
     "@nodelib/fs.walk": ["@nodelib/fs.walk@1.2.8", "", { "dependencies": { "@nodelib/fs.scandir": "2.1.5", "fastq": "^1.6.0" } }, "sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg=="],
 
     "@nolyfill/is-core-module": ["@nolyfill/is-core-module@1.0.39", "", {}, "sha512-nn5ozdjYQpUCZlWGuxcJY/KpxkWQs4DcbMCmKojjyrYDEAGy4Ce19NN4v5MduafTwJlbKc99UA8YhSVqq9yPZA=="],
-
-    "@paddle/paddle-js": ["@paddle/paddle-js@1.6.2", "", {}, "sha512-nx1NXCzwWUWjf0iaRDiXZlfWgFjNZ6996RFcTDk0G0ggzrh514Zsc6jGTPOUGdLB1sYJXVQiKKoNLoKoXhH+sA=="],
-
-    "@paddle/paddle-node-sdk": ["@paddle/paddle-node-sdk@3.6.0", "", {}, "sha512-EFP1thHb1FVuKGwSJ/+/oj5FvCk3l3adyVy/mpUnDq/MM31RdcAdNn+AZ8qYd0pF4rJxtwXmWMGjXqjHKhKHuA=="],
 
     "@panva/hkdf": ["@panva/hkdf@1.2.1", "", {}, "sha512-6oclG6Y3PiDFcoyk8srjLfVKyMfVCKJ27JwNPViuXziFpmdz+MZnZN/aKY0JGXgYuO/VghU0jcOAZgWXZ1Dmrw=="],
 
@@ -1547,6 +1542,8 @@
     "strip-bom": ["strip-bom@3.0.0", "", {}, "sha512-vavAMRXOgBVNF6nyEEmL3DBK19iRpDcoIwW+swQ+CbGiu7lju6t+JklA1MHweoWtadgt4ISVUsXLyDq34ddcwA=="],
 
     "strip-json-comments": ["strip-json-comments@5.0.3", "", {}, "sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw=="],
+
+    "stripe": ["stripe@22.0.2", "", { "peerDependencies": { "@types/node": ">=18" }, "optionalPeers": ["@types/node"] }, "sha512-2/BLrQ3oB1zlNfeL/LfHFjTGx6EQn0j+ztrrTJHuDjV5VVIpk92oSDaxyKLUr3pG3dnee2LZqhFUv2Bf0G1/3g=="],
 
     "styled-jsx": ["styled-jsx@5.1.6", "", { "dependencies": { "client-only": "0.0.1" }, "peerDependencies": { "react": ">= 16.8.0 || 17.x.x || ^18.0.0-0 || ^19.0.0-0" } }, "sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA=="],
 

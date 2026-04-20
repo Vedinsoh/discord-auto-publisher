@@ -22,9 +22,9 @@ const app = express();
 // Request logger (applies to all routes)
 app.use(...createRequestLogger(env.isDevelopment));
 
-// Paddle webhook route (premium only, needs raw body BEFORE express.json())
+// Stripe webhook route (premium only, needs raw body BEFORE express.json())
 if (config.isPremiumInstance) {
-  app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
+  app.use('/webhooks/stripe', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
 }
 
 // JSON parser for all remaining routes

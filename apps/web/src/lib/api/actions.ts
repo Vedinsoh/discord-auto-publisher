@@ -97,8 +97,13 @@ export async function getSubscription(
   return backendFetch<SubscriptionData | null>(edition, `/api/guild/${guildId}/subscription`);
 }
 
-export async function createCheckout(edition: Edition, guildId: string): Promise<CheckoutResponse> {
+export async function createCheckout(
+  edition: Edition,
+  guildId: string,
+  priceId: string
+): Promise<CheckoutResponse> {
   return backendFetch<CheckoutResponse>(edition, `/api/guild/${guildId}/subscription/checkout`, {
     method: 'POST',
+    body: JSON.stringify({ priceId }),
   });
 }

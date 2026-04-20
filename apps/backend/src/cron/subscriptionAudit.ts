@@ -19,15 +19,15 @@ const auditExpiredSubscriptions = async () => {
       try {
         // Leave guild via Discord API (through proxy)
         await Discord.rest.delete(Routes.userGuild(sub.guildId));
-        logger.info(`Left guild ${sub.guildId} (expired subscription ${sub.paddleSubscriptionId})`);
+        logger.info(`Left guild ${sub.guildId} (expired subscription ${sub.stripeSubscriptionId})`);
       } catch (error) {
         // Guild may already be left or bot not in guild — non-fatal
         logger.debug(error, `Could not leave guild ${sub.guildId}`);
       }
 
       // Mark as expired to prevent re-processing
-      if (sub.paddleSubscriptionId) {
-        await Services.Subscriptions.update(sub.paddleSubscriptionId, {
+      if (sub.stripeSubscriptionId) {
+        await Services.Subscriptions.update(sub.stripeSubscriptionId, {
           status: 'expired',
         });
       }

@@ -17,10 +17,13 @@ export const env = cleanEnv(process.env, {
   // Backend
   DATABASE_URL: str({ default: 'postgresql://postgres:postgres@localhost:54322/postgres' }),
 
-  // Paddle
-  PADDLE_API_KEY: str({ default: '' }),
-  PADDLE_WEBHOOK_SECRET: str({ default: '' }),
-  PADDLE_ENVIRONMENT: str({ default: 'sandbox', choices: ['sandbox', 'production'] }),
+  // Stripe
+  STRIPE_SECRET_KEY: str({ default: '' }),
+  STRIPE_WEBHOOK_SECRET: str({ default: '' }),
+
+  // Invoicing (optional external service)
+  INVOICING_WEBHOOK_URL: str({ default: '' }),
+  INVOICING_WEBHOOK_SECRET: str({ default: '' }),
 
   // Web
   WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),

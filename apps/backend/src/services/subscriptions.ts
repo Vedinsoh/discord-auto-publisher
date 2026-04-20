@@ -16,19 +16,19 @@ const getByGuildId = async (guildId: string): Promise<Subscription | undefined> 
   }
 };
 
-const getByPaddleSubscriptionId = async (
-  paddleSubId: string
+const getByStripeSubscriptionId = async (
+  stripeSubId: string
 ): Promise<Subscription | undefined> => {
   try {
     const [row] = await db
       .select()
       .from(subscription)
-      .where(eq(subscription.paddleSubscriptionId, paddleSubId))
+      .where(eq(subscription.stripeSubscriptionId, stripeSubId))
       .limit(1);
     return row;
   } catch (error) {
     logger.error(error);
-    throw new Error('Failed to retrieve subscription by paddleSubscriptionId');
+    throw new Error('Failed to retrieve subscription by stripeSubscriptionId');
   }
 };
 
@@ -45,17 +45,17 @@ const create = async (data: NewSubscription): Promise<Subscription> => {
 };
 
 const update = async (
-  paddleSubId: string,
+  stripeSubId: string,
   data: Partial<Omit<Subscription, 'id' | 'createdAt'>>
 ): Promise<Subscription | undefined> => {
   try {
     const [row] = await db
       .update(subscription)
       .set(data)
-      .where(eq(subscription.paddleSubscriptionId, paddleSubId))
+      .where(eq(subscription.stripeSubscriptionId, stripeSubId))
       .returning();
     if (row) {
-      logger.debug(`Updated subscription ${paddleSubId}`);
+      logger.debug(`Updated subscription ${stripeSubId}`);
     }
     return row;
   } catch (error) {
@@ -106,7 +106,7 @@ const getExpired = async (): Promise<Subscription[]> => {
 
 export const Subscriptions = {
   getByGuildId,
-  getByPaddleSubscriptionId,
+  getByStripeSubscriptionId,
   create,
   update,
   isActive,

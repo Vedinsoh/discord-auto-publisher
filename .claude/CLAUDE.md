@@ -100,7 +100,9 @@ bot (Discord Gateway) <--HTTP--> backend (REST API) <--> PostgreSQL (Supabase) +
 - **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
 - Auto-cleanup on permission/deletion errors
 - Cache sync on startup (reconciles Redis/PostgreSQL)
-- Tech stack: Express, discord.js, Drizzle ORM (https://orm.drizzle.team), redis, zod (https://v3.zod.dev/)
+- Stripe integration for premium subscriptions (Checkout Sessions, Customer Portal, webhooks)
+- HMAC-signed webhook forwarding to optional external invoicing service
+- Tech stack: Express, discord.js, Drizzle ORM (https://orm.drizzle.team), redis, zod (https://v3.zod.dev/), stripe (https://docs.stripe.com/)
 
 **Shared packages** (packages/\*):
 
@@ -146,6 +148,26 @@ channels {
   filterMode (text, default 'any')
   createdAt, updatedAt
 }
+
+subscription {
+  id (uuid, pk)
+  guildId (text, unique, FK → guilds.guildId, cascade delete)
+  stripeSubscriptionId (text, unique)
+  stripeCustomerId (text)
+  subscriberDiscordUserId (text)
+  status (text: 'active', 'cancelled', 'past_due', 'paused', 'trialing', 'expired')
+  stripePriceId (text)
+  billingInterval (text: 'month' | 'year')
+  currentPeriodEndsAt, cancelledAt, createdAt, updatedAt
+}
+
+stripe_customer {
+  id (uuid, pk)
+  discordUserId (text, unique)
+  stripeCustomerId (text, unique)
+  email (text)
+  createdAt, updatedAt
+}
 ```
 
 **Supabase setup**:
@@ -172,6 +194,12 @@ APP_EDITION: free|premium
 BOT_SHARDS
 BOT_SHARDS_PER_CLUSTER
 DATABASE_URL: postgresql://... (Supabase connection string)
+STRIPE_SECRET_KEY: sk_test_... or sk_live_... (premium backend only)
+STRIPE_WEBHOOK_SECRET: whsec_... (premium backend only)
+INVOICING_WEBHOOK_URL: optional, external invoicing service URL
+INVOICING_WEBHOOK_SECRET: optional, HMAC secret for invoicing payloads
+NEXT_PUBLIC_STRIPE_PRICE_MONTHLY: Stripe Price ID for monthly plan
+NEXT_PUBLIC_STRIPE_PRICE_YEARLY: Stripe Price ID for yearly plan
 ```
 
 ## Message publishing flow
