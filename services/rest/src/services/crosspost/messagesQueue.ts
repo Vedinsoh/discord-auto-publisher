@@ -12,7 +12,7 @@ import { minToMs, secToMs } from '@/utils/timeConversions';
  */
 class Queue {
   private _queue = new PQueue({
-    intervalCap: 10,
+    intervalCap: 40,
     interval: secToMs(1),
     timeout: minToMs(5),
     autoStart: true,
