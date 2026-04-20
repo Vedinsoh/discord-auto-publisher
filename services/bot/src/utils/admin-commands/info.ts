@@ -8,11 +8,10 @@ export default new AdminCommand(CommandNames.INFO, async ({ channel }) => {
   const parsedData = [
     `Guilds: ${guildsCount}`,
     '### Messages queue:',
-    `> Size: ${data?.size}`,
-    `> Pending: ${data?.pending}`,
-    `> Paused: ${data?.paused}`,
-    '### Channel queues:',
-    `> Size: ${data?.channelQueues}`,
+    `> Size: ${data?.queue.size}`,
+    `> Pending: ${data?.queue.pending}`,
+    '### Channels:',
+    `> Tracked: ${data?.channelsCount}`,
     '### Rate limits cache:',
     `> Size: ${data?.rateLimitsSize}`,
   ];
