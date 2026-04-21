@@ -10,6 +10,7 @@ import { env } from '@/utils/config';
 const rest = new REST({
   api: 'http://discord-proxy:8080/api',
   version: '10',
+  globalRequestsPerSecond: 45,
   rejectOnRateLimit: (data) => {
     // Reject only shared scope (per-channel resource limit = 10/hr crosspost sublimit)
     // User/global scope rate limits are auto-retried by discord.js (route-level ~10s, global ~50ms)
@@ -32,7 +33,18 @@ const crosspost = async (channelId: Snowflake, messageId: Snowflake) => {
     return rest.post(Routes.channelMessageCrosspost(channelId, messageId));
 };
 
+/**
+ * Get REST client stats (active buckets, global rate limit state)
+ */
+const getInfo = () => ({
+  globalRemaining: rest.globalRemaining,
+  handlers: rest.handlers.size,
+  activeHandlers: rest.handlers.filter((h) => !h.inactive).size,
+  hashes: rest.hashes.size,
+});
+
 export const Discord = {
   rest,
   crosspost,
+  getInfo,
 };

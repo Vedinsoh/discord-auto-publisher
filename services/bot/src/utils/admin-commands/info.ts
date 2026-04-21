@@ -7,9 +7,11 @@ export default new AdminCommand(CommandNames.INFO, async ({ channel }) => {
   const guildsCount = await Services.Presence.getGuildsCount();
   const parsedData = [
     `Guilds: ${guildsCount}`,
-    '### Messages queue:',
-    `> Size: ${data?.queue.size}`,
-    `> Pending: ${data?.queue.pending}`,
+    '### REST:',
+    `> Global remaining: ${data?.rest.globalRemaining}/45`,
+    `> Active handlers: ${data?.rest.activeHandlers}`,
+    `> Total handlers: ${data?.rest.handlers}`,
+    `> Bucket hashes: ${data?.rest.hashes}`,
     '### Channels:',
     `> Tracked: ${data?.channelsCount}`,
     '### Rate limits cache:',

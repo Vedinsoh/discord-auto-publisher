@@ -65,20 +65,19 @@ const submit = async (channelId: Snowflake, messageId: Snowflake) => {
 };
 
 /**
- * Push message to crosspost queue
+ * Push message for crossposting
  * @param channelId ID of the channel
  * @param messageId ID of the message
  * @returns ServiceResponse
  */
 const push = async (channelId: Snowflake, messageId: Snowflake) => {
   try {
-    Services.Crosspost.Queue.add(channelId, messageId);
-
-    Services.Logger.debug(`Message ${messageId} pushed to crosspost queue`);
+    // Submit directly — discord.js handles per-channel bucketing and rate limit retries
+    submit(channelId, messageId);
 
     return new ServiceResponse(
       ResponseStatus.Success,
-      'Message pushed to crosspost queue',
+      'Message submitted for crossposting',
       {
         pushed: true,
       },
@@ -89,7 +88,7 @@ const push = async (channelId: Snowflake, messageId: Snowflake) => {
 
     return new ServiceResponse(
       ResponseStatus.Failed,
-      'Error pushing message to crosspost queue',
+      'Error submitting message for crossposting',
       {
         pushed: false,
       },

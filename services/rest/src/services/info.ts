@@ -1,5 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 
+import { Data } from '@/data';
 import { ResponseStatus, ServiceResponse } from '@/data/models/serviceResponse';
 
 import { Services } from '.';
@@ -9,7 +10,7 @@ import { Services } from '.';
  */
 const get = async () => {
   try {
-    const queue = Services.Crosspost.Queue.getInfo();
+    const rest = Data.API.Discord.getInfo();
     const rateLimitsSize = await Services.RateLimitsCache.getSize();
     const channelsCount = await Services.Crosspost.Counter.getChannelsCount();
 
@@ -17,7 +18,7 @@ const get = async () => {
       ResponseStatus.Success,
       'Info',
       {
-        queue,
+        rest,
         rateLimitsSize,
         channelsCount,
       },

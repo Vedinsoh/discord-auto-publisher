@@ -7,9 +7,11 @@ const get = async () => {
   if (!body.data) return null;
 
   return body.data as {
-    queue: {
-      size: number;
-      pending: number;
+    rest: {
+      globalRemaining: number;
+      handlers: number;
+      activeHandlers: number;
+      hashes: number;
     };
     rateLimitsSize: number;
     channelsCount: number;
