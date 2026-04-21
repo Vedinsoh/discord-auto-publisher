@@ -51,10 +51,10 @@ const server = createServer(async (req, res) => {
       headers,
     });
 
-    // Forward successful response, stripping rate limit headers
+    // Forward successful response with all headers (including rate limit headers
+    // so clients can build per-channel bucket state for proper parallel processing)
     res.statusCode = discordResponse.status;
     for (const [header, value] of discordResponse.headers) {
-      if (/^x-ratelimit/i.test(header)) continue;
       res.setHeader(header, value);
     }
 
