@@ -3,6 +3,7 @@ import urlRegex from 'url-regex-safe';
 import { Data } from '#data';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { sleep } from '#utils/common';
+import { logger } from '#utils/logger';
 import { secToMs } from '#utils/timeConverters';
 
 /**
@@ -42,7 +43,12 @@ const handle = async (message: Message, channel: NewsChannel) => {
  * @param message Message to crosspost
  */
 const push = async (message: ReceivedMessage) => {
-  return await Data.API.REST.pushCrosspost(message.channel.id, message.id);
+  try {
+    return await Data.API.REST.pushCrosspost(message.channel.id, message.id);
+  } catch (error) {
+    logger.error(error, `Failed to push crosspost for message ${message.id} in channel ${message.channel.id}`);
+    return
+  }
 };
 
 export const Crosspost = { handle, push };
