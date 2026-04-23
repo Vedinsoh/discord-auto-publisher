@@ -12,13 +12,16 @@ const rest = new REST({
   version: '10',
   globalRequestsPerSecond: 45,
   rejectOnRateLimit: (data) => {
-    // Reject only shared scope (per-channel resource limit = 10/hr crosspost sublimit)
-    // User/global scope rate limits are auto-retried by discord.js (route-level ~10s, global ~50ms)
-    // Per Discord docs: shared 429s are NOT counted against Cloudflare ban
+    // Reject only sublimit (10/hr) rate limits — route-level limits are auto-retried by discord.js
     const isPostMethod = data.method.toUpperCase() === RequestMethod.Post;
     const isCrosspostRoute = data.route === Constants.API.Discord.routes.crosspost;
-    const isSublimited = data.scope === 'shared' && data.sublimitTimeout > 0;
-    return isPostMethod && isCrosspostRoute && isSublimited;
+    // Post-429: discord.js correctly passes scope='shared' and sublimitTimeout>0
+    const isSublimit = data.scope === 'shared' && data.sublimitTimeout > 0;
+    // Pre-flight: discord.js always hardcodes sublimitTimeout=0 and scope='user' in the
+    // while(limited) loop, so use timeToReset as a proxy — sublimits have long resets
+    // (minutes-to-hours), route-level limits reset in <10s
+    const isPreflightSublimit = data.timeToReset > 60_000;
+    return isPostMethod && isCrosspostRoute && (isSublimit || isPreflightSublimit);
   },
 }).setToken(env.DISCORD_TOKEN);
 

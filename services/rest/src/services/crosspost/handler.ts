@@ -28,10 +28,10 @@ const submit = async (channelId: Snowflake, messageId: Snowflake) => {
   } catch (error: DiscordAPIError | RateLimitError | unknown) {
     Services.Logger.warn(error);
 
-    // Handle Discord rate limit errors (only shared/sublimit scope reaches here)
-    // Global and route-level rate limits are auto-retried by discord.js
+    // Handle Discord rate limit errors (sublimits only — route-level limits are auto-retried)
+    // rejectOnRateLimit fires for: post-429 sublimits (scope='shared') and pre-flight waits
+    // on sublimit-locked buckets (timeToReset>60s), routing both cases here
     if (error instanceof RateLimitError) {
-      // Set channel counter to max so no further attempts until the sublimit expires
       Services.Crosspost.Counter.set(channelId, {
         count: 10,
         expiry: Math.ceil(msToSec(error.retryAfter)),
