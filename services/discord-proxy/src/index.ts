@@ -66,9 +66,15 @@ const server = createServer(async (req, res) => {
     }
   } catch (error) {
     if (error instanceof RateLimitError) {
-      // Return full rate limit data so clients can properly detect sublimits
       res.statusCode = 429;
+      // Forward all bucket headers so clients can update their rate limit state correctly.
+      // X-RateLimit-Reset-After is critical: without it clients can't update this.reset,
+      // causing getTimeToReset() to return stale values from the last successful response.
       res.setHeader('Retry-After', String(error.retryAfter / 1_000));
+      res.setHeader('X-RateLimit-Reset-After', String(error.retryAfter / 1_000));
+      res.setHeader('X-RateLimit-Remaining', '0');
+      res.setHeader('X-RateLimit-Limit', String(error.limit));
+      res.setHeader('X-RateLimit-Bucket', error.hash);
       res.setHeader('X-RateLimit-Scope', error.scope);
       if (error.global) {
         res.setHeader('X-RateLimit-Global', 'true');
