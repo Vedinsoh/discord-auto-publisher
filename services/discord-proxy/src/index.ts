@@ -164,7 +164,11 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
       if (channelId && error.scope === 'shared' && !error.global) {
         onCrosspostSublimit(channelId, error.retryAfter / 1_000);
       }
-      onInvalidRequest(429);
+      // Per Discord docs, 429s with X-RateLimit-Scope: shared do not count
+      // toward the invalid-request limit
+      if (error.scope !== 'shared') {
+        onInvalidRequest(429);
+      }
       res.statusCode = 429;
       writeRateLimitHeaders(res, error);
       res.setHeader('Content-Type', 'application/json');
