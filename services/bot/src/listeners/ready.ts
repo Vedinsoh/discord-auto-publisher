@@ -4,6 +4,7 @@ import Event from '#structures/Event';
 
 export default new Event(Events.ClientReady, async () => {
   // Initialize bot presence
+  Services.Presence.startGuildsCountUpdateInterval();
   Services.Presence.updateBotPresence();
   Services.Presence.startBotPresenceInterval();
 });
