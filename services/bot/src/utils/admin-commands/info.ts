@@ -8,7 +8,7 @@ export default new AdminCommand(CommandNames.INFO, async ({ channel }) => {
   const parsedData = [
     `Guilds: ${guildsCount}`,
     '### REST:',
-    `> Global remaining: ${data?.rest.globalRemaining}/45`,
+    `> Global remaining: ${data?.rest.globalRemaining}/50`,
     `> Active handlers: ${data?.rest.activeHandlers}`,
     `> Total handlers: ${data?.rest.handlers}`,
     `> Bucket hashes: ${data?.rest.hashes}`,

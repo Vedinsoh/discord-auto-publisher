@@ -5,24 +5,15 @@ services:
     extends:
       file: docker-compose.base.yml
       service: discord-proxy
+    depends_on:
+      rest-cache:
+        condition: service_started
 
   bot:
     extends:
       file: docker-compose.base.yml
       service: bot
     depends_on:
-      rest:
-        condition: service_started
-      discord-proxy:
-        condition: service_healthy
-
-  rest:
-    extends:
-      file: docker-compose.base.yml
-      service: rest
-    depends_on:
-      rest-cache:
-        condition: service_started
       discord-proxy:
         condition: service_healthy
 

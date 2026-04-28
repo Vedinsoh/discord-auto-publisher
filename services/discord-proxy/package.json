@@ -4,15 +4,19 @@
   "license": "GPL-3.0-or-later",
   "main": "src/index.ts",
   "scripts": {
-    "start": "tsx src/index.ts",
-    "start:dev": "tsx watch --clear-screen=false src/index.ts"
+    "start": "tsx src/index.ts | pino-pretty",
+    "start:dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty"
   },
   "type": "module",
   "dependencies": {
     "@discordjs/rest": "^2.4.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "envalid": "^8.0.0",
+    "pino": "^9.5.0",
+    "redis": "^4.7.0"
   },
   "devDependencies": {
+    "pino-pretty": "^11.2.2",
     "tsx": "^4.19.0",
     "typescript": "^5.5.4"
   }

@@ -6,5 +6,4 @@ export default new Event(Events.ClientReady, async () => {
   // Initialize bot presence
   Services.Presence.updateBotPresence();
   Services.Presence.startBotPresenceInterval();
-  Services.Presence.startGuildsCountUpdateInterval();
 });

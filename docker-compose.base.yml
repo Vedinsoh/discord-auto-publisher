@@ -6,6 +6,9 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    depends_on:
+      rest-cache:
+        condition: service_started
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').catch(()=>process.exit(1))"]
       interval: 30s
@@ -21,21 +24,6 @@ services:
     env_file:
       - .env
     depends_on:
-      rest:
-        condition: service_started
-      discord-proxy:
-        condition: service_healthy
-
-  rest:
-    build:
-      context: services/rest
-      dockerfile: .docker/Dockerfile
-    restart: unless-stopped
-    env_file:
-      - .env
-    depends_on:
-      rest-cache:
-        condition: service_started
       discord-proxy:
         condition: service_healthy
 
@@ -46,13 +34,5 @@ services:
     volumes:
       - rest-cache-data:/data
 
-  rest-db:
-    image: mongo:6
-    restart: unless-stopped
-    command: mongod --port 27017
-    volumes:
-      - rest-db-data:/data/db
-
 volumes:
   rest-cache-data:
-  rest-db-data:

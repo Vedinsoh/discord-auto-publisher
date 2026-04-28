@@ -1,5 +1,5 @@
-import { REST } from './rest.js';
+import { Proxy } from './proxy.js';
 
 export const API = {
-  REST,
+  Proxy,
 };

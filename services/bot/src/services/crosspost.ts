@@ -44,7 +44,7 @@ const handle = async (message: Message, channel: NewsChannel) => {
  */
 const push = async (message: ReceivedMessage) => {
   try {
-    return await Data.API.REST.pushCrosspost(message.channel.id, message.id);
+    return await Data.API.Proxy.pushCrosspost(message.channel.id, message.id);
   } catch (error) {
     logger.error(error, `Failed to push crosspost for message ${message.id} in channel ${message.channel.id}`);
     return

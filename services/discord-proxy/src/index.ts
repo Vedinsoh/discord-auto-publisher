@@ -1,43 +1,136 @@
-import 'dotenv/config';
-import { createServer } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import process from 'node:process';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { DiscordAPIError, HTTPError, RateLimitError, REST, type RequestMethod, type RouteLike } from '@discordjs/rest';
+import {
+  DiscordAPIError,
+  HTTPError,
+  RateLimitError,
+  REST,
+  type RequestMethod,
+  type RouteLike,
+} from '@discordjs/rest';
+import { env } from './config.js';
+import { logger } from './logger.js';
+import { CrosspostsCounter, RateLimitsCache } from './redis/index.js';
 
-process.on('SIGINT', () => process.exit(0));
+const CROSSPOST_ROUTE = /^\/channels\/(\d{17,19})\/messages\/(\d{17,19})\/crosspost$/;
+const INVALID_REQUEST_STATUSES = new Set([401, 403, 429]);
+const ALREADY_CROSSPOSTED_CODE = 40033;
 
-const api = new REST({ rejectOnRateLimit: () => true, retries: 0 }).setToken(process.env.DISCORD_TOKEN!);
+const api = new REST({
+  rejectOnRateLimit: () => true,
+  retries: 0,
+}).setToken(env.DISCORD_TOKEN);
 
-const server = createServer(async (req, res) => {
+const writeRateLimitHeaders = (res: ServerResponse, error: RateLimitError) => {
+  res.setHeader('Retry-After', String(error.retryAfter / 1_000));
+  res.setHeader('X-RateLimit-Reset-After', String(error.retryAfter / 1_000));
+  res.setHeader('X-RateLimit-Remaining', '0');
+  res.setHeader('X-RateLimit-Limit', String(error.limit));
+  res.setHeader('X-RateLimit-Bucket', error.hash);
+  res.setHeader('X-RateLimit-Scope', error.scope);
+  if (error.global) res.setHeader('X-RateLimit-Global', 'true');
+};
+
+const handleHealth = (res: ServerResponse) => {
+  res.statusCode = 200;
+  res.end('OK');
+};
+
+const handleInfo = async (res: ServerResponse) => {
+  try {
+    const [channelsCount, rateLimitsSize] = await Promise.all([
+      CrosspostsCounter.getSize(),
+      RateLimitsCache.getSize(),
+    ]);
+    const body = {
+      data: {
+        rest: {
+          globalRemaining: api.globalRemaining,
+          handlers: api.handlers.size,
+          activeHandlers: api.handlers.filter((h) => !h.inactive).size,
+          hashes: api.hashes.size,
+        },
+        channelsCount,
+        rateLimitsSize,
+      },
+    };
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(body));
+  } catch (error) {
+    logger.error({ event: 'info.failed', err: error });
+    res.statusCode = 500;
+    res.end();
+  }
+};
+
+const handleCrosspostPreCheck = async (channelId: string): Promise<boolean> => {
+  const blocked = await CrosspostsCounter.isOverLimit(channelId);
+  if (blocked) {
+    logger.debug({ event: 'crosspost.blocked.counter', channelId });
+  }
+  return blocked;
+};
+
+const onCrosspostSuccess = (channelId: string, messageId: string) => {
+  void CrosspostsCounter.increment(channelId);
+  logger.debug({ event: 'crosspost.success', channelId, messageId });
+};
+
+const onCrosspostSublimit = (channelId: string, retryAfterSec: number) => {
+  void CrosspostsCounter.lockSublimit(channelId, retryAfterSec);
+  logger.info({ event: 'crosspost.sublimit', channelId, retryAfterSec });
+};
+
+const onAlreadyCrossposted = (channelId: string) => {
+  void CrosspostsCounter.increment(channelId);
+  logger.debug({ event: 'crosspost.already', channelId, code: ALREADY_CROSSPOSTED_CODE });
+};
+
+const onInvalidRequest = (status: number) => {
+  void RateLimitsCache.add(status);
+  logger.info({ event: 'cloudflare.invalid', status });
+};
+
+const buildHeaders = (req: IncomingMessage): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (req.headers['content-type']) headers['Content-Type'] = req.headers['content-type'];
+  if (req.headers['x-audit-log-reason']) headers['x-audit-log-reason'] = req.headers['x-audit-log-reason'] as string;
+  return headers;
+};
+
+const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
   const { method, url } = req;
-
   if (!method || !url) {
     res.statusCode = 400;
     res.end();
     return;
   }
 
-  // Health check endpoint
   const parsedUrl = new URL(url, 'http://noop');
+
   if (parsedUrl.pathname === '/health') {
-    res.statusCode = 200;
-    res.end('OK');
+    handleHealth(res);
+    return;
+  }
+  if (parsedUrl.pathname === '/info') {
+    await handleInfo(res);
     return;
   }
 
-  // Strip /api and version prefix to get the Discord API route
   const fullRoute = parsedUrl.pathname.replace(/^\/api(\/v\d+)?/, '') as RouteLike;
+  const crosspostMatch = method === 'POST' ? CROSSPOST_ROUTE.exec(fullRoute) : null;
+  const channelId = crosspostMatch?.[1];
+  const messageId = crosspostMatch?.[2];
 
-  const headers: Record<string, string> = {};
-  if (req.headers['content-type']) {
-    headers['Content-Type'] = req.headers['content-type'];
-  }
-  if (req.headers.authorization) {
-    headers.authorization = req.headers.authorization;
-  }
-  if (req.headers['x-audit-log-reason']) {
-    headers['x-audit-log-reason'] = req.headers['x-audit-log-reason'] as string;
+  if (channelId && messageId) {
+    if (await handleCrosspostPreCheck(channelId)) {
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
   }
 
   try {
@@ -45,40 +138,35 @@ const server = createServer(async (req, res) => {
       body: req,
       fullRoute,
       method: method as RequestMethod,
-      auth: false,
+      auth: true,
       passThroughBody: true,
       query: parsedUrl.searchParams,
-      headers,
+      headers: buildHeaders(req),
     });
 
-    // Forward successful response with all headers (including rate limit headers
-    // so clients can build per-channel bucket state for proper parallel processing)
+    if (channelId && messageId && discordResponse.status >= 200 && discordResponse.status < 300) {
+      onCrosspostSuccess(channelId, messageId);
+    }
+
     res.statusCode = discordResponse.status;
     for (const [header, value] of discordResponse.headers) {
       res.setHeader(header, value);
     }
 
     if (discordResponse.body) {
-      await pipeline(
-        discordResponse.body instanceof Readable ? discordResponse.body : Readable.fromWeb(discordResponse.body),
-        res,
-      );
+      const stream = discordResponse.body instanceof Readable
+        ? discordResponse.body
+        : Readable.fromWeb(discordResponse.body);
+      await pipeline(stream, res);
     }
   } catch (error) {
     if (error instanceof RateLimitError) {
-      res.statusCode = 429;
-      // Forward all bucket headers so clients can update their rate limit state correctly.
-      // X-RateLimit-Reset-After is critical: without it clients can't update this.reset,
-      // causing getTimeToReset() to return stale values from the last successful response.
-      res.setHeader('Retry-After', String(error.retryAfter / 1_000));
-      res.setHeader('X-RateLimit-Reset-After', String(error.retryAfter / 1_000));
-      res.setHeader('X-RateLimit-Remaining', '0');
-      res.setHeader('X-RateLimit-Limit', String(error.limit));
-      res.setHeader('X-RateLimit-Bucket', error.hash);
-      res.setHeader('X-RateLimit-Scope', error.scope);
-      if (error.global) {
-        res.setHeader('X-RateLimit-Global', 'true');
+      if (channelId && error.scope === 'shared' && !error.global) {
+        onCrosspostSublimit(channelId, error.retryAfter / 1_000);
       }
+      onInvalidRequest(429);
+      res.statusCode = 429;
+      writeRateLimitHeaders(res, error);
       res.setHeader('Content-Type', 'application/json');
       res.write(
         JSON.stringify({
@@ -87,22 +175,53 @@ const server = createServer(async (req, res) => {
           global: error.global,
         }),
       );
-    } else if (error instanceof DiscordAPIError || error instanceof HTTPError) {
+    } else if (error instanceof DiscordAPIError) {
+      if (channelId && error.code === ALREADY_CROSSPOSTED_CODE) {
+        onAlreadyCrossposted(channelId);
+      }
+      if (INVALID_REQUEST_STATUSES.has(error.status)) {
+        onInvalidRequest(error.status);
+      }
       res.statusCode = error.status;
-      if ('rawError' in error) {
+      if (error.rawError) {
         res.setHeader('Content-Type', 'application/json');
         res.write(JSON.stringify(error.rawError));
       }
+    } else if (error instanceof HTTPError) {
+      if (INVALID_REQUEST_STATUSES.has(error.status)) {
+        onInvalidRequest(error.status);
+      }
+      res.statusCode = error.status;
     } else if (error instanceof Error && error.name === 'AbortError') {
       res.statusCode = 504;
       res.statusMessage = 'Upstream timed out';
     } else {
-      throw error;
+      logger.error({ event: 'proxy.unhandled_error', err: error, fullRoute, method });
+      res.statusCode = 500;
     }
   } finally {
     res.end();
   }
+};
+
+const server = createServer((req, res) => {
+  handleRequest(req, res).catch((error) => {
+    logger.error({ event: 'proxy.fatal', err: error });
+    if (!res.headersSent) {
+      res.statusCode = 500;
+      res.end();
+    }
+  });
 });
 
-const port = Number.parseInt(process.env.PORT ?? '8080', 10);
-server.listen(port, () => console.log(`Discord proxy listening on port ${port}`));
+server.listen(env.PORT, () => {
+  logger.info({ event: 'proxy.listening', port: env.PORT }, `Discord proxy listening on port ${env.PORT}`);
+});
+
+const shutdown = () => {
+  logger.info({ event: 'proxy.shutdown' });
+  server.close(() => process.exit(0));
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

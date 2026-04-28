@@ -1,7 +1,7 @@
 import { Data } from '#data';
 
 const get = async () => {
-  const res = await Data.API.REST.getInfo();
+  const res = await Data.API.Proxy.getInfo();
   const body = (await res.json()) as any;
 
   if (!body.data) return null;
