@@ -19,7 +19,11 @@ const INVALID_REQUEST_STATUSES = new Set([401, 403, 429]);
 const ALREADY_CROSSPOSTED_CODE = 40033;
 
 const api = new REST({
-  rejectOnRateLimit: () => true,
+  rejectOnRateLimit: ({ scope, sublimitTimeout, timeToReset, global }) => {
+    if (global) return true;
+    if (scope === 'shared' && sublimitTimeout > 0) return true;
+    return timeToReset > 60_000;
+  },
   retries: 0,
 }).setToken(env.DISCORD_TOKEN);
 
