@@ -1,6 +1,14 @@
 import { getInfo } from 'discord-hybrid-sharding';
 import { GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { BotClient } from '#structures/Client';
+import { logger } from '#utils/logger';
+
+process.on('uncaughtException', (err) => {
+  logger.error({ event: 'process.uncaughtException', err }, 'Uncaught exception in shard');
+});
+process.on('unhandledRejection', (reason) => {
+  logger.error({ event: 'process.unhandledRejection', err: reason }, 'Unhandled rejection in shard');
+});
 
 const client = new BotClient({
   makeCache: Options.cacheWithLimits({

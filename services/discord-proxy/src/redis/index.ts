@@ -1,2 +1,2 @@
 export { CrosspostsCounter } from './crosspostsCounter.js';
-export { RateLimitsCache } from './rateLimitsCache.js';
+export { InvalidRequestsCounter } from './invalidRequestsCounter.js';
