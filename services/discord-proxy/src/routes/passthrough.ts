@@ -45,7 +45,12 @@ export const handlePassthrough = async (
       requestOptions.passThroughBody = true;
     }
 
+    const startedAt = Date.now();
     const discordResponse = await api.queueRequest(requestOptions);
+    const durationMs = Date.now() - startedAt;
+    if (durationMs > 5_000) {
+      logger.warn({ event: 'passthrough.slow', method, fullRoute, durationMs, status: discordResponse.status });
+    }
 
     res.statusCode = discordResponse.status;
     for (const [header, value] of discordResponse.headers) res.setHeader(header, value);

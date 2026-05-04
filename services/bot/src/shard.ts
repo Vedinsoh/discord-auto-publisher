@@ -45,6 +45,7 @@ const client = new BotClient({
   rest: {
     api: 'http://discord-proxy:8080/api',
     globalRequestsPerSecond: Number.POSITIVE_INFINITY,
+    timeout: 60_000,
   },
 });
 
