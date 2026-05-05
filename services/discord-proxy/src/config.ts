@@ -8,5 +8,5 @@ export const env = cleanEnv(process.env, {
   REDIS_URI: url({ default: 'redis://rest-cache:6379' }),
   DISCORD_TOKEN: str(),
   PORT: port({ default: 8080 }),
-  REDIS_TIMEOUT_MS: num({ default: 200 }),
+  REDIS_TIMEOUT_MS: num({ default: 500 }),
 });
