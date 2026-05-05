@@ -39,11 +39,12 @@ export const handleCrosspost = async (channelId: string, messageId: string, res:
     return;
   }
 
-  // Enqueue with deterministic jobId for natural dedup of duplicate sends
+  // Enqueue with deterministic jobId for natural dedup of duplicate sends.
+  // BullMQ disallows `:` in jobId, use `-` as separator.
   await crosspostQueue.add(
     'crosspost',
     { channelId, messageId },
-    { jobId: `${channelId}:${messageId}` },
+    { jobId: `${channelId}-${messageId}` },
   );
 
   res.statusCode = 202;
