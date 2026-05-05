@@ -12,10 +12,17 @@ export default new AdminCommand(CommandNames.INFO, async ({ channel }) => {
     `> Active handlers: ${data?.rest.activeHandlers}`,
     `> Total handlers: ${data?.rest.handlers}`,
     `> Bucket hashes: ${data?.rest.hashes}`,
+    '### Queue:',
+    `> Waiting: ${data?.queue.waiting ?? 0}`,
+    `> Active: ${data?.queue.active ?? 0}`,
+    `> Delayed: ${data?.queue.delayed ?? 0}`,
+    `> Failed: ${data?.queue.failed ?? 0}`,
+    `> Completed: ${data?.queue.completed ?? 0}`,
     '### Channels:',
-    `> Tracked: ${data?.channelsCount}`,
-    '### Rate limits cache:',
-    `> Size: ${data?.rateLimitsSize}`,
+    `> Sublimit-tracked: ${data?.channelsCount}`,
+    `> Cant-post cached: ${data?.cantPostCount}`,
+    '### Invalid requests (10min window):',
+    `> Count: ${data?.invalidRequests}`,
   ];
   channel.send(parsedData.join('\n'));
 });

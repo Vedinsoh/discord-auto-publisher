@@ -4,7 +4,9 @@ import { REST, type RequestMethod, type RouteLike } from '@discordjs/rest';
 import { env } from './config.js';
 import { logger } from './logger.js';
 import { rejectOnCrosspostRateLimit } from './rateLimits/rejectPredicate.js';
-import { CrosspostsCounter, InvalidRequestsCounter } from './redis/index.js';
+import { crosspostQueue } from './queue/crosspostQueue.js';
+import { startCrosspostWorker } from './queue/crosspostWorker.js';
+import { CantPostCache, CrosspostsCounter, InvalidRequestsCounter } from './redis/index.js';
 import { handleCrosspost } from './routes/crosspost.js';
 import { handlePassthrough } from './routes/passthrough.js';
 
@@ -15,6 +17,8 @@ const api = new REST({
   retries: 0,
 }).setToken(env.DISCORD_TOKEN);
 
+const worker = startCrosspostWorker(api);
+
 const handleHealth = (res: ServerResponse) => {
   res.statusCode = 200;
   res.end('OK');
@@ -22,9 +26,11 @@ const handleHealth = (res: ServerResponse) => {
 
 const handleInfo = async (res: ServerResponse) => {
   try {
-    const [channelsCount, invalidRequests] = await Promise.all([
+    const [channelsCount, invalidRequests, cantPostCount, queueCounts] = await Promise.all([
       CrosspostsCounter.getSize(),
       InvalidRequestsCounter.getCount(),
+      CantPostCache.getSize(),
+      crosspostQueue.getJobCounts('waiting', 'active', 'delayed', 'failed', 'completed'),
     ]);
     const body = {
       data: {
@@ -34,7 +40,9 @@ const handleInfo = async (res: ServerResponse) => {
           activeHandlers: api.handlers.filter((h) => !h.inactive).size,
           hashes: api.hashes.size,
         },
+        queue: queueCounts,
         channelsCount,
+        cantPostCount,
         invalidRequests,
       },
     };
@@ -46,6 +54,12 @@ const handleInfo = async (res: ServerResponse) => {
     res.statusCode = 500;
     res.end();
   }
+};
+
+const handleClearCantPost = async (channelId: string, res: ServerResponse) => {
+  await CantPostCache.clear(channelId);
+  res.statusCode = 204;
+  res.end();
 };
 
 const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
@@ -60,12 +74,18 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
   if (parsedUrl.pathname === '/health') return handleHealth(res);
   if (parsedUrl.pathname === '/info') return handleInfo(res);
 
+  // Internal endpoint for the bot to invalidate cant-post entries on permission updates.
+  if (method === 'DELETE') {
+    const cantPostMatch = /^\/internal\/cant-post\/(\d{17,19})$/.exec(parsedUrl.pathname);
+    if (cantPostMatch) return handleClearCantPost(cantPostMatch[1], res);
+  }
+
   const fullRoute = parsedUrl.pathname.replace(/^\/api(\/v\d+)?/, '') as RouteLike;
   const crosspostMatch = method === 'POST' ? CROSSPOST_ROUTE.exec(fullRoute) : null;
 
   if (crosspostMatch) {
     const [, channelId, messageId] = crosspostMatch;
-    return handleCrosspost(api, channelId, messageId, fullRoute, method as RequestMethod, res);
+    return handleCrosspost(channelId, messageId, res);
   }
 
   return handlePassthrough(api, req, res, fullRoute, method as RequestMethod, parsedUrl.searchParams);
@@ -85,8 +105,10 @@ server.listen(env.PORT, () => {
   logger.info({ event: 'proxy.listening', port: env.PORT }, `Discord proxy listening on port ${env.PORT}`);
 });
 
-const shutdown = () => {
+const shutdown = async () => {
   logger.info({ event: 'proxy.shutdown' });
+  await worker.close();
+  await crosspostQueue.close();
   server.close(() => process.exit(0));
 };
 

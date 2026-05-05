@@ -13,8 +13,16 @@ const get = async () => {
       activeHandlers: number;
       hashes: number;
     };
-    rateLimitsSize: number;
+    queue: {
+      waiting?: number;
+      active?: number;
+      delayed?: number;
+      failed?: number;
+      completed?: number;
+    };
     channelsCount: number;
+    cantPostCount: number;
+    invalidRequests: number;
   };
 };
 

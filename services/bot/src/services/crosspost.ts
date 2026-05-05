@@ -1,6 +1,7 @@
-import { type Message, type NewsChannel, PermissionsBitField } from 'discord.js';
+import { type Message, type NewsChannel } from 'discord.js';
 import urlRegex from 'url-regex-safe';
 import { Data } from '#data';
+import { Services } from '#services';
 import type { ReceivedMessage } from '#types/MessageTypes';
 import { sleep } from '#utils/common';
 import { logger } from '#utils/logger';
@@ -12,42 +13,39 @@ import { secToMs } from '#utils/timeConverters';
  * @param channel NewsChannel object
  */
 const handle = async (message: Message, channel: NewsChannel) => {
-  // Check if the bot has the necessary permissions to crosspost
-  const botMember = await message.guild?.members.me?.fetch();
-  const permissionsBitfield = botMember?.permissionsIn(channel);
-
-  // Check necessary permissions
-  if (!permissionsBitfield?.has(PermissionsBitField.Flags.ManageMessages)) return;
-  if (!permissionsBitfield?.has(PermissionsBitField.Flags.SendMessages)) return;
+  // Synchronous, cache-only permission check. discord.js auto-populates `members.me`,
+  // role cache, and channel permission overwrites from GUILD_CREATE / *_UPDATE events.
+  if (!Services.Permissions.canCrosspostInChannel(channel)) return;
 
   // If message has no text content, crosspost immediately
   if (!message.content) {
     return push(message);
   }
 
-  // Check if the message has a URL and no embeds
+  // Defer crossposting if the message has a URL but no embeds
   const hasUrl = urlRegex({ strict: true, localhost: false }).test(message.content);
   const hasEmbeds = Boolean(message.embeds.length);
-
-  // Defer crossposting if the message has a URL but no embeds
   if (hasUrl && !hasEmbeds) {
     await sleep(secToMs(5));
   }
 
-  // Push the message for crossposting
   return push(message);
 };
 
 /**
- * Sends a message to the REST service to crosspost
- * @param message Message to crosspost
+ * Sends a message to the proxy for crossposting. The proxy ACKs immediately with 202
+ * and processes asynchronously via its BullMQ queue, so this fetch returns in <100ms
+ * regardless of Discord's rate-limit state.
  */
 const push = async (message: ReceivedMessage) => {
   try {
     return await Data.API.Proxy.pushCrosspost(message.channel.id, message.id);
   } catch (error) {
-    logger.error(error, `Failed to push crosspost for message ${message.id} in channel ${message.channel.id}`);
-    return
+    logger.warn(
+      { event: 'crosspost.push_failed', channelId: message.channel.id, messageId: message.id, err: error },
+      'Failed to push crosspost to proxy',
+    );
+    return;
   }
 };
 
