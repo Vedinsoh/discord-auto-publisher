@@ -1,4 +1,4 @@
-import { type Message, type NewsChannel } from 'discord.js';
+import { type Message, MessageFlags, type NewsChannel } from 'discord.js';
 import urlRegex from 'url-regex-safe';
 import { Data } from '#data';
 import { Services } from '#services';
@@ -8,11 +8,28 @@ import { logger } from '#utils/logger';
 import { secToMs } from '#utils/timeConverters';
 
 /**
+ * Returns true if Discord will reject this message with code 50068 (Invalid Message Type)
+ * or 40033 (Already Crossposted). Filtering here avoids enqueueing work that would always
+ * fail downstream and burn Discord requests for nothing.
+ */
+const isCrosspostable = (message: Message): boolean => {
+  if (message.system) return false;
+  if (message.flags.has(MessageFlags.IsCrosspost)) return false;
+  if (message.flags.has(MessageFlags.Crossposted)) return false;
+  return true;
+};
+
+/**
  * Handles the message for crossposting
  * @param message Message object
  * @param channel NewsChannel object
  */
 const handle = async (message: Message, channel: NewsChannel) => {
+  // Pre-filter messages Discord would reject as un-crosspostable (system messages,
+  // already-crossposted, forwarded). Saves a queue round-trip and avoids burning
+  // Discord requests on guaranteed failures.
+  if (!isCrosspostable(message)) return;
+
   // Synchronous, cache-only permission check. discord.js auto-populates `members.me`,
   // role cache, and channel permission overwrites from GUILD_CREATE / *_UPDATE events.
   if (!Services.Permissions.canCrosspostInChannel(channel)) return;

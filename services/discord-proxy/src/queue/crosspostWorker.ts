@@ -94,9 +94,10 @@ const processJob = async (api: REST, job: Job<CrosspostJobData>): Promise<void> 
         });
         return;
       }
-      // Other 4xx (bad request, missing access, channel deleted, etc.) — don't retry
+      // Other 4xx (bad request, missing access, channel deleted, etc.) — don't retry.
+      // Per Discord docs, only 401/403/429 count toward the CF invalid-request budget,
+      // so we don't increment the counter here.
       if (error.status >= 400 && error.status < 500) {
-        void InvalidRequestsCounter.increment(error.status);
         logger.warn({
           event: 'crosspost.discord_error',
           channelId,
