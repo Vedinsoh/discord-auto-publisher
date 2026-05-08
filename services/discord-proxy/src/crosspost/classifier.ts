@@ -5,7 +5,7 @@ const SUBLIMIT_TIME_THRESHOLD_MS = 60_000;
 
 export type CrosspostOutcome =
   | { kind: 'already_done' }
-  | { kind: 'cant_post'; status: 401 | 403 }
+  | { kind: 'blocked'; status: 401 | 403 }
   | { kind: 'sublimit'; retryAfterMs: number }
   | { kind: 'global_ratelimit'; retryAfterMs: number }
   | { kind: 'transient_429'; retryAfterMs: number }
@@ -31,7 +31,7 @@ const classifyDiscordApi = (error: DiscordAPIError): CrosspostOutcome => {
     return { kind: 'already_done' };
   }
   if (error.status === 401 || error.status === 403) {
-    return { kind: 'cant_post', status: error.status };
+    return { kind: 'blocked', status: error.status };
   }
   if (error.status >= 400 && error.status < 500) {
     return { kind: 'fatal_4xx', status: error.status, code: error.code };

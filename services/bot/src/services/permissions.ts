@@ -19,12 +19,12 @@ const canCrosspostInChannel = (channel: GuildBasedChannel): boolean => {
 
 /**
  * Recompute crosspost eligibility for a single channel and clear the proxy's
- * cant-post cache entry if the bot now has permission.
+ * blocked cache entry if the bot now has permission.
  */
 const refreshChannel = async (channel: GuildBasedChannel) => {
   if (canCrosspostInChannel(channel)) {
-    await Data.API.Proxy.clearCantPost(channel.id).catch((err) =>
-      logger.warn({ event: 'permissions.clear_cant_post_failed', channelId: channel.id, err }),
+    await Data.API.Proxy.clearBlocked(channel.id).catch((err) =>
+      logger.warn({ event: 'permissions.clear_blocked_failed', channelId: channel.id, err }),
     );
   }
 };

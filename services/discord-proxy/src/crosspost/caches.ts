@@ -2,12 +2,12 @@ import { env } from '../config.js';
 import { logger } from '../logger.js';
 import type { RedisClient } from '../redis/index.js';
 
-const SUBLIMIT_KEY_PREFIX = 'channel';
+const SUBLIMIT_KEY_PREFIX = 'channel:sublimit';
 const SUBLIMIT_DEFAULT_TTL_SEC = 60 * 60;
 const SUBLIMIT_COUNT = 10;
 
-const CANT_POST_KEY_PREFIX = 'cant_post';
-const CANT_POST_TTL_SEC = 60 * 60;
+const BLOCKED_KEY_PREFIX = 'channel:blocked';
+const BLOCKED_TTL_SEC = 60 * 60;
 
 const withTimeout = async <T>(
   promise: Promise<T>,
@@ -75,33 +75,33 @@ export const createSublimitCounter = (redis: RedisClient): SublimitCounter => {
   };
 };
 
-export type CantPostCache = {
+export type BlockedCache = {
   set(channelId: string): Promise<void>;
-  isCantPost(channelId: string): Promise<boolean>;
+  isBlocked(channelId: string): Promise<boolean>;
   clear(channelId: string): Promise<void>;
   size(): Promise<number>;
 };
 
-export const createCantPostCache = (redis: RedisClient): CantPostCache => {
-  const key = (channelId: string) => `${CANT_POST_KEY_PREFIX}:${channelId}`;
+export const createBlockedCache = (redis: RedisClient): BlockedCache => {
+  const key = (channelId: string) => `${BLOCKED_KEY_PREFIX}:${channelId}`;
 
   return {
     set: async (channelId) => {
       try {
-        await redis.setEx(key(channelId), CANT_POST_TTL_SEC, '1');
+        await redis.setEx(key(channelId), BLOCKED_TTL_SEC, '1');
       } catch (error) {
-        logger.warn({ event: 'redis.write_failed', op: 'cant_post.set', channelId, err: error });
+        logger.warn({ event: 'redis.write_failed', op: 'blocked.set', channelId, err: error });
       }
     },
-    isCantPost: async (channelId) => {
-      const value = await withTimeout(redis.get(key(channelId)), null, { op: 'cant_post.get', channelId });
+    isBlocked: async (channelId) => {
+      const value = await withTimeout(redis.get(key(channelId)), null, { op: 'blocked.get', channelId });
       return value === '1';
     },
     clear: async (channelId) => {
       try {
         await redis.del(key(channelId));
       } catch (error) {
-        logger.warn({ event: 'redis.write_failed', op: 'cant_post.clear', channelId, err: error });
+        logger.warn({ event: 'redis.write_failed', op: 'blocked.clear', channelId, err: error });
       }
     },
     size: async () => {

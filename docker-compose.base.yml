@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     depends_on:
-      rest-cache:
+      cache:
         condition: service_started
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:8080/health').catch(()=>process.exit(1))"]
@@ -27,12 +27,12 @@ services:
       discord-proxy:
         condition: service_healthy
 
-  rest-cache:
+  cache:
     image: redis:7-alpine
     restart: unless-stopped
     command: 'redis-server --port 6379'
     volumes:
-      - rest-cache-data:/data
+      - cache-data:/data
 
 volumes:
-  rest-cache-data:
+  cache-data:

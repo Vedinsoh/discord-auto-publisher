@@ -13,7 +13,7 @@ services:
     healthcheck:
       disable: true
     depends_on:
-      rest-cache:
+      cache:
         condition: service_started
 
   bot:
@@ -29,12 +29,12 @@ services:
       discord-proxy:
         condition: service_started
 
-  rest-cache:
+  cache:
     extends:
       file: docker-compose.base.yml
-      service: rest-cache
+      service: cache
     ports:
       - 6379:6379
 
 volumes:
-  rest-cache-data:
+  cache-data:

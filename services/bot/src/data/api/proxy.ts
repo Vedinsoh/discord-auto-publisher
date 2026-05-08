@@ -10,8 +10,8 @@ const enqueueCrosspost = async (channelId: Snowflake, messageId: Snowflake) => {
   });
 };
 
-const clearCantPost = async (channelId: Snowflake) => {
-  return fetch(`${baseUrl}/internal/cant-post/${channelId}`, {
+const clearBlocked = async (channelId: Snowflake) => {
+  return fetch(`${baseUrl}/internal/blocked/${channelId}`, {
     method: 'DELETE',
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
@@ -21,4 +21,4 @@ const getInfo = async () => {
   return fetch(`${baseUrl}/info`, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
 };
 
-export const Proxy = { enqueueCrosspost, clearCantPost, getInfo };
+export const Proxy = { enqueueCrosspost, clearBlocked, getInfo };

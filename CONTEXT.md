@@ -16,13 +16,13 @@
 
 - **Sublimit** — Discord's per-channel 10/hour shared 429 on crossposts. Surfaces as `RateLimitError` with `scope: 'shared'`.
 
-- **Cant-post cache** — negative TTL'd record marking a channel as un-crosspostable (401/403). Cleared by the bot via `DELETE /internal/cant-post/:id` on permission updates.
+- **Blocked cache** — negative TTL'd record marking a channel as un-crosspostable (401/403). Cleared by the bot via `DELETE /internal/blocked/:id` on permission updates.
 
 ## Internal Proxy modules
 
 - **Gateway** — owns the `REST` instance, the `rejectOnRateLimit` predicate, REST event listeners, the CF-budget tracker, and the passthrough Express route. Pure rate-limit-sync concern.
 
-- **Crosspost** — owns the BullMQ queue + worker, the gate (CF-budget + cant-post + sublimit), the Discord-error classifier, the Redis-backed caches, and the enqueue Express route.
+- **Crosspost** — owns the BullMQ queue + worker, the gate (CF-budget + blocked + sublimit), the Discord-error classifier, the Redis-backed caches, and the enqueue Express route.
 
 The Crosspost module calls `Gateway.rest.post(...)` directly (in-process function call, not HTTP).
 

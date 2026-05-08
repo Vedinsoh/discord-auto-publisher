@@ -6,7 +6,7 @@ services:
       file: docker-compose.base.yml
       service: discord-proxy
     depends_on:
-      rest-cache:
+      cache:
         condition: service_started
 
   bot:
@@ -17,10 +17,10 @@ services:
       discord-proxy:
         condition: service_healthy
 
-  rest-cache:
+  cache:
     extends:
       file: docker-compose.base.yml
-      service: rest-cache
+      service: cache
 
 volumes:
-  rest-cache-data:
+  cache-data:

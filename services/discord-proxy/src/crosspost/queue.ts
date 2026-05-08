@@ -4,12 +4,12 @@ import { Routes, type Snowflake } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import IORedis, { type Redis } from 'ioredis';
 import { logger } from '../logger.js';
-import type { CantPostCache, SublimitCounter } from './caches.js';
+import type { BlockedCache, SublimitCounter } from './caches.js';
 import { type CrosspostOutcome, classify } from './classifier.js';
 import type { Gate } from './gate.js';
 
 const QUEUE_NAME = 'crosspost';
-const QUEUE_DB = 3;
+const QUEUE_DB = 0;
 const QUEUE_HIGH_WATER = 10_000;
 const RATE_LIMIT_RETRY_CAP_MS = 5 * 60 * 1_000;
 const CF_BUDGET_DELAY_MS = 60_000;
@@ -38,7 +38,7 @@ export type CrosspostQueueModule = {
 export const createCrosspostQueue = (deps: {
   rest: REST;
   gate: Gate;
-  caches: { cantPost: CantPostCache; sublimit: SublimitCounter };
+  caches: { blocked: BlockedCache; sublimit: SublimitCounter };
   redisUri: string;
   concurrency: number;
 }): CrosspostQueueModule => {
@@ -61,9 +61,9 @@ export const createCrosspostQueue = (deps: {
         await deps.caches.sublimit.increment(channelId);
         logger.debug({ event: 'crosspost.already', channelId, messageId });
         return;
-      case 'cant_post':
-        await deps.caches.cantPost.set(channelId);
-        logger.info({ event: 'crosspost.cant_post', channelId, messageId, status: outcome.status });
+      case 'blocked':
+        await deps.caches.blocked.set(channelId);
+        logger.info({ event: 'crosspost.blocked', channelId, messageId, status: outcome.status });
         return;
       case 'sublimit':
         await deps.caches.sublimit.lock(channelId, outcome.retryAfterMs / 1_000);
@@ -148,13 +148,13 @@ export const createCrosspostQueue = (deps: {
   });
 
   const internalRouter = express.Router();
-  internalRouter.delete('/internal/cant-post/:channelId', async (req, res) => {
+  internalRouter.delete('/internal/blocked/:channelId', async (req, res) => {
     const { channelId } = req.params;
     if (!CHANNEL_ID_PATTERN.test(channelId)) {
       res.status(400).end();
       return;
     }
-    await deps.caches.cantPost.clear(channelId);
+    await deps.caches.blocked.clear(channelId);
     res.status(204).end();
   });
 

@@ -24,8 +24,8 @@ const get = async () => {
       failed?: number;
       completed?: number;
     };
-    channelsCount: number;
-    cantPostCount: number;
+    sublimitCount: number;
+    blockedCount: number;
   };
 };
 

@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { env } from './config.js';
-import { createCantPostCache, createSublimitCounter } from './crosspost/caches.js';
+import { createBlockedCache, createSublimitCounter } from './crosspost/caches.js';
 import { createGate } from './crosspost/gate.js';
 import { createCrosspostQueue } from './crosspost/queue.js';
 import { buildGateway } from './gateway/index.js';
@@ -8,23 +8,23 @@ import { createApp } from './http/app.js';
 import { logger } from './logger.js';
 import { createRedisClient, disconnectAllRedis } from './redis/index.js';
 
-const SUBLIMIT_REDIS_DB = 0;
-const CANT_POST_REDIS_DB = 2;
+const SUBLIMIT_REDIS_DB = 1;
+const BLOCKED_REDIS_DB = 2;
 const CF_BUDGET_THRESHOLD = 5_000;
 const WORKER_CONCURRENCY = 50;
 
 const main = async () => {
-  const [sublimitRedis, cantPostRedis] = await Promise.all([
+  const [sublimitRedis, blockedRedis] = await Promise.all([
     createRedisClient(SUBLIMIT_REDIS_DB),
-    createRedisClient(CANT_POST_REDIS_DB),
+    createRedisClient(BLOCKED_REDIS_DB),
   ]);
 
   const sublimit = createSublimitCounter(sublimitRedis);
-  const cantPost = createCantPostCache(cantPostRedis);
-  const caches = { sublimit, cantPost };
+  const blocked = createBlockedCache(blockedRedis);
+  const caches = { sublimit, blocked };
 
   const gateway = buildGateway({ token: env.DISCORD_TOKEN, cfThreshold: CF_BUDGET_THRESHOLD });
-  const gate = createGate({ cfBudget: gateway.cfBudget, cantPost, sublimit });
+  const gate = createGate({ cfBudget: gateway.cfBudget, blocked, sublimit });
   const crosspost = createCrosspostQueue({
     rest: gateway.rest,
     gate,
