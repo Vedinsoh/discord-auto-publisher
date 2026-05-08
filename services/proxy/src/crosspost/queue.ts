@@ -1,6 +1,6 @@
 import type { REST } from '@discordjs/rest';
 import { DelayedError, type Job, Queue, Worker } from 'bullmq';
-import { Routes, type Snowflake } from 'discord-api-types/v10';
+import { Routes, type Snowflake } from 'discord-api-types/v10.js';
 import express, { type Router } from 'express';
 import IORedis, { type Redis } from 'ioredis';
 import { logger } from '../logger.js';
