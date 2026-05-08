@@ -2,28 +2,30 @@ import { createClient, type RedisClientType } from 'redis';
 import { env } from '../config.js';
 import { logger } from '../logger.js';
 
-export class Client {
-  public client: RedisClientType;
-  private databaseId: number;
+export type RedisClient = RedisClientType;
 
-  constructor(databaseId: number) {
-    this.databaseId = databaseId;
-    this.client = createClient({
-      database: databaseId,
-      url: env.REDIS_URI,
-    });
-    this.client.on('error', (error) => {
-      logger.warn({ event: 'redis.error', databaseId: this.databaseId, err: error }, 'Redis client error');
-    });
-  }
+const clients: { databaseId: number; client: RedisClient }[] = [];
 
-  public async connect() {
-    await this.client.connect();
-    logger.info({ event: 'redis.connected', databaseId: this.databaseId }, 'Connected to Redis');
-  }
+export const createRedisClient = async (databaseId: number): Promise<RedisClient> => {
+  const client = createClient({ database: databaseId, url: env.REDIS_URI }) as RedisClient;
+  client.on('error', (error) => {
+    logger.warn({ event: 'redis.error', databaseId, err: error }, 'Redis client error');
+  });
+  await client.connect();
+  logger.info({ event: 'redis.connected', databaseId }, 'Connected to Redis');
+  clients.push({ databaseId, client });
+  return client;
+};
 
-  public async disconnect() {
-    await this.client.disconnect();
-    logger.info({ event: 'redis.disconnected', databaseId: this.databaseId }, 'Disconnected from Redis');
-  }
-}
+export const disconnectAllRedis = async () => {
+  await Promise.all(
+    clients.map(async ({ databaseId, client }) => {
+      try {
+        await client.disconnect();
+        logger.info({ event: 'redis.disconnected', databaseId });
+      } catch (error) {
+        logger.warn({ event: 'redis.disconnect_failed', databaseId, err: error });
+      }
+    }),
+  );
+};

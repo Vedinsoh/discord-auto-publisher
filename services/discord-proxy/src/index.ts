@@ -1,116 +1,56 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import process from 'node:process';
-import { REST, type RequestMethod, type RouteLike } from '@discordjs/rest';
 import { env } from './config.js';
+import { createCantPostCache, createSublimitCounter } from './crosspost/caches.js';
+import { createGate } from './crosspost/gate.js';
+import { createCrosspostQueue } from './crosspost/queue.js';
+import { buildGateway } from './gateway/index.js';
+import { createApp } from './http/app.js';
 import { logger } from './logger.js';
-import { rejectOnCrosspostRateLimit } from './rateLimits/rejectPredicate.js';
-import { crosspostQueue } from './queue/crosspostQueue.js';
-import { startCrosspostWorker } from './queue/crosspostWorker.js';
-import { CantPostCache, CrosspostsCounter, InvalidRequestsCounter } from './redis/index.js';
-import { handleCrosspost } from './routes/crosspost.js';
-import { handlePassthrough } from './routes/passthrough.js';
+import { createRedisClient, disconnectAllRedis } from './redis/index.js';
 
-const CROSSPOST_ROUTE = /^\/channels\/(\d{17,19})\/messages\/(\d{17,19})\/crosspost$/;
+const SUBLIMIT_REDIS_DB = 0;
+const CANT_POST_REDIS_DB = 2;
+const CF_BUDGET_THRESHOLD = 5_000;
+const WORKER_CONCURRENCY = 50;
 
-const api = new REST({
-  rejectOnRateLimit: rejectOnCrosspostRateLimit,
-  retries: 0,
-}).setToken(env.DISCORD_TOKEN);
+const main = async () => {
+  const [sublimitRedis, cantPostRedis] = await Promise.all([
+    createRedisClient(SUBLIMIT_REDIS_DB),
+    createRedisClient(CANT_POST_REDIS_DB),
+  ]);
 
-const worker = startCrosspostWorker(api);
+  const sublimit = createSublimitCounter(sublimitRedis);
+  const cantPost = createCantPostCache(cantPostRedis);
+  const caches = { sublimit, cantPost };
 
-const handleHealth = (res: ServerResponse) => {
-  res.statusCode = 200;
-  res.end('OK');
-};
-
-const handleInfo = async (res: ServerResponse) => {
-  try {
-    const [channelsCount, invalidRequests, cantPostCount, queueCounts] = await Promise.all([
-      CrosspostsCounter.getSize(),
-      InvalidRequestsCounter.getCount(),
-      CantPostCache.getSize(),
-      crosspostQueue.getJobCounts('waiting', 'active', 'delayed', 'failed', 'completed'),
-    ]);
-    const body = {
-      data: {
-        rest: {
-          globalRemaining: api.globalRemaining,
-          handlers: api.handlers.size,
-          activeHandlers: api.handlers.filter((h) => !h.inactive).size,
-          hashes: api.hashes.size,
-        },
-        queue: queueCounts,
-        channelsCount,
-        cantPostCount,
-        invalidRequests,
-      },
-    };
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(body));
-  } catch (error) {
-    logger.error({ event: 'info.failed', err: error });
-    res.statusCode = 500;
-    res.end();
-  }
-};
-
-const handleClearCantPost = async (channelId: string, res: ServerResponse) => {
-  await CantPostCache.clear(channelId);
-  res.statusCode = 204;
-  res.end();
-};
-
-const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
-  const { method, url } = req;
-  if (!method || !url) {
-    res.statusCode = 400;
-    res.end();
-    return;
-  }
-
-  const parsedUrl = new URL(url, 'http://noop');
-  if (parsedUrl.pathname === '/health') return handleHealth(res);
-  if (parsedUrl.pathname === '/info') return handleInfo(res);
-
-  // Internal endpoint for the bot to invalidate cant-post entries on permission updates.
-  if (method === 'DELETE') {
-    const cantPostMatch = /^\/internal\/cant-post\/(\d{17,19})$/.exec(parsedUrl.pathname);
-    if (cantPostMatch) return handleClearCantPost(cantPostMatch[1], res);
-  }
-
-  const fullRoute = parsedUrl.pathname.replace(/^\/api(\/v\d+)?/, '') as RouteLike;
-  const crosspostMatch = method === 'POST' ? CROSSPOST_ROUTE.exec(fullRoute) : null;
-
-  if (crosspostMatch) {
-    const [, channelId, messageId] = crosspostMatch;
-    return handleCrosspost(channelId, messageId, res);
-  }
-
-  return handlePassthrough(api, req, res, fullRoute, method as RequestMethod, parsedUrl.searchParams);
-};
-
-const server = createServer((req, res) => {
-  handleRequest(req, res).catch((error) => {
-    logger.error({ event: 'proxy.fatal', err: error });
-    if (!res.headersSent) {
-      res.statusCode = 500;
-      res.end();
-    }
+  const gateway = buildGateway({ token: env.DISCORD_TOKEN, cfThreshold: CF_BUDGET_THRESHOLD });
+  const gate = createGate({ cfBudget: gateway.cfBudget, cantPost, sublimit });
+  const crosspost = createCrosspostQueue({
+    rest: gateway.rest,
+    gate,
+    caches,
+    redisUri: env.REDIS_URI,
+    concurrency: WORKER_CONCURRENCY,
   });
-});
 
-server.listen(env.PORT, () => {
-  logger.info({ event: 'proxy.listening', port: env.PORT }, `Discord proxy listening on port ${env.PORT}`);
-});
+  const app = createApp({ gateway, crosspost, caches });
+  const server = app.listen(env.PORT, () => {
+    logger.info({ event: 'proxy.listening', port: env.PORT }, `Discord proxy listening on port ${env.PORT}`);
+  });
 
-const shutdown = async () => {
-  logger.info({ event: 'proxy.shutdown' });
-  await worker.close();
-  await crosspostQueue.close();
-  server.close(() => process.exit(0));
+  const shutdown = async () => {
+    logger.info({ event: 'proxy.shutdown' });
+    server.close();
+    await crosspost.shutdown();
+    await disconnectAllRedis();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 };
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+main().catch((error) => {
+  logger.error({ event: 'proxy.fatal', err: error });
+  process.exit(1);
+});

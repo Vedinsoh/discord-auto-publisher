@@ -49,18 +49,13 @@ const handle = async (message: Message, channel: NewsChannel) => {
   return push(message);
 };
 
-/**
- * Sends a message to the proxy for crossposting. The proxy ACKs immediately with 202
- * and processes asynchronously via its BullMQ queue, so this fetch returns in <100ms
- * regardless of Discord's rate-limit state.
- */
 const push = async (message: ReceivedMessage) => {
   try {
-    return await Data.API.Proxy.pushCrosspost(message.channel.id, message.id);
+    return await Data.API.Proxy.enqueueCrosspost(message.channel.id, message.id);
   } catch (error) {
     logger.warn(
       { event: 'crosspost.push_failed', channelId: message.channel.id, messageId: message.id, err: error },
-      'Failed to push crosspost to proxy',
+      'Failed to enqueue crosspost on proxy',
     );
     return;
   }
