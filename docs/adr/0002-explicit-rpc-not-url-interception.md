@@ -6,7 +6,7 @@ Accepted — 2026-05-08
 
 ## Context
 
-The Bot's discord.js Client routes all REST traffic through the Proxy (`rest.api: 'http://discord-proxy:8080/api'`). One option for enqueueing crossposts is to let the Bot call discord.js's native `channel.messages.crosspost(messageId)` and have the Proxy intercept the resulting `POST /api/v10/channels/:id/messages/:id/crosspost` URL, divert it into the BullMQ queue, and ACK with 202.
+The Bot's discord.js Client routes all REST traffic through the Proxy (`rest.api: 'http://proxy:8080/api'`). One option for enqueueing crossposts is to let the Bot call discord.js's native `channel.messages.crosspost(messageId)` and have the Proxy intercept the resulting `POST /api/v10/channels/:id/messages/:id/crosspost` URL, divert it into the BullMQ queue, and ACK with 202.
 
 The DX appeal: the Bot uses one URL base and one abstraction (discord.js), with no crosspost-specific RPC client.
 

@@ -1,7 +1,7 @@
 services:
-  discord-proxy:
+  proxy:
     build:
-      context: services/discord-proxy
+      context: services/proxy
       dockerfile: .docker/Dockerfile
     restart: unless-stopped
     env_file:
@@ -24,7 +24,7 @@ services:
     env_file:
       - .env
     depends_on:
-      discord-proxy:
+      proxy:
         condition: service_healthy
 
   cache:

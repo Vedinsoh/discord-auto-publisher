@@ -43,7 +43,7 @@ const client = new BotClient({
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
-    api: 'http://discord-proxy:8080/api',
+    api: 'http://proxy:8080/api',
     globalRequestsPerSecond: Number.POSITIVE_INFINITY,
     timeout: 60_000,
   },

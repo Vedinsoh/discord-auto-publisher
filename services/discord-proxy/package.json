@@ -1,5 +1,5 @@
 {
-  "name": "discord-proxy",
+  "name": "proxy",
   "author": "Vedinsoh",
   "license": "GPL-3.0-or-later",
   "main": "src/index.ts",

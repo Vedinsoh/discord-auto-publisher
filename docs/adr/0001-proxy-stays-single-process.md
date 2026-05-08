@@ -8,7 +8,7 @@ Accepted — 2026-05-08
 
 The Proxy's only architectural reason to exist is rate-limit synchronization across shards via a shared in-memory `@discordjs/rest` REST instance. Everything else (crosspost queue, gate, error classification, caches) lives in the Proxy because it is the natural home for code that wants to make Discord REST calls under the shared bucket state.
 
-The `refactor/v7` branch experimented with splitting these concerns into two services: `discord-proxy` (passthrough only) and `crosspost-worker` (queue + worker + classifier), with the worker calling the proxy over HTTP for the actual Discord crosspost call. This three-tier shape was speculative and was never load-tested in production. The single-process shape on `refactor/proxy` is the proven one, and `v7` will be updated to drop `crosspost-worker` and adopt the same single-process design.
+The `refactor/v7` branch experimented with splitting these concerns into two services: `proxy` (passthrough only) and `crosspost-worker` (queue + worker + classifier), with the worker calling the proxy over HTTP for the actual Discord crosspost call. This three-tier shape was speculative and was never load-tested in production. The single-process shape on `refactor/proxy` is the proven one, and `v7` will be updated to drop `crosspost-worker` and adopt the same single-process design.
 
 ## Decision
 

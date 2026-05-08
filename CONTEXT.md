@@ -2,9 +2,9 @@
 
 ## Services
 
-- **Bot** (`services/bot`) — discord.js gateway client(s). Receives WS events, filters crosspost-eligible messages, forwards crosspost intents to the Proxy, then forgets. The bot's discord.js `Client` is configured with `rest.api: 'http://discord-proxy:8080/api'` and `globalRequestsPerSecond: Infinity` — all Discord REST traffic flows through the Proxy.
+- **Bot** (`services/bot`) — discord.js gateway client(s). Receives WS events, filters crosspost-eligible messages, forwards crosspost intents to the Proxy, then forgets. The bot's discord.js `Client` is configured with `rest.api: 'http://proxy:8080/api'` and `globalRequestsPerSecond: Infinity` — all Discord REST traffic flows through the Proxy.
 
-- **Proxy** (`services/discord-proxy`) — single Node process. Sole purpose: **rate-limit synchronization across shards via a shared in-memory `@discordjs/rest` REST instance.** All other concerns (crosspost queue, gate, error classification) live here because the Proxy is the natural home for any code wanting to make Discord REST calls with the shared bucket state.
+- **Proxy** (`services/proxy`) — single Node process. Sole purpose: **rate-limit synchronization across shards via a shared in-memory `@discordjs/rest` REST instance.** All other concerns (crosspost queue, gate, error classification) live here because the Proxy is the natural home for any code wanting to make Discord REST calls with the shared bucket state.
 
 ## Domain terms
 

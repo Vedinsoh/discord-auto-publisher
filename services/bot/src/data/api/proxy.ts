@@ -1,6 +1,6 @@
 import type { Snowflake } from 'discord.js';
 
-const baseUrl = 'http://discord-proxy:8080';
+const baseUrl = 'http://proxy:8080';
 const FETCH_TIMEOUT_MS = 5_000;
 
 const enqueueCrosspost = async (channelId: Snowflake, messageId: Snowflake) => {

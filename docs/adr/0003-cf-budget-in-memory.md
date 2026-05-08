@@ -16,7 +16,7 @@ Since the Proxy is single-process by [ADR 0001](./0001-proxy-stays-single-proces
 
 The CF-budget tracker is in-memory. It listens on `RESTEvents.InvalidRequestWarning` (with `invalidRequestWarningInterval: 1` so every invalid request fires the event) and stores `{ count, expiresAt }`. The crosspost gate reads this synchronously to decide whether to shed.
 
-The hand-rolled counter at `services/discord-proxy/src/redis/invalidRequestsCounter.ts` and Redis DB 1 are removed. Manual `InvalidRequestsCounter.increment(status)` calls in passthrough and worker are removed.
+The hand-rolled counter at `services/proxy/src/redis/invalidRequestsCounter.ts` and Redis DB 1 are removed. Manual `InvalidRequestsCounter.increment(status)` calls in passthrough and worker are removed.
 
 ## Consequences
 
