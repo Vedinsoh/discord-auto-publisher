@@ -12,6 +12,10 @@ const get = async () => {
       handlers: number;
       activeHandlers: number;
       hashes: number;
+      cfBudget: {
+        count: number;
+        expiresInMs: number;
+      };
     };
     queue: {
       waiting?: number;
@@ -22,7 +26,6 @@ const get = async () => {
     };
     channelsCount: number;
     cantPostCount: number;
-    invalidRequests: number;
   };
 };
 

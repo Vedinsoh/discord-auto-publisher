@@ -21,8 +21,9 @@ export default new AdminCommand(CommandNames.INFO, async ({ channel }) => {
     '### Channels:',
     `> Sublimit-tracked: ${data?.channelsCount}`,
     `> Cant-post cached: ${data?.cantPostCount}`,
-    '### Invalid requests (10min window):',
-    `> Count: ${data?.invalidRequests}`,
+    '### CF budget (10min window):',
+    `> Invalid requests: ${data?.rest.cfBudget.count ?? 0}`,
+    `> Window remaining: ${Math.round((data?.rest.cfBudget.expiresInMs ?? 0) / 1_000)}s`,
   ];
   channel.send(parsedData.join('\n'));
 });
