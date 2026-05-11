@@ -17,7 +17,6 @@ export const createRest = (token: string): REST => {
   const rest = new REST({
     rejectOnRateLimit: rejectOnCrosspostRateLimit,
     retries: 0,
-    invalidRequestWarningInterval: 1,
   }).setToken(token);
 
   rest.on(RESTEvents.RateLimited, (data) => {

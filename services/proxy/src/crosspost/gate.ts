@@ -1,7 +1,7 @@
-import type { CfBudget } from '../gateway/cfBudget.js';
+import type { InvalidRequestsTracker } from '../gateway/invalidRequests.js';
 import type { BlockedCache, SublimitCounter } from './caches.js';
 
-export type GateRejectReason = 'cf_budget' | 'blocked' | 'sublimit';
+export type GateRejectReason = 'invalid_requests' | 'blocked' | 'sublimit';
 
 export type GateVerdict =
   | { kind: 'allow' }
@@ -12,12 +12,12 @@ export type Gate = {
 };
 
 export const createGate = (deps: {
-  cfBudget: CfBudget;
+  invalidRequests: InvalidRequestsTracker;
   blocked: BlockedCache;
   sublimit: SublimitCounter;
 }): Gate => ({
   evaluate: async (channelId) => {
-    if (deps.cfBudget.isOverThreshold()) return { kind: 'reject', reason: 'cf_budget' };
+    if (deps.invalidRequests.isOverThreshold()) return { kind: 'reject', reason: 'invalid_requests' };
     if (await deps.blocked.isBlocked(channelId)) return { kind: 'reject', reason: 'blocked' };
     if (await deps.sublimit.isOverLimit(channelId)) return { kind: 'reject', reason: 'sublimit' };
     return { kind: 'allow' };

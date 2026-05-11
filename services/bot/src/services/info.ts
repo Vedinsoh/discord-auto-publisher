@@ -12,7 +12,7 @@ const get = async () => {
       handlers: number;
       activeHandlers: number;
       hashes: number;
-      cfBudget: {
+      invalidRequests: {
         count: number;
         expiresInMs: number;
       };

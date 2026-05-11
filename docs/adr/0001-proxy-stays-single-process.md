@@ -12,11 +12,11 @@ The `refactor/v7` branch experimented with splitting these concerns into two ser
 
 ## Decision
 
-The Proxy is one Node process. The Crosspost module calls the Gateway's REST instance directly via in-process function calls — no HTTP hop between them. Scaling out to multiple processes is not a goal; if it becomes one, this ADR is reopened together with [ADR 0003](./0003-cf-budget-in-memory.md).
+The Proxy is one Node process. The Crosspost module calls the Gateway's REST instance directly via in-process function calls — no HTTP hop between them. Scaling out to multiple processes is not a goal; if it becomes one, this ADR is reopened together with [ADR 0003](./0003-invalid-requests-in-memory.md).
 
 ## Consequences
 
 - One Docker container, one port, one lifecycle to manage.
 - The Crosspost worker shares the same REST bucket state as passthrough — both contribute to and observe the same rate-limit handlers.
-- Multi-replica deployment is not currently supported. Doing so would require sharing CF-budget state ([ADR 0003](./0003-cf-budget-in-memory.md)) and routing crosspost traffic to a single replica or sharding by `channelId`.
+- Multi-replica deployment is not currently supported. Doing so would require sharing the invalid-requests tracker state ([ADR 0003](./0003-invalid-requests-in-memory.md)) and routing crosspost traffic to a single replica or sharding by `channelId`.
 - The internal split into `Gateway` and `Crosspost` modules is justified by testability and locality, not by anticipating a future service split.

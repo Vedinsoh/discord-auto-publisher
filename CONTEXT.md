@@ -12,7 +12,7 @@
 
 - **Passthrough** — any non-crosspost Discord REST request from the bot's discord.js Client. Forwarded by the Proxy unchanged with all `x-ratelimit-*` headers preserved, since the bot's Client uses them to maintain its handler/hash collections.
 
-- **CF budget** — the rolling 10-minute count of invalid requests (401/403/429) Cloudflare uses to ban an egress IP. Tracked in-memory via `RESTEvents.InvalidRequestWarning`. Single-replica only.
+- **Invalid requests** — the rolling 10-minute count of invalid requests Cloudflare uses to ban an egress IP. Counts 401, 403, and 429 except those with `X-RateLimit-Scope: shared`. Tracked in-memory via `RESTEvents.Response`. Single-replica only.
 
 - **Sublimit** — Discord's per-channel 10/hour shared 429 on crossposts. Surfaces as `RateLimitError` with `scope: 'shared'`.
 
@@ -20,9 +20,9 @@
 
 ## Internal Proxy modules
 
-- **Gateway** — owns the `REST` instance, the `rejectOnRateLimit` predicate, REST event listeners, the CF-budget tracker, and the passthrough Express route. Pure rate-limit-sync concern.
+- **Gateway** — owns the `REST` instance, the `rejectOnRateLimit` predicate, REST event listeners, the invalid-requests tracker, and the passthrough Express route. Pure rate-limit-sync concern.
 
-- **Crosspost** — owns the BullMQ queue + worker, the gate (CF-budget + blocked + sublimit), the Discord-error classifier, the Redis-backed caches, and the enqueue Express route.
+- **Crosspost** — owns the BullMQ queue + worker, the gate (invalid-requests + blocked + sublimit), the Discord-error classifier, the Redis-backed caches, and the enqueue Express route.
 
 The Crosspost module calls `Gateway.rest.post(...)` directly (in-process function call, not HTTP).
 
@@ -32,4 +32,4 @@ The Crosspost module calls `Gateway.rest.post(...)` directly (in-process functio
 
 - **Explicit RPC bot↔proxy for crossposts.** Bot calls `POST /crosspost/:channelId/:messageId` (empty body) instead of letting the Proxy intercept Discord-shaped URLs. Keeps the async-queue semantics visible at the call site.
 
-- **CF budget in-memory.** Relies on single-replica deployment. Multi-replica deployment requires moving this back to Redis.
+- **Invalid-requests in-memory.** Relies on single-replica deployment. Multi-replica deployment requires moving this back to Redis.

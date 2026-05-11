@@ -10,7 +10,7 @@ import { createRedisClient, disconnectAllRedis } from './redis/index.js';
 
 const SUBLIMIT_REDIS_DB = 1;
 const BLOCKED_REDIS_DB = 2;
-const CF_BUDGET_THRESHOLD = 5_000;
+const INVALID_REQUESTS_THRESHOLD = 5_000;
 const WORKER_CONCURRENCY = 50;
 
 const main = async () => {
@@ -23,8 +23,8 @@ const main = async () => {
   const blocked = createBlockedCache(blockedRedis);
   const caches = { sublimit, blocked };
 
-  const gateway = buildGateway({ token: env.DISCORD_TOKEN, cfThreshold: CF_BUDGET_THRESHOLD });
-  const gate = createGate({ cfBudget: gateway.cfBudget, blocked, sublimit });
+  const gateway = buildGateway({ token: env.DISCORD_TOKEN, invalidRequestsThreshold: INVALID_REQUESTS_THRESHOLD });
+  const gate = createGate({ invalidRequests: gateway.invalidRequests, blocked, sublimit });
   const crosspost = createCrosspostQueue({
     rest: gateway.rest,
     gate,

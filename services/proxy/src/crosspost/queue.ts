@@ -12,7 +12,7 @@ const QUEUE_NAME = 'crosspost';
 const QUEUE_DB = 0;
 const QUEUE_HIGH_WATER = 10_000;
 const RATE_LIMIT_RETRY_CAP_MS = 5 * 60 * 1_000;
-const CF_BUDGET_DELAY_MS = 60_000;
+const INVALID_REQUESTS_DELAY_MS = 60_000;
 const CHANNEL_ID_PATTERN = /^\d{17,19}$/;
 
 export type CrosspostJobData = {
@@ -89,9 +89,9 @@ export const createCrosspostQueue = (deps: {
     const { channelId, messageId } = job.data;
     const verdict = await deps.gate.evaluate(channelId);
     if (verdict.kind === 'reject') {
-      if (verdict.reason === 'cf_budget') {
-        logger.warn({ event: 'crosspost.shed.cf_budget', channelId, messageId });
-        await job.moveToDelayed(Date.now() + CF_BUDGET_DELAY_MS, job.token);
+      if (verdict.reason === 'invalid_requests') {
+        logger.warn({ event: 'crosspost.shed.invalid_requests', channelId, messageId });
+        await job.moveToDelayed(Date.now() + INVALID_REQUESTS_DELAY_MS, job.token);
         throw new DelayedError();
       }
       logger.debug({ event: 'crosspost.skipped', channelId, messageId, reason: verdict.reason });
@@ -126,8 +126,8 @@ export const createCrosspostQueue = (deps: {
 
     const verdict = await deps.gate.evaluate(channelId);
     if (verdict.kind === 'reject') {
-      if (verdict.reason === 'cf_budget') {
-        logger.warn({ event: 'crosspost.rejected.cf_budget', channelId, messageId });
+      if (verdict.reason === 'invalid_requests') {
+        logger.warn({ event: 'crosspost.rejected.invalid_requests', channelId, messageId });
         res.setHeader('Retry-After', '60').status(503).end();
         return;
       }
