@@ -17,6 +17,12 @@ export const env = cleanEnv(process.env, {
   // Backend
   DATABASE_URL: str({ default: 'postgresql://postgres:postgres@localhost:54322/postgres' }),
 
+  // Redis
+  REDIS_URI: str({ default: 'redis://redis:6379' }),
+
+  // Proxy
+  PROXY_PORT: num({ default: 8080 }),
+
   // Stripe
   STRIPE_SECRET_KEY: str({ default: '' }),
   STRIPE_WEBHOOK_SECRET: str({ default: '' }),

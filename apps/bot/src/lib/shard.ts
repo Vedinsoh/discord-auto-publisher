@@ -1,6 +1,7 @@
 import { ActivityType, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { getInfo } from 'discord-hybrid-sharding';
 import { BotClient } from 'lib/structures/client.js';
+import { logger } from 'utils/logger.js';
 import { links } from './constants/index.js';
 
 export const client = new BotClient({
@@ -44,8 +45,15 @@ export const client = new BotClient({
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
-    api: 'http://discord-proxy:8080/api',
+    api: 'http://proxy:8080/api',
+    globalRequestsPerSecond: Number.POSITIVE_INFINITY,
+    timeout: 60_000,
   },
 });
+
+process.on('uncaughtException', err => logger.error({ event: 'shard.uncaught_exception', err }));
+process.on('unhandledRejection', reason =>
+  logger.error({ event: 'shard.unhandled_rejection', err: reason })
+);
 
 client.start();

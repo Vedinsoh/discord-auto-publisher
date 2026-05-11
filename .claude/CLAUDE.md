@@ -61,48 +61,57 @@ supabase status          # Show local Supabase status and connection info
 ### Multi-service design
 
 ```
-bot (Discord Gateway) <--HTTP--> backend (REST API) <--> PostgreSQL (Supabase) + Redis
-                  \                       /
-                   \                     /
-                    --> discord-proxy <--
-                         (Discord API)
+bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (Supabase) + Redis
+        │                            │
+        │  POST /crosspost/:c/:m     │  HTTP /api/* (passthrough)
+        └────────────►  proxy  ◄─────┘
+                  (Discord API + BullMQ crosspost queue)
 ```
 
-**discord-proxy**:
+**proxy** (apps/proxy):
 
-- Discord API proxy container (@discordjs/proxy-container https://github.com/discordjs/discord.js/tree/main/packages/proxy-container)
-- Routes all Discord API requests through centralized proxy
-- Runs on port 8080 (internal), exposed on 8081 in dev mode
-- Shared by bot, backend and crosspost-worker
+- Single Discord REST gateway + async crosspost queue. Replaces the old `@discordjs/proxy-container` + `crosspost-worker` pair.
+- Two responsibilities:
+  - `POST /crosspost/:channelId/:messageId` — sync gate check, then BullMQ enqueue. ACKs 202 in <100ms.
+  - `*/api/*` passthrough — generic Discord REST proxy used by bot + backend's `@discordjs/rest`. Selective header forwarding, response streamed back.
+- Single `@discordjs/rest` instance shared by both paths. Interaction acks bypass crosspost queue naturally via `BurstHandler`.
+- Sync pre-check pipeline (gate): `invalid_requests` shed → `BlockedChannels` denylist → `SublimitCounter` (per-channel 10/hr).
+- BullMQ worker (concurrency 50) classifies Discord error outcomes:
+  - `already_done` / `blocked` / `sublimit` (intentional skip + cache update)
+  - `transient_429` / `global_ratelimit` → `job.moveToDelayed` with `Retry-After`
+  - `5xx` / network → BullMQ exponential backoff (10 attempts)
+- Cloudflare-ban self-shed at 5,000 invalid requests / 10 min (half of Discord's 10k ceiling). Tracked in-memory via `RESTEvents.Response`, excluding shared 429s.
+- Runs on port 8080 (internal), exposed on 8081 in dev. Healthcheck on `/health`. Stats on `/info`.
+- Tech stack: `@discordjs/rest`, BullMQ + ioredis (queue), Express, pino via `@ap/logger`.
 
 **bot** (apps/bot):
 
 - Discord bot app for receiving events and running commands
 - Uses Sapphire Framework (https://sapphirejs.dev/docs/General/Welcome) built on discord.js
-- Uses discord-hybrid-sharding for horizontal scaling across multiple shards & clusters
-- Entry: ClusterManager spawns sharded workers
-- Listens for messageCreate in announcement channels
-- Validates permissions, detects URLs (5s delay for embed loading)
-- **Calls backend as internal API** - bot does NOT make direct Discord API requests for crossposting
-- **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
+- Uses discord-hybrid-sharding for horizontal scaling across multiple shards & clusters; `ClusterManager` does manual exponential-backoff respawn (5s/30s/60s/5min/10min) to avoid burning the invalid-request budget.
+- Entry: `ClusterManager` spawns sharded workers via `lib/shard.ts`.
+- Listens for `messageCreate` in announcement channels. **Hot path is fully synchronous + cache-only**:
+  1. `isCrosspostable` bit-flag check (system, IsCrosspost, Crossposted)
+  2. `canCrosspostInChannel` — sync `permissionsFor(members.me)` (never `.fetch()`)
+  3. `Guild.isMigrated(guildId)` Redis lookup; if migrated → `Channel.isEnabled(channelId)` Redis lookup (else bail)
+  4. `Filter.evaluate` (premium-only HTTP to backend)
+  5. 5s delay if URL without embed (lets Discord generate embeds)
+  6. `Data.API.Proxy.enqueueCrosspost(channelId, messageId)` — raw `fetch` POST, fire-and-forget
+- Permission listeners (`channelUpdate`, `guildMemberUpdate`, `roleUpdate`) call `DELETE /internal/blocked/:c` on the proxy to invalidate the denylist when perms are restored.
+- **Discord REST routed through proxy `/api/*`** (`http://proxy:8080/api`, `globalRequestsPerSecond: Infinity` — proxy is the global limiter).
 - Listens for guildDelete/channelDelete for cleanup
 - Tech stack: discord.js (https://discord.js.org/docs/packages/discord.js/main & https://discordjs.guide/), Sapphire, discord-hybrid-sharding (https://github.com/meister03/discord-hybrid-sharding/blob/ts-rewrite/README.md)
 
 **backend** (apps/backend):
 
-- **Backend app used as internal API for bot** - central place for sending Discord API requests
-- Why centralized: bot has multiple processes (shards/clusters), backend centralizes Discord API calls
+- **Internal API for bot** — owns channel registration, filters, Stripe subscriptions, web dashboard API.
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
-- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis cache (https://redis.io/docs/latest/develop/clients/nodejs/)
-- p-queue based crossposting with priority (timestamp-based)
-- Two-tier queue: per-channel queues → global queue
-- Rate limit management (10/hour per channel Discord limit)
-- **Routes Discord API requests through discord-proxy** (http://discord-proxy:8080/api)
-- Auto-cleanup on permission/deletion errors
-- Cache sync on startup (reconciles Redis/PostgreSQL)
+- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers), `DiscordAuth` (web auth tokens).
+- Cache sync on startup (reconciles Redis/Postgres).
+- **Discord REST routed through proxy `/api/*`** for guild-channel reads and the subscription-audit cron (leaving guilds with lapsed subscriptions).
 - Stripe integration for premium subscriptions (Checkout Sessions, Customer Portal, webhooks)
 - HMAC-signed webhook forwarding to optional external invoicing service
-- Tech stack: Express, discord.js, Drizzle ORM (https://orm.drizzle.team), redis, zod (https://v3.zod.dev/), stripe (https://docs.stripe.com/)
+- Tech stack: Express, `@discordjs/rest`, Drizzle ORM (https://orm.drizzle.team), ioredis via `@ap/redis`, zod (https://v3.zod.dev/), stripe (https://docs.stripe.com/)
 
 **Shared packages** (packages/\*):
 
@@ -115,21 +124,23 @@ bot (Discord Gateway) <--HTTP--> backend (REST API) <--> PostgreSQL (Supabase) +
 
 ### Key architectural decisions
 
-**HTTP communication between services**: Decouples Discord gateway handling from persistence/queue management. Enables independent scaling of bot shards vs API workers. Allows centralized rate limiting across all shards.
+**Single proxy service**: One `apps/proxy` owns all Discord REST traffic — both the async crosspost queue and the generic `/api/*` passthrough — sharing a single `@discordjs/rest` instance. Replaces the previous `discord-proxy` (generic container) + `crosspost-worker` (custom in-memory queue) pair.
 
-**Two-tier queue system**: Per-channel queues prevent spam channels from monopolizing global queue. Global queue with priority ensures fairness. Older messages prioritized by timestamp.
+**BullMQ-backed queue**: Jobs survive proxy restarts. `jobId: ${channelId}-${messageId}` prevents duplicate enqueues. Per-outcome handling: only intentional skips (`already_done` / `blocked` / `sublimit-lock`) drop messages; transient errors become delayed retries (≤5 min cap) or BullMQ exponential backoff (10 attempts).
 
-**Redis channel cache**: Sub-millisecond "is channel enabled" checks. Shared state across multiple services. Built-in TTL for rate limit counters. Startup sync ensures cache/DB consistency.
+**Wait when Discord asks**: `Retry-After` from rate-limit responses is honoured exactly via `job.moveToDelayed`. Never drops messages on transient 429s.
 
-**5s URL delay**: Discord needs time to generate link previews. Publishing before embeds load causes followers to miss rich content. Uses advanced URL detection algorithm.
+**Cloudflare-ban self-shed**: Proxy tracks 401/403/(non-shared)429 responses in-memory; at 5k in 10 min (half of Discord's 10k ceiling) the gate rejects new crossposts with 503 `Retry-After: 60` so the host IP can't get banned. Counter is filtered via `RESTEvents.Response` + `X-RateLimit-Scope` (the library's `InvalidRequestWarning` is incorrect — it counts sublimit hits).
+
+**Allowlist + migration model**: Premium-relevant channels are explicitly registered via `/ap enable`. `MigratedGuilds` Redis cache marks guilds opted into the v7 model — migrated guilds enforce the allowlist; legacy guilds auto-publish all announcement channels. Slated for removal ~6 months after v7 ships.
+
+**Redis channel cache**: Sub-ms "is channel enabled" Redis lookups on bot's hot path (no backend RTT). Startup sync reconciles cache/DB consistency.
+
+**5s URL delay**: Discord needs time to generate link previews. Publishing before embeds load causes followers to miss rich content.
 
 **Aggressive Discord cache minimization**: Bot only caches bot member (for permission checks). Reduces memory footprint for high-guild-count scenarios. Uses Intents: Guilds, GuildMessages, MessageContent.
 
-**Rate limit strategy**: Tracks 429 responses in Redis cache. Pauses global queue when >1000 rate limits detected. Resumes when <8000 rate limits AND queue empty. Per-channel counters enforce Discord's 10/hour limit.
-
-**Discord API proxy**: Uses @discordjs/proxy-container to centralize Discord API requests. Provides single point for request management.
-
-**Rollback attempts**: Maintains cache/DB consistency during partial failures. Prevents orphaned cache entries or DB records. Catches & logs rollback failures gracefully.
+**Cluster respawn backoff**: `ClusterManager` disables native auto-respawn and schedules respawn with exponential backoff (5s/30s/60s/5min/10min, reset after 10 min of stability). Prevents a death-loop from burning the invalid-request budget.
 
 ### Database schema (Drizzle ORM + PostgreSQL)
 
@@ -181,9 +192,18 @@ stripe_customer {
 
 ### Redis structure
 
-- Database 0: Channels cache (`channel:{channelId}` keys)
-- Additional databases: Rate limit counters with TTL (1-hour windows)
-- Uses SCAN instead of KEYS (production-safe)
+Single Redis instance, multiple logical DBs (managed via `DatabaseIDs` enum in `@ap/redis`):
+
+| DB | Name | Owner | Purpose |
+|----|------|-------|---------|
+| 0 | `Channels` | backend | registered-channel allowlist + filters (no TTL) |
+| 1 | `CrosspostQueue` | proxy | BullMQ |
+| 2 | `SublimitCounter` | proxy | per-channel 10/hr counter (`channel:sublimit:{id}`, 1h TTL) |
+| 3 | `BlockedChannels` | proxy | denylist (`channel:blocked:{id}`, 1h TTL) — populated on 401/403 |
+| 4 | `DiscordAuth` | backend | web auth token cache |
+| 5 | `MigratedGuilds` | backend | v6→v7 migration markers (`migrated_guild:{id}`, no TTL) |
+
+Uses SCAN instead of KEYS (production-safe). ioredis client (BullMQ requirement), wrapped by `@ap/redis` factory `createRedisClient(databaseId)`.
 
 ### Environment variables
 
@@ -194,6 +214,8 @@ APP_EDITION: free|premium
 BOT_SHARDS
 BOT_SHARDS_PER_CLUSTER
 DATABASE_URL: postgresql://... (Supabase connection string)
+REDIS_URI: redis://redis:6379 (shared Redis instance)
+PROXY_PORT: 8080 (proxy listen port)
 STRIPE_SECRET_KEY: sk_test_... or sk_live_... (premium backend only)
 STRIPE_WEBHOOK_SECRET: whsec_... (premium backend only)
 INVOICING_WEBHOOK_URL: optional, external invoicing service URL
@@ -204,44 +226,44 @@ NEXT_PUBLIC_STRIPE_PRICE_YEARLY: Stripe Price ID for yearly plan
 
 ## Message publishing flow
 
-1. Discord message posted in announcement channel
-2. bot messageCreate listener validates & delays (if URL detected)
-3. HTTP POST to crosspost-worker /enqueue/{channelId}/{messageId}
-4. crosspost-worker checks channel cache, adds to queue
-5. Per-channel queue → global queue (priority by timestamp)
-6. Discord crosspost API call with error handling
-7. Counter increment, rate limit tracking
-8. Auto-cleanup on permission/deletion errors
+1. Discord message posted in announcement channel; bot's `messageCreate` listener fires.
+2. Bot synchronously gates: `isCrosspostable` bit-flags → `canCrosspostInChannel` (cache-only `permissionsFor`) → `Guild.isMigrated` Redis → `Channel.isEnabled` Redis → `Filter.evaluate` (premium-only, HTTP to backend).
+3. 5s delay if message has URL but no embeds.
+4. Bot `fetch` POSTs `http://proxy:8080/crosspost/:channelId/:messageId` (fire-and-forget, 5s timeout).
+5. Proxy re-runs sync gate (invalid-requests → blocked → sublimit). Rejects with 503 / 204 or accepts with 202.
+6. Proxy enqueues a BullMQ job (DB 1) keyed by `${channelId}-${messageId}`.
+7. Worker (concurrency 50) re-evaluates gate, calls `rest.post(Routes.channelMessageCrosspost(...))`, classifies result via `classifier.ts`.
+8. Success → increment `SublimitCounter`. Errors → cache update + skip (intentional) or `moveToDelayed` (transient) or BullMQ retry (5xx).
 
 ## Docker configuration
 
-- Base config: scripts/bot/docker-compose.base.yml
-- Dev config: scripts/bot/dev/docker-compose.yml (extends base)
-- Prod config: scripts/bot/prod/docker-compose.yml
-- Service dependencies: bot → discord-proxy, backend → discord-proxy, redis (Redis)
-- Health checks on discord-proxy, backend & Redis
+- Base config: `scripts/bot/docker-compose.base.yml`
+- Dev config: `scripts/bot/dev/docker-compose.yml` (extends base)
+- Prod config: `scripts/bot/prod/docker-compose.yml`
+- Services: `proxy`, `bot`, `backend`, `redis`
+- Service dependencies: bot → proxy + backend + redis; backend → proxy + redis; proxy → redis
+- Health checks on proxy, backend & redis
 - Development: File sync with restart, exposed ports (3101:8080 backend, 8081:8080 proxy, 6379:6379 redis)
 - Production: No port exposure, health checks enabled
 
 ## Import conventions
 
-- Shared packages: @ap/\* (e.g., @ap/database, @ap/logger, @ap/utils)
-- Import extensions required: .js for TS files (ES modules)
+- Shared packages: `@ap/*` (e.g., `@ap/database`, `@ap/logger`, `@ap/utils`, `@ap/redis`, `@ap/config`)
+- Import extensions required: `.js` for TS files (ES modules)
 - Workspace dependencies managed by bun workspaces
 
 ## Discord.js specifics
 
-- Version: 14.22.1
+- Version: 14.x
 - Intents: Guilds, GuildMessages, MessageContent
 - Partials: Channel, GuildMember
 - Uses discord-hybrid-sharding for horizontal scaling
-- Aggressive cache limits (only caches bot member)
-- REST API requests routed through @discordjs/proxy-container (discord-proxy service)
+- Aggressive cache limits (only caches bot member; never `.fetch()` on hot path)
+- REST API routed through `apps/proxy` `/api/*`; `globalRequestsPerSecond: Infinity` (proxy is the global limiter)
 
 ## Rate limits & queue management
 
-- Discord limit: 10 crosspost/hour per channel
-- Global pause mechanism: >1000 cached rate limits
-- Queue cleanup: Inactive channel queues swept every 5 minutes
-- Message priority: Older messages published first
-- Per-channel queues prevent monopolization
+- Discord limit: 10 crosspost/hour per channel (`SublimitCounter` Redis DB)
+- Cloudflare 10k invalid-requests/10min: proxy self-sheds at 5k threshold (in-memory tracker)
+- BullMQ queue: 10 attempts with exponential backoff (2s base), `Retry-After` honoured via `moveToDelayed` (≤5 min cap), high-water mark 10k waiting jobs → 503 `Retry-After: 30`
+- Single `@discordjs/rest` instance; `BurstHandler` lets interaction acks bypass crosspost queueing

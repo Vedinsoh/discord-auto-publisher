@@ -1,43 +1,30 @@
 name: auto-publisher-dev
 
 services:
-  discord-proxy:
+  proxy:
     extends:
       file: docker-compose.base.yml
-      service: discord-proxy
-    ports:
-      - 8081:8080 # Expose proxy for local debugging
-    healthcheck:
-      disable: true # Remove healthcheck for faster development startup
-
-  crosspost-worker:
-    extends:
-      file: docker-compose.base.yml
-      service: crosspost-worker
+      service: proxy
     build:
-      dockerfile: apps/crosspost-worker/Dockerfile.dev
+      dockerfile: apps/proxy/Dockerfile.dev
     env_file:
       - ../../.env.local
     environment:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
-      discord-proxy:
-        condition: service_started
-      backend :
-        condition: service_started
       redis:
         condition: service_started
     ports:
-      - 8082:8082 # Expose worker for local debugging
+      - 8081:8080 # Expose proxy for local debugging
     healthcheck:
       disable: true # Remove healthcheck for faster development startup
     command: ["bun", "run", "start"]
     develop:
       watch:
         - action: sync+restart
-          path: ../../apps/crosspost-worker/src
-          target: /app/apps/crosspost-worker/src
+          path: ../../apps/proxy/src
+          target: /app/apps/proxy/src
           ignore:
             - "**/*.test.ts"
             - "**/*.spec.ts"
@@ -50,7 +37,7 @@ services:
             - "**/*.test.ts"
             - "**/*.spec.ts"
         - action: rebuild
-          path: ../../apps/crosspost-worker/package.json
+          path: ../../apps/proxy/package.json
         - action: rebuild
           path: ../../package.json
         - action: rebuild
@@ -68,11 +55,9 @@ services:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
-      discord-proxy:
+      proxy:
         condition: service_started
       backend :
-        condition: service_started
-      crosspost-worker:
         condition: service_started
       redis:
         condition: service_started
@@ -105,7 +90,7 @@ services:
   backend :
     extends:
       file: docker-compose.base.yml
-      service: backend 
+      service: backend
     build:
       dockerfile: apps/backend/Dockerfile.dev
     env_file:
@@ -114,13 +99,13 @@ services:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
-      discord-proxy:
+      proxy:
         condition: service_started
       redis:
         condition: service_started
     ports:
       - 3101:8080 # Expose API for local development
-    healthcheck: 
+    healthcheck:
       disable: true # Remove healthcheck for faster development startup
     command: ["bun", "run", "start"]
     develop:

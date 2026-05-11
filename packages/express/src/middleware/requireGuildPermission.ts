@@ -7,7 +7,7 @@ const MANAGE_GUILD = BigInt(0x20);
 
 type RedisLike = {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, options?: { EX?: number }): Promise<unknown>;
+  set(key: string, value: string, ex: 'EX', seconds: number): Promise<unknown>;
 };
 
 type DiscordPartialGuild = {
@@ -66,7 +66,7 @@ export function createRequireGuildPermission(redisClient: RedisLike) {
         guilds = await response.json();
 
         // Cache guilds list
-        await redisClient.set(cacheKey, JSON.stringify(guilds), { EX: GUILDS_CACHE_TTL_SECONDS });
+        await redisClient.set(cacheKey, JSON.stringify(guilds), 'EX', GUILDS_CACHE_TTL_SECONDS);
       }
 
       const matchingGuild = guilds.find(g => g.id === guildId);

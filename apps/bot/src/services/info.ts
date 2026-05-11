@@ -1,23 +1,61 @@
 import { Data } from 'data/index.js';
+import { logger } from 'utils/logger.js';
 
-type InfoData = {
-  size: number;
-  pending: number;
-  channelQueues: number;
-  paused: boolean;
-  rateLimitsSize: number;
-  cache?: {
-    channels: number;
+export type ProxyInfo = {
+  rest: {
+    globalRemaining: number;
+    handlers: number;
+    activeHandlers: number;
+    hashes: number;
+    invalidRequests: { count: number; expiresInMs: number };
   };
+  queue: {
+    waiting: number;
+    active: number;
+    delayed: number;
+    failed: number;
+    completed: number;
+  };
+  sublimitCount: number;
+  blockedCount: number;
 };
 
-const get = async (): Promise<InfoData | null> => {
-  const res = await Data.API.Backend.getInfo();
-  const body = (await res.json()) as { data?: InfoData };
+export type BackendInfo = {
+  channelsCacheSize: number;
+};
 
-  if (!body.data) return null;
+export type AggregatedInfo = {
+  proxy: ProxyInfo | null;
+  backend: BackendInfo | null;
+};
 
-  return body.data;
+const fetchProxy = async (): Promise<ProxyInfo | null> => {
+  try {
+    const res = await Data.API.Proxy.getInfo();
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const body = (await res.json()) as { data: ProxyInfo };
+    return body.data ?? null;
+  } catch (error) {
+    logger.warn({ event: 'info.proxy_failed', err: error });
+    return null;
+  }
+};
+
+const fetchBackend = async (): Promise<BackendInfo | null> => {
+  try {
+    const res = await Data.API.Backend.getInfo();
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const body = (await res.json()) as { data: BackendInfo };
+    return body.data ?? null;
+  } catch (error) {
+    logger.warn({ event: 'info.backend_failed', err: error });
+    return null;
+  }
+};
+
+const get = async (): Promise<AggregatedInfo> => {
+  const [proxy, backend] = await Promise.all([fetchProxy(), fetchBackend()]);
+  return { proxy, backend };
 };
 
 export const Info = {

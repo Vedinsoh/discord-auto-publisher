@@ -1,10 +1,23 @@
 import type { ChannelFilter } from '@ap/database';
 import { FilterMatchMode } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
-import type { RedisClientType } from 'redis';
+import type { RedisClient } from './client.js';
 import type { Keys } from './constants.js';
 
-export const createChannelsCache = (client: RedisClientType, channelKey: Keys) => {
+const SCAN_COUNT = 100;
+
+const scanKeys = async (client: RedisClient, pattern: string): Promise<string[]> => {
+  const keys: string[] = [];
+  let cursor = '0';
+  do {
+    const [next, batch] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', SCAN_COUNT);
+    cursor = next;
+    keys.push(...batch);
+  } while (cursor !== '0');
+  return keys;
+};
+
+export const createChannelsCache = (client: RedisClient, channelKey: Keys) => {
   const _createKey = (channelId: Snowflake) => `${channelKey}:${channelId}`;
 
   const isEnabled = async (channelId: Snowflake): Promise<boolean> => {
@@ -37,6 +50,7 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   };
 
   const removeMany = async (channelIds: Snowflake[]) => {
+    if (channelIds.length === 0) return 0;
     return await client.del(channelIds.map(id => _createKey(id)));
   };
 
@@ -60,36 +74,12 @@ export const createChannelsCache = (client: RedisClientType, channelKey: Keys) =
   };
 
   const getAll = async (): Promise<Snowflake[]> => {
-    const keyPattern = `${channelKey}:*`;
-    const keys: string[] = [];
-    let cursor = '0';
-
-    do {
-      const result = await client.scan(cursor, {
-        MATCH: keyPattern,
-        COUNT: 100,
-      });
-      cursor = result.cursor;
-      keys.push(...result.keys);
-    } while (cursor !== '0');
-
+    const keys = await scanKeys(client, `${channelKey}:*`);
     return keys.map(key => key.replace(`${channelKey}:`, '') as Snowflake);
   };
 
   const getSize = async () => {
-    const keyPattern = `${channelKey}:*`;
-    const keys: string[] = [];
-    let cursor = '0';
-
-    do {
-      const result = await client.scan(cursor, {
-        MATCH: keyPattern,
-        COUNT: 100,
-      });
-      cursor = result.cursor;
-      keys.push(...result.keys);
-    } while (cursor !== '0');
-
+    const keys = await scanKeys(client, `${channelKey}:*`);
     return keys.length;
   };
 

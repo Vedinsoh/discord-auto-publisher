@@ -3,10 +3,10 @@ name: auto-publisher
 services:
   redis:
     command: >
-      redis-server 
-      --appendonly yes 
-      --appendfsync everysec 
-      --maxmemory 512mb 
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
       --maxmemory-policy allkeys-lru
       --save 900 1
       --save 300 10
@@ -16,6 +16,26 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  proxy:
+    env_file:
+      - ../../.env.production
+    environment:
+      - NODE_ENV=production
+      - LOGGER_LEVEL=info
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '0.75'
+        reservations:
+          memory: 384M
+          cpus: '0.375'
 
   backend :
     env_file:

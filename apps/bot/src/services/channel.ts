@@ -132,6 +132,14 @@ const getGuildChannels = async (guildId: Snowflake) => {
   }
 };
 
+const isEnabled = async (channelId: Snowflake) => {
+  try {
+    return await Data.Cache.Channels.isEnabled(channelId);
+  } catch {
+    return false;
+  }
+};
+
 export const Channel = {
   fetchChannel,
   fetchNewsChannel,
@@ -139,4 +147,5 @@ export const Channel = {
   disable,
   getStatus,
   getGuildChannels,
+  isEnabled,
 };

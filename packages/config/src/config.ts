@@ -23,15 +23,6 @@ export const config = {
      */
     filtersPerChannel: 5,
   },
-  /**
-   * Crosspost Worker configuration
-   */
-  crosspostWorker: {
-    /**
-     * Maximum Discord requests per second
-     */
-    requestsPerSecond: 45,
-  },
 } as const;
 
 // Re-export env

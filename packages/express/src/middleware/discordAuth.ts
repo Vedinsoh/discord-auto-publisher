@@ -18,7 +18,7 @@ declare global {
 
 type RedisLike = {
   get(key: string): Promise<string | null>;
-  set(key: string, value: string, options?: { EX?: number }): Promise<unknown>;
+  set(key: string, value: string, ex: 'EX', seconds: number): Promise<unknown>;
 };
 
 const CACHE_TTL_SECONDS = 300;
@@ -73,7 +73,7 @@ export function createDiscordAuth(redisClient: RedisLike) {
       };
 
       // Cache the user data
-      await redisClient.set(cacheKey, JSON.stringify(user), { EX: CACHE_TTL_SECONDS });
+      await redisClient.set(cacheKey, JSON.stringify(user), 'EX', CACHE_TTL_SECONDS);
 
       req.discordUser = user;
       req.discordAccessToken = token;

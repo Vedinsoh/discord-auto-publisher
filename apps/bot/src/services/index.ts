@@ -3,6 +3,7 @@ import { Crosspost } from './crosspost.js';
 import { FilterService } from './filter.js';
 import { Guild } from './guild.js';
 import { Info } from './info.js';
+import { Permissions } from './permissions.js';
 
 export const Services = {
   Channel,
@@ -10,4 +11,5 @@ export const Services = {
   Filter: FilterService,
   Guild,
   Info,
+  Permissions,
 };

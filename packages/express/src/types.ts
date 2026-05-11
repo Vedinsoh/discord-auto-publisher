@@ -1,11 +1,7 @@
 import type { Snowflake } from 'discord-api-types/globals';
 
 export interface InfoResponse {
-  size: number;
-  pending: number;
-  channelQueues: number;
-  paused: boolean;
-  rateLimitsSize: number;
+  channelsCacheSize: number;
 }
 
 // Message Types

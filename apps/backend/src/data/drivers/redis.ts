@@ -1,22 +1,16 @@
-import { DatabaseIDs, RedisClient, type RedisClientType } from '@ap/redis';
+import { createRedisClient, DatabaseIDs, type RedisClient } from '@ap/redis';
 import { logger } from 'utils/logger.js';
 
-// Initialize Redis clients
-const channelsClient = new RedisClient(DatabaseIDs.Channels, logger);
-// MIGRATION: After transition (6 months), remove migratedGuildsClient
-const migratedGuildsClient = new RedisClient(DatabaseIDs.MigratedGuilds, logger);
-const discordAuthClient = new RedisClient(DatabaseIDs.DiscordAuthCache, logger);
-
-await channelsClient.connect();
-await migratedGuildsClient.connect();
-await discordAuthClient.connect();
+const channelsClient = await createRedisClient(DatabaseIDs.Channels, logger);
+const migratedGuildsClient = await createRedisClient(DatabaseIDs.MigratedGuilds, logger);
+const discordAuthClient = await createRedisClient(DatabaseIDs.DiscordAuth, logger);
 
 export const Redis: {
-  client: RedisClientType;
-  MigratedGuilds: RedisClientType;
-  DiscordAuth: RedisClientType;
+  client: RedisClient;
+  MigratedGuilds: RedisClient;
+  DiscordAuth: RedisClient;
 } = {
-  client: channelsClient.client, // Backward compatibility
-  MigratedGuilds: migratedGuildsClient.client, // MIGRATION: Remove after 6 months
-  DiscordAuth: discordAuthClient.client,
+  client: channelsClient,
+  MigratedGuilds: migratedGuildsClient,
+  DiscordAuth: discordAuthClient,
 };

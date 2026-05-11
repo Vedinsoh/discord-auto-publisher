@@ -1,7 +1,7 @@
 import { Backend } from './backend.js';
-import { CrosspostWorker } from './crosspost-worker.js';
+import { ProxyAPI } from './proxy.js';
 
 export const API = {
   Backend,
-  CrosspostWorker,
+  Proxy: ProxyAPI,
 };

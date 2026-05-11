@@ -11,4 +11,7 @@ const manager = new ClusterManager({
 
 manager.start();
 
-process.on('unhandledRejection', ({ stack }: Error) => logger.error(stack));
+process.on('uncaughtException', err => logger.error({ event: 'bot.uncaught_exception', err }));
+process.on('unhandledRejection', reason =>
+  logger.error({ event: 'bot.unhandled_rejection', err: reason })
+);

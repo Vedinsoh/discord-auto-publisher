@@ -1,8 +1,8 @@
 import rateLimit from 'express-rate-limit';
-import RedisStore, { type SendCommandFn } from 'rate-limit-redis';
+import RedisStore, { type RedisReply } from 'rate-limit-redis';
 
 type RedisLike = {
-  sendCommand(args: string[]): ReturnType<SendCommandFn>;
+  call(...args: (string | number)[]): Promise<unknown>;
 };
 
 export function createApiRateLimit(redisClient: RedisLike, windowMs: number, max: number) {
@@ -13,7 +13,7 @@ export function createApiRateLimit(redisClient: RedisLike, windowMs: number, max
     legacyHeaders: false,
     keyGenerator: req => req.discordUser?.id ?? req.ip ?? 'unknown',
     store: new RedisStore({
-      sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+      sendCommand: (...args: string[]) => redisClient.call(...args) as Promise<RedisReply>,
     }),
   });
 }

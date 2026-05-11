@@ -1,0 +1,19 @@
+FROM oven/bun:1.2.22-alpine
+
+RUN adduser -S app -u 1001
+
+WORKDIR /app
+
+COPY --chown=app:app package.json bun.lock turbo.json ./
+COPY --chown=app:app packages/ ./packages/
+COPY --chown=app:app apps/proxy/package.json ./apps/proxy/package.json
+
+RUN bun install --no-optional
+
+COPY --chown=app:app . .
+
+USER app
+
+EXPOSE 8080
+
+WORKDIR /app/apps/proxy

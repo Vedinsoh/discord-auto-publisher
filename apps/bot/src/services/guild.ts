@@ -22,6 +22,9 @@ const remove = async (guildId: Snowflake) => {
   }
 };
 
+const isMigrated = (guildId: Snowflake) => Data.Cache.MigratedGuilds.isMigrated(guildId);
+
 export const Guild = {
   remove,
+  isMigrated,
 };

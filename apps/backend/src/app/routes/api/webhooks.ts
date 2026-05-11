@@ -17,7 +17,7 @@ const isEventProcessed = async (eventId: string): Promise<boolean> => {
 
 const markEventProcessed = async (eventId: string): Promise<void> => {
   const key = `stripe_event:${eventId}`;
-  await Data.Drivers.Redis.client.set(key, '1', { EX: IDEMPOTENCY_TTL });
+  await Data.Drivers.Redis.client.set(key, '1', 'EX', IDEMPOTENCY_TTL);
 };
 
 export const Webhooks: Router = (() => {
