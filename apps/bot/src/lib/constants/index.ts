@@ -27,6 +27,6 @@ export const messages = {
   rateLimitNote:
     '\n\n-# Note: Discord only allows up to 10 messages to be published per hour per channel!',
   delayNote: config.isPremiumInstance
-    ? '\n\n-# Note: Messages might have delays in publishing due to Discord API limiting the bot.'
+    ? '\n\n-# Note: Messages might have delays in publishing due to Discord limits. Rest assured, I will ensure it gets published as soon as possible!'
     : '',
 };
