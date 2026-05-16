@@ -11,6 +11,10 @@ echo "🚀 Starting development environment..."
 is_docker_running
 check_env_exists "local"
 
+# Start Supabase (database)
+echo "Starting Supabase database..."
+supabase start
+
 echo "📋 Using .env.local for environment configuration"
 
 # Check if --watch flag is provided

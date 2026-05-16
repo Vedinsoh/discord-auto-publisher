@@ -13,6 +13,10 @@ is_docker_running
 # Stop services and remove images and volumes
 docker compose $BOT_COMPOSE_FILES_DEV down --rmi local --volumes
 
+# Stop Supabase
+echo "Stopping Supabase database..."
+supabase stop
+
 # Comprehensive cleanup: remove all unused Docker resources
 echo "🧽 Cleaning up all unused Docker resources..."
 docker image prune -f
