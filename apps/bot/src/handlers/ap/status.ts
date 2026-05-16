@@ -1,8 +1,10 @@
+import { config } from '@ap/config';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
-import { emojis, messages } from 'lib/constants/index.js';
+import { emojis, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
+import { formatNotes } from 'utils/notes.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
 
 export async function chatInputStatus(
@@ -45,7 +47,7 @@ export async function chatInputStatus(
 
       const listContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${messages.delayNote}`
+          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${formatNotes([config.isPremiumInstance && notes.publishDelay])}`
         )
       );
 
@@ -133,7 +135,7 @@ export async function chatInputStatus(
     const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
         `${emojis.checkmark} Auto-publishing is **enabled** in <#${channel.id}> channel.` +
-          messages.delayNote
+          formatNotes([config.isPremiumInstance && notes.publishDelay])
       )
     );
 

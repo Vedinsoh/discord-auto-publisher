@@ -10,9 +10,10 @@ import {
   ContainerBuilder,
   MessageFlags,
 } from 'discord.js';
-import { emojis } from 'lib/constants/index.js';
+import { emojis, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
+import { formatNotes } from 'utils/notes.js';
 
 export async function chatInputDisable(
   this: Subcommand,
@@ -47,7 +48,8 @@ export async function chatInputDisable(
       if (filters && filters.length > 0) {
         const warningContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `### ${emojis.warning} Disabling auto-publishing will also remove all filters set for <#${channel.id}> channel.\n\nIf you want to temporarily disable auto-publishing without removing filters, we suggest disabling \`View Channel\` permission instead.\n\n-# Note: Don't keep permissions disabled for too long, as the bot will automatically disable channels that lack proper permissions for an extended period.`
+            `### ${emojis.warning} Disabling auto-publishing will also remove all filters set for <#${channel.id}> channel.\n\nIf you want to temporarily disable auto-publishing without removing filters, we suggest disabling \`View Channel\` permission instead.` +
+              formatNotes([notes.permissionsExtendedDisable])
           )
         );
 

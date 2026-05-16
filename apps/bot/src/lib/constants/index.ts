@@ -1,5 +1,3 @@
-import { config } from '@ap/config';
-
 const HOSTNAME = 'auto-publisher.gg';
 const WEBSITE = `https://${HOSTNAME}`;
 
@@ -23,10 +21,10 @@ export const emojis = {
   redCircle: '<:ap_red_circle_dot:1444789399966715955>',
 };
 
-export const messages = {
-  rateLimitNote:
-    '\n\n-# Note: Discord only allows up to 10 messages to be published per hour per channel!',
-  delayNote: config.isPremiumInstance
-    ? '\n\n-# Note: Messages might have delays in publishing due to Discord limits. Rest assured, I will ensure it gets published as soon as possible!'
-    : '',
-};
+export const notes = {
+  rateLimit: 'Discord only allows up to 10 messages to be published per hour per channel!',
+  publishDelay:
+    'Messages might have delays in publishing due to Discord limits. Rest assured, I will ensure it gets published as soon as possible!',
+  permissionsExtendedDisable:
+    "Don't keep permissions disabled for too long, as the bot will automatically disable channels that lack proper permissions for an extended period.",
+} as const;

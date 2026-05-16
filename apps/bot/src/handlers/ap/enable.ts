@@ -1,9 +1,10 @@
 import { config } from '@ap/config';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
-import { emojis, links, messages } from 'lib/constants/index.js';
+import { emojis, links, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
+import { formatNotes } from 'utils/notes.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
 
 export async function chatInputEnable(
@@ -106,10 +107,10 @@ export async function chatInputEnable(
 
     const successMessage =
       `${emojis.checkmark} Auto-publishing has been enabled in <#${channel.id}> channel!` +
-      messages.rateLimitNote;
+      formatNotes([notes.rateLimit, config.isPremiumInstance && notes.publishDelay]);
 
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(successMessage + messages.delayNote)
+      textDisplay.setContent(successMessage)
     );
 
     return interaction.editReply({
