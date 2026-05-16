@@ -25,7 +25,6 @@ export type CrosspostQueueStats = {
   active: number;
   delayed: number;
   failed: number;
-  completed: number;
 };
 
 export type CrosspostQueueModule = {
@@ -225,7 +224,6 @@ export const createCrosspostQueue = (deps: {
         active: counts.active ?? 0,
         delayed: counts.delayed ?? 0,
         failed: counts.failed ?? 0,
-        completed: counts.completed ?? 0,
       };
     },
   };

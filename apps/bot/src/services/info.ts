@@ -14,7 +14,6 @@ export type ProxyInfo = {
     active: number;
     delayed: number;
     failed: number;
-    completed: number;
   };
   sublimitCount: number;
   blockedCount: number;

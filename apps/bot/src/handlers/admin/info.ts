@@ -36,7 +36,6 @@ export async function chatInputInfo(
     `> Active: ${proxy?.queue.active ?? 'N/A'}`,
     `> Delayed: ${proxy?.queue.delayed ?? 'N/A'}`,
     `> Failed: ${proxy?.queue.failed ?? 'N/A'}`,
-    `> Completed: ${proxy?.queue.completed ?? 'N/A'}`,
     `> Sublimit-tracked channels: ${proxy?.sublimitCount ?? 'N/A'}`,
     `> Blocked channels: ${proxy?.blockedCount ?? 'N/A'}`,
   ].join('\n');
