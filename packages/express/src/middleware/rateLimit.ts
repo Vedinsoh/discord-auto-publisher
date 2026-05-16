@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import RedisStore, { type RedisReply } from 'rate-limit-redis';
 
 type RedisLike = {
@@ -11,7 +11,7 @@ export function createApiRateLimit(redisClient: RedisLike, windowMs: number, max
     max,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: req => req.discordUser?.id ?? req.ip ?? 'unknown',
+    keyGenerator: req => req.discordUser?.id ?? ipKeyGenerator(req.ip ?? '', 56),
     store: new RedisStore({
       sendCommand: (...args: string[]) => redisClient.call(...args) as Promise<RedisReply>,
     }),
