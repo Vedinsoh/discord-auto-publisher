@@ -13,6 +13,7 @@ import { logger } from '../logger.js';
 
 const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
 const SLOW_REQUEST_MS = 5_000;
+const STRIPPED_RESPONSE_HEADERS = new Set(['content-encoding', 'content-length', 'transfer-encoding']);
 
 const buildHeaders = (req: Request): Record<string, string> => {
   const headers: Record<string, string> = {};
@@ -87,7 +88,10 @@ export const createPassthroughHandler =
       }
 
       res.status(discordResponse.status);
-      for (const [header, value] of discordResponse.headers) res.setHeader(header, value);
+      for (const [header, value] of discordResponse.headers) {
+        if (STRIPPED_RESPONSE_HEADERS.has(header.toLowerCase())) continue;
+        res.setHeader(header, value);
+      }
 
       if (discordResponse.body) {
         const stream =
