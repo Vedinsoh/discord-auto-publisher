@@ -22,6 +22,22 @@ export const GuildReqSchema = z.object({
   }),
 });
 
+export const GuildChannelReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+});
+
+export const SubscriptionCheckoutReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    interval: z.enum(['month', 'year']),
+  }),
+});
+
 export const FilterReqSchema = z.object({
   params: z.object({
     channelId: Validations.snowflakeId,

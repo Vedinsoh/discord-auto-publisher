@@ -100,10 +100,10 @@ export async function getSubscription(
 export async function createCheckout(
   edition: Edition,
   guildId: string,
-  priceId: string
+  interval: 'month' | 'year'
 ): Promise<CheckoutResponse> {
   return backendFetch<CheckoutResponse>(edition, `/api/guild/${guildId}/subscription/checkout`, {
     method: 'POST',
-    body: JSON.stringify({ priceId }),
+    body: JSON.stringify({ interval }),
   });
 }

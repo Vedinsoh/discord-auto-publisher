@@ -23,22 +23,21 @@ export const env = cleanEnv(process.env, {
   // Proxy
   PROXY_PORT: num({ default: 8080 }),
 
-  // Stripe
-  STRIPE_SECRET_KEY: str({ default: '' }),
-  STRIPE_WEBHOOK_SECRET: str({ default: '' }),
+  // Bot
+  BOT_SUPPORT_GUILD_ID: str({ default: '' }),
+  BOT_SHARDS: num({ default: 1 }),
+  BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 
-  // Invoicing (optional external service)
-  INVOICING_WEBHOOK_URL: str({ default: '' }),
-  INVOICING_WEBHOOK_SECRET: str({ default: '' }),
+  // Paddle (premium backend only)
+  PADDLE_ENVIRONMENT: str({ default: 'sandbox', choices: ['sandbox', 'production'] }),
+  PADDLE_API_KEY: str({ default: '' }),
+  PADDLE_WEBHOOK_SECRET: str({ default: '' }),
+  PADDLE_PRICE_MONTHLY: str({ default: '' }),
+  PADDLE_PRICE_YEARLY: str({ default: '' }),
 
   // Web
   WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),
 
   // Premium
   PREMIUM_BOT_CLIENT_ID: str({ default: '' }),
-
-  // Bot
-  BOT_SUPPORT_GUILD_ID: str({ default: '' }),
-  BOT_SHARDS: num({ default: 1 }),
-  BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 });

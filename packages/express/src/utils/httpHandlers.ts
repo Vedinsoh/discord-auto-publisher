@@ -1,6 +1,6 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { RequestHandler, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import type { ZodError, ZodType } from 'zod';
+import type { ZodType, z } from 'zod';
 
 /**
  * Standard API response format
@@ -101,17 +101,29 @@ export const sendErrorResponse = (
   });
 };
 
-export const validateRequest =
-  (schema: ZodType) => (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse({ body: req.body, query: req.query, params: req.params });
-      next();
-    } catch (err) {
-      const zodError = err as ZodError<unknown>;
-      const errorMessage = `Invalid input: ${zodError.issues.map((e: unknown) => (e as { message: string }).message).join(', ')}`;
+/**
+ * Validates req against a `{ params?, body?, query? }` zod schema (400 on mismatch)
+ * and pins the route's request generics, so downstream handlers in the same route
+ * see typed req.params/req.body/req.query without casts.
+ */
+export const validateRequest = <S extends ZodType>(
+  schema: S
+): RequestHandler<
+  z.infer<S> extends { params: infer P } ? P : Record<string, string>,
+  unknown,
+  z.infer<S> extends { body: infer B } ? B : unknown,
+  z.infer<S> extends { query: infer Q } ? Q : Record<string, unknown>
+> => {
+  return (req, res, next) => {
+    const result = schema.safeParse({ body: req.body, query: req.query, params: req.params });
+    if (!result.success) {
+      const errorMessage = `Invalid input: ${result.error.issues.map(issue => issue.message).join(', ')}`;
       res.status(StatusCodes.BAD_REQUEST).json({
         status: StatusCodes.BAD_REQUEST,
         message: errorMessage,
       });
+      return;
     }
+    next();
   };
+};

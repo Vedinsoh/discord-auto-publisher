@@ -6,7 +6,7 @@ import {
   validateRequest,
 } from '@ap/express';
 import type { CreateFilter } from '@ap/validations';
-import express, { type Request, type Response, type Router } from 'express';
+import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
 import {
   AddFilterReqSchema,
@@ -24,11 +24,11 @@ export const Filter: Router = (() => {
   /**
    * Get filters for channel
    */
-  router.get('/', validateRequest(FilterReqSchema), async (req: Request, res: Response) => {
+  router.get('/', validateRequest(FilterReqSchema), async (req, res) => {
     const { channelId } = req.params;
 
     try {
-      const filters = await Services.Channels.Filters.list(channelId as string);
+      const filters = await Services.Channels.Filters.list(channelId);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { filters },
@@ -42,12 +42,12 @@ export const Filter: Router = (() => {
   /**
    * Add filter to channel
    */
-  router.post('/', validateRequest(AddFilterReqSchema), async (req: Request, res: Response) => {
+  router.post('/', validateRequest(AddFilterReqSchema), async (req, res) => {
     const { channelId } = req.params;
     const filterData: CreateFilter = req.body;
 
     try {
-      const filter = await Services.Channels.Filters.add(channelId as string, filterData);
+      const filter = await Services.Channels.Filters.add(channelId, filterData);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true, filter },
@@ -61,47 +61,39 @@ export const Filter: Router = (() => {
   /**
    * Update filter in channel
    */
-  router.put(
-    '/:filterId',
-    validateRequest(UpdateFilterReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId, filterId } = req.params;
-      const filterData: CreateFilter = req.body;
+  router.put('/:filterId', validateRequest(UpdateFilterReqSchema), async (req, res) => {
+    const { channelId, filterId } = req.params;
+    const filterData: CreateFilter = req.body;
 
-      try {
-        await Services.Channels.Filters.update(channelId as string, filterId as string, filterData);
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: { success: true },
-          message: 'Filter updated successfully',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to update filter');
-      }
+    try {
+      await Services.Channels.Filters.update(channelId, filterId, filterData);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Filter updated successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to update filter');
     }
-  );
+  });
 
   /**
    * Remove filter from channel
    */
-  router.delete(
-    '/:filterId',
-    validateRequest(RemoveFilterReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId, filterId } = req.params;
+  router.delete('/:filterId', validateRequest(RemoveFilterReqSchema), async (req, res) => {
+    const { channelId, filterId } = req.params;
 
-      try {
-        await Services.Channels.Filters.remove(channelId as string, filterId as string);
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: { success: true },
-          message: 'Filter removed successfully',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to remove filter');
-      }
+    try {
+      await Services.Channels.Filters.remove(channelId, filterId);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Filter removed successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to remove filter');
     }
-  );
+  });
 
   return router;
 })();

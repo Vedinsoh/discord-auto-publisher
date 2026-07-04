@@ -10,12 +10,14 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createCheckout } from '@/lib/api/actions';
 import type { Edition, SubscriptionData } from '@/lib/api/types';
+import { usePaddle } from '@/lib/paddle';
 
 interface SubscriptionPanelProps {
   edition: Edition;
@@ -26,8 +28,6 @@ interface SubscriptionPanelProps {
   checkoutSuccess?: boolean;
 }
 
-const PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY ?? '';
-const PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY ?? '';
 const PREMIUM_BOT_CLIENT_ID = process.env.NEXT_PUBLIC_PREMIUM_BOT_CLIENT_ID;
 
 function getPremiumBotInviteUrl(guildId: string): string {
@@ -64,7 +64,7 @@ const statusLabels: Record<string, { label: string; className: string }> = {
     label: 'Past Due',
     className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   },
-  cancelled: {
+  canceled: {
     label: 'Cancelled',
     className: 'bg-red-500/20 text-red-400 border-red-500/30',
   },
@@ -98,7 +98,10 @@ export function SubscriptionPanel({
         <CheckoutSuccessCard guildId={guildId} premiumBotPresent={premiumBotPresent} />
       )}
 
-      {subscription && (subscription.status === 'active' || subscription.status === 'trialing') ? (
+      {subscription &&
+      (subscription.status === 'active' ||
+        subscription.status === 'trialing' ||
+        subscription.status === 'past_due') ? (
         <ActiveSubscription subscription={subscription} />
       ) : (
         <FreeSubscription edition={edition} guildId={guildId} guildName={guildName} />
@@ -174,23 +177,37 @@ function ActiveSubscription({ subscription }: { subscription: SubscriptionData }
           </div>
         </div>
 
-        {subscription.currentPeriodEndsAt && (
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 mb-6">
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
-              <Calendar className="w-4 h-4" />
-              <span>
-                {subscription.status === 'cancelled' ? 'Access Until' : 'Next Billing Date'}
-              </span>
+        {(() => {
+          const cancelScheduled = subscription.scheduledChange?.action === 'cancel';
+          const dateValue = cancelScheduled
+            ? subscription.scheduledChange?.effectiveAt
+            : subscription.currentPeriodEndsAt;
+          if (!dateValue) return null;
+          return (
+            <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 mb-6">
+              <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
+                <Calendar className="w-4 h-4" />
+                <span>
+                  {cancelScheduled || subscription.status === 'canceled'
+                    ? 'Access Until'
+                    : 'Next Billing Date'}
+                </span>
+              </div>
+              <p className="text-2xl text-white">
+                {new Date(dateValue).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+              {cancelScheduled && (
+                <p className="text-slate-400 text-sm mt-2">
+                  Your subscription is set to cancel at the end of the billing period.
+                </p>
+              )}
             </div>
-            <p className="text-2xl text-white">
-              {new Date(subscription.currentPeriodEndsAt).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         <ul className="space-y-3 mb-6">
           {premiumBenefits.map(benefit => (
@@ -236,20 +253,27 @@ function FreeSubscription({
   const [error, setError] = useState(false);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
 
-  const priceId = billingInterval === 'year' ? PRICE_YEARLY : PRICE_MONTHLY;
+  const router = useRouter();
+  const paddle = usePaddle(
+    useCallback(() => {
+      // Webhook activates the subscription; success card covers the gap
+      router.push(`/dashboard/${guildId}/subscription?success=true`);
+      router.refresh();
+    }, [guildId, router])
+  );
 
   const handleUpgrade = useCallback(() => {
-    if (!priceId) return;
+    if (!paddle) return;
     setError(false);
     startTransition(async () => {
       try {
-        const { sessionUrl } = await createCheckout(edition, guildId, priceId);
-        window.location.href = sessionUrl;
+        const { transactionId } = await createCheckout(edition, guildId, billingInterval);
+        paddle.Checkout.open({ transactionId });
       } catch {
         setError(true);
       }
     });
-  }, [edition, guildId, priceId]);
+  }, [edition, guildId, billingInterval, paddle]);
 
   return (
     <div className="space-y-6">
@@ -354,18 +378,18 @@ function FreeSubscription({
           <Button
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
             onClick={handleUpgrade}
-            disabled={isPending || !priceId}
+            disabled={isPending || !paddle}
           >
             {isPending ? (
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : (
               <Crown className="w-5 h-5 mr-2" />
             )}
-            {isPending ? 'Redirecting to checkout...' : 'Upgrade to Premium'}
+            {isPending ? 'Opening checkout...' : 'Upgrade to Premium'}
           </Button>
 
           <p className="text-slate-500 text-sm text-center mt-4">
-            Secure payment via Stripe &bull; Cancel anytime &bull; 7-day money-back guarantee
+            Secure payment via Paddle &bull; Cancel anytime &bull; 7-day money-back guarantee
           </p>
         </Card>
       </div>

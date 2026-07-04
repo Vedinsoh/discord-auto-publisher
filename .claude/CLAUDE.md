@@ -104,14 +104,13 @@ bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (S
 
 **backend** (apps/backend):
 
-- **Internal API for bot** — owns channel registration, filters, Stripe subscriptions, web dashboard API.
+- **Internal API for bot** — owns channel registration, filters, Paddle subscriptions, web dashboard API.
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
-- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers), `DiscordAuth` (web auth tokens).
+- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys).
 - Cache sync on startup (reconciles Redis/Postgres).
-- **Discord REST routed through proxy `/api/*`** for guild-channel reads and the subscription-audit cron (leaving guilds with lapsed subscriptions).
-- Stripe integration for premium subscriptions (Checkout Sessions, Customer Portal, webhooks)
-- HMAC-signed webhook forwarding to optional external invoicing service
-- Tech stack: Express, `@discordjs/rest`, Drizzle ORM (https://orm.drizzle.team), ioredis via `@ap/redis`, zod (https://v3.zod.dev/), stripe (https://docs.stripe.com/)
+- **Discord REST routed through proxy `/api/*`** for guild-channel reads and entitlement revocation (premium bot leaves guilds that lose their subscription).
+- Paddle (merchant of record) integration for premium subscriptions: backend-created transactions for the web overlay checkout, Customer Portal sessions, `POST /webhooks/paddle` (signature-verified, Redis-deduped), daily reconcile cron against the Paddle API. Postgres is the subscription source of truth; entitled statuses are `active`/`trialing`/`past_due`.
+- Tech stack: Express, `@discordjs/rest`, Drizzle ORM (https://orm.drizzle.team), ioredis via `@ap/redis`, zod (https://v3.zod.dev/), @paddle/paddle-node-sdk (https://developer.paddle.com/)
 
 **Shared packages** (packages/\*):
 
@@ -162,20 +161,20 @@ channels {
 
 subscription {
   id (uuid, pk)
-  guildId (text, unique, FK → guilds.guildId, cascade delete)
-  stripeSubscriptionId (text, unique)
-  stripeCustomerId (text)
+  guildId (text, unique — intentionally NO FK: subscription outlives the guild row)
+  paddleSubscriptionId (text, unique)
+  paddleCustomerId (text)
   subscriberDiscordUserId (text)
-  status (text: 'active', 'cancelled', 'past_due', 'paused', 'trialing', 'expired')
-  stripePriceId (text)
+  status (text, Paddle statuses verbatim: 'active', 'trialing', 'past_due', 'paused', 'canceled')
+  paddlePriceId (text)
   billingInterval (text: 'month' | 'year')
-  currentPeriodEndsAt, cancelledAt, createdAt, updatedAt
+  currentPeriodEndsAt, scheduledChangeAction, scheduledChangeAt, canceledAt, createdAt, updatedAt
 }
 
-stripe_customer {
+paddle_customer {
   id (uuid, pk)
   discordUserId (text, unique)
-  stripeCustomerId (text, unique)
+  paddleCustomerId (text, unique)
   email (text)
   createdAt, updatedAt
 }
@@ -202,6 +201,7 @@ Single Redis instance, multiple logical DBs (managed via `DatabaseIDs` enum in `
 | 3 | `BlockedChannels` | proxy | denylist (`channel:blocked:{id}`, 1h TTL) — populated on 401/403 |
 | 4 | `DiscordAuth` | backend | web auth token cache |
 | 5 | `MigratedGuilds` | backend | v6→v7 migration markers (`migrated_guild:{id}`, no TTL) |
+| 6 | `PaddleWebhookDedupe` | backend | Paddle webhook idempotency (`paddle_event:{eventId}`, 24h TTL) |
 
 Uses SCAN instead of KEYS (production-safe). ioredis client (BullMQ requirement), wrapped by `@ap/redis` factory `createRedisClient(databaseId)`.
 
@@ -216,12 +216,13 @@ BOT_SHARDS_PER_CLUSTER
 DATABASE_URL: postgresql://... (Supabase connection string)
 REDIS_URI: redis://redis:6379 (shared Redis instance)
 PROXY_PORT: 8080 (proxy listen port)
-STRIPE_SECRET_KEY: sk_test_... or sk_live_... (premium backend only)
-STRIPE_WEBHOOK_SECRET: whsec_... (premium backend only)
-INVOICING_WEBHOOK_URL: optional, external invoicing service URL
-INVOICING_WEBHOOK_SECRET: optional, HMAC secret for invoicing payloads
-NEXT_PUBLIC_STRIPE_PRICE_MONTHLY: Stripe Price ID for monthly plan
-NEXT_PUBLIC_STRIPE_PRICE_YEARLY: Stripe Price ID for yearly plan
+PADDLE_ENVIRONMENT: sandbox|production (premium backend only)
+PADDLE_API_KEY: Paddle API key (premium backend only)
+PADDLE_WEBHOOK_SECRET: Paddle notification destination secret (premium backend only)
+PADDLE_PRICE_MONTHLY: Paddle Price ID for monthly plan (pri_...)
+PADDLE_PRICE_YEARLY: Paddle Price ID for yearly plan (pri_...)
+NEXT_PUBLIC_PADDLE_ENVIRONMENT: sandbox|production (web)
+NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: Paddle client-side token for Paddle.js (web)
 ```
 
 ## Message publishing flow

@@ -1,9 +1,15 @@
 import { config, env } from '@ap/config';
-import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
+import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import { type APIChannel, ChannelType, Routes } from 'discord-api-types/v10';
-import express, { type Request, type Response, type Router } from 'express';
+import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
+import { isEntitledStatus } from 'services/subscriptions.js';
+import {
+  GuildChannelReqSchema,
+  GuildReqSchema,
+  SubscriptionCheckoutReqSchema,
+} from 'utils/validations.js';
 
 export const GuildApi: Router = (() => {
   const router = express.Router({ mergeParams: true });
@@ -12,15 +18,15 @@ export const GuildApi: Router = (() => {
    * GET /api/guild/:guildId
    * Returns guild channels (enriched with Discord names) + subscription summary
    */
-  router.get('/', async (req: Request, res: Response) => {
+  router.get('/', validateRequest(GuildReqSchema), async (req, res) => {
     const { guildId } = req.params;
 
     try {
       const [channelRecords, discordChannels, sub] = await Promise.all([
-        Services.Guilds.getChannelRecords(guildId as string),
-        Discord.rest.get(Routes.guildChannels(guildId as string)) as Promise<APIChannel[]>,
+        Services.Guilds.getChannelRecords(guildId),
+        Discord.rest.get(Routes.guildChannels(guildId)) as Promise<APIChannel[]>,
         config.isPremiumInstance
-          ? Services.Subscriptions.getByGuildId(guildId as string)
+          ? Services.Subscriptions.getByGuildId(guildId)
           : Promise.resolve(null),
       ]);
 
@@ -48,8 +54,13 @@ export const GuildApi: Router = (() => {
           subscription: sub
             ? {
                 status: sub.status,
+                billingInterval: sub.billingInterval,
                 currentPeriodEndsAt: sub.currentPeriodEndsAt,
-                cancelledAt: sub.cancelledAt,
+                scheduledChange:
+                  sub.scheduledChangeAction && sub.scheduledChangeAt
+                    ? { action: sub.scheduledChangeAction, effectiveAt: sub.scheduledChangeAt }
+                    : null,
+                canceledAt: sub.canceledAt,
               }
             : null,
         },
@@ -64,11 +75,11 @@ export const GuildApi: Router = (() => {
    * GET /api/guild/:guildId/channels
    * Returns channel list with filters from DB
    */
-  router.get('/channels', async (req: Request, res: Response) => {
+  router.get('/channels', validateRequest(GuildReqSchema), async (req, res) => {
     const { guildId } = req.params;
 
     try {
-      const channelIds = await Services.Guilds.getChannels(guildId as string);
+      const channelIds = await Services.Guilds.getChannels(guildId);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
@@ -84,11 +95,11 @@ export const GuildApi: Router = (() => {
    * PUT /api/guild/:guildId/channel/:channelId
    * Enable channel for auto-publishing
    */
-  router.put('/channel/:channelId', async (req: Request, res: Response) => {
+  router.put('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
     const { guildId, channelId } = req.params;
 
     try {
-      await Services.Channels.add(guildId as string, channelId as string);
+      await Services.Channels.add(guildId, channelId);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
@@ -104,11 +115,11 @@ export const GuildApi: Router = (() => {
    * DELETE /api/guild/:guildId/channel/:channelId
    * Disable channel for auto-publishing
    */
-  router.delete('/channel/:channelId', async (req: Request, res: Response) => {
+  router.delete('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
     const { channelId } = req.params;
 
     try {
-      await Services.Channels.remove(channelId as string);
+      await Services.Channels.remove(channelId);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
@@ -124,7 +135,7 @@ export const GuildApi: Router = (() => {
    * GET /api/guild/:guildId/subscription
    * Returns subscription details + portal URL if subscriber matches current user
    */
-  router.get('/subscription', async (req: Request, res: Response) => {
+  router.get('/subscription', validateRequest(GuildReqSchema), async (req, res) => {
     if (!config.isPremiumInstance) {
       res.status(StatusCodes.NOT_FOUND).json({
         status: StatusCodes.NOT_FOUND,
@@ -137,7 +148,7 @@ export const GuildApi: Router = (() => {
     const userId = req.discordUser?.id;
 
     try {
-      const sub = await Services.Subscriptions.getByGuildId(guildId as string);
+      const sub = await Services.Subscriptions.getByGuildId(guildId);
 
       if (!sub) {
         res.status(StatusCodes.OK).json({
@@ -151,10 +162,12 @@ export const GuildApi: Router = (() => {
       let portalUrl: string | undefined;
 
       // Only provide portal URL if the requester is the subscriber
-      if (userId === sub.subscriberDiscordUserId && sub.stripeCustomerId) {
+      if (userId === sub.subscriberDiscordUserId) {
         try {
-          const returnUrl = `${env.WEB_APP_ORIGIN}/dashboard/${guildId}/subscription`;
-          portalUrl = await Services.Stripe.createPortalSession(sub.stripeCustomerId, returnUrl);
+          portalUrl = await Services.Paddle.createPortalSession(
+            sub.paddleCustomerId,
+            sub.paddleSubscriptionId
+          );
         } catch {
           // Non-fatal: portal URL is optional
         }
@@ -166,7 +179,11 @@ export const GuildApi: Router = (() => {
           status: sub.status,
           billingInterval: sub.billingInterval,
           currentPeriodEndsAt: sub.currentPeriodEndsAt,
-          cancelledAt: sub.cancelledAt,
+          scheduledChange:
+            sub.scheduledChangeAction && sub.scheduledChangeAt
+              ? { action: sub.scheduledChangeAction, effectiveAt: sub.scheduledChangeAt }
+              : null,
+          canceledAt: sub.canceledAt,
           portalUrl,
         },
         message: 'Subscription retrieved successfully',
@@ -178,86 +195,74 @@ export const GuildApi: Router = (() => {
 
   /**
    * POST /api/guild/:guildId/subscription/checkout
-   * Create a Stripe Checkout Session
+   * Creates a Paddle transaction for the overlay checkout (price resolved server-side)
    */
-  router.post('/subscription/checkout', async (req: Request, res: Response) => {
-    if (!config.isPremiumInstance) {
-      res.status(StatusCodes.NOT_FOUND).json({
-        status: StatusCodes.NOT_FOUND,
-        message: 'Subscriptions are not available',
-      } as APIResponse);
-      return;
-    }
-
-    const { guildId } = req.params;
-    const userId = req.discordUser?.id;
-    const email = req.discordUser?.email;
-    const { priceId } = req.body;
-
-    if (!userId) {
-      res.status(StatusCodes.UNAUTHORIZED).json({
-        status: StatusCodes.UNAUTHORIZED,
-        message: 'Authentication required',
-      } as APIResponse);
-      return;
-    }
-
-    if (!priceId || typeof priceId !== 'string') {
-      res.status(StatusCodes.BAD_REQUEST).json({
-        status: StatusCodes.BAD_REQUEST,
-        message: 'Missing priceId in request body',
-      } as APIResponse);
-      return;
-    }
-
-    try {
-      // Check for existing active subscription
-      const existing = await Services.Subscriptions.getByGuildId(guildId as string);
-      if (existing && (existing.status === 'active' || existing.status === 'trialing')) {
-        res.status(StatusCodes.CONFLICT).json({
-          status: StatusCodes.CONFLICT,
-          message: 'Guild already has an active subscription',
+  router.post(
+    '/subscription/checkout',
+    validateRequest(SubscriptionCheckoutReqSchema),
+    async (req, res) => {
+      if (!config.isPremiumInstance) {
+        res.status(StatusCodes.NOT_FOUND).json({
+          status: StatusCodes.NOT_FOUND,
+          message: 'Subscriptions are not available',
         } as APIResponse);
         return;
       }
 
-      // Look up or create Stripe Customer
-      let stripeCustomerId: string | undefined;
-      const existingCustomer = await Services.StripeCustomers.getByDiscordUserId(userId);
+      const { guildId } = req.params;
+      const { interval } = req.body;
+      const userId = req.discordUser?.id;
 
-      if (existingCustomer) {
-        stripeCustomerId = existingCustomer.stripeCustomerId;
-      } else {
-        const newCustomer = await Services.Stripe.createCustomer({
-          email,
-          discordUserId: userId,
-        });
-        await Services.StripeCustomers.upsert(userId, newCustomer.id, email);
-        stripeCustomerId = newCustomer.id;
+      if (!userId) {
+        res.status(StatusCodes.UNAUTHORIZED).json({
+          status: StatusCodes.UNAUTHORIZED,
+          message: 'Authentication required',
+        } as APIResponse);
+        return;
       }
 
-      const successUrl = `${env.WEB_APP_ORIGIN}/dashboard/${guildId}/subscription?success=true`;
-      const cancelUrl = `${env.WEB_APP_ORIGIN}/dashboard/${guildId}/subscription`;
+      const priceId = interval === 'year' ? env.PADDLE_PRICE_YEARLY : env.PADDLE_PRICE_MONTHLY;
 
-      const result = await Services.Stripe.createCheckoutSession({
-        guildId: guildId as string,
-        discordUserId: userId,
-        email,
-        priceId,
-        stripeCustomerId,
-        successUrl,
-        cancelUrl,
-      });
+      if (!priceId) {
+        res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+          status: StatusCodes.SERVICE_UNAVAILABLE,
+          message: 'Checkout is not configured',
+        } as APIResponse);
+        return;
+      }
 
-      res.status(StatusCodes.OK).json({
-        status: StatusCodes.OK,
-        data: result,
-        message: 'Checkout session created',
-      } as APIResponse);
-    } catch (error) {
-      sendErrorResponse(res, error, 'Failed to create checkout');
+      try {
+        // Guard: one subscription per guild
+        const existing = await Services.Subscriptions.getByGuildId(guildId);
+        if (existing && isEntitledStatus(existing.status)) {
+          res.status(StatusCodes.CONFLICT).json({
+            status: StatusCodes.CONFLICT,
+            message: 'Guild already has an active subscription',
+          } as APIResponse);
+          return;
+        }
+
+        // Reuse the Paddle customer if this Discord user already has one;
+        // otherwise the checkout collects email and creates the customer.
+        const existingCustomer = await Services.PaddleCustomers.getByDiscordUserId(userId);
+
+        const result = await Services.Paddle.createCheckoutTransaction({
+          guildId,
+          discordUserId: userId,
+          priceId,
+          paddleCustomerId: existingCustomer?.paddleCustomerId,
+        });
+
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: result,
+          message: 'Checkout transaction created',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to create checkout');
+      }
     }
-  });
+  );
 
   return router;
 })();

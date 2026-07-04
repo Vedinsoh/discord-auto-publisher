@@ -5,6 +5,7 @@ export enum DatabaseIDs {
   BlockedChannels = 3,
   DiscordAuth = 4,
   MigratedGuilds = 5,
+  PaddleWebhookDedupe = 6,
 }
 
 export enum Keys {
@@ -12,4 +13,5 @@ export enum Keys {
   Sublimit = 'channel:sublimit',
   Blocked = 'channel:blocked',
   MigratedGuild = 'migrated_guild',
+  PaddleEvent = 'paddle_event',
 }

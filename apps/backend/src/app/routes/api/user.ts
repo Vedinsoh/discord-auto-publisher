@@ -2,6 +2,7 @@ import { db, guild, subscription } from '@ap/database';
 import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
 import { inArray } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
+import { isEntitledStatus } from 'services/subscriptions.js';
 
 const MANAGE_GUILD = BigInt(0x20);
 
@@ -75,9 +76,7 @@ export const User: Router = (() => {
         .from(subscription)
         .where(inArray(subscription.guildId, guildIds));
       const subscribedGuildIds = new Set(
-        subscriptions
-          .filter(s => s.status === 'active' || s.status === 'trialing')
-          .map(s => s.guildId)
+        subscriptions.filter(s => isEntitledStatus(s.status)).map(s => s.guildId)
       );
 
       const result = managedGuilds.map(g => ({

@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1772136315336,
-      "tag": "0000_sad_jimmy_woo",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1772441095947,
-      "tag": "0001_equal_iron_lad",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1745107200000,
-      "tag": "0002_replace_paddle_with_stripe",
+      "when": 1783095295282,
+      "tag": "0000_loose_shinko_yamashiro",
       "breakpoints": true
     }
   ]

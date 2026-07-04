@@ -10,7 +10,7 @@ import {
   createRequireGuildPermission,
 } from '@ap/express';
 import { App } from 'app/index.js';
-import { startSubscriptionAudit } from 'cron/subscriptionAudit.js';
+import { startSubscriptionReconcile } from 'cron/subscriptionReconcile.js';
 import { Data } from 'data/index.js';
 import express from 'express';
 import { Services } from 'services/index.js';
@@ -22,9 +22,9 @@ const app = express();
 // Request logger (applies to all routes)
 app.use(...createRequestLogger(env.isDevelopment));
 
-// Stripe webhook route (premium only, needs raw body BEFORE express.json())
+// Paddle webhook route (premium only, needs raw body BEFORE express.json())
 if (config.isPremiumInstance) {
-  app.use('/webhooks/stripe', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
+  app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
 }
 
 // JSON parser for all remaining routes
@@ -71,9 +71,9 @@ const server = app.listen('8080', async () => {
   logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
 });
 
-// Start subscription audit cron (premium only)
+// Start subscription reconcile cron (premium only)
 if (config.isPremiumInstance) {
-  startSubscriptionAudit();
+  startSubscriptionReconcile();
 }
 
 // Gracefully handle server shutdown

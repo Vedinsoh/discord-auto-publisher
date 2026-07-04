@@ -43,16 +43,25 @@ export interface GuildChannel {
   filterMode: FilterMatchMode;
 }
 
+/** Subscription status (mirrors Paddle statuses verbatim) */
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'paused' | 'canceled';
+
+/** Billing interval */
+export type BillingInterval = 'month' | 'year';
+
+/** Pending scheduled change on a subscription (cancel/pause at period end) */
+export interface SubscriptionScheduledChange {
+  action: 'cancel' | 'pause' | 'resume';
+  effectiveAt: string;
+}
+
 /** Subscription data (JSON-serialized with portalUrl) */
 export interface SubscriptionData {
-  id: string;
-  guildId: string;
-  stripeSubscriptionId: string | null;
-  subscriberDiscordUserId: string;
-  status: 'active' | 'cancelled' | 'past_due' | 'paused' | 'trialing';
-  billingInterval: 'month' | 'year' | null;
+  status: SubscriptionStatus;
+  billingInterval: BillingInterval | null;
   currentPeriodEndsAt: string | null;
-  cancelledAt: string | null;
+  scheduledChange: SubscriptionScheduledChange | null;
+  canceledAt: string | null;
   portalUrl: string | null;
 }
 
@@ -62,7 +71,7 @@ export interface GuildDashboardData {
   subscription: SubscriptionData | null;
 }
 
-/** Checkout session response */
+/** Checkout response: transaction ID consumed by Paddle.js overlay checkout */
 export interface CheckoutResponse {
-  sessionUrl: string;
+  transactionId: string;
 }

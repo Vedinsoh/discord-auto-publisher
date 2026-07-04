@@ -1,15 +1,17 @@
 import { Channels } from './channels/index.js';
+import { Entitlements } from './entitlements.js';
 import { Guilds } from './guilds.js';
 import { Info } from './info.js';
-import { StripeService } from './stripe.js';
-import { StripeCustomers } from './stripeCustomers.js';
+import { PaddleService } from './paddle.js';
+import { PaddleCustomers } from './paddleCustomers.js';
 import { Subscriptions } from './subscriptions.js';
 
 export const Services = {
   Channels,
+  Entitlements,
   Guilds,
   Info,
-  Stripe: StripeService,
-  StripeCustomers,
+  Paddle: PaddleService,
+  PaddleCustomers,
   Subscriptions,
 };

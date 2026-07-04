@@ -1,5 +1,5 @@
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
-import express, { type Request, type Response, type Router } from 'express';
+import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
 import {
   ChannelEnableReqSchema,
@@ -18,10 +18,10 @@ export const Channel: Router = (() => {
    * Checks if a specific channel is enabled for auto-publishing
    * Returns channel status with filters and filter mode
    */
-  router.get('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
+  router.get('/', validateRequest(ChannelReqSchema), async (req, res) => {
     const { channelId } = req.params;
 
-    const channelData = await Services.Channels.get(channelId as string);
+    const channelData = await Services.Channels.get(channelId);
 
     if (channelData) {
       res.status(StatusCodes.OK).json({
@@ -42,12 +42,12 @@ export const Channel: Router = (() => {
    * Enables auto-publishing in a specific channel
    * Adds the channel to the Redis cache and stores it in DB
    */
-  router.put('/', validateRequest(ChannelEnableReqSchema), async (req: Request, res: Response) => {
+  router.put('/', validateRequest(ChannelEnableReqSchema), async (req, res) => {
     const { channelId } = req.params;
     const { guildId } = req.body;
 
     try {
-      await Services.Channels.add(guildId as string, channelId as string);
+      await Services.Channels.add(guildId, channelId);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },
@@ -62,11 +62,11 @@ export const Channel: Router = (() => {
    * Disables auto-publishing in a specific channel
    * Removes the channel from the Redis cache and DB
    */
-  router.delete('/', validateRequest(ChannelReqSchema), async (req: Request, res: Response) => {
+  router.delete('/', validateRequest(ChannelReqSchema), async (req, res) => {
     const { channelId } = req.params;
 
     try {
-      await Services.Channels.remove(channelId as string);
+      await Services.Channels.remove(channelId);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },
@@ -80,25 +80,21 @@ export const Channel: Router = (() => {
   /**
    * Update filter mode for channel
    */
-  router.put(
-    '/filter-mode',
-    validateRequest(SetFilterModeReqSchema),
-    async (req: Request, res: Response) => {
-      const { channelId } = req.params;
-      const { mode } = req.body;
+  router.put('/filter-mode', validateRequest(SetFilterModeReqSchema), async (req, res) => {
+    const { channelId } = req.params;
+    const { mode } = req.body;
 
-      try {
-        await Services.Channels.setFilterMode(channelId as string, mode);
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: { success: true, mode },
-          message: 'Filter mode updated successfully',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to update filter mode');
-      }
+    try {
+      await Services.Channels.setFilterMode(channelId, mode);
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true, mode },
+        message: 'Filter mode updated successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to update filter mode');
     }
-  );
+  });
 
   return router;
 })();
