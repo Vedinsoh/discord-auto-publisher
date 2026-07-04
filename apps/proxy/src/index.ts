@@ -10,6 +10,7 @@ import { logger } from './logger.js';
 
 const INVALID_REQUESTS_THRESHOLD = 5_000;
 const WORKER_CONCURRENCY = 50;
+const PROXY_PORT = 8080;
 
 const main = async () => {
   const [sublimitRedis, blockedRedis] = await Promise.all([
@@ -35,10 +36,10 @@ const main = async () => {
   });
 
   const app = createApp({ gateway, crosspost, caches });
-  const server = app.listen(env.PROXY_PORT, () => {
+  const server = app.listen(PROXY_PORT, () => {
     logger.info(
-      { event: 'proxy.listening', port: env.PROXY_PORT },
-      `Discord proxy listening on port ${env.PROXY_PORT}`
+      { event: 'proxy.listening', port: PROXY_PORT },
+      `Discord proxy listening on port ${PROXY_PORT}`
     );
   });
 

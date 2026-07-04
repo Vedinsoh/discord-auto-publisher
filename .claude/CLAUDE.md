@@ -214,8 +214,7 @@ APP_EDITION: free|premium
 BOT_SHARDS
 BOT_SHARDS_PER_CLUSTER
 DATABASE_URL: postgresql://... (Supabase connection string)
-REDIS_URI: redis://redis:6379 (shared Redis instance)
-PROXY_PORT: 8080 (proxy listen port)
+REDIS_URI: redis://redis:6379 (optional override; defaults to shared Docker Redis)
 PADDLE_ENVIRONMENT: sandbox|production (premium backend only)
 PADDLE_API_KEY: Paddle API key (premium backend only)
 PADDLE_WEBHOOK_SECRET: Paddle notification destination secret (premium backend only)

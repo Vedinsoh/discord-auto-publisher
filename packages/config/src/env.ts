@@ -20,11 +20,8 @@ export const env = cleanEnv(process.env, {
   // Redis
   REDIS_URI: str({ default: 'redis://redis:6379' }),
 
-  // Proxy
-  PROXY_PORT: num({ default: 8080 }),
-
   // Bot
-  BOT_SUPPORT_GUILD_ID: str({ default: '' }),
+  BOT_SUPPORT_GUILD_ID: str({ default: '958709555683033128' }),
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 
