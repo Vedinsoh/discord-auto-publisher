@@ -6,7 +6,7 @@ import {
   type Paddle,
   type PaddleEventData,
 } from '@paddle/paddle-js';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 const CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
 const ENVIRONMENT =
@@ -18,8 +18,9 @@ const ENVIRONMENT =
  */
 export function usePaddle(onCheckoutCompleted?: () => void) {
   const [paddle, setPaddle] = useState<Paddle | null>(null);
-  const completedRef = useRef(onCheckoutCompleted);
-  completedRef.current = onCheckoutCompleted;
+  const handleCheckoutCompleted = useEffectEvent(() => {
+    onCheckoutCompleted?.();
+  });
 
   useEffect(() => {
     if (!CLIENT_TOKEN) return;
@@ -37,7 +38,7 @@ export function usePaddle(onCheckoutCompleted?: () => void) {
       },
       eventCallback: (event: PaddleEventData) => {
         if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
-          completedRef.current?.();
+          handleCheckoutCompleted();
         }
       },
     })
