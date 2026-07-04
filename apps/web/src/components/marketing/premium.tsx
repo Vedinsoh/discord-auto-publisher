@@ -1,5 +1,11 @@
 import { Check, Crown, HeadphonesIcon, type LucideIcon, Sparkles, Zap } from 'lucide-react';
 import { values } from '@/lib/constants';
+import {
+  formatUsd,
+  PREMIUM_PRICE_MONTHLY_USD,
+  PREMIUM_YEARLY_PER_MONTH_USD,
+  PREMIUM_YEARLY_SAVINGS_PERCENT,
+} from '@/lib/pricing';
 import { formatNumberFull } from '@/lib/utils';
 import { Button } from '../ui/button';
 
@@ -91,7 +97,9 @@ export function Premium() {
                 <div>
                   <div className="mb-4">
                     <div className="flex items-baseline gap-2 mb-1">
-                      <span className="text-4xl lg:text-5xl font-bold text-white">$4.99</span>
+                      <span className="text-4xl lg:text-5xl font-bold text-white">
+                        {formatUsd(PREMIUM_PRICE_MONTHLY_USD)}
+                      </span>
                       <span className="text-slate-400">/month</span>
                     </div>
                     <p className="text-slate-400">per server</p>
@@ -99,7 +107,11 @@ export function Premium() {
 
                   <div className="bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-2 mb-6">
                     <p className="text-green-400 text-sm">
-                      Or <span className="font-semibold">$3.99/month</span> billed yearly — save 20%
+                      Or{' '}
+                      <span className="font-semibold">
+                        {formatUsd(PREMIUM_YEARLY_PER_MONTH_USD)}/month
+                      </span>{' '}
+                      billed yearly — save {PREMIUM_YEARLY_SAVINGS_PERCENT}%
                     </p>
                   </div>
 

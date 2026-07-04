@@ -29,7 +29,7 @@ web (Paddle.js overlay)                    premium backend
 1. **Catalog → Products**: create product `Auto Publisher Premium`.
 2. Add two recurring prices to it:
    - Monthly: `4.99 USD`, billing period 1 month → copy the `pri_...` ID
-   - Yearly: `47.88 USD`, billing period 1 year → copy the `pri_...` ID
+   - Yearly: `49.99 USD`, billing period 1 year → copy the `pri_...` ID
 3. **Developer tools → Authentication**: create an API key → `PADDLE_API_KEY` (`pdl_sdbx_apikey_...`).
 4. **Developer tools → Client-side tokens**: create a token → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` (`test_...`).
 5. **Developer tools → Notifications**: create a notification destination:

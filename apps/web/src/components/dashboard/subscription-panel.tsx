@@ -18,6 +18,14 @@ import { Card } from '@/components/ui/card';
 import { createCheckout } from '@/lib/api/actions';
 import type { Edition, SubscriptionData } from '@/lib/api/types';
 import { usePaddle } from '@/lib/paddle';
+import {
+  formatUsd,
+  PREMIUM_PRICE_MONTHLY_USD,
+  PREMIUM_PRICE_YEARLY_USD,
+  PREMIUM_YEARLY_PER_MONTH_USD,
+  PREMIUM_YEARLY_SAVINGS_PERCENT,
+  PREMIUM_YEARLY_SAVINGS_USD,
+} from '@/lib/pricing';
 
 interface SubscriptionPanelProps {
   edition: Edition;
@@ -251,7 +259,7 @@ function FreeSubscription({
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<BillingInterval>('month');
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('year');
 
   const router = useRouter();
   const paddle = usePaddle(
@@ -339,29 +347,26 @@ function FreeSubscription({
               >
                 Yearly
                 <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-                  Save 20%
+                  Save {PREMIUM_YEARLY_SAVINGS_PERCENT}%
                 </span>
               </button>
             </div>
 
             {/* Price display */}
             <div className="flex items-baseline justify-center gap-2">
-              {billingInterval === 'month' ? (
-                <>
-                  <span className="text-5xl text-white">$4.99</span>
-                  <span className="text-slate-400 text-xl">/month</span>
-                </>
-              ) : (
-                <>
-                  <span className="text-5xl text-white">$3.99</span>
-                  <span className="text-slate-400 text-xl">/month</span>
-                </>
-              )}
+              <span className="text-5xl text-white">
+                {billingInterval === 'month'
+                  ? formatUsd(PREMIUM_PRICE_MONTHLY_USD)
+                  : formatUsd(PREMIUM_YEARLY_PER_MONTH_USD)}
+              </span>
+              <span className="text-slate-400 text-xl">/month</span>
             </div>
             {billingInterval === 'year' && (
               <p className="text-slate-500 text-sm mt-2">
-                Billed annually at $47.88
-                <span className="text-green-400 ml-2">(save $12.00/year)</span>
+                Billed annually at {formatUsd(PREMIUM_PRICE_YEARLY_USD)}
+                <span className="text-green-400 ml-2">
+                  (save {formatUsd(PREMIUM_YEARLY_SAVINGS_USD)}/year)
+                </span>
               </p>
             )}
           </div>
