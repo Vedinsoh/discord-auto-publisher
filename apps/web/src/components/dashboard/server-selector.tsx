@@ -155,10 +155,21 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                 );
 
                 if (botAbsent) {
+                  const inviteUrl = getBotInviteUrl(
+                    guild.hasSubscription ? 'premium' : 'free',
+                    guild.id
+                  );
+                  if (!inviteUrl) {
+                    return (
+                      <div key={guild.id} className="block">
+                        {content}
+                      </div>
+                    );
+                  }
                   return (
                     <a
                       key={guild.id}
-                      href={getBotInviteUrl(guild.hasSubscription ? 'premium' : 'free', guild.id)}
+                      href={inviteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={armRefreshOnReturn}

@@ -123,6 +123,11 @@ function CheckoutSuccessCard({
   premiumBotPresent: boolean;
 }) {
   const armRefreshOnReturn = useRefreshOnReturn();
+  // Locked to the subscribed guild: the premium entitlement gate makes the
+  // bot self-leave any other guild
+  const inviteUrl = PREMIUM_BOT_CLIENT_ID
+    ? getBotInviteUrl('premium', guildId, { lockGuildSelect: true })
+    : null;
   return (
     <Card className="bg-green-500/10 border-green-500/30 p-6">
       <div className="flex items-start gap-3">
@@ -132,14 +137,14 @@ function CheckoutSuccessCard({
           <p className="text-slate-400 mb-4">
             Your premium subscription is being activated. This may take a few moments.
           </p>
-          {!premiumBotPresent && PREMIUM_BOT_CLIENT_ID && (
+          {!premiumBotPresent && inviteUrl && (
             <>
               <p className="text-slate-400 mb-3">
                 Invite the Premium bot to your server to get started:
               </p>
               <Button className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
                 <a
-                  href={getBotInviteUrl('premium', guildId)}
+                  href={inviteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={armRefreshOnReturn}
