@@ -227,10 +227,11 @@ export const GuildApi: Router = (() => {
         return;
       }
 
+      const isSubscriber = userId === sub.subscriberDiscordUserId;
       let portalUrl: string | undefined;
 
       // Only provide portal URL if the requester is the subscriber
-      if (userId === sub.subscriberDiscordUserId) {
+      if (isSubscriber) {
         try {
           portalUrl = await Services.Paddle.createPortalSession(
             sub.paddleCustomerId,
@@ -240,6 +241,12 @@ export const GuildApi: Router = (() => {
           // Non-fatal: portal URL is optional
         }
       }
+
+      // Non-subscriber admins see "Billing is managed by @X" — the subscriber's
+      // own view is just the button, so skip the lookup for them
+      const subscriberUsername = isSubscriber
+        ? null
+        : await Discord.getUsername(sub.subscriberDiscordUserId);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
@@ -252,7 +259,12 @@ export const GuildApi: Router = (() => {
               ? { action: sub.scheduledChangeAction, effectiveAt: sub.scheduledChangeAt }
               : null,
           canceledAt: sub.canceledAt,
-          portalUrl,
+          portalUrl: portalUrl ?? null,
+          isSubscriber,
+          subscriber: {
+            id: sub.subscriberDiscordUserId,
+            username: subscriberUsername,
+          },
         },
         message: 'Subscription retrieved successfully',
       } as APIResponse);

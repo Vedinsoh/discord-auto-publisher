@@ -9,6 +9,7 @@
     "start": "bun run ."
   },
   "dependencies": {
+    "@ap/alerts": "workspace:*",
     "@ap/config": "workspace:*",
     "@ap/database": "workspace:*",
     "@ap/express": "workspace:*",

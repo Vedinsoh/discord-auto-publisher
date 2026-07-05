@@ -1,5 +1,6 @@
 import { db, guild, type Subscription, subscription } from '@ap/database';
 import { and, eq, isNull, notInArray } from 'drizzle-orm';
+import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
 /** Statuses that keep a guild entitled to premium (past_due rides out Paddle dunning) */
@@ -109,8 +110,10 @@ const getByPaddleSubscriptionId = async (
 /**
  * Applies a Paddle subscription state to the local row (webhooks + reconcile cron).
  * Returns previous/current rows so callers can detect entitlement transitions.
- * Skips stale input two ways (webhook deliveries are unordered):
+ * Skips input three ways (webhook deliveries are unordered):
  * - same subscription: Paddle updated_at older than the applied state
+ * - same guild, different subscription, both entitled: duplicate checkout
+ *   race — first subscription wins, alert fires
  * - same guild, different subscription: a lapsed subscription may not
  *   overwrite a newer entitled one (re-subscribe)
  */
@@ -142,6 +145,22 @@ const applyPaddleSubscription = async (
     const existingByGuild = await getByGuildId(values.guildId);
 
     if (existingByGuild) {
+      // Duplicate guard: two admins completed checkout before either webhook
+      // landed (the 409 checkout guard only covers transaction creation). Keep
+      // the FIRST subscription and alert — support cancels+refunds the
+      // duplicate in Paddle. A legitimate new subscription can only arrive
+      // while the existing row is non-entitled.
+      if (isEntitledStatus(existingByGuild.status) && isEntitledStatus(values.status)) {
+        logger.error(
+          `Duplicate entitled Paddle subscription ${values.paddleSubscriptionId} for guild ${values.guildId} (keeping ${existingByGuild.paddleSubscriptionId})`
+        );
+        alerter.send(`duplicate-subscription:${values.guildId}`, {
+          title: 'Duplicate entitled subscription',
+          description: `Guild ${values.guildId} already has entitled subscription \`${existingByGuild.paddleSubscriptionId}\`; ignored incoming \`${values.paddleSubscriptionId}\` (subscriber ${values.subscriberDiscordUserId}). Cancel + refund the duplicate in Paddle.`,
+        });
+        return { previous: existingByGuild, current: existingByGuild, skipped: true };
+      }
+
       const isStale = isEntitledStatus(existingByGuild.status) && !isEntitledStatus(values.status);
 
       if (isStale) {

@@ -1,4 +1,5 @@
 import process from 'node:process';
+import { createAlerter } from '@ap/alerts';
 import { env } from '@ap/config';
 import { createRedisClient, DatabaseIDs, disconnectAllRedis } from '@ap/redis';
 import { createBlockedCache, createSublimitCounter } from './crosspost/caches.js';
@@ -13,20 +14,22 @@ const WORKER_CONCURRENCY = 50;
 const PROXY_PORT = 8080;
 
 const main = async () => {
-  const [sublimitRedis, blockedRedis] = await Promise.all([
+  const [sublimitRedis, blockedRedis, alertsRedis] = await Promise.all([
     createRedisClient(DatabaseIDs.SublimitCounter, logger),
     createRedisClient(DatabaseIDs.BlockedChannels, logger),
+    createRedisClient(DatabaseIDs.Alerts, logger),
   ]);
 
   const sublimit = createSublimitCounter(sublimitRedis);
   const blocked = createBlockedCache(blockedRedis);
   const caches = { sublimit, blocked };
+  const alerter = createAlerter({ redis: alertsRedis, service: 'proxy', logger });
 
   const gateway = buildGateway({
     token: env.DISCORD_TOKEN,
     invalidRequestsThreshold: INVALID_REQUESTS_THRESHOLD,
   });
-  const gate = createGate({ invalidRequests: gateway.invalidRequests, blocked, sublimit });
+  const gate = createGate({ invalidRequests: gateway.invalidRequests, blocked, sublimit, alerter });
   const crosspost = createCrosspostQueue({
     rest: gateway.rest,
     gate,

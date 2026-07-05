@@ -117,6 +117,7 @@ bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (S
 
 - **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guilds`, `channels`). Migrations in `packages/database/migrations/`.
 - **@ap/logger**: Pino logging utilities (REST & Bot loggers)
+- **@ap/alerts**: `createAlerter` — fire-and-forget Discord webhook alerts (`ALERT_WEBHOOK_URL`, disabled when unset), per-key throttle via `Alerts` Redis DB (30 min TTL), minimal embed format. Wired events: duplicate entitled subscription (backend), guild reconcile rails tripped (backend), invalid-request shed (proxy). Bar for new events: actionable, not merely unusual.
 - **@ap/utils**: Common utilities (time, regex, discord helpers)
 - **@ap/validations**: Zod schemas for validation
 - **@ap/types**: Shared TypeScript types
@@ -206,6 +207,7 @@ Single Redis instance, multiple logical DBs (managed via `DatabaseIDs` enum in `
 | 5 | `MigratedGuilds` | backend | v6→v7 migration markers (`migrated_guild:{id}`, no TTL), derived from `guild.migratedAt` |
 | 6 | `PaddleWebhookDedupe` | backend | Paddle webhook idempotency (`paddle_event:{eventId}`, 24h TTL) |
 | 7 | `LegacyGuildPerms` | backend | legacy-guild `canPublish` maps (`legacy_perms:{guildId}`, 5 min TTL); dropped at sunset |
+| 8 | `Alerts` | shared | alert-webhook per-key throttle markers (`alert:{key}`, 30 min TTL) via `@ap/alerts` |
 
 Uses SCAN instead of KEYS (production-safe). ioredis client (BullMQ requirement), wrapped by `@ap/redis` factory `createRedisClient(databaseId)`.
 
@@ -219,6 +221,7 @@ BOT_SHARDS
 BOT_SHARDS_PER_CLUSTER
 DATABASE_URL: postgresql://... (Supabase connection string)
 REDIS_URI: redis://redis:6379 (optional override; defaults to shared Docker Redis)
+ALERT_WEBHOOK_URL: Discord webhook for ops alerts (optional; alerts disabled when unset)
 PADDLE_ENVIRONMENT: sandbox|production (premium backend only)
 PADDLE_API_KEY: Paddle API key (premium backend only)
 PADDLE_WEBHOOK_SECRET: Paddle notification destination secret (premium backend only)

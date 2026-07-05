@@ -5,6 +5,7 @@ import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-type
 import { and, inArray, isNull, lt } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
+import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
 const PAGE_SIZE = 200;
@@ -104,6 +105,10 @@ const reconcileGuilds = async () => {
     logger.error(
       `Guild reconcile: refusing to soft-delete ${toSoftDelete.length} guilds (cap ${deletionCap}) — live list may be truncated`
     );
+    alerter.send('guild-reconcile-deletion-cap', {
+      title: 'Guild reconcile deletion cap tripped',
+      description: `Refused to soft-delete ${toSoftDelete.length} guilds (cap ${deletionCap}, ${activeRows.length} active). Discord's live guild list may be truncated — investigate before the next sweep.`,
+    });
   } else {
     for (const batch of chunk(toSoftDelete, BATCH_SIZE)) {
       await db
@@ -141,6 +146,10 @@ export const runGuildReconcile = async (): Promise<void> => {
     await reconcileGuilds();
   } catch (error) {
     logger.error(error, 'Guild reconcile failed');
+    alerter.send('guild-reconcile-failed', {
+      title: 'Guild reconcile aborted',
+      description: `Sweep failed before completion (pagination or DB error): ${error instanceof Error ? error.message : String(error)}. The guild table was not reconciled today.`,
+    });
   } finally {
     inFlight = false;
   }

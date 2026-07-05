@@ -9,14 +9,15 @@ import {
   ExternalLink,
   Loader2,
   Sparkles,
+  UserRound,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState, useTransition } from 'react';
+import { useCallback, useEffect, useState, useTransition } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { createCheckout } from '@/lib/api/actions';
-import type { Edition, SubscriptionData } from '@/lib/api/types';
+import { createCheckout, getSubscription } from '@/lib/api/actions';
+import type { Edition, SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { usePaddle } from '@/lib/paddle';
 import {
@@ -106,7 +107,7 @@ export function SubscriptionPanel({
       (subscription.status === 'active' ||
         subscription.status === 'trialing' ||
         subscription.status === 'past_due') ? (
-        <ActiveSubscription subscription={subscription} />
+        <ActiveSubscription edition={edition} guildId={guildId} subscription={subscription} />
       ) : (
         <FreeSubscription edition={edition} guildId={guildId} guildName={guildName} />
       )}
@@ -158,7 +159,34 @@ function CheckoutSuccessCard({
   );
 }
 
-function ActiveSubscription({ subscription }: { subscription: SubscriptionData }) {
+function ActiveSubscription({
+  edition,
+  guildId,
+  subscription,
+}: {
+  edition: Edition;
+  guildId: string;
+  subscription: SubscriptionData;
+}) {
+  // The dashboard aggregate carries only the summary — portal URL and
+  // subscriber attribution come from the dedicated subscription endpoint
+  // (creates a Paddle portal session on demand, so it is not fetched eagerly)
+  const [detail, setDetail] = useState<SubscriptionDetail | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSubscription(edition, guildId)
+      .then(result => {
+        if (!cancelled) setDetail(result);
+      })
+      .catch(() => {
+        // Non-fatal: panel renders without the billing footer
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [edition, guildId]);
+
   const statusInfo = statusLabels[subscription.status] ?? statusLabels.active;
   const intervalLabel = subscription.billingInterval
     ? intervalLabels[subscription.billingInterval]
@@ -228,19 +256,31 @@ function ActiveSubscription({ subscription }: { subscription: SubscriptionData }
           ))}
         </ul>
 
-        {subscription.portalUrl && (
+        {detail?.isSubscriber && detail.portalUrl && (
           <div className="flex gap-3">
             <Button
               variant="outline"
               className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
               asChild
             >
-              <a href={subscription.portalUrl} target="_blank" rel="noopener noreferrer">
+              <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
                 <CreditCard className="w-4 h-4 mr-2" />
                 Manage Billing
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
             </Button>
+          </div>
+        )}
+
+        {detail && !detail.isSubscriber && (
+          <div className="flex items-center gap-2 text-slate-400 text-sm bg-slate-900/50 rounded-lg p-4 border border-slate-800">
+            <UserRound className="w-4 h-4 shrink-0" />
+            <span>
+              Billing is managed by{' '}
+              <span className="text-slate-300">
+                @{detail.subscriber.username ?? detail.subscriber.id}
+              </span>
+            </span>
           </div>
         )}
       </Card>

@@ -7,4 +7,5 @@ export type {
   GuildChannel,
   GuildDashboardData,
   SubscriptionData,
+  SubscriptionDetail,
 } from '@ap/api-types';

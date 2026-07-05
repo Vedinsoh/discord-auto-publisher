@@ -61,14 +61,30 @@ export interface SubscriptionScheduledChange {
   effectiveAt: string;
 }
 
-/** Subscription data (JSON-serialized with portalUrl) */
+/** Subscription summary (part of the guild dashboard aggregate) */
 export interface SubscriptionData {
   status: SubscriptionStatus;
   billingInterval: BillingInterval | null;
   currentPeriodEndsAt: string | null;
   scheduledChange: SubscriptionScheduledChange | null;
   canceledAt: string | null;
+}
+
+/** The Discord user who paid for the subscription */
+export interface SubscriptionSubscriber {
+  id: string;
+  /** Resolved display name; null when resolution failed or requester is the subscriber */
+  username: string | null;
+}
+
+/**
+ * Full subscription detail from GET /api/guild/:guildId/subscription.
+ * portalUrl is set only when the requester is the subscriber.
+ */
+export interface SubscriptionDetail extends SubscriptionData {
   portalUrl: string | null;
+  isSubscriber: boolean;
+  subscriber: SubscriptionSubscriber;
 }
 
 /** Guild dashboard aggregate response */

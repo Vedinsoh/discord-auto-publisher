@@ -1,0 +1,20 @@
+{
+  "name": "@ap/alerts",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit",
+    "start": "bun run ."
+  },
+  "dependencies": {
+    "@ap/config": "workspace:*",
+    "@ap/logger": "workspace:*",
+    "@ap/redis": "workspace:*"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*"
+  }
+}

@@ -8,6 +8,7 @@ export enum DatabaseIDs {
   PaddleWebhookDedupe = 6,
   // MIGRATION: dropped together with MigratedGuilds at sunset
   LegacyGuildPerms = 7,
+  Alerts = 8,
 }
 
 export enum Keys {
@@ -17,4 +18,5 @@ export enum Keys {
   MigratedGuild = 'migrated_guild',
   PaddleEvent = 'paddle_event',
   LegacyPerms = 'legacy_perms',
+  Alert = 'alert',
 }

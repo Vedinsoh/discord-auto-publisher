@@ -8,7 +8,7 @@ import type {
   Edition,
   GuildChannel,
   GuildDashboardData,
-  SubscriptionData,
+  SubscriptionDetail,
 } from '@/lib/api/types';
 
 export async function getUserGuilds(): Promise<DiscordGuild[]> {
@@ -111,8 +111,8 @@ export async function migrateGuild(
 export async function getSubscription(
   edition: Edition,
   guildId: string
-): Promise<SubscriptionData | null> {
-  return backendFetch<SubscriptionData | null>(edition, `/api/guild/${guildId}/subscription`);
+): Promise<SubscriptionDetail | null> {
+  return backendFetch<SubscriptionDetail | null>(edition, `/api/guild/${guildId}/subscription`);
 }
 
 export async function createCheckout(

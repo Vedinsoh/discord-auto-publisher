@@ -20,6 +20,9 @@ export const env = cleanEnv(process.env, {
   // Redis
   REDIS_URI: str({ default: 'redis://redis:6379' }),
 
+  // Alerts (optional; alerts are disabled when unset)
+  ALERT_WEBHOOK_URL: str({ default: '' }),
+
   // Bot
   BOT_SUPPORT_GUILD_ID: str({ default: '958709555683033128' }),
   BOT_SHARDS: num({ default: 1 }),
