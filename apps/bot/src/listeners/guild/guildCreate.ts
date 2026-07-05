@@ -2,7 +2,7 @@ import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { Data } from 'data/index.js';
-import { Events, type Guild } from 'discord.js';
+import { ChannelType, Events, type Guild } from 'discord.js';
 import { logger } from 'utils/logger.js';
 
 @ApplyOptions<Listener.Options>({
@@ -10,9 +10,13 @@ import { logger } from 'utils/logger.js';
 })
 export class GuildCreateListener extends Listener {
   public async run(guild: Guild) {
-    // Register new guild in cache (use new system from day 1)
-    // MIGRATION: After transition (6 months), remove this listener entirely
-    await Data.API.Backend.registerNewGuild(guild.id);
+    // Insert row / clear soft delete; the live announcement channel list (from
+    // the GUILD_CREATE payload, no REST) lets the backend prune config for
+    // channels deleted while the bot was kicked (missed channelDelete events)
+    const announcementChannelIds = guild.channels.cache
+      .filter(c => c.type === ChannelType.GuildAnnouncement)
+      .map(c => c.id);
+    await Data.API.Backend.registerNewGuild(guild.id, announcementChannelIds);
 
     // Premium instance: verify active subscription before staying
     if (config.isPremiumInstance) {

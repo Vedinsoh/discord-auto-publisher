@@ -39,11 +39,15 @@ const deleteGuild = async (guildId: Snowflake) => {
   });
 };
 
-// Register new guild in cache (marks as using new system)
-// MIGRATION: After transition (6 months), remove this function
-const registerNewGuild = async (guildId: Snowflake) => {
+// Register guild on join/re-invite: insert row or clear soft delete, prune
+// config for channels deleted while the bot was away, rebuild derived cache
+const registerNewGuild = async (guildId: Snowflake, announcementChannelIds: Snowflake[]) => {
   return fetch(`${baseUrl}/guild/${guildId}/new`, {
     method: RequestMethod.Post,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ announcementChannelIds }),
   });
 };
 

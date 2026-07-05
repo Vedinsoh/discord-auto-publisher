@@ -120,12 +120,13 @@ const reconcileGuilds = async () => {
     .from(guild)
     .where(lt(guild.deletedAt, purgeCutoff));
 
+  let purgedCount = 0;
   for (const row of toPurge) {
-    await Services.Guilds.remove(row.guildId);
+    if (await Services.Guilds.purge(row.guildId, purgeCutoff)) purgedCount++;
   }
 
   logger.info(
-    `Guild reconcile finished: ${liveIds.size} live, ${toInsert.length} inserted, ${toRestore.length} restored, ${deletionsAborted ? `0 soft-deleted (ABORTED: ${toSoftDelete.length} > cap ${deletionCap})` : `${toSoftDelete.length} soft-deleted`}, ${toPurge.length} purged`
+    `Guild reconcile finished: ${liveIds.size} live, ${toInsert.length} inserted, ${toRestore.length} restored, ${deletionsAborted ? `0 soft-deleted (ABORTED: ${toSoftDelete.length} > cap ${deletionCap})` : `${toSoftDelete.length} soft-deleted`}, ${purgedCount} purged`
   );
 };
 

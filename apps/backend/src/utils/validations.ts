@@ -22,6 +22,17 @@ export const GuildReqSchema = z.object({
   }),
 });
 
+export const GuildRegisterReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    // Live announcement channels from the GUILD_CREATE payload; absent = no prune.
+    // 500 = Discord's per-guild channel cap
+    announcementChannelIds: z.array(Validations.snowflakeId).max(500).optional(),
+  }),
+});
+
 export const GuildChannelReqSchema = z.object({
   params: z.object({
     guildId: Validations.snowflakeId,

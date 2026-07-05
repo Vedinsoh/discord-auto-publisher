@@ -1,7 +1,7 @@
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
-import { GuildReqSchema } from 'utils/validations.js';
+import { GuildRegisterReqSchema, GuildReqSchema } from 'utils/validations.js';
 
 export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });
@@ -46,14 +46,16 @@ export const Guild: Router = (() => {
   });
 
   /**
-   * Register new guild in cache (marks as using new system)
-   * MIGRATION: After transition (6 months), remove this endpoint entirely
+   * Bot joined or was re-invited to the guild (guildCreate): insert the row or
+   * clear its soft delete, prune channel config for channels deleted while the
+   * bot was away (missed channelDelete events), and rebuild the derived cache.
    */
-  router.post('/new', validateRequest(GuildReqSchema), async (req, res) => {
+  router.post('/new', validateRequest(GuildRegisterReqSchema), async (req, res) => {
     const { guildId } = req.params;
+    const { announcementChannelIds } = req.body;
 
     try {
-      await Services.Guilds.registerNewGuild(guildId);
+      await Services.Guilds.registerNewGuild(guildId, announcementChannelIds);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },

@@ -260,37 +260,6 @@ const remove = async (channelId: Snowflake): Promise<void> => {
 };
 
 /**
- * Remove all channels for a guild from DB & cache
- * Uses a single delete query for efficiency
- * @param guildId ID of the guild
- * @returns Array of removed channel IDs
- */
-const removeByGuildId = async (guildId: Snowflake) => {
-  try {
-    // First, get all channel IDs for this guild to remove from cache
-    const guildChannels = await db
-      .select({ channelId: channelTable.channelId })
-      .from(channelTable)
-      .where(eq(channelTable.guildId, guildId));
-
-    // Delete all channels for this guild in a single query
-    await db.delete(channelTable).where(eq(channelTable.guildId, guildId));
-
-    const channelIds = guildChannels.map(c => c.channelId);
-
-    // Remove all channels from cache in a single operation
-    if (channelIds.length > 0) {
-      await Data.Channels.Cache.removeMany(channelIds);
-    }
-
-    return channelIds;
-  } catch (error) {
-    logger.error(error);
-    throw error;
-  }
-};
-
-/**
  * Get count of channels by guild ID
  * @param guildId ID of the guild
  * @returns Number of channels in the guild
@@ -361,7 +330,6 @@ export const Channels = {
   get,
   add,
   remove,
-  removeByGuildId,
   countByGuild,
   setFilterMode,
   getSize,

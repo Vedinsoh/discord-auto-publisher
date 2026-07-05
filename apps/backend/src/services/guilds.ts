@@ -4,9 +4,8 @@ import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, lt, notInArray, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
-import { Channels } from './channels/index.js';
 
 /**
  * Create or update guild in DB
@@ -81,37 +80,86 @@ const softDelete = async (guildId: Snowflake): Promise<void> => {
 };
 
 /**
- * Hard-delete guild and all its associated channels from DB & cache
- * Called by the reconciliation purge step only (30 days after soft delete)
+ * Hard-delete a soft-deleted guild and all its associated channels from DB &
+ * cache. Called by the reconciliation purge step only (30 days after soft
+ * delete). The delete is guarded by the cutoff so a re-invite landing
+ * mid-sweep wins: `registerNewGuild` clears `deletedAt`, the conditional
+ * delete then matches nothing, and the restored config survives.
  * @param guildId ID of the guild
+ * @param cutoff purge threshold; only rows soft-deleted before it are removed
+ * @returns true if the guild was purged, false if it was restored mid-sweep
  */
-const remove = async (guildId: Snowflake): Promise<void> => {
+const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
   try {
-    // Remove all channels for this guild using efficient single query
-    const removedChannelIds = await Channels.removeByGuildId(guildId);
+    // Channel IDs must be read before the delete — the FK cascade removes the rows
+    const channelIds = await getChannels(guildId);
 
-    // Delete guild from DB (channels already deleted above; cascade is a safety net)
-    await db.delete(guild).where(eq(guild.guildId, guildId));
+    const deleted = await db
+      .delete(guild)
+      .where(and(eq(guild.guildId, guildId), lt(guild.deletedAt, cutoff)))
+      .returning({ guildId: guild.guildId });
 
-    // MIGRATION: Remove guild migration marker from cache (also done in removeByGuildId,
-    // but needed here for guilds with 0 channels that were registered via registerNewGuild)
-    // TODO: After transition (6 months), remove this line
+    if (deleted.length === 0) {
+      logger.info(`Purge skipped for guild ${guildId}: restored mid-sweep`);
+      return false;
+    }
+
+    // Channel rows cascaded with the guild row; clear the derived Redis state
+    if (channelIds.length > 0) {
+      await Data.Channels.Cache.removeMany(channelIds);
+    }
+    // MIGRATION: After transition (6 months), remove the marker delete
     await Data.Drivers.Redis.MigratedGuilds.del(`migrated_guild:${guildId}`);
 
-    logger.debug(`Deleted guild ${guildId} and ${removedChannelIds.length} associated channels`);
+    logger.debug(`Purged guild ${guildId} and ${channelIds.length} associated channels`);
+    return true;
   } catch (error) {
     logger.error(error);
-    throw new Error('Failed to remove guild');
+    throw new Error('Failed to purge guild');
+  }
+};
+
+/**
+ * Delete channel config (DB rows + Redis entries) for channels no longer in
+ * the guild's live announcement-channel list — channels deleted while the bot
+ * was kicked or down never fire channelDelete, and stale rows count against
+ * the free-plan channel limit with no dashboard toggle to free them.
+ * @param guildId ID of the guild
+ * @param liveChannelIds the guild's current announcement channel IDs
+ */
+const pruneStaleChannels = async (
+  guildId: Snowflake,
+  liveChannelIds: Snowflake[]
+): Promise<void> => {
+  const staleFilter =
+    liveChannelIds.length > 0
+      ? and(eq(channel.guildId, guildId), notInArray(channel.channelId, liveChannelIds))
+      : eq(channel.guildId, guildId);
+
+  const stale = await db
+    .delete(channel)
+    .where(staleFilter)
+    .returning({ channelId: channel.channelId });
+
+  if (stale.length > 0) {
+    await Data.Channels.Cache.removeMany(stale.map(s => s.channelId));
+    logger.info(`Pruned ${stale.length} stale channels for guild ${guildId}`);
   }
 };
 
 /**
  * Register guild on join (guildCreate): new guilds start migrated; a re-invited
  * guild only gets its soft delete cleared — `migratedAt` is preserved, so a
- * kicked legacy guild returns as legacy.
+ * kicked legacy guild returns as legacy. When the live announcement-channel
+ * list is provided, config for channels deleted while the bot was away is
+ * pruned before the cache rebuild.
  * @param guildId ID of the guild
+ * @param announcementChannelIds live announcement channels from the GUILD_CREATE payload
  */
-const registerNewGuild = async (guildId: Snowflake): Promise<void> => {
+const registerNewGuild = async (
+  guildId: Snowflake,
+  announcementChannelIds?: Snowflake[]
+): Promise<void> => {
   try {
     const rows = await db
       .insert(guild)
@@ -119,10 +167,17 @@ const registerNewGuild = async (guildId: Snowflake): Promise<void> => {
       .onConflictDoUpdate({ target: guild.guildId, set: { deletedAt: null } })
       .returning({ migratedAt: guild.migratedAt });
 
-    // Marker only for migrated guilds — a restored legacy guild must stay legacy
-    // MIGRATION: After transition (6 months), remove the marker write
+    if (announcementChannelIds) {
+      await pruneStaleChannels(guildId, announcementChannelIds);
+    }
+
+    // Rebuild derived cache only for migrated guilds — a restored legacy guild
+    // must stay legacy. Full sync (entries first, marker last) rather than a
+    // bare marker write: a re-invited guild must get its channel entries back
+    // even if Redis lost them while the guild was soft-deleted.
+    // MIGRATION: After transition (6 months), remove the sync call
     if (rows[0]?.migratedAt) {
-      await Data.Drivers.Redis.MigratedGuilds.set(`migrated_guild:${guildId}`, '1');
+      await syncMigratedGuildCache(guildId);
     }
 
     logger.debug(`Registered guild ${guildId} in DB and cache`);
@@ -251,7 +306,7 @@ export const Guilds = {
   getChannels,
   getChannelRecords,
   softDelete,
-  remove,
+  purge,
   registerNewGuild,
   migrate,
   syncMigratedGuildCache,
