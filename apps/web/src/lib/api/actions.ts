@@ -34,6 +34,7 @@ export async function getUserGuilds(): Promise<DiscordGuild[]> {
       permissions: g.permissions,
       freeBotPresent: g.botPresent,
       premiumBotPresent: false,
+      migrated: g.migrated,
       hasSubscription: false,
     });
   }
@@ -43,6 +44,10 @@ export async function getUserGuilds(): Promise<DiscordGuild[]> {
     if (existing) {
       existing.premiumBotPresent = g.botPresent;
       existing.hasSubscription = g.hasSubscription;
+      // The managing edition is premium when its bot is present
+      if (g.botPresent) {
+        existing.migrated = g.migrated;
+      }
     } else {
       guildMap.set(g.id, {
         id: g.id,
@@ -51,6 +56,7 @@ export async function getUserGuilds(): Promise<DiscordGuild[]> {
         permissions: g.permissions,
         freeBotPresent: false,
         premiumBotPresent: g.botPresent,
+        migrated: g.migrated,
         hasSubscription: g.hasSubscription,
       });
     }
@@ -87,6 +93,18 @@ export async function disableChannel(
 ): Promise<void> {
   await backendFetch(edition, `/api/guild/${guildId}/channel/${channelId}`, {
     method: 'DELETE',
+  });
+}
+
+/** MIGRATION: Remove after migration period (6 months) */
+export async function migrateGuild(
+  edition: Edition,
+  guildId: string,
+  channelIds: string[]
+): Promise<void> {
+  await backendFetch(edition, `/api/guild/${guildId}/migrate`, {
+    method: 'POST',
+    body: JSON.stringify({ channelIds }),
   });
 }
 

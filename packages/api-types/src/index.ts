@@ -10,6 +10,8 @@ export interface BackendDiscordGuild {
   icon: string | null;
   permissions: string;
   botPresent: boolean;
+  /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
+  migrated: boolean;
   hasSubscription: boolean;
 }
 
@@ -21,6 +23,8 @@ export interface DiscordGuild {
   permissions: string;
   freeBotPresent: boolean;
   premiumBotPresent: boolean;
+  /** MIGRATION: resolved from the managing edition (premium wins). Removed at sunset. */
+  migrated: boolean;
   hasSubscription: boolean;
 }
 
@@ -41,6 +45,8 @@ export interface GuildChannel {
   enabled: boolean;
   filters: ChannelFilterRule[];
   filterMode: FilterMatchMode;
+  /** MIGRATION: present on legacy guilds only — migrate-modal preselection. */
+  canPublish?: boolean;
 }
 
 /** Subscription status (mirrors Paddle statuses verbatim) */
@@ -67,6 +73,10 @@ export interface SubscriptionData {
 
 /** Guild dashboard aggregate response */
 export interface GuildDashboardData {
+  /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
+  migrated: boolean;
+  /** Max enabled channels for this backend's plan; 0 = unlimited */
+  channelLimit: number;
   channels: GuildChannel[];
   subscription: SubscriptionData | null;
 }

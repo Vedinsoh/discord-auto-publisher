@@ -15,7 +15,9 @@ Concepts that show up across the codebase. Keep this list short — only terms t
 ## Allowlist / registration model
 
 - **Registered channel** — a channel a user opted into auto-publishing via `/ap enable`. Persisted in Postgres `channels` table and mirrored in `Channels` Redis cache (`channel:{id}` keys, value = `{filters, filterMode}` JSON, no TTL).
-- **Migrated guild** — a guild that has opted into the v7 allowlist model. Marker in `MigratedGuilds` Redis DB (`migrated_guild:{guildId}` = '1', no TTL). Set on first `/ap enable` or new guild join. Migrated guilds enforce the allowlist; legacy (unmigrated) guilds auto-publish all announcement channels. Migration flag is temporary — slated for removal ~6 months after v7 ships.
+- **Migrated guild** — a guild that has opted into the v7 allowlist model. Source of truth: `guild.migratedAt` in Postgres (`NULL` = legacy); the `MigratedGuilds` Redis DB (`migrated_guild:{guildId}` = '1', no TTL) is a derived hot-path cache rebuilt at startup. Set on first `/ap enable` or new guild join. Migrated guilds enforce the allowlist; legacy (unmigrated) guilds auto-publish all announcement channels. Migration state is temporary — column and Redis DB are dropped together ~6 months after v7 ships.
+- **Guild row** — a row in the Postgres `guild` table with `deletedAt = NULL` means "the bot is in this guild" (drives dashboard `botPresent` and the premium revocation backstop), NOT "guild is migrated" — legacy guilds get rows too, with `migratedAt = NULL`. Kept honest by the guild-presence reconciliation.
+- **Soft-deleted guild** — kick/leave sets `guild.deletedAt` instead of cascading; all channel config and cache entries survive so an accidental kick + re-invite restores everything (including legacy status — `migratedAt` is preserved on restore). Hard delete (full `Guilds.remove` cascade) happens 30 days later via the reconciliation cron's purge step. Mirrors the billing rule "subscription outlives the guild row."
 - **Filter** — premium-only message filter (keyword/mention/author/webhook, allow or block mode) attached to a registered channel. Evaluated bot-side per message before fire-to-proxy. Filter data lives in the `Channels` cache JSON value.
 
 ## Billing (Paddle)
@@ -49,6 +51,7 @@ Concepts that show up across the codebase. Keep this list short — only terms t
 | 4   | `DiscordAuth`         | backend | web auth token cache                        |
 | 5   | `MigratedGuilds`      | backend | v6→v7 allowlist opt-in marker               |
 | 6   | `PaddleWebhookDedupe` | backend | Paddle webhook idempotency keys (24h TTL)   |
+| 7   | `LegacyGuildPerms`    | backend | legacy-guild `canPublish` maps (5 min TTL); dropped at sunset with DB 5 |
 
 ## Key architectural rules
 

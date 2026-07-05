@@ -106,10 +106,11 @@ bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (S
 
 - **Internal API for bot** — owns channel registration, filters, Paddle subscriptions, web dashboard API.
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
-- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys).
+- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers, derived from `guild.migratedAt`), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys), `LegacyGuildPerms` (legacy-guild `canPublish` maps, 5 min TTL).
 - Cache sync on startup (reconciles Redis/Postgres).
 - **Discord REST routed through proxy `/api/*`** for guild-channel reads and entitlement revocation (premium bot leaves guilds that lose their subscription).
 - Paddle (merchant of record) integration for premium subscriptions: backend-created transactions for the web overlay checkout, Customer Portal sessions, `POST /webhooks/paddle` (signature-verified, Redis-deduped), daily reconcile cron against the Paddle API. Postgres is the subscription source of truth; entitled statuses are `active`/`trialing`/`past_due`.
+- Crons: guild presence reconcile (`30 3 * * *`, both editions — sweeps `GET /users/@me/guilds` against the `guild` table; manual trigger `POST /internal/reconcile/guilds`) and subscription reconcile (`0 4 * * *`, premium only).
 - Tech stack: Express, `@discordjs/rest`, Drizzle ORM (https://orm.drizzle.team), ioredis via `@ap/redis`, zod (https://v3.zod.dev/), @paddle/paddle-node-sdk (https://developer.paddle.com/)
 
 **Shared packages** (packages/\*):
@@ -131,7 +132,9 @@ bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (S
 
 **Cloudflare-ban self-shed**: Proxy tracks 401/403/(non-shared)429 responses in-memory; at 5k in 10 min (half of Discord's 10k ceiling) the gate rejects new crossposts with 503 `Retry-After: 60` so the host IP can't get banned. Counter is filtered via `RESTEvents.Response` + `X-RateLimit-Scope` (the library's `InvalidRequestWarning` is incorrect — it counts sublimit hits).
 
-**Allowlist + migration model**: Premium-relevant channels are explicitly registered via `/ap enable`. `MigratedGuilds` Redis cache marks guilds opted into the v7 model — migrated guilds enforce the allowlist; legacy guilds auto-publish all announcement channels. Slated for removal ~6 months after v7 ships.
+**Allowlist + migration model**: Premium-relevant channels are explicitly registered via `/ap enable` or the dashboard migrate flow. Migration state lives in `guild.migratedAt` (Postgres, `NULL` = legacy); the `MigratedGuilds` Redis cache is derived from it (rebuilt at startup) — migrated guilds enforce the allowlist; legacy guilds auto-publish all announcement channels. `Guilds.migrate` is DB-first: one transaction (channel rows + `migratedAt`), then derived cache sync with the Redis marker written last (behavioral commit point — every partial state stays fully legacy, no compensating rollbacks). Slated for removal ~6 months after v7 ships (`migratedAt` + Redis DBs 5/7 + legacy web UX dropped together). See ADR 0005.
+
+**Guild presence + soft delete**: A `guild` row with `deletedAt IS NULL` means "bot is in this guild" (drives dashboard `botPresent` and the premium revocation backstop) — NOT "guild is migrated"; legacy guilds get rows too. Kick/leave soft-deletes (config + cache preserved for re-invite); the daily reconciliation cron inserts missed guilds as legacy, restores/soft-deletes by diffing Discord's guild list (rails: abort on pagination error, 1h join-race guard, `max(50, 10%)` deletion cap), and hard-purges rows soft-deleted >30 days ago. `deletedAt` + reconciliation are permanent. See ADR 0005.
 
 **Redis channel cache**: Sub-ms "is channel enabled" Redis lookups on bot's hot path (no backend RTT). Startup sync reconciles cache/DB consistency.
 
@@ -147,6 +150,8 @@ bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (S
 guilds {
   id (uuid, pk)
   guildId (text, unique)
+  migratedAt (timestamp, NULL = legacy guild; dropped at sunset)
+  deletedAt (timestamp, NULL = bot present; soft delete, purged after 30d)
   createdAt, updatedAt
 }
 
@@ -200,8 +205,9 @@ Single Redis instance, multiple logical DBs (managed via `DatabaseIDs` enum in `
 | 2 | `SublimitCounter` | proxy | per-channel 10/hr counter (`channel:sublimit:{id}`, 1h TTL) |
 | 3 | `BlockedChannels` | proxy | denylist (`channel:blocked:{id}`, 1h TTL) — populated on 401/403 |
 | 4 | `DiscordAuth` | backend | web auth token cache |
-| 5 | `MigratedGuilds` | backend | v6→v7 migration markers (`migrated_guild:{id}`, no TTL) |
+| 5 | `MigratedGuilds` | backend | v6→v7 migration markers (`migrated_guild:{id}`, no TTL), derived from `guild.migratedAt` |
 | 6 | `PaddleWebhookDedupe` | backend | Paddle webhook idempotency (`paddle_event:{eventId}`, 24h TTL) |
+| 7 | `LegacyGuildPerms` | backend | legacy-guild `canPublish` maps (`legacy_perms:{guildId}`, 5 min TTL); dropped at sunset |
 
 Uses SCAN instead of KEYS (production-safe). ioredis client (BullMQ requirement), wrapped by `@ap/redis` factory `createRedisClient(databaseId)`.
 

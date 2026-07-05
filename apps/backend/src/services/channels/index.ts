@@ -4,7 +4,7 @@ import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { asc, count, eq, gt } from 'drizzle-orm';
+import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
 
@@ -62,7 +62,10 @@ const initialize = async () => {
     // MIGRATION: Phase 2 - Cache migrated guild IDs from guild table
     // TODO: Remove this block after migration period (6 months)
     logger.info('Phase 2: Syncing migrated guilds to cache');
-    const migratedGuilds = await db.select({ guildId: guild.guildId }).from(guild);
+    const migratedGuilds = await db
+      .select({ guildId: guild.guildId })
+      .from(guild)
+      .where(and(isNotNull(guild.migratedAt), isNull(guild.deletedAt)));
 
     if (migratedGuilds.length > 0) {
       const pipeline = Data.Drivers.Redis.MigratedGuilds.multi();
@@ -202,8 +205,15 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   let dbCreated = false;
 
   try {
-    // Ensure guild exists before adding channel
-    await db.insert(guild).values({ guildId }).onConflictDoNothing();
+    // Ensure guild exists; enabling a channel migrates a legacy guild and
+    // restores a soft-deleted one
+    await db
+      .insert(guild)
+      .values({ guildId, migratedAt: new Date() })
+      .onConflictDoUpdate({
+        target: guild.guildId,
+        set: { migratedAt: sql`COALESCE(${guild.migratedAt}, now())`, deletedAt: null },
+      });
 
     await db.insert(channelTable).values({ channelId, guildId, filters: [] });
     dbCreated = true;

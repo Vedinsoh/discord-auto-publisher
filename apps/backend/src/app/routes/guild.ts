@@ -26,14 +26,15 @@ export const Guild: Router = (() => {
   });
 
   /**
-   * Deletes a guild and all its associated channels
-   * Removes the guild and channels from both the DB and Redis cache
+   * Bot kicked/left the guild (guildDelete): soft delete — config and cache
+   * are preserved so a re-invite restores everything. Hard delete happens via
+   * the reconciliation purge after 30 days.
    */
   router.delete('/', validateRequest(GuildReqSchema), async (req, res) => {
     const { guildId } = req.params;
 
     try {
-      await Services.Guilds.remove(guildId);
+      await Services.Guilds.softDelete(guildId);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },

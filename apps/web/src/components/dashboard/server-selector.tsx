@@ -95,6 +95,12 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                             {guild.hasSubscription && (
                               <Crown className="w-5 h-5 text-yellow-500 shrink-0" />
                             )}
+                            {/* MIGRATION: remove badge at sunset */}
+                            {hasBotPresent(guild) && !guild.migrated && (
+                              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 shrink-0">
+                                Legacy
+                              </Badge>
+                            )}
                           </div>
                           {guild.hasSubscription ? (
                             <Badge className="bg-green-500/20 text-green-400 border-green-500/30">

@@ -12,6 +12,8 @@ export default function ChannelsPage() {
       guildId={guild.id}
       channels={data.channels}
       hasSubscription={guild.hasSubscription}
+      channelLimit={data.channelLimit}
+      migrated={data.migrated}
     />
   );
 }

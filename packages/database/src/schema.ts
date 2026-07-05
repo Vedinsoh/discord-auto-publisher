@@ -12,6 +12,12 @@ export type ChannelFilter = {
 export const guild = pgTable('guild', {
   id: uuid('id').primaryKey().defaultRandom(),
   guildId: text('guild_id').unique().notNull(),
+  // NULL = legacy guild (auto-publishes all announcement channels, pre-v7 model).
+  // MIGRATION: dropped together with the MigratedGuilds Redis DB at sunset.
+  migratedAt: timestamp('migrated_at', { withTimezone: true }),
+  // Soft delete: row with deletedAt = NULL means "bot is in this guild".
+  // Kick/leave sets it (config preserved); reconciliation purges after 30 days.
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()

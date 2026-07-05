@@ -1,5 +1,5 @@
 import { db, guild, type Subscription, subscription } from '@ap/database';
-import { eq, notInArray } from 'drizzle-orm';
+import { and, eq, isNull, notInArray } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 
 /** Statuses that keep a guild entitled to premium (past_due rides out Paddle dunning) */
@@ -184,7 +184,13 @@ const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
       .select()
       .from(subscription)
       .innerJoin(guild, eq(subscription.guildId, guild.guildId))
-      .where(notInArray(subscription.status, [...ENTITLED_STATUSES]));
+      .where(
+        and(
+          notInArray(subscription.status, [...ENTITLED_STATUSES]),
+          // Soft-deleted row = bot already absent, nothing to revoke
+          isNull(guild.deletedAt)
+        )
+      );
     return rows.map(row => row.subscription);
   } catch (error) {
     logger.error(error);

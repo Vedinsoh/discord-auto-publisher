@@ -12,6 +12,8 @@ CREATE TABLE "channel" (
 CREATE TABLE "guild" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"guild_id" text NOT NULL,
+	"migrated_at" timestamp with time zone,
+	"deleted_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "guild_guild_id_unique" UNIQUE("guild_id")

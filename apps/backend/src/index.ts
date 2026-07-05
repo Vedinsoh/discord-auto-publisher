@@ -10,6 +10,7 @@ import {
   createRequireGuildPermission,
 } from '@ap/express';
 import { App } from 'app/index.js';
+import { startGuildReconcile } from 'cron/guildReconcile.js';
 import { startSubscriptionReconcile } from 'cron/subscriptionReconcile.js';
 import { Data } from 'data/index.js';
 import express from 'express';
@@ -34,6 +35,7 @@ app.use(express.json());
 app.use('/channel/:channelId', App.Routes.Channel);
 app.use('/guild/:guildId', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
+app.use('/internal', App.Routes.Internal);
 app.get('/health', createHealthRoute);
 
 // Public API routes (with CORS + Discord auth)
@@ -70,6 +72,10 @@ const server = app.listen('8080', async () => {
   const { NODE_ENV } = env;
   logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
 });
+
+// Start guild presence reconcile cron (both editions, 03:30 — before
+// subscription reconcile so its bot-present backstop reads fresh presence)
+startGuildReconcile();
 
 // Start subscription reconcile cron (premium only)
 if (config.isPremiumInstance) {

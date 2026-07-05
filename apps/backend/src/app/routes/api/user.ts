@@ -1,6 +1,6 @@
 import { db, guild, subscription } from '@ap/database';
 import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
-import { inArray } from 'drizzle-orm';
+import { and, inArray, isNull } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
 import { isEntitledStatus } from 'services/subscriptions.js';
 
@@ -63,12 +63,16 @@ export const User: Router = (() => {
 
       const guildIds = managedGuilds.map(g => g.id);
 
-      // Batch query: which guilds have the bot
+      // Batch query: which guilds have the bot (soft-deleted rows = bot absent)
       const botGuilds = await db
-        .select({ guildId: guild.guildId })
+        .select({ guildId: guild.guildId, migratedAt: guild.migratedAt })
         .from(guild)
-        .where(inArray(guild.guildId, guildIds));
+        .where(and(inArray(guild.guildId, guildIds), isNull(guild.deletedAt)));
       const botGuildIds = new Set(botGuilds.map(g => g.guildId));
+      // MIGRATION: Remove after migration period (6 months)
+      const migratedGuildIds = new Set(
+        botGuilds.filter(g => g.migratedAt !== null).map(g => g.guildId)
+      );
 
       // Batch query: which guilds have active subscriptions
       const subscriptions = await db
@@ -85,6 +89,7 @@ export const User: Router = (() => {
         icon: g.icon,
         permissions: g.permissions,
         botPresent: botGuildIds.has(g.id),
+        migrated: migratedGuildIds.has(g.id),
         hasSubscription: subscribedGuildIds.has(g.id),
       }));
 

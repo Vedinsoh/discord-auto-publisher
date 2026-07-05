@@ -29,6 +29,17 @@ export const GuildChannelReqSchema = z.object({
   }),
 });
 
+// MIGRATION: Remove after migration period (6 months)
+export const GuildMigrateReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    // 500 = Discord's per-guild channel cap; the plan limit is enforced in Guilds.migrate
+    channelIds: z.array(Validations.snowflakeId).max(500),
+  }),
+});
+
 export const SubscriptionCheckoutReqSchema = z.object({
   params: z.object({
     guildId: Validations.snowflakeId,

@@ -6,6 +6,8 @@ export enum DatabaseIDs {
   DiscordAuth = 4,
   MigratedGuilds = 5,
   PaddleWebhookDedupe = 6,
+  // MIGRATION: dropped together with MigratedGuilds at sunset
+  LegacyGuildPerms = 7,
 }
 
 export enum Keys {
@@ -14,4 +16,5 @@ export enum Keys {
   Blocked = 'channel:blocked',
   MigratedGuild = 'migrated_guild',
   PaddleEvent = 'paddle_event',
+  LegacyPerms = 'legacy_perms',
 }

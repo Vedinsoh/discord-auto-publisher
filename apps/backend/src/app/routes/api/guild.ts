@@ -7,9 +7,16 @@ import { Services } from 'services/index.js';
 import { isEntitledStatus } from 'services/subscriptions.js';
 import {
   GuildChannelReqSchema,
+  GuildMigrateReqSchema,
   GuildReqSchema,
   SubscriptionCheckoutReqSchema,
 } from 'utils/validations.js';
+
+/** Announcement channels of a guild, fetched through the proxy */
+const fetchAnnouncementChannels = async (guildId: string): Promise<APIChannel[]> => {
+  const channels = (await Discord.rest.get(Routes.guildChannels(guildId))) as APIChannel[];
+  return channels.filter(c => c.type === ChannelType.GuildAnnouncement);
+};
 
 export const GuildApi: Router = (() => {
   const router = express.Router({ mergeParams: true });
@@ -22,34 +29,45 @@ export const GuildApi: Router = (() => {
     const { guildId } = req.params;
 
     try {
-      const [channelRecords, discordChannels, sub] = await Promise.all([
+      const [channelRecords, announcementChannels, guildRow, sub] = await Promise.all([
         Services.Guilds.getChannelRecords(guildId),
-        Discord.rest.get(Routes.guildChannels(guildId)) as Promise<APIChannel[]>,
+        fetchAnnouncementChannels(guildId),
+        Services.Guilds.find(guildId),
         config.isPremiumInstance
           ? Services.Subscriptions.getByGuildId(guildId)
           : Promise.resolve(null),
       ]);
 
+      // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
+      const migrated = !!guildRow?.migratedAt;
+
+      // canPublish drives migrate-modal preselection — computed (and cached)
+      // for legacy guilds only, to keep the extra REST calls off the hot path
+      const canPublishMap = migrated
+        ? null
+        : await Services.LegacyPerms.getCanPublishMap(guildId, announcementChannels);
+
       const enabledMap = new Map(channelRecords.map(ch => [ch.channelId, ch]));
 
-      const channels = discordChannels
-        .filter(c => c.type === ChannelType.GuildAnnouncement)
-        .map(c => {
-          const record = enabledMap.get(c.id);
-          return {
-            channelId: c.id,
-            name: c.name ?? 'Unknown Channel',
-            type: c.type,
-            enabled: !!record,
-            filters: record?.filters ?? [],
-            filterMode: record?.filterMode ?? 'any',
-          };
-        });
+      const channels = announcementChannels.map(c => {
+        const record = enabledMap.get(c.id);
+        return {
+          channelId: c.id,
+          name: c.name ?? 'Unknown Channel',
+          type: c.type,
+          enabled: !!record,
+          filters: record?.filters ?? [],
+          filterMode: record?.filterMode ?? 'any',
+          ...(canPublishMap ? { canPublish: canPublishMap[c.id] ?? false } : {}),
+        };
+      });
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: {
           guildId,
+          migrated,
+          channelLimit: config.limits.channelsPerGuild,
           channels,
           subscription: sub
             ? {
@@ -93,12 +111,25 @@ export const GuildApi: Router = (() => {
 
   /**
    * PUT /api/guild/:guildId/channel/:channelId
-   * Enable channel for auto-publishing
+   * Enable channel for auto-publishing. Validates the channel is an
+   * announcement channel of THIS guild — the bot hot path trusts the
+   * channel-level cache, so a cross-guild channelId would force-publish
+   * someone else's channel.
    */
   router.put('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
     const { guildId, channelId } = req.params;
 
     try {
+      const announcementChannels = await fetchAnnouncementChannels(guildId);
+
+      if (!announcementChannels.some(c => c.id === channelId)) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          status: StatusCodes.BAD_REQUEST,
+          message: 'Channel is not an announcement channel of this guild',
+        } as APIResponse);
+        return;
+      }
+
       await Services.Channels.add(guildId, channelId);
 
       res.status(StatusCodes.OK).json({
@@ -128,6 +159,43 @@ export const GuildApi: Router = (() => {
       } as APIResponse);
     } catch (error) {
       sendErrorResponse(res, error, 'Failed to disable channel');
+    }
+  });
+
+  /**
+   * POST /api/guild/:guildId/migrate
+   * Migrate a legacy guild to the allowlist model with the given channels.
+   * MIGRATION: Remove after migration period (6 months)
+   */
+  router.post('/migrate', validateRequest(GuildMigrateReqSchema), async (req, res) => {
+    const { guildId } = req.params;
+    const { channelIds } = req.body as { channelIds: string[] };
+
+    try {
+      const uniqueChannelIds = [...new Set(channelIds)];
+
+      const announcementChannels = await fetchAnnouncementChannels(guildId);
+      const announcementIds = new Set(announcementChannels.map(c => c.id));
+      const invalid = uniqueChannelIds.filter(id => !announcementIds.has(id));
+
+      if (invalid.length > 0) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          status: StatusCodes.BAD_REQUEST,
+          message: 'All channels must be announcement channels of this guild',
+        } as APIResponse);
+        return;
+      }
+
+      // Already-migrated and channel-limit rejections are enforced in the service
+      await Services.Guilds.migrate(guildId, uniqueChannelIds);
+
+      res.status(StatusCodes.OK).json({
+        status: StatusCodes.OK,
+        data: { success: true },
+        message: 'Guild migrated successfully',
+      } as APIResponse);
+    } catch (error) {
+      sendErrorResponse(res, error, 'Failed to migrate guild');
     }
   });
 
