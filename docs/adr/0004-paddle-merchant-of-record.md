@@ -15,7 +15,7 @@ Use Paddle (Paddle Billing) as merchant of record. Paddle is the seller: it comp
 Integration lives entirely in `apps/backend` (premium edition only):
 
 - **Postgres is the source of truth** for subscription state (`subscription`, `paddle_customer` tables), updated by Paddle webhooks; Redis holds only webhook idempotency keys and derived caches.
-- **Checkout**: backend creates the Paddle transaction (server-set `custom_data: {guildId, discordUserId}`, customer reuse, duplicate-subscription guard); web opens a Paddle.js overlay with the transaction ID.
+- **Checkout**: backend creates the Paddle transaction (server-set `custom_data: {discord_guild_id, discord_user_id}`, customer reuse, duplicate-subscription guard); web opens a Paddle.js overlay with the transaction ID.
 - **Management**: Paddle Customer Portal sessions, subscriber-only — no in-app cancel/payment UI.
 - **Entitlement**: `active`/`trialing`/`past_due` keep premium; `canceled`/`paused` revoke (webhook-triggered bot leave + daily reconciliation cron against the Paddle API).
 

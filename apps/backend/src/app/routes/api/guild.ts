@@ -315,7 +315,7 @@ export const GuildApi: Router = (() => {
         const existingCustomer = await Services.PaddleCustomers.getByDiscordUserId(userId);
 
         const result = await Services.Paddle.createCheckoutTransaction({
-          guildId,
+          discordGuildId: guildId,
           discordUserId: userId,
           priceId,
           paddleCustomerId: existingCustomer?.paddleCustomerId,

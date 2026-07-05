@@ -22,10 +22,10 @@ const ensurePaddle = () => {
 
 /**
  * Creates a Paddle transaction for the overlay checkout.
- * custom_data is server-set so webhooks can trust guildId/discordUserId.
+ * custom_data is server-set so webhooks can trust discord_guild_id/discord_user_id.
  */
 const createCheckoutTransaction = async (params: {
-  guildId: string;
+  discordGuildId: string;
   discordUserId: string;
   priceId: string;
   paddleCustomerId?: string;
@@ -34,13 +34,13 @@ const createCheckoutTransaction = async (params: {
     const transaction = await ensurePaddle().transactions.create({
       items: [{ priceId: params.priceId, quantity: 1 }],
       customData: {
-        guildId: params.guildId,
-        discordUserId: params.discordUserId,
+        discord_guild_id: params.discordGuildId,
+        discord_user_id: params.discordUserId,
       },
       ...(params.paddleCustomerId && { customerId: params.paddleCustomerId }),
     });
 
-    logger.debug(`Created Paddle transaction ${transaction.id} for guild ${params.guildId}`);
+    logger.debug(`Created Paddle transaction ${transaction.id} for guild ${params.discordGuildId}`);
     return { transactionId: transaction.id };
   } catch (error) {
     logger.error(error, 'Failed to create Paddle transaction');

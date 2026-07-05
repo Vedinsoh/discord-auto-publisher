@@ -42,12 +42,17 @@ type PaddleSubscriptionValues = {
 };
 
 const mapPaddleSubscription = (sub: PaddleSubscriptionState): PaddleSubscriptionValues | null => {
-  const customData = sub.customData as { guildId?: string; discordUserId?: string } | null;
-  const guildId = customData?.guildId;
-  const discordUserId = customData?.discordUserId;
+  const customData = sub.customData as {
+    discord_guild_id?: string;
+    discord_user_id?: string;
+  } | null;
+  const guildId = customData?.discord_guild_id;
+  const discordUserId = customData?.discord_user_id;
 
   if (!guildId || !discordUserId) {
-    logger.warn(`Paddle subscription ${sub.id} missing guildId/discordUserId in custom_data`);
+    logger.warn(
+      `Paddle subscription ${sub.id} missing discord_guild_id/discord_user_id in custom_data`
+    );
     return null;
   }
 
