@@ -10,8 +10,8 @@ export type ChannelFilter = {
 };
 
 export const guild = pgTable('guild', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  guildId: text('guild_id').unique().notNull(),
+  // Discord snowflakes are immutable and never reused — safe natural PK.
+  guildId: text('guild_id').primaryKey(),
   // NULL = legacy guild (auto-publishes all announcement channels, pre-v7 model).
   // MIGRATION: dropped together with the MigratedGuilds Redis DB at sunset.
   migratedAt: timestamp('migrated_at', { withTimezone: true }),
@@ -32,8 +32,7 @@ export const guildRelations = relations(guild, ({ many }) => ({
 export const channel = pgTable(
   'channel',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
-    channelId: text('channel_id').unique().notNull(),
+    channelId: text('channel_id').primaryKey(),
     guildId: text('guild_id')
       .notNull()
       .references(() => guild.guildId, { onDelete: 'cascade' }),
@@ -55,6 +54,9 @@ export const channelRelations = relations(channel, ({ one }) => ({
 // No FK to guild: a subscription outlives the guild row (bot kick/guild delete
 // must never cancel billing — the subscriber cancels via dashboard/portal).
 export const subscription = pgTable('subscription', {
+  // Surrogate PK kept deliberately: two candidate keys (guild_id, paddle_subscription_id).
+  // A natural PK on guild_id would bake in "one subscription row per guild forever"
+  // and block a future history model (row per Paddle subscription).
   id: uuid('id').primaryKey().defaultRandom(),
   guildId: text('guild_id').unique().notNull(),
   paddleSubscriptionId: text('paddle_subscription_id').unique().notNull(),

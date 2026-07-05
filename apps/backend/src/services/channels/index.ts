@@ -24,14 +24,13 @@ const initialize = async () => {
     while (true) {
       const batch = await db
         .select({
-          id: channelTable.id,
           channelId: channelTable.channelId,
           filters: channelTable.filters,
           filterMode: channelTable.filterMode,
         })
         .from(channelTable)
-        .where(cursor ? gt(channelTable.id, cursor) : undefined)
-        .orderBy(asc(channelTable.id))
+        .where(cursor ? gt(channelTable.channelId, cursor) : undefined)
+        .orderBy(asc(channelTable.channelId))
         .limit(BATCH_SIZE);
 
       if (batch.length === 0) break;
@@ -46,7 +45,7 @@ const initialize = async () => {
       );
 
       syncedCount += batch.length;
-      cursor = batch[batch.length - 1]?.id;
+      cursor = batch[batch.length - 1]?.channelId;
 
       // Progress logging every 10k
       if (syncedCount % 10000 === 0) {
@@ -85,10 +84,10 @@ const initialize = async () => {
 
     while (true) {
       const dbBatch = await db
-        .select({ id: channelTable.id, channelId: channelTable.channelId })
+        .select({ channelId: channelTable.channelId })
         .from(channelTable)
-        .where(dbCursor ? gt(channelTable.id, dbCursor) : undefined)
-        .orderBy(asc(channelTable.id))
+        .where(dbCursor ? gt(channelTable.channelId, dbCursor) : undefined)
+        .orderBy(asc(channelTable.channelId))
         .limit(BATCH_SIZE);
 
       if (dbBatch.length === 0) break;
@@ -97,7 +96,7 @@ const initialize = async () => {
         dbChannelIds.add(ch.channelId);
       }
 
-      dbCursor = dbBatch[dbBatch.length - 1]?.id;
+      dbCursor = dbBatch[dbBatch.length - 1]?.channelId;
       await new Promise(resolve => setImmediate(resolve));
     }
 

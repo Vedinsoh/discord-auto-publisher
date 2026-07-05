@@ -1,22 +1,18 @@
 CREATE TABLE "channel" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"channel_id" text NOT NULL,
+	"channel_id" text PRIMARY KEY NOT NULL,
 	"guild_id" text NOT NULL,
 	"filters" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"filter_mode" text DEFAULT 'any' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "channel_channel_id_unique" UNIQUE("channel_id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "guild" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"guild_id" text NOT NULL,
+	"guild_id" text PRIMARY KEY NOT NULL,
 	"migrated_at" timestamp with time zone,
 	"deleted_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "guild_guild_id_unique" UNIQUE("guild_id")
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "paddle_customer" (

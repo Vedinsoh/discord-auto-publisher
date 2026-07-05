@@ -148,16 +148,14 @@ bot (Discord Gateway) ──HTTP──> backend (REST API) ──> PostgreSQL (S
 
 ```
 guilds {
-  id (uuid, pk)
-  guildId (text, unique)
+  guildId (text, pk — natural key; Discord snowflakes are immutable, never reused)
   migratedAt (timestamp, NULL = legacy guild; dropped at sunset)
   deletedAt (timestamp, NULL = bot present; soft delete, purged after 30d)
   createdAt, updatedAt
 }
 
 channels {
-  id (uuid, pk)
-  channelId (text, unique)
+  channelId (text, pk — natural key)
   guildId (text, FK → guilds.guildId, cascade delete)
   filters (jsonb, array of ChannelFilter)
   filterMode (text, default 'any')
@@ -165,7 +163,7 @@ channels {
 }
 
 subscription {
-  id (uuid, pk)
+  id (uuid, pk — surrogate kept deliberately: two candidate keys; a guild_id PK would bake in "one subscription row per guild forever")
   guildId (text, unique — intentionally NO FK: subscription outlives the guild row)
   paddleSubscriptionId (text, unique)
   paddleCustomerId (text)

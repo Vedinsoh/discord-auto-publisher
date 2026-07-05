@@ -1,5 +1,5 @@
 {
-  "id": "794cde7d-b62c-4b5d-9df6-bf7445188349",
+  "id": "0c5ad8b1-0958-4199-b62a-51bda4b62fa2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -8,17 +8,10 @@
       "name": "channel",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
         "channel_id": {
           "name": "channel_id",
           "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "guild_id": {
@@ -85,13 +78,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "channel_channel_id_unique": {
-          "name": "channel_channel_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["channel_id"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -100,17 +87,10 @@
       "name": "guild",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
         "guild_id": {
           "name": "guild_id",
           "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "migrated_at": {
@@ -143,13 +123,7 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "guild_guild_id_unique": {
-          "name": "guild_guild_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["guild_id"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
