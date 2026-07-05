@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, ChevronRight, Crown, ExternalLink, Sparkles, TriangleAlert } from 'lucide-react';
+import { Bot, ChevronRight, Crown, Plus, Sparkles, TriangleAlert } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -89,7 +89,7 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                               height={64}
                             />
                           ) : (
-                            <span className="text-white text-lg font-semibold">
+                            <span className="text-white text-xl font-semibold">
                               {guild.name.charAt(0).toUpperCase()}
                             </span>
                           )}
@@ -130,7 +130,7 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                         </div>
                       </div>
                       {botAbsent ? (
-                        <ExternalLink className="w-5 h-5 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <Plus className="w-8 h-8 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       ) : (
                         <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
                       )}
