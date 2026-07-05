@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createCheckout } from '@/lib/api/actions';
 import type { Edition, SubscriptionData } from '@/lib/api/types';
+import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { usePaddle } from '@/lib/paddle';
 import {
   formatUsd,
@@ -26,6 +27,7 @@ import {
   PREMIUM_YEARLY_SAVINGS_PERCENT,
   PREMIUM_YEARLY_SAVINGS_USD,
 } from '@/lib/pricing';
+import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 interface SubscriptionPanelProps {
   edition: Edition;
@@ -34,12 +36,6 @@ interface SubscriptionPanelProps {
   subscription: SubscriptionData | null;
   premiumBotPresent: boolean;
   checkoutSuccess?: boolean;
-}
-
-const PREMIUM_BOT_CLIENT_ID = process.env.NEXT_PUBLIC_PREMIUM_BOT_CLIENT_ID;
-
-function getPremiumBotInviteUrl(guildId: string): string {
-  return `https://discord.com/oauth2/authorize?client_id=${PREMIUM_BOT_CLIENT_ID}&permissions=10240&scope=bot+applications.commands&guild_id=${guildId}`;
 }
 
 const premiumBenefits = [
@@ -125,6 +121,7 @@ function CheckoutSuccessCard({
   guildId: string;
   premiumBotPresent: boolean;
 }) {
+  const armRefreshOnReturn = useRefreshOnReturn();
   return (
     <Card className="bg-green-500/10 border-green-500/30 p-6">
       <div className="flex items-start gap-3">
@@ -140,7 +137,12 @@ function CheckoutSuccessCard({
                 Invite the Premium bot to your server to get started:
               </p>
               <Button className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
-                <a href={getPremiumBotInviteUrl(guildId)} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={getBotInviteUrl('premium', guildId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={armRefreshOnReturn}
+                >
                   Invite Premium Bot
                   <ExternalLink className="w-4 h-4 ml-2" />
                 </a>

@@ -33,6 +33,10 @@ Concepts that show up across the codebase. Keep this list short — only terms t
 - **No per-transaction invoicing export** — the old HMAC invoicing forwarder (`invoicing.ts`) is deleted. Paddle (MoR) issues customer invoices; company bookkeeping runs off Paddle payout statements.
 - **Revocation** — a `canceled`/`paused` webhook makes the backend immediately have the premium bot leave the guild (via proxy REST). The premium bot's `guildCreate` entitlement gate stays. A daily reconciliation cron lists subscriptions from the Paddle API and repairs Postgres drift (missed webhooks); it replaces the hourly local `currentPeriodEndsAt` expiry scan — Paddle owns period-end cancellation.
 
+## Dashboard
+
+- **Bot invite (server list)** — a bot-absent guild card in the dashboard server list is a Discord OAuth invite link (new tab, `guild_id` pre-selected + `disable_guild_select`). Edition rule: invite the **free** bot, unless the guild has an entitled subscription — then invite the **premium** bot (premium without a subscription is pointless — the entitlement gate makes it leave; free with a subscription wastes the subscription). If `NEXT_PUBLIC_PREMIUM_BOT_CLIENT_ID` is unset, fall back to the free invite. After an invite click (server list or subscription panel), the page re-fetches once on the next window focus (one-shot — `/users/@me/guilds` is rate-limited per user token, so no refresh on ordinary tab switches, and no retry polling: returning before the bot's `guildCreate` lands shows stale presence until manual reload — accepted).
+
 ## Services
 
 - **bot** — discord.js gateway listener. Multi-shard via discord-hybrid-sharding. Owns no Discord REST traffic on the hot path (gates everything synchronously, fires-and-forgets to proxy). Does sync permission checks against discord.js cache (never `.fetch()`).

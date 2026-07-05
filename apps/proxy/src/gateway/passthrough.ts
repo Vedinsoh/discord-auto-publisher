@@ -13,7 +13,11 @@ import { logger } from '../logger.js';
 
 const METHODS_WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
 const SLOW_REQUEST_MS = 5_000;
-const STRIPPED_RESPONSE_HEADERS = new Set(['content-encoding', 'content-length', 'transfer-encoding']);
+const STRIPPED_RESPONSE_HEADERS = new Set([
+  'content-encoding',
+  'content-length',
+  'transfer-encoding',
+]);
 
 const buildHeaders = (req: Request): Record<string, string> => {
   const headers: Record<string, string> = {};

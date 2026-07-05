@@ -1,9 +1,13 @@
-import { Bot, ChevronRight, Crown, Sparkles, TriangleAlert } from 'lucide-react';
+'use client';
+
+import { Bot, ChevronRight, Crown, ExternalLink, Sparkles, TriangleAlert } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { DiscordGuild } from '@/lib/api/types';
+import { getBotInviteUrl } from '@/lib/invite';
+import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 import type { DashboardUser } from './guild-context';
 import { UserBadge } from './user-badge';
 
@@ -38,6 +42,7 @@ function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
 
 export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
   const sortedGuilds = sortGuilds(guilds);
+  const armRefreshOnReturn = useRefreshOnReturn();
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
       <div className="max-w-4xl mx-auto">
@@ -62,14 +67,14 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
             <div className="grid md:grid-cols-2 gap-4">
               {sortedGuilds.map(guild => {
                 const iconUrl = guildIconUrl(guild);
-                const disabled = !hasBotPresent(guild);
+                const botAbsent = !hasBotPresent(guild);
                 const content = (
                   <Card
                     key={guild.id}
-                    className={`p-6 transition-all group ${
-                      disabled
-                        ? 'bg-slate-900/30 border-slate-800/50 opacity-60 cursor-default hover:opacity-80'
-                        : 'bg-slate-900/50 border-slate-800 hover:border-blue-500/50 cursor-pointer'
+                    className={`p-6 transition-all group cursor-pointer ${
+                      botAbsent
+                        ? 'bg-slate-900/30 border-slate-800/50 opacity-60 hover:opacity-100 hover:border-blue-500/50'
+                        : 'bg-slate-900/50 border-slate-800 hover:border-blue-500/50'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -116,14 +121,17 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                               Free Plan
                             </Badge>
                           ) : (
-                            <Badge className="bg-slate-800/50 text-slate-500 border-slate-700">
+                            <Badge className="bg-slate-800/50 text-slate-500 border-slate-700 group-hover:bg-blue-500/20 group-hover:text-blue-400 group-hover:border-blue-500/30 transition-colors">
                               <Bot className="w-3 h-3 mr-1" />
-                              Bot not added
+                              <span className="group-hover:hidden">Bot not added</span>
+                              <span className="hidden group-hover:inline">Add bot to server</span>
                             </Badge>
                           )}
                         </div>
                       </div>
-                      {!disabled && (
+                      {botAbsent ? (
+                        <ExternalLink className="w-5 h-5 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      ) : (
                         <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
                       )}
                     </div>
@@ -146,8 +154,19 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                   </Card>
                 );
 
-                if (disabled) {
-                  return <div key={guild.id}>{content}</div>;
+                if (botAbsent) {
+                  return (
+                    <a
+                      key={guild.id}
+                      href={getBotInviteUrl(guild.hasSubscription ? 'premium' : 'free', guild.id)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={armRefreshOnReturn}
+                      className="block"
+                    >
+                      {content}
+                    </a>
+                  );
                 }
 
                 return (

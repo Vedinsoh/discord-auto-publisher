@@ -1,7 +1,8 @@
+import { BOT_INVITE_PERMISSIONS, BOT_INVITE_SCOPE, FREE_BOT_CLIENT_ID } from '@/lib/invite';
+
 export const links = {
   discordSupportServer: 'https://discord.gg/xcEeJkdQX8',
-  discordBotInvite:
-    'https://discord.com/oauth2/authorize?client_id=739823232651100180&permissions=10240&integration_type=0&scope=bot+applications.commands',
+  discordBotInvite: `https://discord.com/oauth2/authorize?client_id=${FREE_BOT_CLIENT_ID}&permissions=${BOT_INVITE_PERMISSIONS}&integration_type=0&scope=${BOT_INVITE_SCOPE}`,
   githubRepo: 'https://github.com/Vedinsoh/discord-auto-publisher',
 };
 
