@@ -30,7 +30,6 @@ interface GuildDashboardShellProps {
 export function GuildDashboardShell({ guild, user, children }: GuildDashboardShellProps) {
   const pathname = usePathname();
   const iconUrl = guildIconUrl(guild);
-  const isPremium = guild.premiumBotPresent || guild.hasSubscription;
 
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
@@ -80,28 +79,29 @@ export function GuildDashboardShell({ guild, user, children }: GuildDashboardShe
         <div className="grid lg:grid-cols-[250px_1fr] gap-6">
           {/* Sidebar Navigation */}
           <div className="space-y-2">
-            {tabs
-              .filter(tab => !tab.premiumOnly || isPremium)
-              .map(tab => {
-                const href = `/dashboard/${guild.id}/${tab.id}`;
-                const isActive = pathname.startsWith(href);
+            {tabs.map(tab => {
+              const href = `/dashboard/${guild.id}/${tab.id}`;
+              const isActive = pathname.startsWith(href);
 
-                return (
-                  <Link
-                    key={tab.id}
-                    href={href}
-                    className={cn(
-                      'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
-                      isActive
-                        ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
-                        : 'bg-slate-900/50 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-300'
-                    )}
-                  >
-                    <tab.icon className="w-5 h-5" />
-                    <span>{tab.label}</span>
-                  </Link>
-                );
-              })}
+              return (
+                <Link
+                  key={tab.id}
+                  href={href}
+                  className={cn(
+                    'group w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                    isActive
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                      : 'bg-slate-900/50 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-300'
+                  )}
+                >
+                  <tab.icon className="w-5 h-5" />
+                  <span>{tab.label}</span>
+                  {tab.premiumOnly && (
+                    <Crown className="w-4 h-4 ml-auto group-hover:text-yellow-500" />
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Main Content Area */}
