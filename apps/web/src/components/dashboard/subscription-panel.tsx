@@ -35,8 +35,6 @@ interface SubscriptionPanelProps {
   guildName: string;
   subscription: SubscriptionData | null;
   premiumBotPresent: boolean;
-  /** Premium handover pending: free bot still publishes until permissions pass */
-  premiumPending: boolean;
   checkoutSuccess?: boolean;
 }
 
@@ -90,7 +88,6 @@ export function SubscriptionPanel({
   guildName,
   subscription,
   premiumBotPresent,
-  premiumPending,
   checkoutSuccess,
 }: SubscriptionPanelProps) {
   return (
@@ -103,8 +100,6 @@ export function SubscriptionPanel({
       {checkoutSuccess && (
         <CheckoutSuccessCard guildId={guildId} premiumBotPresent={premiumBotPresent} />
       )}
-
-      {premiumPending && <PremiumPendingCard guildId={guildId} />}
 
       {subscription &&
       (subscription.status === 'active' ||
@@ -163,29 +158,6 @@ function CheckoutSuccessCard({
               </p>
             </>
           )}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-/** Shown while the free bot still covers the guild and the premium bot idles */
-function PremiumPendingCard({ guildId }: { guildId: string }) {
-  return (
-    <Card className="bg-purple-500/10 border-purple-500/30 p-6">
-      <div className="flex items-start gap-3">
-        <Loader2 className="w-6 h-6 text-purple-400 shrink-0 mt-0.5 animate-spin" />
-        <div>
-          <h3 className="text-white text-lg mb-2">Premium bot is waiting to take over</h3>
-          <p className="text-slate-400">
-            The free bot keeps publishing until the Premium bot can publish in every configured
-            channel. Check the{' '}
-            <a href={`/dashboard/${guildId}/channels`} className="text-blue-400 hover:underline">
-              Channels tab
-            </a>{' '}
-            for channels that still need access — the switch completes automatically once they all
-            pass.
-          </p>
         </div>
       </div>
     </Card>

@@ -13,7 +13,6 @@ export default function ChannelsPage() {
       hasSubscription={guild.hasSubscription}
       channelLimit={data.channelLimit}
       migrated={data.migrated}
-      premiumPending={data.premiumPending}
     />
   );
 }

@@ -163,11 +163,6 @@ export function SubscriptionPanelSkeleton() {
   );
 }
 
-/** Generic content skeleton for guild dashboard (used in layout Suspense fallback) */
-export function GuildDashboardContentSkeleton() {
-  return <ChannelConfigSkeleton />;
-}
-
 /** Skeleton for the guild dashboard shell (header + sidebar + content) */
 export function GuildDashboardShellSkeleton() {
   return (

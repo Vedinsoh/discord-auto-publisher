@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { DiscordGuild } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
+import { DashboardBanners } from './dashboard-banners';
 import type { DashboardUser } from './guild-context';
 import { UserBadge } from './user-badge';
 
@@ -71,6 +72,9 @@ export function GuildDashboardShell({ guild, user, children }: GuildDashboardShe
             <UserBadge user={user} />
           </div>
         </div>
+
+        {/* Guild-level banners, above sidebar and page content */}
+        <DashboardBanners />
 
         {/* Dashboard Grid with Sidebar */}
         <div className="grid lg:grid-cols-[250px_1fr] gap-6">

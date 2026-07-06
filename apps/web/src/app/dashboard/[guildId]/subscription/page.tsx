@@ -15,7 +15,6 @@ export default function SubscriptionPage() {
       guildName={guild.name}
       subscription={data.subscription}
       premiumBotPresent={guild.premiumBotPresent}
-      premiumPending={data.premiumPending}
       checkoutSuccess={checkoutSuccess}
     />
   );

@@ -3,10 +3,7 @@ import { Suspense } from 'react';
 import type { DashboardUser } from '@/components/dashboard/guild-context';
 import { GuildProvider } from '@/components/dashboard/guild-context';
 import { GuildDashboardShell } from '@/components/dashboard/guild-dashboard-shell';
-import {
-  GuildDashboardContentSkeleton,
-  GuildDashboardShellSkeleton,
-} from '@/components/dashboard/skeletons';
+import { GuildDashboardShellSkeleton } from '@/components/dashboard/skeletons';
 import { getGuildDashboard, getUserGuilds } from '@/lib/api/actions';
 import type { DiscordGuild, GuildDashboardData } from '@/lib/api/types';
 import { auth } from '@/lib/auth';
@@ -40,7 +37,13 @@ export default async function GuildLayout({
   );
 }
 
-/** Fetches guild list, validates guild, renders shell with nested Suspense for content */
+/**
+ * Fetches guild list, validates guild, then fetches dashboard data before
+ * rendering the shell — the shell's banner stack (and its migrate modal) read
+ * dashboard data from context, so the whole page waits behind one skeleton
+ * instead of streaming the sidebar first (accepted trade-off, see CONTEXT.md
+ * "Guild-level banner stack").
+ */
 async function GuildShellLoader({
   guildId,
   user,
@@ -63,13 +66,11 @@ async function GuildShellLoader({
   }
 
   return (
-    <GuildDashboardShell guild={guild} user={user}>
-      <Suspense fallback={<GuildDashboardContentSkeleton />}>
-        <GuildDataProvider guild={guild} guildId={guildId} user={user}>
-          {children}
-        </GuildDataProvider>
-      </Suspense>
-    </GuildDashboardShell>
+    <GuildDataProvider guild={guild} guildId={guildId} user={user}>
+      <GuildDashboardShell guild={guild} user={user}>
+        {children}
+      </GuildDashboardShell>
+    </GuildDataProvider>
   );
 }
 
