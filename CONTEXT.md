@@ -16,8 +16,10 @@ Concepts that show up across the codebase. Keep this list short — only terms t
 
 - **Registered channel** — a channel a user opted into auto-publishing via `/ap enable`. Persisted in Postgres `channels` table and mirrored in `Channels` Redis cache (`channel:{id}` keys, value = `{filters, filterMode}` JSON, no TTL).
 - **Migrated guild** — a guild that has opted into the v7 allowlist model. Source of truth: `guild.migratedAt` in Postgres (`NULL` = legacy); the `MigratedGuilds` Redis DB (`migrated_guild:{guildId}` = '1', no TTL) is a derived hot-path cache rebuilt at startup. Set on first `/ap enable` or new guild join. Migrated guilds enforce the allowlist; legacy (unmigrated) guilds auto-publish all announcement channels. Migration state is temporary — column and Redis DB are dropped together ~6 months after v7 ships.
-- **Guild row** — a row in the Postgres `guild` table with `deletedAt = NULL` means "the bot is in this guild" (drives dashboard `botPresent` and the premium revocation backstop), NOT "guild is migrated" — legacy guilds get rows too, with `migratedAt = NULL`. Kept honest by the guild-presence reconciliation.
-- **Soft-deleted guild** — kick/leave sets `guild.deletedAt` instead of cascading; all channel config and cache entries survive so an accidental kick + re-invite restores everything (including legacy status — `migratedAt` is preserved on restore; the derived Redis state is rebuilt from DB, entries first, marker last). On re-invite the bot sends the live announcement-channel list from the GUILD_CREATE payload so config for channels deleted while it was away is pruned (missed `channelDelete` events would otherwise leave stale rows consuming free-plan limit slots). Hard delete happens 30 days later via the reconciliation cron's purge step (`Guilds.purge`), guarded by the cutoff so a re-invite landing mid-sweep wins over the purge. Mirrors the billing rule "subscription outlives the guild row."
+- **Bot presence (per edition)** — record of "this edition's bot is in this guild": `bot_presence` table, pk `(guildId, edition)`, `leftAt IS NULL` = in guild. Unrelated to Discord's *user* presence (online status). Replaces the old `guild.deletedAt` semantics (ADR 0006). Drives dashboard per-edition bot state (`freeBotPresent`/`premiumBotPresent`) and the premium revocation backstop. Kept honest by per-edition reconciliation sweeps.
+- **Managing edition** — the edition whose bot is doing the publishing: premium once the handover has swapped (or when it is the sole bot), free otherwise — including while a premium handover is pending. Routes backend Discord REST to the right proxy and picks the dashboard's managed view.
+- **Premium handover** — the gated atomic swap from free to premium bot after purchase. Bot permissions don't transfer between Discord applications (the free bot's integration role and its channel overwrites vanish when it leaves), so while both bots are present the premium bot idles (`PremiumPending` marker) and the free bot operates unchanged. The backend evaluates the premium bot's effective permissions across registered channels — measured against the free bot's ACTUAL coverage, so a channel the free bot itself cannot publish in never gates the swap — on join, on permission-change pings, and in the nightly marker sweep (backstop for missed pings); when all pass it flips the marker and has the free bot leave via the free proxy — crossposting and filters cut over atomically. Dashboard warns before the invite and flags blocking channels while pending; pending may last indefinitely (accepted — free keeps covering). If the free bot is kicked mid-pending, premium activates immediately; if the free bot is re-invited while premium is active, the backend makes it leave again.
+- **Soft-deleted presence** — kick/leave sets `bot_presence.leftAt` instead of cascading; all guild-scoped config (channels, filters, `migratedAt`, subscription) survives, so an accidental kick + re-invite restores everything (the derived Redis state is rebuilt from DB, entries first, marker last). On re-invite the bot sends the live announcement-channel list from the GUILD_CREATE payload so config for channels deleted while it was away is pruned (missed `channelDelete` events would otherwise leave stale rows consuming free-plan limit slots). A guild with no active presence rows is purge-eligible 30 days after its newest `leftAt` (reconciliation cron, cutoff-guarded so a re-invite landing mid-sweep wins). Mirrors the billing rule "subscription outlives the guild row."
 - **Filter** — premium-only message filter (keyword/mention/author/webhook, allow or block mode) attached to a registered channel. Evaluated bot-side per message before fire-to-proxy. Filter data lives in the `Channels` cache JSON value.
 
 ## Billing (Paddle)
@@ -33,7 +35,7 @@ Concepts that show up across the codebase. Keep this list short — only terms t
 - **Plan catalogue** — one Paddle product ("Auto Publisher Premium"), two prices: $4.99/month, $49.99/year. No trial period; money-back requests are Paddle refunds. Price IDs are backend-only config (backend creates the transaction), not `NEXT_PUBLIC_*`.
 - **Subscription outlives the guild row** — `subscription` has no cascading FK to `guilds`. Kicking the bot or deleting the server never deletes or cancels the subscription (kick is often accidental; re-invite restores premium instantly). The subscriber cancels via dashboard/portal; the dashboard can show a subscription for a server the bot is no longer in.
 - **No per-transaction invoicing export** — the old HMAC invoicing forwarder (`invoicing.ts`) is deleted. Paddle (MoR) issues customer invoices; company bookkeeping runs off Paddle payout statements.
-- **Revocation** — a `canceled`/`paused` webhook makes the backend immediately have the premium bot leave the guild (via proxy REST). The premium bot's `guildCreate` entitlement gate stays. A daily reconciliation cron lists subscriptions from the Paddle API and repairs Postgres drift (missed webhooks); it replaces the hourly local `currentPeriodEndsAt` expiry scan — Paddle owns period-end cancellation.
+- **Revocation** — a `canceled`/`paused` webhook makes the backend immediately have the premium bot leave the guild (via the premium proxy). The entitlement gate is backend-side in `registerNewGuild` (ADR 0006) — the bot has no subscription check. A daily reconciliation cron lists subscriptions from the Paddle API and repairs Postgres drift (missed webhooks); it replaces the hourly local `currentPeriodEndsAt` expiry scan — Paddle owns period-end cancellation.
 
 ## Dashboard
 
@@ -45,28 +47,34 @@ Concepts that show up across the codebase. Keep this list short — only terms t
 
 ## Services
 
-- **bot** — discord.js gateway listener. Multi-shard via discord-hybrid-sharding. Owns no Discord REST traffic on the hot path (gates everything synchronously, fires-and-forgets to proxy). Does sync permission checks against discord.js cache (never `.fetch()`).
-- **backend** — internal Express API. Owns channel registration, filter CRUD, Paddle subscriptions, guild migration markers, the public `/api/*` web surface, and the `Channels` Redis cache.
-- **proxy** — see Crosspost pipeline above.
-- **web** — Next.js dashboard. Reads from backend's `/api/*`.
+- **bot** — discord.js gateway listener, one instance per edition (separate Discord applications/tokens). Multi-shard via discord-hybrid-sharding. Owns no Discord REST traffic on the hot path (gates everything synchronously, fires-and-forgets to its edition's proxy). Does sync permission checks against discord.js cache (never `.fetch()`).
+- **backend** — internal Express API, **single instance serving both editions** (edition-agnostic: no `APP_EDITION`; Paddle always configured — ADR 0006). Owns channel registration, filter CRUD, Paddle subscriptions, bot presence, the premium entitlement gate, handover orchestration, guild migration markers, the public `/api/*` web surface, and the `Channels` Redis cache. Holds both bot tokens; routes Discord REST through the managing edition's proxy; the backend is the single orchestrator of all bot join/leave decisions.
+- **proxy** — see Crosspost pipeline above; one instance per edition, each with its own egress IP (Cloudflare ban isolation — Discord rate limits are per token, the IP only matters for the invalid-request ban).
+- **web** — Next.js dashboard. Reads from the single backend's `/api/*` (one `BACKEND_URL`).
 
 ## Redis layout (single instance, multiple DBs)
+
+Backend-owned DBs are shared across editions; proxy-owned DBs are per-edition (`ProxyDatabaseIDs` in `@ap/redis`: free proxy uses 1/2/3, premium proxy 9/10/11).
 
 | DB  | Name                  | Owner   | Purpose                                     |
 | --- | --------------------- | ------- | ------------------------------------------- |
 | 0   | `Channels`            | backend | registered-channel allowlist + filters      |
-| 1   | `CrosspostQueue`      | proxy   | BullMQ                                      |
-| 2   | `SublimitCounter`     | proxy   | per-channel 10/hr crosspost counter, 1h TTL |
-| 3   | `BlockedChannels`     | proxy   | denylist (1h TTL), populated on 401/403     |
+| 1   | `CrosspostQueue`      | free proxy | BullMQ                          |
+| 2   | `SublimitCounter`     | free proxy | per-channel 10/hr crosspost counter, 1h TTL |
+| 3   | `BlockedChannels`     | free proxy | denylist (1h TTL), populated on 401/403 |
 | 4   | `DiscordAuth`         | backend | web auth token cache                        |
 | 5   | `MigratedGuilds`      | backend | v6→v7 allowlist opt-in marker               |
 | 6   | `PaddleWebhookDedupe` | backend | Paddle webhook idempotency keys (24h TTL)   |
 | 7   | `LegacyGuildPerms`    | backend | legacy-guild `canPublish` maps (5 min TTL); dropped at sunset with DB 5 |
 | 8   | `Alerts`              | shared  | alert-webhook per-key throttle markers (30 min TTL), used via `@ap/alerts` |
+| 9   | `CrosspostQueuePremium`   | premium proxy | BullMQ                      |
+| 10  | `SublimitCounterPremium`  | premium proxy | per-channel 10/hr crosspost counter, 1h TTL |
+| 11  | `BlockedChannelsPremium`  | premium proxy | denylist (1h TTL), populated on 401/403 |
+| 12  | `PremiumPending`      | backend (premium bot reads) | handover markers (`premium_pending:{guildId}`, no TTL) |
 
 ## Key architectural rules
 
 - **Bot never `.fetch()`s on the hot path.** `members.me` is auto-populated by `GUILD_CREATE`; trust the cache. Permission checks use `permissionsFor` only.
-- **Bot's REST = proxy's REST.** Bot's discord.js is configured with `api: 'http://proxy:8080/api'` and `globalRequestsPerSecond: Infinity` (proxy is the global limiter).
+- **Bot's REST = proxy's REST.** Bot's discord.js is configured with `api: '{this edition's proxy}/api'` (`config.proxyUrl`) and `globalRequestsPerSecond: Infinity` (proxy is the global limiter).
 - **Crossposts are never dropped on transient errors.** Route 429s are absorbed by discord.js internally. Sublimit (long waits), global 429s, 5xx, and network errors all become BullMQ delayed retries. Only `already_done`, `blocked`, `sublimit-lock`, and `fatal_4xx` are intentional skips.
 - **Single REST instance per token.** One `@discordjs/rest` handles crosspost queue worker and `/api/*` passthrough. Global ceiling is `50/s`; interactions use `BurstHandler` so they don't compete with crossposts.

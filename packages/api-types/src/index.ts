@@ -3,19 +3,7 @@ import type { FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
 /** App edition identifier */
 export type Edition = 'free' | 'premium';
 
-/** Single backend response for user guilds (what each backend returns) */
-export interface BackendDiscordGuild {
-  id: string;
-  name: string;
-  icon: string | null;
-  permissions: string;
-  botPresent: boolean;
-  /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
-  migrated: boolean;
-  hasSubscription: boolean;
-}
-
-/** Merged guild for web dashboard (combined from both backends) */
+/** Guild entry from GET /api/user/guilds (per-edition bot presence) */
 export interface DiscordGuild {
   id: string;
   name: string;
@@ -23,7 +11,9 @@ export interface DiscordGuild {
   permissions: string;
   freeBotPresent: boolean;
   premiumBotPresent: boolean;
-  /** MIGRATION: resolved from the managing edition (premium wins). Removed at sunset. */
+  /** Premium handover pending: both bots present, free bot still managing */
+  premiumPending: boolean;
+  /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
   migrated: boolean;
   hasSubscription: boolean;
 }
@@ -47,6 +37,8 @@ export interface GuildChannel {
   filterMode: FilterMatchMode;
   /** MIGRATION: present on legacy guilds only — migrate-modal preselection. */
   canPublish?: boolean;
+  /** Present while a premium handover is pending — false = warning badge */
+  premiumBotHasPermissions?: boolean;
 }
 
 /** Subscription status (mirrors Paddle statuses verbatim) */
@@ -91,7 +83,9 @@ export interface SubscriptionDetail extends SubscriptionData {
 export interface GuildDashboardData {
   /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
   migrated: boolean;
-  /** Max enabled channels for this backend's plan; 0 = unlimited */
+  /** Premium handover pending: premium bot idle until its permissions pass everywhere */
+  premiumPending: boolean;
+  /** Max enabled channels for the guild's managing edition; 0 = unlimited */
   channelLimit: number;
   channels: GuildChannel[];
   subscription: SubscriptionData | null;

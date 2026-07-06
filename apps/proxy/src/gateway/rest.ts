@@ -1,4 +1,6 @@
+import { config } from '@ap/config';
 import { type RateLimitData, REST, RESTEvents } from '@discordjs/rest';
+import { Agent, type buildConnector } from 'undici';
 import { logger } from '../logger.js';
 
 const SUBLIMIT_TIME_THRESHOLD_MS = 60_000;
@@ -18,6 +20,18 @@ export const createRest = (token: string): REST => {
     rejectOnRateLimit: rejectOnCrosspostRateLimit,
     retries: 0,
   }).setToken(token);
+
+  // Pin the outbound source IP so each edition's proxy keeps its own egress
+  // IP (per-edition Cloudflare ban isolation). Unset = default route (dev).
+  if (config.egressLocalAddress) {
+    // undici's BuildOptions type demands port although it is optional at runtime
+    const connect = { localAddress: config.egressLocalAddress } as buildConnector.BuildOptions;
+    rest.setAgent(new Agent({ connect }));
+    logger.info(
+      { event: 'rest.egress_pinned', localAddress: config.egressLocalAddress },
+      'Discord egress pinned to local address'
+    );
+  }
 
   rest.on(RESTEvents.RateLimited, data => {
     logger.warn({ event: 'rest.rate_limited', ...data }, 'Rate limit hit');

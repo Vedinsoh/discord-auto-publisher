@@ -23,5 +23,8 @@ export class GuildMemberUpdateListener extends Listener {
     await Promise.all(
       announcementChannels.map(channel => Services.Permissions.refreshChannel(channel))
     );
+
+    // Premium + handover pending: the changed roles may unblock the swap
+    await Services.Handover.pingIfPending(newMember.guild.id);
   }
 }

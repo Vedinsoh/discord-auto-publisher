@@ -107,7 +107,12 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
                               </Badge>
                             )}
                           </div>
-                          {guild.hasSubscription ? (
+                          {guild.premiumPending ? (
+                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              Premium activating
+                            </Badge>
+                          ) : guild.hasSubscription ? (
                             <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                               Premium Active
                             </Badge>

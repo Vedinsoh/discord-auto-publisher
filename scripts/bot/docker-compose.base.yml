@@ -1,11 +1,13 @@
 services:
-  proxy:
+  proxy-free: &proxy-base
     build:
       context: ../..
       dockerfile: apps/proxy/Dockerfile
     restart: unless-stopped
     env_file:
       - ../../.env.local
+    environment:
+      - APP_EDITION=free
     networks:
       - ap-network
     depends_on:
@@ -18,24 +20,43 @@ services:
       retries: 3
       start_period: 30s
 
-  bot:
+  proxy-premium:
+    <<: *proxy-base
+    environment:
+      - APP_EDITION=premium
+
+  bot-free: &bot-base
     build:
       context: ../..
       dockerfile: apps/bot/Dockerfile
     restart: unless-stopped
     env_file:
       - ../../.env.local
+    environment:
+      - APP_EDITION=free
     networks:
       - ap-network
     depends_on:
-      proxy:
+      proxy-free:
         condition: service_healthy
-      backend :
+      backend:
         condition: service_healthy
       redis:
         condition: service_healthy
 
-  backend :
+  bot-premium:
+    <<: *bot-base
+    environment:
+      - APP_EDITION=premium
+    depends_on:
+      proxy-premium:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  backend:
     build:
       context: ../..
       dockerfile: apps/backend/Dockerfile
@@ -45,8 +66,6 @@ services:
     networks:
       - ap-network
     depends_on:
-      proxy:
-        condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:

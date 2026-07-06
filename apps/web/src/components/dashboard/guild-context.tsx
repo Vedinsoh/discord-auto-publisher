@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { DiscordGuild, Edition, GuildDashboardData } from '@/lib/api/types';
+import type { DiscordGuild, GuildDashboardData } from '@/lib/api/types';
 
 export interface DashboardUser {
   id: string;
@@ -13,7 +13,6 @@ export interface DashboardUser {
 interface GuildContextValue {
   guild: DiscordGuild;
   data: GuildDashboardData;
-  edition: Edition;
   user: DashboardUser;
 }
 
@@ -23,10 +22,8 @@ interface GuildProviderProps extends GuildContextValue {
   children: React.ReactNode;
 }
 
-export function GuildProvider({ guild, data, edition, user, children }: GuildProviderProps) {
-  return (
-    <GuildContext.Provider value={{ guild, data, edition, user }}>{children}</GuildContext.Provider>
-  );
+export function GuildProvider({ guild, data, user, children }: GuildProviderProps) {
+  return <GuildContext.Provider value={{ guild, data, user }}>{children}</GuildContext.Provider>;
 }
 
 export function useGuild() {

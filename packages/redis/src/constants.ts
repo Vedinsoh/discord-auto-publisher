@@ -9,7 +9,26 @@ export enum DatabaseIDs {
   // MIGRATION: dropped together with MigratedGuilds at sunset
   LegacyGuildPerms = 7,
   Alerts = 8,
+  CrosspostQueuePremium = 9,
+  SublimitCounterPremium = 10,
+  BlockedChannelsPremium = 11,
+  // Premium handover markers (backend-owned; premium bot reads on its hot path)
+  PremiumPending = 12,
 }
+
+/** Proxy-owned logical DBs, keyed by the proxy's edition */
+export const ProxyDatabaseIDs = {
+  free: {
+    crosspostQueue: DatabaseIDs.CrosspostQueue,
+    sublimitCounter: DatabaseIDs.SublimitCounter,
+    blockedChannels: DatabaseIDs.BlockedChannels,
+  },
+  premium: {
+    crosspostQueue: DatabaseIDs.CrosspostQueuePremium,
+    sublimitCounter: DatabaseIDs.SublimitCounterPremium,
+    blockedChannels: DatabaseIDs.BlockedChannelsPremium,
+  },
+} as const;
 
 export enum Keys {
   Channel = 'channel',
@@ -19,4 +38,5 @@ export enum Keys {
   PaddleEvent = 'paddle_event',
   LegacyPerms = 'legacy_perms',
   Alert = 'alert',
+  PremiumPending = 'premium_pending',
 }

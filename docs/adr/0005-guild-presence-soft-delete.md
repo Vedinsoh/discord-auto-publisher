@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-07-04
+Accepted — 2026-07-04. Amended by ADR 0006 — presence relocates from `guild.deletedAt` to per-edition `bot_presence` rows; the soft-delete, restore, purge, and reconciliation semantics below carry over unchanged, applied per edition.
 
 ## Context
 

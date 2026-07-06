@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
-import type { Edition, SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
+import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { usePaddle } from '@/lib/paddle';
 import {
@@ -31,11 +31,12 @@ import {
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 interface SubscriptionPanelProps {
-  edition: Edition;
   guildId: string;
   guildName: string;
   subscription: SubscriptionData | null;
   premiumBotPresent: boolean;
+  /** Premium handover pending: free bot still publishes until permissions pass */
+  premiumPending: boolean;
   checkoutSuccess?: boolean;
 }
 
@@ -85,11 +86,11 @@ const intervalLabels: Record<string, string> = {
 };
 
 export function SubscriptionPanel({
-  edition,
   guildId,
   guildName,
   subscription,
   premiumBotPresent,
+  premiumPending,
   checkoutSuccess,
 }: SubscriptionPanelProps) {
   return (
@@ -103,13 +104,15 @@ export function SubscriptionPanel({
         <CheckoutSuccessCard guildId={guildId} premiumBotPresent={premiumBotPresent} />
       )}
 
+      {premiumPending && <PremiumPendingCard guildId={guildId} />}
+
       {subscription &&
       (subscription.status === 'active' ||
         subscription.status === 'trialing' ||
         subscription.status === 'past_due') ? (
-        <ActiveSubscription edition={edition} guildId={guildId} subscription={subscription} />
+        <ActiveSubscription guildId={guildId} subscription={subscription} />
       ) : (
-        <FreeSubscription edition={edition} guildId={guildId} guildName={guildName} />
+        <FreeSubscription guildId={guildId} guildName={guildName} />
       )}
     </div>
   );
@@ -154,7 +157,9 @@ function CheckoutSuccessCard({
                 </a>
               </Button>
               <p className="text-slate-500 text-sm mt-3">
-                After adding the Premium bot, you can remove the free bot from your server settings.
+                Bot permissions don&apos;t transfer between apps: the free bot keeps publishing
+                until the Premium bot can publish in all your channels, then hands over and leaves
+                automatically. Channels that still need access are flagged on the Channels tab.
               </p>
             </>
           )}
@@ -164,12 +169,33 @@ function CheckoutSuccessCard({
   );
 }
 
+/** Shown while the free bot still covers the guild and the premium bot idles */
+function PremiumPendingCard({ guildId }: { guildId: string }) {
+  return (
+    <Card className="bg-purple-500/10 border-purple-500/30 p-6">
+      <div className="flex items-start gap-3">
+        <Loader2 className="w-6 h-6 text-purple-400 shrink-0 mt-0.5 animate-spin" />
+        <div>
+          <h3 className="text-white text-lg mb-2">Premium bot is waiting to take over</h3>
+          <p className="text-slate-400">
+            The free bot keeps publishing until the Premium bot can publish in every configured
+            channel. Check the{' '}
+            <a href={`/dashboard/${guildId}/channels`} className="text-blue-400 hover:underline">
+              Channels tab
+            </a>{' '}
+            for channels that still need access — the switch completes automatically once they all
+            pass.
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function ActiveSubscription({
-  edition,
   guildId,
   subscription,
 }: {
-  edition: Edition;
   guildId: string;
   subscription: SubscriptionData;
 }) {
@@ -180,7 +206,7 @@ function ActiveSubscription({
 
   useEffect(() => {
     let cancelled = false;
-    getSubscription(edition, guildId)
+    getSubscription(guildId)
       .then(result => {
         if (!cancelled) setDetail(result);
       })
@@ -190,7 +216,7 @@ function ActiveSubscription({
     return () => {
       cancelled = true;
     };
-  }, [edition, guildId]);
+  }, [guildId]);
 
   const statusInfo = statusLabels[subscription.status] ?? statusLabels.active;
   const intervalLabel = subscription.billingInterval
@@ -295,15 +321,7 @@ function ActiveSubscription({
 
 type BillingInterval = 'month' | 'year';
 
-function FreeSubscription({
-  edition,
-  guildId,
-  guildName,
-}: {
-  edition: Edition;
-  guildId: string;
-  guildName: string;
-}) {
+function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: string }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('year');
@@ -322,13 +340,13 @@ function FreeSubscription({
     setError(false);
     startTransition(async () => {
       try {
-        const { transactionId } = await createCheckout(edition, guildId, billingInterval);
+        const { transactionId } = await createCheckout(guildId, billingInterval);
         paddle.Checkout.open({ transactionId });
       } catch {
         setError(true);
       }
     });
-  }, [edition, guildId, billingInterval, paddle]);
+  }, [guildId, billingInterval, paddle]);
 
   return (
     <div className="space-y-6">

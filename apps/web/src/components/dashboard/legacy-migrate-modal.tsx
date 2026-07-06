@@ -6,12 +6,11 @@ import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { migrateGuild } from '@/lib/api/actions';
-import type { Edition, GuildChannel } from '@/lib/api/types';
+import type { GuildChannel } from '@/lib/api/types';
 
 // MIGRATION: Remove this component after migration period (6 months)
 
 interface LegacyMigrateModalProps {
-  edition: Edition;
   guildId: string;
   channels: GuildChannel[];
   /** Max selectable channels, or null for unlimited (premium) */
@@ -19,13 +18,7 @@ interface LegacyMigrateModalProps {
   onClose: () => void;
 }
 
-export function LegacyMigrateModal({
-  edition,
-  guildId,
-  channels,
-  limit,
-  onClose,
-}: LegacyMigrateModalProps) {
+export function LegacyMigrateModal({ guildId, channels, limit, onClose }: LegacyMigrateModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
@@ -57,7 +50,7 @@ export function LegacyMigrateModal({
     setError(false);
     startTransition(async () => {
       try {
-        await migrateGuild(edition, guildId, [...selected]);
+        await migrateGuild(guildId, [...selected]);
         onClose();
         router.refresh();
       } catch {

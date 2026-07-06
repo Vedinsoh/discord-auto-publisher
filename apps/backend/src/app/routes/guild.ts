@@ -1,7 +1,7 @@
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
-import { GuildRegisterReqSchema, GuildReqSchema } from 'utils/validations.js';
+import { GuildDeleteReqSchema, GuildRegisterReqSchema, GuildReqSchema } from 'utils/validations.js';
 
 export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });
@@ -26,15 +26,17 @@ export const Guild: Router = (() => {
   });
 
   /**
-   * Bot kicked/left the guild (guildDelete): soft delete — config and cache
-   * are preserved so a re-invite restores everything. Hard delete happens via
-   * the reconciliation purge after 30 days.
+   * Bot kicked/left the guild (guildDelete): soft-deletes the edition's
+   * presence — config and cache are preserved so a re-invite restores
+   * everything. Hard delete happens via the reconciliation purge 30 days
+   * after the last bot left.
    */
-  router.delete('/', validateRequest(GuildReqSchema), async (req, res) => {
+  router.delete('/', validateRequest(GuildDeleteReqSchema), async (req, res) => {
     const { guildId } = req.params;
+    const { edition } = req.body;
 
     try {
-      await Services.Guilds.softDelete(guildId);
+      await Services.Guilds.softDelete(guildId, edition);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },
@@ -46,16 +48,18 @@ export const Guild: Router = (() => {
   });
 
   /**
-   * Bot joined or was re-invited to the guild (guildCreate): insert the row or
-   * clear its soft delete, prune channel config for channels deleted while the
-   * bot was away (missed channelDelete events), and rebuild the derived cache.
+   * Bot joined or was re-invited to the guild (guildCreate): upsert the guild
+   * row, activate the edition's presence, prune channel config for channels
+   * deleted while no bot was watching (missed channelDelete events), rebuild
+   * the derived cache, and run the join orchestration (entitlement gate /
+   * premium handover / free leave while premium manages).
    */
   router.post('/new', validateRequest(GuildRegisterReqSchema), async (req, res) => {
     const { guildId } = req.params;
-    const { announcementChannelIds } = req.body;
+    const { edition, announcementChannelIds } = req.body;
 
     try {
-      await Services.Guilds.registerNewGuild(guildId, announcementChannelIds);
+      await Services.Guilds.registerNewGuild(guildId, edition, announcementChannelIds);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },

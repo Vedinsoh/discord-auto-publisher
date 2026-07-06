@@ -1,5 +1,4 @@
 export type {
-  BackendDiscordGuild,
   ChannelFilterRule,
   CheckoutResponse,
   DiscordGuild,

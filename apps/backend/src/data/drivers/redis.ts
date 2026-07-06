@@ -7,6 +7,7 @@ const discordAuthClient = await createRedisClient(DatabaseIDs.DiscordAuth, logge
 const paddleWebhookDedupeClient = await createRedisClient(DatabaseIDs.PaddleWebhookDedupe, logger);
 const legacyGuildPermsClient = await createRedisClient(DatabaseIDs.LegacyGuildPerms, logger);
 const alertsClient = await createRedisClient(DatabaseIDs.Alerts, logger);
+const premiumPendingClient = await createRedisClient(DatabaseIDs.PremiumPending, logger);
 
 export const Redis: {
   client: RedisClient;
@@ -15,6 +16,7 @@ export const Redis: {
   PaddleWebhookDedupe: RedisClient;
   LegacyGuildPerms: RedisClient;
   Alerts: RedisClient;
+  PremiumPending: RedisClient;
 } = {
   client: channelsClient,
   MigratedGuilds: migratedGuildsClient,
@@ -22,4 +24,5 @@ export const Redis: {
   PaddleWebhookDedupe: paddleWebhookDedupeClient,
   LegacyGuildPerms: legacyGuildPermsClient,
   Alerts: alertsClient,
+  PremiumPending: premiumPendingClient,
 };

@@ -1,3 +1,4 @@
+import { config } from '@ap/config';
 import { ActivityType, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { getInfo } from 'discord-hybrid-sharding';
 import { BotClient } from 'lib/structures/client.js';
@@ -45,7 +46,7 @@ export const client = new BotClient({
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
-    api: 'http://proxy:8080/api',
+    api: `${config.proxyUrl}/api`,
     globalRequestsPerSecond: Number.POSITIVE_INFINITY,
     timeout: 60_000,
   },

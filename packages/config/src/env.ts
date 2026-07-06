@@ -10,12 +10,24 @@ export const env = cleanEnv(process.env, {
   NODE_ENV: str({ default: 'development', choices: ['development', 'production', 'test'] }),
   LOGGER_LEVEL: str({ default: 'info', choices: loggerLevels }),
 
-  // Common
-  DISCORD_TOKEN: str({ default: '' }),
+  // Bot + proxy edition selector (set per compose service); the backend is
+  // edition-agnostic and uses the per-edition pairs below. Bot/proxy resolve
+  // their own token, proxy URL, and egress IP from it via config. There is
+  // deliberately no singular DISCORD_TOKEN/PROXY_URL override — a stale v6-era
+  // env file must not silently make both editions share one Discord app.
   APP_EDITION: str({ default: 'free', choices: ['free', 'premium'] }),
+
+  // Proxy: outbound source IPs for Discord traffic (per-edition Cloudflare ban
+  // isolation); empty = default route (dev)
+  EGRESS_LOCAL_ADDRESS_FREE: str({ default: '' }),
+  EGRESS_LOCAL_ADDRESS_PREMIUM: str({ default: '' }),
 
   // Backend
   DATABASE_URL: str({ default: 'postgresql://postgres:postgres@localhost:54322/postgres' }),
+  DISCORD_TOKEN_FREE: str({ default: '' }),
+  DISCORD_TOKEN_PREMIUM: str({ default: '' }),
+  PROXY_URL_FREE: str({ default: 'http://proxy-free:8080' }),
+  PROXY_URL_PREMIUM: str({ default: 'http://proxy-premium:8080' }),
 
   // Redis
   REDIS_URI: str({ default: 'redis://redis:6379' }),
@@ -28,7 +40,7 @@ export const env = cleanEnv(process.env, {
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 
-  // Paddle (premium backend only)
+  // Paddle (backend)
   PADDLE_ENVIRONMENT: str({ default: 'sandbox', choices: ['sandbox', 'production'] }),
   PADDLE_API_KEY: str({ default: '' }),
   PADDLE_WEBHOOK_SECRET: str({ default: '' }),

@@ -1,16 +1,70 @@
+import type { Edition } from '@ap/api-types';
 import { env } from '@ap/config';
 import { REST } from '@discordjs/rest';
+import type { Snowflake } from 'discord-api-types/globals';
 import { type APIUser, Routes } from 'discord-api-types/v10';
+import { logger } from 'utils/logger.js';
 
-const rest = new REST({
-  api: 'http://proxy:8080/api',
-}).setToken(env.DISCORD_TOKEN);
+// One REST client per edition, each routed through its edition's proxy so
+// Discord traffic keeps the per-edition egress IP (Cloudflare ban isolation).
+// An unset token (dev subset without this edition) fails client-side in
+// @discordjs/rest before any HTTP is sent.
+const restByEdition: Record<Edition, REST> = {
+  free: new REST({ api: `${env.PROXY_URL_FREE}/api` }).setToken(env.DISCORD_TOKEN_FREE),
+  premium: new REST({ api: `${env.PROXY_URL_PREMIUM}/api` }).setToken(env.DISCORD_TOKEN_PREMIUM),
+};
+
+const restFor = (edition: Edition): REST => restByEdition[edition];
+
+const hasToken = (edition: Edition): boolean =>
+  Boolean(edition === 'free' ? env.DISCORD_TOKEN_FREE : env.DISCORD_TOKEN_PREMIUM);
+
+const botUserIds: Partial<Record<Edition, Snowflake>> = {};
+
+/** Bot application's user ID for an edition (fetched once, cached for process lifetime) */
+const getBotUserId = async (edition: Edition): Promise<Snowflake> => {
+  const cached = botUserIds[edition];
+  if (cached) return cached;
+  const user = (await restFor(edition).get(Routes.user())) as APIUser;
+  botUserIds[edition] = user.id;
+  return user.id;
+};
+
+/**
+ * Live membership check: whether an edition's bot is currently in the guild.
+ * Errors (including network failures) report false — callers use this to
+ * avoid evicting the OTHER bot, so the safe answer is "not present".
+ */
+const isBotInGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean> => {
+  try {
+    const botUserId = await getBotUserId(edition);
+    await restFor(edition).get(Routes.guildMember(guildId, botUserId));
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Makes an edition's bot leave a guild. Idempotent: the bot may already be
+ * gone (kick, guild deleted). Returns false when the leave call failed.
+ */
+const leaveGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean> => {
+  try {
+    await restFor(edition).delete(Routes.userGuild(guildId));
+    logger.info(`Left guild ${guildId} (${edition} bot)`);
+    return true;
+  } catch (error) {
+    logger.debug(error, `Could not leave guild ${guildId} (${edition} bot)`);
+    return false;
+  }
+};
 
 const USERNAME_CACHE_TTL_MS = 60 * 60 * 1000;
 const usernameCache = new Map<string, { username: string; expiresAt: number }>();
 
 /**
- * Display name of a Discord user, resolved through the proxy and cached
+ * Display name of a Discord user, resolved through the premium proxy and cached
  * in-memory for 1h (backend is single-instance; one lookup per premium guild).
  * Failures are not cached — returns null so callers fall back to the raw ID.
  */
@@ -19,7 +73,7 @@ const getUsername = async (userId: string): Promise<string | null> => {
   if (cached && cached.expiresAt > Date.now()) return cached.username;
 
   try {
-    const user = (await rest.get(Routes.user(userId))) as APIUser;
+    const user = (await restFor('premium').get(Routes.user(userId))) as APIUser;
     const username = user.global_name ?? user.username;
     usernameCache.set(userId, { username, expiresAt: Date.now() + USERNAME_CACHE_TTL_MS });
     return username;
@@ -28,4 +82,4 @@ const getUsername = async (userId: string): Promise<string | null> => {
   }
 };
 
-export const Discord = { rest, getUsername };
+export const Discord = { restFor, hasToken, getBotUserId, isBotInGuild, leaveGuild, getUsername };

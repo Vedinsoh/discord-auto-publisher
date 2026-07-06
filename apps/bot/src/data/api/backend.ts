@@ -1,7 +1,10 @@
+import { env } from '@ap/config';
 import type { CreateFilter, FilterMatchMode } from '@ap/validations';
 import { RequestMethod, type Snowflake } from 'discord.js';
 
 const baseUrl = 'http://backend:8080';
+// The single backend tracks presence per edition — every guild lifecycle call carries ours
+const edition = env.APP_EDITION;
 
 // Channels
 const addChannel = async (guildId: Snowflake, channelId: Snowflake) => {
@@ -36,18 +39,32 @@ const getGuildChannels = async (guildId: Snowflake) => {
 const deleteGuild = async (guildId: Snowflake) => {
   return fetch(`${baseUrl}/guild/${guildId}`, {
     method: RequestMethod.Delete,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ edition }),
   });
 };
 
-// Register guild on join/re-invite: insert row or clear soft delete, prune
-// config for channels deleted while the bot was away, rebuild derived cache
+// Register guild on join/re-invite: upsert guild row, activate this edition's
+// presence, prune config for channels deleted while the bot was away, rebuild
+// derived cache; the backend runs the join orchestration (entitlement gate,
+// premium handover, free leave while premium manages)
 const registerNewGuild = async (guildId: Snowflake, announcementChannelIds: Snowflake[]) => {
   return fetch(`${baseUrl}/guild/${guildId}/new`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ announcementChannelIds }),
+    body: JSON.stringify({ edition, announcementChannelIds }),
+  });
+};
+
+// Permission-change ping while a premium handover is pending — the backend
+// re-evaluates the premium bot's effective permissions and swaps when all pass
+const pingHandoverEvaluate = async (guildId: Snowflake) => {
+  return fetch(`${baseUrl}/internal/handover/${guildId}/evaluate`, {
+    method: RequestMethod.Post,
   });
 };
 
@@ -107,6 +124,7 @@ export const Backend = {
   getGuildChannels,
   deleteGuild,
   registerNewGuild,
+  pingHandoverEvaluate,
   addFilter,
   removeFilter,
   getFilters,

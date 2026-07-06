@@ -1,4 +1,4 @@
-import { config, env } from '@ap/config';
+import { env } from '@ap/config';
 import {
   Environment,
   type EventEntity,
@@ -7,16 +7,15 @@ import {
 } from '@paddle/paddle-node-sdk';
 import { logger } from 'utils/logger.js';
 
-const paddle =
-  config.isPremiumInstance && env.PADDLE_API_KEY
-    ? new Paddle(env.PADDLE_API_KEY, {
-        environment:
-          env.PADDLE_ENVIRONMENT === 'production' ? Environment.production : Environment.sandbox,
-      })
-    : null;
+const paddle = env.PADDLE_API_KEY
+  ? new Paddle(env.PADDLE_API_KEY, {
+      environment:
+        env.PADDLE_ENVIRONMENT === 'production' ? Environment.production : Environment.sandbox,
+    })
+  : null;
 
 const ensurePaddle = () => {
-  if (!paddle) throw new Error('Paddle is not available in free edition');
+  if (!paddle) throw new Error('PADDLE_API_KEY is not configured');
   return paddle;
 };
 

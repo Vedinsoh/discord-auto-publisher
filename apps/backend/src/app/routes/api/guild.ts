@@ -1,10 +1,12 @@
-import { config, env } from '@ap/config';
+import type { Edition } from '@ap/api-types';
+import { env } from '@ap/config';
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import { type APIChannel, ChannelType, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
 import { isEntitledStatus } from 'services/subscriptions.js';
+import { logger } from 'utils/logger.js';
 import {
   GuildChannelReqSchema,
   GuildMigrateReqSchema,
@@ -12,9 +14,14 @@ import {
   SubscriptionCheckoutReqSchema,
 } from 'utils/validations.js';
 
-/** Announcement channels of a guild, fetched through the proxy */
-const fetchAnnouncementChannels = async (guildId: string): Promise<APIChannel[]> => {
-  const channels = (await Discord.rest.get(Routes.guildChannels(guildId))) as APIChannel[];
+/** Announcement channels of a guild, fetched through an edition's proxy */
+const fetchAnnouncementChannels = async (
+  edition: Edition,
+  guildId: string
+): Promise<APIChannel[]> => {
+  const channels = (await Discord.restFor(edition).get(
+    Routes.guildChannels(guildId)
+  )) as APIChannel[];
   return channels.filter(c => c.type === ChannelType.GuildAnnouncement);
 };
 
@@ -29,14 +36,16 @@ export const GuildApi: Router = (() => {
     const { guildId } = req.params;
 
     try {
-      const [channelRecords, announcementChannels, guildRow, sub] = await Promise.all([
-        Services.Guilds.getChannelRecords(guildId),
-        fetchAnnouncementChannels(guildId),
-        Services.Guilds.find(guildId),
-        config.isPremiumInstance
-          ? Services.Subscriptions.getByGuildId(guildId)
-          : Promise.resolve(null),
-      ]);
+      const managingEdition = await Services.Editions.getManagingEdition(guildId);
+
+      const [channelRecords, announcementChannels, guildRow, sub, premiumPending] =
+        await Promise.all([
+          Services.Guilds.getChannelRecords(guildId),
+          fetchAnnouncementChannels(managingEdition, guildId),
+          Services.Guilds.find(guildId),
+          Services.Subscriptions.getByGuildId(guildId),
+          Services.Handover.isPending(guildId),
+        ]);
 
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
       const migrated = !!guildRow?.migratedAt;
@@ -45,7 +54,24 @@ export const GuildApi: Router = (() => {
       // for legacy guilds only, to keep the extra REST calls off the hot path
       const canPublishMap = migrated
         ? null
-        : await Services.LegacyPerms.getCanPublishMap(guildId, announcementChannels);
+        : await Services.LegacyPerms.getCanPublishMap(
+            managingEdition,
+            guildId,
+            announcementChannels
+          );
+
+      // While a handover is pending, flag channels the premium bot cannot
+      // publish in yet (dashboard warning badges). Evaluation failure (e.g. a
+      // dangling marker after the premium bot was kicked) only omits the
+      // badges — it must never break the whole dashboard.
+      let premiumBlockedIds: Set<string> | null = null;
+      if (premiumPending) {
+        try {
+          premiumBlockedIds = new Set(await Services.Handover.getBlockedChannelIds(guildId));
+        } catch (error) {
+          logger.warn(error, `Blocked-channel evaluation failed for guild ${guildId}`);
+        }
+      }
 
       const enabledMap = new Map(channelRecords.map(ch => [ch.channelId, ch]));
 
@@ -59,6 +85,7 @@ export const GuildApi: Router = (() => {
           filters: record?.filters ?? [],
           filterMode: record?.filterMode ?? 'any',
           ...(canPublishMap ? { canPublish: canPublishMap[c.id] ?? false } : {}),
+          ...(premiumBlockedIds ? { premiumBotHasPermissions: !premiumBlockedIds.has(c.id) } : {}),
         };
       });
 
@@ -67,7 +94,8 @@ export const GuildApi: Router = (() => {
         data: {
           guildId,
           migrated,
-          channelLimit: config.limits.channelsPerGuild,
+          premiumPending,
+          channelLimit: Services.Editions.channelLimitFor(managingEdition),
           channels,
           subscription: sub
             ? {
@@ -120,7 +148,8 @@ export const GuildApi: Router = (() => {
     const { guildId, channelId } = req.params;
 
     try {
-      const announcementChannels = await fetchAnnouncementChannels(guildId);
+      const managingEdition = await Services.Editions.getManagingEdition(guildId);
+      const announcementChannels = await fetchAnnouncementChannels(managingEdition, guildId);
 
       if (!announcementChannels.some(c => c.id === channelId)) {
         res.status(StatusCodes.BAD_REQUEST).json({
@@ -174,7 +203,8 @@ export const GuildApi: Router = (() => {
     try {
       const uniqueChannelIds = [...new Set(channelIds)];
 
-      const announcementChannels = await fetchAnnouncementChannels(guildId);
+      const managingEdition = await Services.Editions.getManagingEdition(guildId);
+      const announcementChannels = await fetchAnnouncementChannels(managingEdition, guildId);
       const announcementIds = new Set(announcementChannels.map(c => c.id));
       const invalid = uniqueChannelIds.filter(id => !announcementIds.has(id));
 
@@ -204,14 +234,6 @@ export const GuildApi: Router = (() => {
    * Returns subscription details + portal URL if subscriber matches current user
    */
   router.get('/subscription', validateRequest(GuildReqSchema), async (req, res) => {
-    if (!config.isPremiumInstance) {
-      res.status(StatusCodes.NOT_FOUND).json({
-        status: StatusCodes.NOT_FOUND,
-        message: 'Subscriptions are not available',
-      } as APIResponse);
-      return;
-    }
-
     const { guildId } = req.params;
     const userId = req.discordUser?.id;
 
@@ -281,14 +303,6 @@ export const GuildApi: Router = (() => {
     '/subscription/checkout',
     validateRequest(SubscriptionCheckoutReqSchema),
     async (req, res) => {
-      if (!config.isPremiumInstance) {
-        res.status(StatusCodes.NOT_FOUND).json({
-          status: StatusCodes.NOT_FOUND,
-          message: 'Subscriptions are not available',
-        } as APIResponse);
-        return;
-      }
-
       const { guildId } = req.params;
       const { interval } = req.body;
       const userId = req.discordUser?.id;

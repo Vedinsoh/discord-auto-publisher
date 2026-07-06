@@ -1,4 +1,4 @@
-import { db, guild, type Subscription, subscription } from '@ap/database';
+import { botPresence, db, type Subscription, subscription } from '@ap/database';
 import { and, eq, isNull, notInArray } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
@@ -199,22 +199,24 @@ const isEntitled = async (guildId: string): Promise<boolean> => {
 };
 
 /**
- * Not-entitled subscriptions whose guild still has the bot present
- * (guild row exists) — reconcile cron re-enforces revocation for these.
+ * Not-entitled subscriptions whose guild still has the premium bot present
+ * (active premium presence) — reconcile cron re-enforces revocation for these.
  */
 const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
   try {
     const rows = await db
       .select()
       .from(subscription)
-      .innerJoin(guild, eq(subscription.guildId, guild.guildId))
-      .where(
+      .innerJoin(
+        botPresence,
         and(
-          notInArray(subscription.status, [...ENTITLED_STATUSES]),
-          // Soft-deleted row = bot already absent, nothing to revoke
-          isNull(guild.deletedAt)
+          eq(subscription.guildId, botPresence.guildId),
+          eq(botPresence.edition, 'premium'),
+          // leftAt set = premium bot already absent, nothing to revoke
+          isNull(botPresence.leftAt)
         )
-      );
+      )
+      .where(notInArray(subscription.status, [...ENTITLED_STATUSES]));
     return rows.map(row => row.subscription);
   } catch (error) {
     logger.error(error);

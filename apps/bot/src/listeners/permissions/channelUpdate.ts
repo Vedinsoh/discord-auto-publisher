@@ -13,5 +13,7 @@ export class ChannelUpdateListener extends Listener {
   ) {
     if (newChannel.type !== ChannelType.GuildAnnouncement) return;
     await Services.Permissions.refreshChannel(newChannel);
+    // Premium + handover pending: the changed overwrites may unblock the swap
+    await Services.Handover.pingIfPending(newChannel.guildId);
   }
 }

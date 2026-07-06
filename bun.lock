@@ -15,12 +15,14 @@
       "name": "backend",
       "dependencies": {
         "@ap/alerts": "workspace:*",
+        "@ap/api-types": "workspace:*",
         "@ap/config": "workspace:*",
         "@ap/database": "workspace:*",
         "@ap/express": "workspace:*",
         "@ap/logger": "workspace:*",
         "@ap/redis": "workspace:*",
         "@ap/utils": "workspace:*",
+        "@ap/validations": "workspace:*",
         "@discordjs/rest": "^2.6.0",
         "@paddle/paddle-node-sdk": "^3.8.0",
         "@sapphire/snowflake": "^3.5.5",
@@ -65,6 +67,7 @@
         "discord-api-types": "^0.38.37",
         "express": "^5.2.1",
         "ioredis": "^5.10.1",
+        "undici": "6.21.3",
       },
     },
     "apps/web": {

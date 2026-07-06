@@ -19,14 +19,16 @@ const isCrosspostable = (message: Message): boolean => {
  * Pipeline:
  *  1. crosspostable bit-flag check
  *  2. sync permission check (cache-only)
- *  3. allowlist gate for migrated guilds (Redis: MigratedGuilds + Channels)
- *  4. premium filter eval (HTTP to backend)
- *  5. 5s delay if URL without embed (lets Discord generate embeds first)
- *  6. fire-and-forget to proxy
+ *  3. premium handover latch (in-memory once active; Redis only while pending)
+ *  4. allowlist gate for migrated guilds (Redis: MigratedGuilds + Channels)
+ *  5. premium filter eval (HTTP to backend)
+ *  6. 5s delay if URL without embed (lets Discord generate embeds first)
+ *  7. fire-and-forget to proxy
  */
 const handle = async (message: Message, channel: NewsChannel) => {
   if (!isCrosspostable(message)) return;
   if (!Services.Permissions.canCrosspostInChannel(channel)) return;
+  if (!(await Services.Handover.isActive(channel.guildId))) return;
 
   if (await Services.Guild.isMigrated(channel.guildId)) {
     if (!(await Services.Channel.isEnabled(channel.id))) return;

@@ -8,7 +8,7 @@ import {
   GuildDashboardShellSkeleton,
 } from '@/components/dashboard/skeletons';
 import { getGuildDashboard, getUserGuilds } from '@/lib/api/actions';
-import type { DiscordGuild, Edition, GuildDashboardData } from '@/lib/api/types';
+import type { DiscordGuild, GuildDashboardData } from '@/lib/api/types';
 import { auth } from '@/lib/auth';
 
 export default async function GuildLayout({
@@ -62,12 +62,10 @@ async function GuildShellLoader({
     redirect('/dashboard');
   }
 
-  const edition: Edition = guild.premiumBotPresent ? 'premium' : 'free';
-
   return (
     <GuildDashboardShell guild={guild} user={user}>
       <Suspense fallback={<GuildDashboardContentSkeleton />}>
-        <GuildDataProvider guild={guild} edition={edition} guildId={guildId} user={user}>
+        <GuildDataProvider guild={guild} guildId={guildId} user={user}>
           {children}
         </GuildDataProvider>
       </Suspense>
@@ -78,20 +76,18 @@ async function GuildShellLoader({
 /** Fetches dashboard data and provides it via context */
 async function GuildDataProvider({
   guild,
-  edition,
   guildId,
   user,
   children,
 }: {
   guild: DiscordGuild;
-  edition: Edition;
   guildId: string;
   user: DashboardUser;
   children: React.ReactNode;
 }) {
   let data: GuildDashboardData;
   try {
-    const raw = await getGuildDashboard(edition, guildId);
+    const raw = await getGuildDashboard(guildId);
     data = {
       ...raw,
       channels: (raw.channels ?? []).map(ch => ({
@@ -104,7 +100,7 @@ async function GuildDataProvider({
   }
 
   return (
-    <GuildProvider guild={guild} data={data} edition={edition} user={user}>
+    <GuildProvider guild={guild} data={data} user={user}>
       {children}
     </GuildProvider>
   );

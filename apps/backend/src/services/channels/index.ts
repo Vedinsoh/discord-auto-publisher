@@ -1,10 +1,10 @@
-import { config } from '@ap/config';
 import { channel as channelTable, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
+import { asc, count, eq, gt, isNotNull, sql } from 'drizzle-orm';
+import { Editions } from 'services/editions.js';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
 
@@ -64,7 +64,7 @@ const initialize = async () => {
     const migratedGuilds = await db
       .select({ guildId: guild.guildId })
       .from(guild)
-      .where(and(isNotNull(guild.migratedAt), isNull(guild.deletedAt)));
+      .where(isNotNull(guild.migratedAt));
 
     if (migratedGuilds.length > 0) {
       const pipeline = Data.Drivers.Redis.MigratedGuilds.multi();
@@ -187,31 +187,28 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
     throw createHttpError('Channel already exists', StatusCodes.CONFLICT);
   }
 
-  // Check if guild has hit the channels limit
+  // Check if guild has hit the channels limit (by its managing edition)
+  const channelLimit = await Editions.getChannelLimit(guildId);
   const countResult = await db
     .select({ count: count() })
     .from(channelTable)
     .where(eq(channelTable.guildId, guildId));
   const guildChannelsCount = countResult[0]?.count ?? 0;
 
-  if (
-    config.limits.channelsPerGuild !== 0 &&
-    guildChannelsCount >= config.limits.channelsPerGuild
-  ) {
+  if (channelLimit !== 0 && guildChannelsCount >= channelLimit) {
     throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST);
   }
 
   let dbCreated = false;
 
   try {
-    // Ensure guild exists; enabling a channel migrates a legacy guild and
-    // restores a soft-deleted one
+    // Ensure guild exists; enabling a channel migrates a legacy guild
     await db
       .insert(guild)
       .values({ guildId, migratedAt: new Date() })
       .onConflictDoUpdate({
         target: guild.guildId,
-        set: { migratedAt: sql`COALESCE(${guild.migratedAt}, now())`, deletedAt: null },
+        set: { migratedAt: sql`COALESCE(${guild.migratedAt}, now())` },
       });
 
     await db.insert(channelTable).values({ channelId, guildId, filters: [] });

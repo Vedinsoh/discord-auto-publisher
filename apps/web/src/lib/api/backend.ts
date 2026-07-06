@@ -1,13 +1,11 @@
 import 'server-only';
 
-import type { Edition } from '@ap/api-types';
 import { auth } from '@/lib/auth';
 
-function getBackendUrl(edition: Edition): string {
-  const envVar = edition === 'premium' ? 'PREMIUM_BACKEND_URL' : 'FREE_BACKEND_URL';
-  const url = process.env[envVar];
+function getBackendUrl(): string {
+  const url = process.env.BACKEND_URL;
   if (!url) {
-    throw new Error(`${envVar} environment variable is not set`);
+    throw new Error('BACKEND_URL environment variable is not set');
   }
   return url;
 }
@@ -26,11 +24,7 @@ export class BackendError extends Error {
   }
 }
 
-export async function backendFetch<T>(
-  edition: Edition,
-  path: string,
-  options?: BackendFetchOptions
-): Promise<T> {
+export async function backendFetch<T>(path: string, options?: BackendFetchOptions): Promise<T> {
   const session = await auth();
 
   if (!session) {
@@ -43,7 +37,7 @@ export async function backendFetch<T>(
     throw new BackendError(401, 'No Discord access token');
   }
 
-  const url = `${getBackendUrl(edition)}${path}`;
+  const url = `${getBackendUrl()}${path}`;
 
   const response = await fetch(url, {
     ...options,

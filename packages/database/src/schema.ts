@@ -1,5 +1,14 @@
-import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import {
+  check,
+  index,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 export type ChannelFilter = {
   id: string;
@@ -15,9 +24,6 @@ export const guild = pgTable('guild', {
   // NULL = legacy guild (auto-publishes all announcement channels, pre-v7 model).
   // MIGRATION: dropped together with the MigratedGuilds Redis DB at sunset.
   migratedAt: timestamp('migrated_at', { withTimezone: true }),
-  // Soft delete: row with deletedAt = NULL means "bot is in this guild".
-  // Kick/leave sets it (config preserved); reconciliation purges after 30 days.
-  deletedAt: timestamp('deleted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
@@ -27,6 +33,31 @@ export const guild = pgTable('guild', {
 
 export const guildRelations = relations(guild, ({ many }) => ({
   channels: many(channel),
+  botPresences: many(botPresence),
+}));
+
+// Per-edition bot membership ("bot presence" domain term; unrelated to Discord
+// user presence). Row with leftAt = NULL means "this edition's bot is in the guild".
+// Kick/leave sets leftAt (guild config preserved for re-invite); reconciliation
+// purges the guild once no edition has an active presence for 30 days.
+export const botPresence = pgTable(
+  'bot_presence',
+  {
+    guildId: text('guild_id')
+      .notNull()
+      .references(() => guild.guildId, { onDelete: 'cascade' }),
+    edition: text('edition').$type<'free' | 'premium'>().notNull(),
+    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull(),
+    leftAt: timestamp('left_at', { withTimezone: true }),
+  },
+  table => [
+    primaryKey({ columns: [table.guildId, table.edition] }),
+    check('bot_presence_edition_check', sql`${table.edition} IN ('free', 'premium')`),
+  ]
+);
+
+export const botPresenceRelations = relations(botPresence, ({ one }) => ({
+  guild: one(guild, { fields: [botPresence.guildId], references: [guild.guildId] }),
 }));
 
 export const channel = pgTable(
@@ -92,6 +123,8 @@ export const paddleCustomer = pgTable('paddle_customer', {
 
 export type Guild = typeof guild.$inferSelect;
 export type Channel = typeof channel.$inferSelect;
+export type BotPresence = typeof botPresence.$inferSelect;
+export type NewBotPresence = typeof botPresence.$inferInsert;
 export type Subscription = typeof subscription.$inferSelect;
 export type NewSubscription = typeof subscription.$inferInsert;
 export type PaddleCustomer = typeof paddleCustomer.$inferSelect;

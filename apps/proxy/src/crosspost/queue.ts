@@ -1,4 +1,3 @@
-import { DatabaseIDs } from '@ap/redis';
 import type { REST } from '@discordjs/rest';
 import { DelayedError, type Job, Queue, Worker } from 'bullmq';
 import { Routes, type Snowflake } from 'discord-api-types/v10';
@@ -39,10 +38,12 @@ export const createCrosspostQueue = (deps: {
   gate: Gate;
   caches: { blocked: BlockedCache; sublimit: SublimitCounter };
   redisUri: string;
+  /** This edition's BullMQ logical DB */
+  queueDatabaseId: number;
   concurrency: number;
 }): CrosspostQueueModule => {
   const connection: Redis = new Redis(deps.redisUri, {
-    db: DatabaseIDs.CrosspostQueue,
+    db: deps.queueDatabaseId,
     maxRetriesPerRequest: null,
   });
 

@@ -1,24 +1,15 @@
-import { config } from '@ap/config';
-import { channel, db, guild } from '@ap/database';
+import type { Edition } from '@ap/api-types';
+import { botPresence, channel, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { and, eq, isNull, lt, notInArray, sql } from 'drizzle-orm';
+import { and, eq, isNull, lt, max, notExists, notInArray, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
-
-/**
- * Create or update guild in DB
- * @param guildId ID of the guild
- */
-const ensureExists = async (guildId: Snowflake) => {
-  try {
-    await db.insert(guild).values({ guildId }).onConflictDoNothing();
-  } catch (error) {
-    logger.error(error);
-    throw error;
-  }
-};
+import { Discord } from './discord.js';
+import { Editions } from './editions.js';
+import { Handover } from './handover.js';
+import { isEntitledStatus, Subscriptions } from './subscriptions.js';
 
 /**
  * Get guild row from DB
@@ -59,34 +50,47 @@ const getChannels = async (guildId: Snowflake): Promise<string[]> => {
 };
 
 /**
- * Soft-delete guild (bot kicked/left): marks the row deleted, preserving all
- * channel config and cache entries so a re-invite restores everything.
- * Hard delete happens via the reconciliation purge after 30 days.
+ * Mark an edition's bot as no longer in the guild (kick/leave): guild config
+ * and cache entries are preserved so a re-invite restores everything. Hard
+ * delete happens via the reconciliation purge once no edition has an active
+ * presence for 30 days. Any pending handover is cleared: free bot gone →
+ * premium activates immediately (its latch reads the absent marker); premium
+ * bot gone → free continues unchanged.
  * @param guildId ID of the guild
+ * @param edition edition of the bot that left
  */
-const softDelete = async (guildId: Snowflake): Promise<void> => {
+const softDelete = async (guildId: Snowflake, edition: Edition): Promise<void> => {
   try {
     // Only set once — keeps the original kick time so the purge window is stable
     await db
-      .update(guild)
-      .set({ deletedAt: new Date() })
-      .where(and(eq(guild.guildId, guildId), isNull(guild.deletedAt)));
+      .update(botPresence)
+      .set({ leftAt: new Date() })
+      .where(
+        and(
+          eq(botPresence.guildId, guildId),
+          eq(botPresence.edition, edition),
+          isNull(botPresence.leftAt)
+        )
+      );
 
-    logger.debug(`Soft-deleted guild ${guildId}`);
+    await Handover.clearPending(guildId);
+
+    logger.debug(`Soft-deleted ${edition} presence for guild ${guildId}`);
   } catch (error) {
     logger.error(error);
-    throw new Error('Failed to soft-delete guild');
+    throw new Error('Failed to soft-delete guild presence');
   }
 };
 
 /**
- * Hard-delete a soft-deleted guild and all its associated channels from DB &
- * cache. Called by the reconciliation purge step only (30 days after soft
- * delete). The delete is guarded by the cutoff so a re-invite landing
- * mid-sweep wins: `registerNewGuild` clears `deletedAt`, the conditional
- * delete then matches nothing, and the restored config survives.
+ * Hard-delete a guild with no active bot presences from DB & cache (presence
+ * and channel rows cascade). Called by the reconciliation purge step only
+ * (30 days after the last bot left). The delete is guarded by the cutoff and
+ * the no-active-presence condition so a re-invite landing mid-sweep wins:
+ * `registerNewGuild` reactivates a presence, the conditional delete then
+ * matches nothing, and the restored config survives.
  * @param guildId ID of the guild
- * @param cutoff purge threshold; only rows soft-deleted before it are removed
+ * @param cutoff purge threshold; only guilds whose newest leftAt predates it are removed
  * @returns true if the guild was purged, false if it was restored mid-sweep
  */
 const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
@@ -94,9 +98,23 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
     // Channel IDs must be read before the delete — the FK cascade removes the rows
     const channelIds = await getChannels(guildId);
 
+    const noActivePresence = notExists(
+      db
+        .select({ one: sql`1` })
+        .from(botPresence)
+        .where(and(eq(botPresence.guildId, guild.guildId), isNull(botPresence.leftAt)))
+    );
+    const newestLeftAtBeforeCutoff = lt(
+      db
+        .select({ value: max(botPresence.leftAt) })
+        .from(botPresence)
+        .where(eq(botPresence.guildId, guild.guildId)),
+      cutoff
+    );
+
     const deleted = await db
       .delete(guild)
-      .where(and(eq(guild.guildId, guildId), lt(guild.deletedAt, cutoff)))
+      .where(and(eq(guild.guildId, guildId), noActivePresence, newestLeftAtBeforeCutoff))
       .returning({ guildId: guild.guildId });
 
     if (deleted.length === 0) {
@@ -104,7 +122,7 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
       return false;
     }
 
-    // Channel rows cascaded with the guild row; clear the derived Redis state
+    // Channel + presence rows cascaded with the guild row; clear derived Redis state
     if (channelIds.length > 0) {
       await Data.Channels.Cache.removeMany(channelIds);
     }
@@ -148,24 +166,75 @@ const pruneStaleChannels = async (
 };
 
 /**
- * Register guild on join (guildCreate): new guilds start migrated; a re-invited
- * guild only gets its soft delete cleared — `migratedAt` is preserved, so a
- * kicked legacy guild returns as legacy. When the live announcement-channel
- * list is provided, config for channels deleted while the bot was away is
- * pruned before the cache rebuild.
+ * Upsert a bot presence as active. A re-invite gets a fresh joinedAt; a
+ * duplicate registration while already active keeps the original one (the
+ * reconciliation join-race guard keys off joinedAt).
+ */
+const activatePresence = async (guildId: Snowflake, edition: Edition): Promise<void> => {
+  await db
+    .insert(botPresence)
+    .values({ guildId, edition, joinedAt: new Date() })
+    .onConflictDoUpdate({
+      target: [botPresence.guildId, botPresence.edition],
+      set: {
+        joinedAt: sql`CASE WHEN ${botPresence.leftAt} IS NULL THEN ${botPresence.joinedAt} ELSE now() END`,
+        leftAt: null,
+      },
+    });
+};
+
+/**
+ * Register a bot joining a guild (guildCreate): upsert the guild row (new
+ * guilds start migrated; a re-invited guild keeps its `migratedAt`, so a
+ * kicked legacy guild returns as legacy), activate the edition's presence,
+ * prune config for channels deleted while no bot was watching, and rebuild the
+ * derived cache. Then edition orchestration (ADR 0006):
+ * - premium not entitled → leave via the premium proxy (backend owns the gate)
+ * - premium while free present → mark handover pending, evaluate (may swap)
+ * - free while premium is managing → leave via the free proxy
  * @param guildId ID of the guild
+ * @param edition edition of the bot that joined
  * @param announcementChannelIds live announcement channels from the GUILD_CREATE payload
  */
 const registerNewGuild = async (
   guildId: Snowflake,
+  edition: Edition,
   announcementChannelIds?: Snowflake[]
 ): Promise<void> => {
   try {
+    if (edition === 'premium') {
+      // Entitlement gate. getByGuildId throws on DB errors (unlike isEntitled,
+      // which would swallow them into "not entitled") — a DB hiccup must
+      // surface as a 500 to the bot, never as a leave.
+      const sub = await Subscriptions.getByGuildId(guildId);
+      if (!(sub && isEntitledStatus(sub.status))) {
+        // Nothing is written — the leave triggers the premium bot's
+        // guildDelete, and there is no presence row to soft-delete
+        logger.info(`Premium bot leaving guild ${guildId}: not entitled`);
+        await Discord.leaveGuild('premium', guildId);
+        return;
+      }
+    }
+
+    // Must be read before activating our own presence
+    const freeActive =
+      edition === 'premium' ? await Editions.isPresenceActive(guildId, 'free') : false;
+
     const rows = await db
       .insert(guild)
       .values({ guildId, migratedAt: new Date() })
-      .onConflictDoUpdate({ target: guild.guildId, set: { deletedAt: null } })
+      .onConflictDoUpdate({ target: guild.guildId, set: { updatedAt: new Date() } })
       .returning({ migratedAt: guild.migratedAt });
+
+    if (edition === 'premium' && freeActive) {
+      // The marker must exist before this call returns: the premium bot's hot
+      // path holds messages behind an in-flight-registration gate until the
+      // register response lands, then latches "active" on its first
+      // absent-marker read — a marker written any later would lose the race
+      await Handover.setPending(guildId);
+    }
+
+    await activatePresence(guildId, edition);
 
     if (announcementChannelIds) {
       await pruneStaleChannels(guildId, announcementChannelIds);
@@ -174,13 +243,33 @@ const registerNewGuild = async (
     // Rebuild derived cache only for migrated guilds — a restored legacy guild
     // must stay legacy. Full sync (entries first, marker last) rather than a
     // bare marker write: a re-invited guild must get its channel entries back
-    // even if Redis lost them while the guild was soft-deleted.
+    // even if Redis lost them while the guild had no bot.
     // MIGRATION: After transition (6 months), remove the sync call
     if (rows[0]?.migratedAt) {
       await syncMigratedGuildCache(guildId);
     }
 
-    logger.debug(`Registered guild ${guildId} in DB and cache`);
+    if (edition === 'premium' && freeActive) {
+      // Gated handover: premium idles behind the marker (set above) until it
+      // can publish everywhere the free bot does; permissions may already
+      // suffice, so evaluate immediately
+      await Handover.evaluate(guildId);
+    } else if (edition === 'free' && (await Editions.getManagingEdition(guildId)) === 'premium') {
+      // Free re-invited while premium is active and managing — no permission
+      // gap concern (premium already covers); leave again immediately. The
+      // premium presence row can be stale (missed guildDelete), so confirm
+      // live membership first: never leave a guild with zero bots.
+      if (await Discord.isBotInGuild('premium', guildId)) {
+        logger.info(`Free bot leaving guild ${guildId}: premium is managing`);
+        await Discord.leaveGuild('free', guildId);
+      } else {
+        logger.warn(
+          `Free bot staying in guild ${guildId}: premium presence row is stale (reconcile will repair)`
+        );
+      }
+    }
+
+    logger.debug(`Registered ${edition} presence for guild ${guildId} in DB and cache`);
   } catch (error) {
     logger.error(error);
     throw new Error('Failed to register new guild');
@@ -231,10 +320,8 @@ const migrate = async (guildId: Snowflake, channelIds: Snowflake[]): Promise<voi
       throw createHttpError('Guild is already migrated', StatusCodes.CONFLICT);
     }
 
-    if (
-      config.limits.channelsPerGuild !== 0 &&
-      channelIds.length > config.limits.channelsPerGuild
-    ) {
+    const channelLimit = await Editions.getChannelLimit(guildId);
+    if (channelLimit !== 0 && channelIds.length > channelLimit) {
       throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST);
     }
 
@@ -244,7 +331,7 @@ const migrate = async (guildId: Snowflake, channelIds: Snowflake[]): Promise<voi
         .values({ guildId, migratedAt: new Date() })
         .onConflictDoUpdate({
           target: guild.guildId,
-          set: { migratedAt: sql`COALESCE(${guild.migratedAt}, now())`, deletedAt: null },
+          set: { migratedAt: sql`COALESCE(${guild.migratedAt}, now())` },
         });
 
       if (channelIds.length > 0) {
@@ -301,7 +388,6 @@ const getChannelRecords = async (guildId: Snowflake) => {
 };
 
 export const Guilds = {
-  ensureExists,
   find,
   getChannels,
   getChannelRecords,

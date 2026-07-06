@@ -1,6 +1,6 @@
 'use client';
 
-import { Hash, Loader2, Megaphone } from 'lucide-react';
+import { Hash, Hourglass, Loader2, Megaphone, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
@@ -9,17 +9,52 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
-import type { Edition, GuildChannel } from '@/lib/api/types';
+import type { GuildChannel } from '@/lib/api/types';
 
 interface ChannelConfigProps {
-  edition: Edition;
   guildId: string;
   channels: GuildChannel[];
   hasSubscription: boolean;
-  /** Max enabled channels for this backend's plan; 0 = unlimited */
+  /** Max enabled channels for the guild's managing edition; 0 = unlimited */
   channelLimit: number;
   /** MIGRATION: false = legacy guild. Removed at sunset. */
   migrated: boolean;
+  /** Premium handover pending: free bot still publishes until the premium bot's permissions pass */
+  premiumPending: boolean;
+}
+
+/** Banner shown while the premium bot waits for permissions before taking over */
+function PremiumPendingBanner({ channels }: { channels: GuildChannel[] }) {
+  const blockedCount = channels.filter(c => c.premiumBotHasPermissions === false).length;
+
+  return (
+    <Card className="bg-purple-500/10 border-purple-500/30 p-6">
+      <div className="flex items-start gap-4">
+        <Hourglass className="w-6 h-6 text-purple-400 shrink-0 mt-1" />
+        <div className="flex-1">
+          <h3 className="text-white text-lg mb-1">Premium bot is waiting to take over</h3>
+          <p className="text-slate-300 text-sm">
+            The free bot keeps publishing until the Premium bot can publish in every configured
+            channel — permissions don&apos;t transfer between bots.{' '}
+            {blockedCount > 0
+              ? `Grant the Premium bot access to the ${blockedCount} flagged channel${blockedCount !== 1 ? 's' : ''} below to complete the switch.`
+              : 'The switch completes automatically within moments.'}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/** Warning badge for channels the premium bot cannot publish in yet */
+function PremiumBlockedBadge({ channel }: { channel: GuildChannel }) {
+  if (channel.premiumBotHasPermissions !== false) return null;
+  return (
+    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
+      <TriangleAlert className="w-3 h-3 mr-1" />
+      Premium bot needs access
+    </Badge>
+  );
 }
 
 /**
@@ -27,15 +62,15 @@ interface ChannelConfigProps {
  * Remove after migration period (6 months).
  */
 function LegacyChannelView({
-  edition,
   guildId,
   channels,
   channelLimit,
+  premiumPending,
 }: {
-  edition: Edition;
   guildId: string;
   channels: GuildChannel[];
   channelLimit: number;
+  premiumPending: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const limit = channelLimit === 0 ? null : channelLimit;
@@ -46,6 +81,8 @@ function LegacyChannelView({
         <h2 className="text-2xl text-white mb-2">Channel Configuration</h2>
         <p className="text-slate-400">Manage Auto Publisher for your announcement channels</p>
       </div>
+
+      {premiumPending && <PremiumPendingBanner channels={channels} />}
 
       <Card className="bg-amber-500/10 border-amber-500/30 p-6">
         <div className="flex items-start gap-4">
@@ -82,6 +119,7 @@ function LegacyChannelView({
                     Missing permissions
                   </Badge>
                 )}
+                <PremiumBlockedBadge channel={channel} />
               </div>
               <Switch checked={!!channel.canPublish} disabled />
             </div>
@@ -101,7 +139,6 @@ function LegacyChannelView({
 
       {modalOpen && (
         <LegacyMigrateModal
-          edition={edition}
           guildId={guildId}
           channels={channels}
           limit={limit}
@@ -113,12 +150,12 @@ function LegacyChannelView({
 }
 
 export function ChannelConfig({
-  edition,
   guildId,
   channels,
   hasSubscription,
   channelLimit,
   migrated,
+  premiumPending,
 }: ChannelConfigProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -127,10 +164,10 @@ export function ChannelConfig({
   if (!migrated) {
     return (
       <LegacyChannelView
-        edition={edition}
         guildId={guildId}
         channels={channels}
         channelLimit={channelLimit}
+        premiumPending={premiumPending}
       />
     );
   }
@@ -139,9 +176,9 @@ export function ChannelConfig({
     startTransition(async () => {
       try {
         if (enabled) {
-          await disableChannel(edition, guildId, channelId);
+          await disableChannel(guildId, channelId);
         } else {
-          await enableChannel(edition, guildId, channelId);
+          await enableChannel(guildId, channelId);
         }
       } finally {
         router.refresh();
@@ -162,6 +199,8 @@ export function ChannelConfig({
         </p>
       </div>
 
+      {premiumPending && <PremiumPendingBanner channels={channels} />}
+
       <div className="space-y-3">
         {enabledChannels.map(channel => (
           <Card key={channel.channelId} className="bg-slate-900/50 border-slate-800 p-6">
@@ -176,6 +215,7 @@ export function ChannelConfig({
                     {channel.filters.length !== 1 && 's'}
                   </Badge>
                 )}
+                <PremiumBlockedBadge channel={channel} />
               </div>
               <div className="flex items-center gap-2">
                 {isPending && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
@@ -194,6 +234,7 @@ export function ChannelConfig({
               <div className="flex items-center gap-3">
                 <Hash className="w-5 h-5 text-slate-600" />
                 <span className="text-slate-400 text-lg">{channel.name}</span>
+                <PremiumBlockedBadge channel={channel} />
               </div>
               <div className="flex items-center gap-2">
                 {isPending && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}

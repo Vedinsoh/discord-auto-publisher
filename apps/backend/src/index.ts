@@ -1,4 +1,4 @@
-import { config, env } from '@ap/config';
+import { env } from '@ap/config';
 import { runMigrations } from '@ap/database';
 import {
   createApiRateLimit,
@@ -23,10 +23,8 @@ const app = express();
 // Request logger (applies to all routes)
 app.use(...createRequestLogger(env.isDevelopment));
 
-// Paddle webhook route (premium only, needs raw body BEFORE express.json())
-if (config.isPremiumInstance) {
-  app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
-}
+// Paddle webhook route (needs raw body BEFORE express.json())
+app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
 
 // JSON parser for all remaining routes
 app.use(express.json());
@@ -53,11 +51,6 @@ app.use(
   App.Routes.Api.GuildApi
 );
 
-// Internal API routes (Docker-internal, no auth, premium only)
-if (config.isPremiumInstance) {
-  app.use('/api/internal', App.Routes.Api.SubscriptionStatus);
-}
-
 // Error handlers
 app.use(...createErrorHandler());
 
@@ -77,10 +70,8 @@ const server = app.listen('8080', async () => {
 // subscription reconcile so its bot-present backstop reads fresh presence)
 startGuildReconcile();
 
-// Start subscription reconcile cron (premium only)
-if (config.isPremiumInstance) {
-  startSubscriptionReconcile();
-}
+// Start subscription reconcile cron
+startSubscriptionReconcile();
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {

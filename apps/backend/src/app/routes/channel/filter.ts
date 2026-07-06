@@ -1,10 +1,4 @@
-import {
-  type APIResponse,
-  requirePremium,
-  StatusCodes,
-  sendErrorResponse,
-  validateRequest,
-} from '@ap/express';
+import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import type { CreateFilter } from '@ap/validations';
 import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
@@ -17,9 +11,6 @@ import {
 
 export const Filter: Router = (() => {
   const router = express.Router({ mergeParams: true });
-
-  // All filter routes require premium
-  router.use(requirePremium);
 
   /**
    * Get filters for channel

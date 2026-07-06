@@ -1,4 +1,4 @@
-import { env } from '@ap/config';
+import { config } from '@ap/config';
 import { SapphireClient } from '@sapphire/framework';
 import { ClusterClient } from './clusterClient.js';
 
@@ -9,7 +9,7 @@ export class BotClient extends SapphireClient {
    * Start the bot client shard
    */
   start() {
-    this.login(env.DISCORD_TOKEN);
+    this.login(config.discordToken);
   }
 }
 

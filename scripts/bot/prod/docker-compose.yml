@@ -1,5 +1,29 @@
 name: auto-publisher
 
+x-prod-logging: &prod-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-proxy-resources: &proxy-resources
+  resources:
+    limits:
+      memory: 768M
+      cpus: '0.75'
+    reservations:
+      memory: 384M
+      cpus: '0.375'
+
+x-bot-resources: &bot-resources
+  resources:
+    limits:
+      memory: 1G
+      cpus: '1.0'
+    reservations:
+      memory: 512M
+      cpus: '0.5'
+
 services:
   redis:
     command: >
@@ -11,43 +35,35 @@ services:
       --save 900 1
       --save 300 10
       --save 60 10000
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *prod-logging
 
-  proxy:
+  proxy-free:
+    env_file:
+      - ../../.env.production
+    environment:
+      - APP_EDITION=free
+      - NODE_ENV=production
+      - LOGGER_LEVEL=info
+    logging: *prod-logging
+    deploy: *proxy-resources
+
+  proxy-premium:
+    env_file:
+      - ../../.env.production
+    environment:
+      - APP_EDITION=premium
+      - NODE_ENV=production
+      - LOGGER_LEVEL=info
+    logging: *prod-logging
+    deploy: *proxy-resources
+
+  backend:
     env_file:
       - ../../.env.production
     environment:
       - NODE_ENV=production
       - LOGGER_LEVEL=info
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          memory: 768M
-          cpus: '0.75'
-        reservations:
-          memory: 384M
-          cpus: '0.375'
-
-  backend :
-    env_file:
-      - ../../.env.production
-    environment:
-      - NODE_ENV=production
-      - LOGGER_LEVEL=info
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    logging: *prod-logging
     deploy:
       resources:
         limits:
@@ -57,22 +73,22 @@ services:
           memory: 256M
           cpus: '0.25'
 
-  bot:
+  bot-free:
     env_file:
       - ../../.env.production
     environment:
+      - APP_EDITION=free
       - NODE_ENV=production
       - LOGGER_LEVEL=info
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
-          memory: 512M
-          cpus: '0.5'
+    logging: *prod-logging
+    deploy: *bot-resources
+
+  bot-premium:
+    env_file:
+      - ../../.env.production
+    environment:
+      - APP_EDITION=premium
+      - NODE_ENV=production
+      - LOGGER_LEVEL=info
+    logging: *prod-logging
+    deploy: *bot-resources

@@ -1,9 +1,66 @@
 {
-  "id": "0c5ad8b1-0958-4199-b62a-51bda4b62fa2",
+  "id": "a053abcf-a6d2-41a0-969e-b9a125d286fc",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.bot_presence": {
+      "name": "bot_presence",
+      "schema": "",
+      "columns": {
+        "guild_id": {
+          "name": "guild_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "edition": {
+          "name": "edition",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "left_at": {
+          "name": "left_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "bot_presence_guild_id_guild_guild_id_fk": {
+          "name": "bot_presence_guild_id_guild_guild_id_fk",
+          "tableFrom": "bot_presence",
+          "tableTo": "guild",
+          "columnsFrom": ["guild_id"],
+          "columnsTo": ["guild_id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "bot_presence_guild_id_edition_pk": {
+          "name": "bot_presence_guild_id_edition_pk",
+          "columns": ["guild_id", "edition"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "bot_presence_edition_check": {
+          "name": "bot_presence_edition_check",
+          "value": "\"bot_presence\".\"edition\" IN ('free', 'premium')"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.channel": {
       "name": "channel",
       "schema": "",
@@ -95,12 +152,6 @@
         },
         "migrated_at": {
           "name": "migrated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_at": {
-          "name": "deleted_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

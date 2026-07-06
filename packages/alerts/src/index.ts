@@ -23,9 +23,12 @@ export type Alerter = {
 export const createAlerter = (options: {
   redis: RedisClient;
   service: string;
+  /** Edition suffix for the footer (per-edition apps only; backend omits it) */
+  edition?: string;
   logger?: Logger;
 }): Alerter => {
-  const { redis, service, logger } = options;
+  const { redis, service, edition, logger } = options;
+  const footerText = edition ? `${service} · ${edition}` : service;
   const webhookUrl = env.ALERT_WEBHOOK_URL;
 
   if (!webhookUrl) {
@@ -56,7 +59,7 @@ export const createAlerter = (options: {
                 description: alert.description,
                 color: EMBED_COLOR,
                 timestamp: new Date().toISOString(),
-                footer: { text: `${service} · ${env.APP_EDITION}` },
+                footer: { text: footerText },
               },
             ],
           }),

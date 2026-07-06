@@ -1,20 +1,13 @@
 import type { Subscription } from '@ap/database';
-import { Routes } from 'discord-api-types/v10';
-import { Discord } from 'services/discord.js';
-import { isEntitledStatus } from 'services/subscriptions.js';
-import { logger } from 'utils/logger.js';
+import { Discord } from './discord.js';
+import { isEntitledStatus } from './subscriptions.js';
 
 /**
  * Makes the premium bot leave a guild that lost its entitlement.
  * Idempotent: bot may already be gone (kick, guild deleted).
  */
 const revokePremiumAccess = async (guildId: string): Promise<void> => {
-  try {
-    await Discord.rest.delete(Routes.userGuild(guildId));
-    logger.info(`Left guild ${guildId} (entitlement revoked)`);
-  } catch (error) {
-    logger.debug(error, `Could not leave guild ${guildId}`);
-  }
+  await Discord.leaveGuild('premium', guildId);
 };
 
 /**
