@@ -1,5 +1,9 @@
 import { type APIResponse, StatusCodes, validateRequest } from '@ap/express';
 import { isGuildReconcileInFlight, runGuildReconcile } from 'cron/guildReconcile.js';
+import {
+  isSubscriptionReconcileInFlight,
+  runSubscriptionReconcile,
+} from 'cron/subscriptionReconcile.js';
 import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
@@ -46,6 +50,29 @@ export const Internal: Router = (() => {
     res.status(StatusCodes.ACCEPTED).json({
       status: StatusCodes.ACCEPTED,
       message: 'Guild reconcile started',
+    } as APIResponse);
+  });
+
+  /**
+   * POST /internal/reconcile/subscriptions
+   * Manually trigger the subscription reconcile against the Paddle API
+   * (Docker-internal). 409 if a run is already in flight, otherwise 202 +
+   * async run.
+   */
+  router.post('/reconcile/subscriptions', (_req, res) => {
+    if (isSubscriptionReconcileInFlight()) {
+      res.status(StatusCodes.CONFLICT).json({
+        status: StatusCodes.CONFLICT,
+        message: 'Subscription reconcile already in flight',
+      } as APIResponse);
+      return;
+    }
+
+    void runSubscriptionReconcile();
+
+    res.status(StatusCodes.ACCEPTED).json({
+      status: StatusCodes.ACCEPTED,
+      message: 'Subscription reconcile started',
     } as APIResponse);
   });
 
