@@ -90,8 +90,10 @@ function LegacyChannelView({
           <div className="flex-1">
             <h3 className="text-white text-lg mb-1">This server runs in legacy mode</h3>
             <p className="text-slate-300 text-sm mb-4">
-              Every announcement channel is published automatically. Switch to the new system to
-              choose exactly which channels publish and unlock filters.
+              Every announcement channel is published automatically. Legacy mode will be
+              discontinued in the near future, and the bot may stop publishing in this server once
+              it is retired. Migrate now to keep publishing without interruption, choose exactly
+              which channels publish, and unlock new features.
             </p>
             <Button
               onClick={() => setModalOpen(true)}
