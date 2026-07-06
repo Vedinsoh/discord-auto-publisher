@@ -67,19 +67,6 @@ const createPortalSession = async (
 };
 
 /**
- * Fetches a Paddle customer's email (used to populate the local mapping).
- */
-const getCustomerEmail = async (paddleCustomerId: string): Promise<string | undefined> => {
-  try {
-    const customer = await ensurePaddle().customers.get(paddleCustomerId);
-    return customer.email ?? undefined;
-  } catch (error) {
-    logger.warn(error, `Failed to fetch Paddle customer ${paddleCustomerId}`);
-    return undefined;
-  }
-};
-
-/**
  * Iterates all subscriptions in Paddle (all statuses) — reconciliation cron input.
  */
 async function* listAllSubscriptions(): AsyncGenerator<PaddleSubscription> {
@@ -99,7 +86,6 @@ const unmarshalWebhook = (rawBody: string, signature: string): Promise<EventEnti
 export const PaddleService = {
   createCheckoutTransaction,
   createPortalSession,
-  getCustomerEmail,
   listAllSubscriptions,
 };
 

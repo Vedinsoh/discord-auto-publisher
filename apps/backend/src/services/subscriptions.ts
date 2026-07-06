@@ -1,5 +1,5 @@
 import { botPresence, db, type Subscription, subscription } from '@ap/database';
-import { and, eq, isNull, notInArray } from 'drizzle-orm';
+import { and, desc, eq, isNull, notInArray } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -104,6 +104,28 @@ const getByPaddleSubscriptionId = async (
   } catch (error) {
     logger.error(error);
     throw new Error('Failed to retrieve subscription by paddleSubscriptionId');
+  }
+};
+
+/**
+ * Newest subscription (any status) bought by a Discord user — checkout uses its
+ * paddleCustomerId to reuse the Paddle customer instead of creating a duplicate.
+ * Rows survive guild purges (no FK), so the mapping never expires.
+ */
+const getLatestBySubscriberDiscordUserId = async (
+  discordUserId: string
+): Promise<Subscription | undefined> => {
+  try {
+    const [row] = await db
+      .select()
+      .from(subscription)
+      .where(eq(subscription.subscriberDiscordUserId, discordUserId))
+      .orderBy(desc(subscription.createdAt))
+      .limit(1);
+    return row;
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to retrieve subscription by subscriberDiscordUserId');
   }
 };
 
@@ -227,6 +249,7 @@ const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
 export const Subscriptions = {
   getByGuildId,
   getByPaddleSubscriptionId,
+  getLatestBySubscriberDiscordUserId,
   applyPaddleSubscription,
   isEntitled,
   getRevokedWithBotPresent,

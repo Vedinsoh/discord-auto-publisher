@@ -89,7 +89,7 @@ export const Webhooks: Router = (() => {
 
     try {
       if (SUBSCRIPTION_EVENTS.has(event.eventType)) {
-        await handleSubscriptionEvent(event.eventType, event.data as PaddleSubscriptionState);
+        await handleSubscriptionEvent(event.data as PaddleSubscriptionState);
       } else {
         logger.debug(`Unhandled Paddle event: ${event.eventType}`);
       }
@@ -113,25 +113,10 @@ export const Webhooks: Router = (() => {
   return router;
 })();
 
-async function handleSubscriptionEvent(
-  eventType: string,
-  sub: PaddleSubscriptionState
-): Promise<void> {
+async function handleSubscriptionEvent(sub: PaddleSubscriptionState): Promise<void> {
   const { previous, current, skipped } = await Services.Subscriptions.applyPaddleSubscription(sub);
 
   if (skipped) return;
-
-  // Keep the Discord user ↔ Paddle customer mapping fresh (portal sessions, customer reuse)
-  if (
-    eventType === EventName.SubscriptionCreated ||
-    eventType === EventName.SubscriptionActivated
-  ) {
-    const discordUserId = current?.subscriberDiscordUserId;
-    if (discordUserId) {
-      const email = await Services.Paddle.getCustomerEmail(sub.customerId);
-      await Services.PaddleCustomers.upsert(discordUserId, sub.customerId, email);
-    }
-  }
 
   // Entitled → not-entitled: premium bot leaves the guild immediately
   await Services.Entitlements.enforceTransition(previous, current);

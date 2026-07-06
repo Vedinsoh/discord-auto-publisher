@@ -346,15 +346,15 @@ export const GuildApi: Router = (() => {
           return;
         }
 
-        // Reuse the Paddle customer if this Discord user already has one;
-        // otherwise the checkout collects email and creates the customer.
-        const existingCustomer = await Services.PaddleCustomers.getByDiscordUserId(userId);
+        // Reuse the Paddle customer from the user's newest subscription (any
+        // guild); otherwise the checkout collects email and creates the customer.
+        const latestSub = await Services.Subscriptions.getLatestBySubscriberDiscordUserId(userId);
 
         const result = await Services.Paddle.createCheckoutTransaction({
           discordGuildId: guildId,
           discordUserId: userId,
           priceId,
-          paddleCustomerId: existingCustomer?.paddleCustomerId,
+          paddleCustomerId: latestSub?.paddleCustomerId,
         });
 
         res.status(StatusCodes.OK).json({

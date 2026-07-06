@@ -7,7 +7,6 @@ import { Handover } from './handover.js';
 import { Info } from './info.js';
 import { LegacyPerms } from './legacyPerms.js';
 import { PaddleService } from './paddle.js';
-import { PaddleCustomers } from './paddleCustomers.js';
 import { PresenceHeal } from './presenceHeal.js';
 import { Subscriptions } from './subscriptions.js';
 
@@ -21,7 +20,6 @@ export const Services = {
   Info,
   LegacyPerms,
   Paddle: PaddleService,
-  PaddleCustomers,
   PresenceHeal,
   Subscriptions,
 };

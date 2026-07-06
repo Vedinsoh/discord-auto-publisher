@@ -1,5 +1,5 @@
 {
-  "id": "a053abcf-a6d2-41a0-969e-b9a125d286fc",
+  "id": "f18830ac-a654-46c5-b3d5-d794d8d09809",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -175,69 +175,6 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.paddle_customer": {
-      "name": "paddle_customer",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "discord_user_id": {
-          "name": "discord_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "paddle_customer_id": {
-          "name": "paddle_customer_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "paddle_customer_discord_user_id_unique": {
-          "name": "paddle_customer_discord_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["discord_user_id"]
-        },
-        "paddle_customer_paddle_customer_id_unique": {
-          "name": "paddle_customer_paddle_customer_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["paddle_customer_id"]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -23,17 +23,6 @@ CREATE TABLE "guild" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "paddle_customer" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"discord_user_id" text NOT NULL,
-	"paddle_customer_id" text NOT NULL,
-	"email" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "paddle_customer_discord_user_id_unique" UNIQUE("discord_user_id"),
-	CONSTRAINT "paddle_customer_paddle_customer_id_unique" UNIQUE("paddle_customer_id")
-);
---> statement-breakpoint
 CREATE TABLE "subscription" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"guild_id" text NOT NULL,

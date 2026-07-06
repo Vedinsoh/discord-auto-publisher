@@ -109,23 +109,9 @@ export const subscription = pgTable('subscription', {
     .$onUpdateFn(() => new Date()),
 });
 
-export const paddleCustomer = pgTable('paddle_customer', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  discordUserId: text('discord_user_id').unique().notNull(),
-  paddleCustomerId: text('paddle_customer_id').unique().notNull(),
-  email: text('email'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .defaultNow()
-    .notNull()
-    .$onUpdateFn(() => new Date()),
-});
-
 export type Guild = typeof guild.$inferSelect;
 export type Channel = typeof channel.$inferSelect;
 export type BotPresence = typeof botPresence.$inferSelect;
 export type NewBotPresence = typeof botPresence.$inferInsert;
 export type Subscription = typeof subscription.$inferSelect;
 export type NewSubscription = typeof subscription.$inferInsert;
-export type PaddleCustomer = typeof paddleCustomer.$inferSelect;
-export type NewPaddleCustomer = typeof paddleCustomer.$inferInsert;

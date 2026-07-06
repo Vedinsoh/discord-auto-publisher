@@ -204,14 +204,6 @@ subscription {
   billingInterval (text: 'month' | 'year')
   currentPeriodEndsAt, scheduledChangeAction, scheduledChangeAt, canceledAt, createdAt, updatedAt
 }
-
-paddle_customer {
-  id (uuid, pk)
-  discordUserId (text, unique)
-  paddleCustomerId (text, unique)
-  email (text)
-  createdAt, updatedAt
-}
 ```
 
 **Supabase setup**:
