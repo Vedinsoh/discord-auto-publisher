@@ -14,7 +14,21 @@ import {
   SubscriptionCheckoutReqSchema,
 } from 'utils/validations.js';
 
-/** Announcement channels of a guild, fetched through an edition's proxy */
+/** Ascending snowflake compare (ids vary in length, so compare numerically) */
+const compareSnowflakes = (a: string, b: string): number => {
+  const bigA = BigInt(a);
+  const bigB = BigInt(b);
+  return bigA < bigB ? -1 : bigA > bigB ? 1 : 0;
+};
+
+/**
+ * Announcement channels of a guild, in Discord sidebar order, fetched through
+ * an edition's proxy. Discord's REST list is unordered and `position` is scoped
+ * per category, so we reproduce the sidebar: uncategorized channels first, then
+ * categories by their position, channels within a category by their position,
+ * ties broken by snowflake id ascending (Discord's own tiebreak). Category
+ * positions are read from the full list before it is filtered down.
+ */
 const fetchAnnouncementChannels = async (
   edition: Edition,
   guildId: string
@@ -22,7 +36,27 @@ const fetchAnnouncementChannels = async (
   const channels = (await Discord.restFor(edition).get(
     Routes.guildChannels(guildId)
   )) as APIChannel[];
-  return channels.filter(c => c.type === ChannelType.GuildAnnouncement);
+
+  const categoryPositions = new Map<string, number>();
+  for (const c of channels) {
+    if (c.type === ChannelType.GuildCategory) categoryPositions.set(c.id, c.position ?? 0);
+  }
+
+  // Uncategorized (and orphaned-parent) channels rank above every category.
+  const groupRank = (c: APIChannel): number => {
+    const parentId = 'parent_id' in c ? c.parent_id : null;
+    const categoryPosition = parentId != null ? categoryPositions.get(parentId) : undefined;
+    return categoryPosition ?? -1;
+  };
+
+  return channels
+    .filter(c => c.type === ChannelType.GuildAnnouncement)
+    .sort(
+      (a, b) =>
+        groupRank(a) - groupRank(b) ||
+        (a.position ?? 0) - (b.position ?? 0) ||
+        compareSnowflakes(a.id, b.id)
+    );
 };
 
 export const GuildApi: Router = (() => {
