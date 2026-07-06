@@ -36,6 +36,16 @@ export const GuildApi: Router = (() => {
     const { guildId } = req.params;
 
     try {
+      // Self-heal before reading presence-derived state — the invite-return
+      // refresh lands here, and re-authorizing an already-present bot fires no
+      // gateway event, so a missing row would otherwise stick until the
+      // nightly reconcile
+      const activeEditions = await Services.Editions.getActiveEditions(guildId);
+      const absentEditions = (['free', 'premium'] as Edition[]).filter(e => !activeEditions.has(e));
+      if (absentEditions.length > 0) {
+        await Services.PresenceHeal.healAbsentEditions(guildId, absentEditions);
+      }
+
       const managingEdition = await Services.Editions.getManagingEdition(guildId);
 
       const [channelRecords, announcementChannels, guildRow, sub, premiumPending] =

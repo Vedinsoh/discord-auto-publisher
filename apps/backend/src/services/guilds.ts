@@ -104,12 +104,14 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
         .from(botPresence)
         .where(and(eq(botPresence.guildId, guild.guildId), isNull(botPresence.leftAt)))
     );
+    // ISO string, not the Date: subquery/aggregate comparisons drop the
+    // column's param mapper, so a raw Date reaches the driver and throws
     const newestLeftAtBeforeCutoff = lt(
       db
         .select({ value: max(botPresence.leftAt) })
         .from(botPresence)
         .where(eq(botPresence.guildId, guild.guildId)),
-      cutoff
+      cutoff.toISOString()
     );
 
     const deleted = await db
@@ -393,6 +395,7 @@ export const Guilds = {
   getChannelRecords,
   softDelete,
   purge,
+  activatePresence,
   registerNewGuild,
   migrate,
   syncMigratedGuildCache,

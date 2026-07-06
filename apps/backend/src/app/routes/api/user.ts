@@ -1,9 +1,11 @@
+import type { Edition } from '@ap/api-types';
 import { botPresence, db, guild, subscription } from '@ap/database';
 import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
 import { Keys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import { and, inArray, isNull } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
+import { Services } from 'services/index.js';
 import { isEntitledStatus } from 'services/subscriptions.js';
 
 const MANAGE_GUILD = BigInt(0x20);
@@ -74,6 +76,23 @@ export const User: Router = (() => {
       const freeGuildIds = new Set(presences.filter(p => p.edition === 'free').map(p => p.guildId));
       const premiumGuildIds = new Set(
         presences.filter(p => p.edition === 'premium').map(p => p.guildId)
+      );
+
+      // Self-heal presences the event path cannot repair (re-auth of an
+      // already-present bot fires no gateway event; rows lost to DB resets) —
+      // the invite-return refresh must show the bot immediately, not after the
+      // nightly reconcile
+      await Promise.all(
+        managedGuilds.map(async g => {
+          const absentEditions: Edition[] = [];
+          if (!freeGuildIds.has(g.id)) absentEditions.push('free');
+          if (!premiumGuildIds.has(g.id)) absentEditions.push('premium');
+          if (absentEditions.length === 0) return;
+
+          const healed = await Services.PresenceHeal.healAbsentEditions(g.id, absentEditions);
+          if (healed.has('free')) freeGuildIds.add(g.id);
+          if (healed.has('premium')) premiumGuildIds.add(g.id);
+        })
       );
 
       // MIGRATION: Remove after migration period (6 months)

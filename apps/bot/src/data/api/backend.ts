@@ -1,14 +1,48 @@
 import { env } from '@ap/config';
+import { secToMs, sleep } from '@ap/utils';
 import type { CreateFilter, FilterMatchMode } from '@ap/validations';
 import { RequestMethod, type Snowflake } from 'discord.js';
+import { logger } from 'utils/logger.js';
 
 const baseUrl = 'http://backend:8080';
 // The single backend tracks presence per edition — every guild lifecycle call carries ours
 const edition = env.APP_EDITION;
 
+const request = async (path: string, init?: RequestInit): Promise<Response> => {
+  const response = await fetch(`${baseUrl}${path}`, init);
+  if (!response.ok) {
+    // Surface backend rejections — swallowed, a failed registration is
+    // indistinguishable from success (bot in guild, dashboard says absent)
+    logger.warn(
+      `Backend request failed: ${init?.method ?? RequestMethod.Get} ${path} → ${response.status}`
+    );
+  }
+  return response;
+};
+
+const LIFECYCLE_RETRY_ATTEMPTS = 3;
+
+// Guild lifecycle events are one-shot — Discord never re-emits a missed join
+// or leave, and a lost call means wrong presence until the next reconcile
+// sweep — so transient failures (network, 5xx) are retried before giving up
+const lifecycleRequest = async (path: string, init: RequestInit): Promise<Response> => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const response = await request(path, init);
+      if (response.ok || response.status < 500 || attempt >= LIFECYCLE_RETRY_ATTEMPTS) {
+        return response;
+      }
+    } catch (error) {
+      if (attempt >= LIFECYCLE_RETRY_ATTEMPTS) throw error;
+      logger.warn(error, `Backend request errored: ${init.method} ${path} (attempt ${attempt})`);
+    }
+    await sleep(secToMs(2 * attempt));
+  }
+};
+
 // Channels
 const addChannel = async (guildId: Snowflake, channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${channelId}`, {
+  return request(`/channel/${channelId}`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
@@ -18,26 +52,26 @@ const addChannel = async (guildId: Snowflake, channelId: Snowflake) => {
 };
 
 const removeChannel = async (channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${channelId}`, {
+  return request(`/channel/${channelId}`, {
     method: RequestMethod.Delete,
   });
 };
 
 const getChannel = async (channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${channelId}`, {
+  return request(`/channel/${channelId}`, {
     method: RequestMethod.Get,
   });
 };
 
 // Guilds
 const getGuildChannels = async (guildId: Snowflake) => {
-  return fetch(`${baseUrl}/guild/${guildId}/channels`, {
+  return request(`/guild/${guildId}/channels`, {
     method: RequestMethod.Get,
   });
 };
 
 const deleteGuild = async (guildId: Snowflake) => {
-  return fetch(`${baseUrl}/guild/${guildId}`, {
+  return lifecycleRequest(`/guild/${guildId}`, {
     method: RequestMethod.Delete,
     headers: {
       'Content-Type': 'application/json',
@@ -51,7 +85,7 @@ const deleteGuild = async (guildId: Snowflake) => {
 // derived cache; the backend runs the join orchestration (entitlement gate,
 // premium handover, free leave while premium manages)
 const registerNewGuild = async (guildId: Snowflake, announcementChannelIds: Snowflake[]) => {
-  return fetch(`${baseUrl}/guild/${guildId}/new`, {
+  return lifecycleRequest(`/guild/${guildId}/new`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
@@ -63,19 +97,19 @@ const registerNewGuild = async (guildId: Snowflake, announcementChannelIds: Snow
 // Permission-change ping while a premium handover is pending — the backend
 // re-evaluates the premium bot's effective permissions and swaps when all pass
 const pingHandoverEvaluate = async (guildId: Snowflake) => {
-  return fetch(`${baseUrl}/internal/handover/${guildId}/evaluate`, {
+  return request(`/internal/handover/${guildId}/evaluate`, {
     method: RequestMethod.Post,
   });
 };
 
 // Info
 const getInfo = async () => {
-  return fetch(`${baseUrl}/info`);
+  return request('/info');
 };
 
 // Filters
 const addFilter = async (channelId: Snowflake, filterData: CreateFilter) => {
-  return fetch(`${baseUrl}/channel/${channelId}/filter`, {
+  return request(`/channel/${channelId}/filter`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
@@ -85,19 +119,19 @@ const addFilter = async (channelId: Snowflake, filterData: CreateFilter) => {
 };
 
 const removeFilter = async (channelId: Snowflake, filterId: string) => {
-  return fetch(`${baseUrl}/channel/${channelId}/filter/${filterId}`, {
+  return request(`/channel/${channelId}/filter/${filterId}`, {
     method: RequestMethod.Delete,
   });
 };
 
 const getFilters = async (channelId: Snowflake) => {
-  return fetch(`${baseUrl}/channel/${channelId}/filter`, {
+  return request(`/channel/${channelId}/filter`, {
     method: RequestMethod.Get,
   });
 };
 
 const updateFilter = async (channelId: Snowflake, filterId: string, filterData: CreateFilter) => {
-  return fetch(`${baseUrl}/channel/${channelId}/filter/${filterId}`, {
+  return request(`/channel/${channelId}/filter/${filterId}`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
@@ -107,7 +141,7 @@ const updateFilter = async (channelId: Snowflake, filterId: string, filterData: 
 };
 
 const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode) => {
-  return fetch(`${baseUrl}/channel/${channelId}/filter-mode`, {
+  return request(`/channel/${channelId}/filter-mode`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',

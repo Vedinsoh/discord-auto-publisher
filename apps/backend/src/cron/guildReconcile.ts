@@ -5,10 +5,10 @@ import { CronJob } from 'cron';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-types/v10';
-import { and, countDistinct, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, countDistinct, eq, inArray, isNull, lt, max, sql } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
-import { isEntitledStatus } from 'services/subscriptions.js';
+import { applyJoinRails } from 'services/joinRails.js';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -176,63 +176,6 @@ const getDualActiveGuildIds = async (): Promise<Snowflake[]> => {
 };
 
 /**
- * Join-decision rails for guilds whose register call the backend never saw
- * (missed guildCreate) — the same orchestration `registerNewGuild` runs, but
- * evaluated on RECONCILED presence rows only, after both sweeps:
- * - premium present with an existing not-entitled subscription → leave via
- *   premium proxy. A MISSING subscription row is deliberately not grounds to
- *   leave here: after a DB reset this sweep runs before the subscription
- *   reconcile has repopulated rows from Paddle, and kicking every premium
- *   guild would be catastrophic — the 04:00 revocation backstop owns that.
- * - both bots present without a marker → set the handover marker (premium
- *   idles; its stale in-memory latch, if any, resets on evaluate-swap or bot
- *   restart) and evaluate when entitlement is confirmed.
- * - free present while premium manages → leave via free proxy.
- */
-const applyJoinRails = async (guildIds: Set<Snowflake>): Promise<void> => {
-  for (const guildId of guildIds) {
-    try {
-      const active = await Services.Editions.getActiveEditions(guildId);
-
-      if (active.has('premium')) {
-        // getByGuildId throws on DB errors — never treat an error as "not entitled"
-        const sub = await Services.Subscriptions.getByGuildId(guildId);
-
-        if (sub && !isEntitledStatus(sub.status)) {
-          logger.info(`Guild reconcile: premium bot leaving guild ${guildId} (not entitled)`);
-          await Discord.leaveGuild('premium', guildId);
-          continue;
-        }
-
-        if (active.has('free')) {
-          if (!(await Services.Handover.isPending(guildId))) {
-            logger.info(`Guild reconcile: restoring handover marker for guild ${guildId}`);
-            await Services.Handover.setPending(guildId);
-          }
-          if (sub) {
-            await Services.Handover.evaluate(guildId);
-          }
-          continue;
-        }
-      }
-
-      if (
-        active.has('free') &&
-        (await Services.Editions.getManagingEdition(guildId)) === 'premium' &&
-        // Belt and braces on top of the reconciled rows: never evict the free
-        // bot unless the premium bot's membership is confirmed live
-        (await Discord.isBotInGuild('premium', guildId))
-      ) {
-        logger.info(`Guild reconcile: free bot leaving guild ${guildId} (premium is managing)`);
-        await Discord.leaveGuild('free', guildId);
-      }
-    } catch (error) {
-      logger.warn(error, `Guild reconcile: join-rail check failed for guild ${guildId}`);
-    }
-  }
-};
-
-/**
  * Backstop for handover markers (missed events, crashed swaps): a marker is
  * only valid while BOTH presences are active — otherwise clear it. Valid
  * pending guilds are re-evaluated, so a handover whose permission-change ping
@@ -278,7 +221,12 @@ const purgeAbandonedGuilds = async (): Promise<void> => {
     .from(botPresence)
     .groupBy(botPresence.guildId)
     .having(
-      sql`BOOL_OR(${botPresence.leftAt} IS NULL) = false AND MAX(${botPresence.leftAt}) < ${purgeCutoff}`
+      and(
+        sql`BOOL_OR(${botPresence.leftAt} IS NULL) = false`,
+        // ISO string, not the Date: aggregate expressions drop the column's
+        // param mapper, so a raw Date reaches the driver and throws
+        lt(max(botPresence.leftAt), purgeCutoff.toISOString())
+      )
     );
 
   let purgedCount = 0;

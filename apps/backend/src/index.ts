@@ -10,7 +10,7 @@ import {
   createRequireGuildPermission,
 } from '@ap/express';
 import { App } from 'app/index.js';
-import { startGuildReconcile } from 'cron/guildReconcile.js';
+import { runGuildReconcile, startGuildReconcile } from 'cron/guildReconcile.js';
 import { startSubscriptionReconcile } from 'cron/subscriptionReconcile.js';
 import { Data } from 'data/index.js';
 import express from 'express';
@@ -72,6 +72,12 @@ startGuildReconcile();
 
 // Start subscription reconcile cron
 startSubscriptionReconcile();
+
+// Startup reconcile: repairs presence state lost while down — Discord never
+// re-emits a missed join, so without this a DB reset or downtime during an
+// invite leaves the dashboard wrong until the 03:30 cron (errors are handled
+// and alerted inside)
+void runGuildReconcile();
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {
