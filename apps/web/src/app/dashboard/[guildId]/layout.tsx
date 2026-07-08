@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import type { DashboardUser } from '@/components/dashboard/guild-context';
 import { GuildProvider } from '@/components/dashboard/guild-context';
 import { GuildDashboardShell } from '@/components/dashboard/guild-dashboard-shell';
 import { GuildDashboardShellSkeleton } from '@/components/dashboard/skeletons';
@@ -21,18 +20,9 @@ export default async function GuildLayout({
     redirect('/dashboard');
   }
 
-  const user: DashboardUser = {
-    id: session.user.id,
-    name: session.user.name ?? 'Unknown',
-    username: session.user.username ?? session.user.name ?? 'unknown',
-    image: session.user.image ?? null,
-  };
-
   return (
     <Suspense fallback={<GuildDashboardShellSkeleton />}>
-      <GuildShellLoader guildId={guildId} user={user}>
-        {children}
-      </GuildShellLoader>
+      <GuildShellLoader guildId={guildId}>{children}</GuildShellLoader>
     </Suspense>
   );
 }
@@ -46,11 +36,9 @@ export default async function GuildLayout({
  */
 async function GuildShellLoader({
   guildId,
-  user,
   children,
 }: {
   guildId: string;
-  user: DashboardUser;
   children: React.ReactNode;
 }) {
   let guilds: DiscordGuild[];
@@ -66,10 +54,8 @@ async function GuildShellLoader({
   }
 
   return (
-    <GuildDataProvider guild={guild} guildId={guildId} user={user}>
-      <GuildDashboardShell guild={guild} user={user}>
-        {children}
-      </GuildDashboardShell>
+    <GuildDataProvider guild={guild} guildId={guildId}>
+      <GuildDashboardShell guild={guild}>{children}</GuildDashboardShell>
     </GuildDataProvider>
   );
 }
@@ -78,12 +64,10 @@ async function GuildShellLoader({
 async function GuildDataProvider({
   guild,
   guildId,
-  user,
   children,
 }: {
   guild: DiscordGuild;
   guildId: string;
-  user: DashboardUser;
   children: React.ReactNode;
 }) {
   let data: GuildDashboardData;
@@ -101,7 +85,7 @@ async function GuildDataProvider({
   }
 
   return (
-    <GuildProvider guild={guild} data={data} user={user}>
+    <GuildProvider guild={guild} data={data}>
       {children}
     </GuildProvider>
   );

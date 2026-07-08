@@ -7,8 +7,6 @@ import { usePathname } from 'next/navigation';
 import type { DiscordGuild } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { DashboardBanners } from './dashboard-banners';
-import type { DashboardUser } from './guild-context';
-import { UserBadge } from './user-badge';
 
 const tabs = [
   { id: 'channels', label: 'Channels', icon: Hash, premiumOnly: false },
@@ -23,11 +21,10 @@ function guildIconUrl(guild: DiscordGuild): string | null {
 
 interface GuildDashboardShellProps {
   guild: DiscordGuild;
-  user: DashboardUser;
   children: React.ReactNode;
 }
 
-export function GuildDashboardShell({ guild, user, children }: GuildDashboardShellProps) {
+export function GuildDashboardShell({ guild, children }: GuildDashboardShellProps) {
   const pathname = usePathname();
   const iconUrl = guildIconUrl(guild);
 
@@ -68,7 +65,6 @@ export function GuildDashboardShell({ guild, user, children }: GuildDashboardShe
                 </div>
               </div>
             </div>
-            <UserBadge user={user} />
           </div>
         </div>
 

@@ -20,16 +20,5 @@ export default async function DashboardPage() {
     error = true;
   }
 
-  return (
-    <ServerSelector
-      guilds={guilds}
-      error={error}
-      user={{
-        id: session.user.id,
-        name: session.user.name ?? 'Unknown',
-        username: session.user.username ?? session.user.name ?? 'unknown',
-        image: session.user.image ?? null,
-      }}
-    />
-  );
+  return <ServerSelector guilds={guilds} error={error} />;
 }

@@ -113,15 +113,6 @@ export function Hero() {
           >
             How It Works
           </Button>
-
-          <Button
-            variant="outline"
-            size="xl"
-            className="bg-slate-800/50 hover:bg-slate-800 text-blue-400 px-8 py-4 rounded-lg border-blue-500/30 transition-all hover:-translate-y-0.5"
-            onClick={() => scrollToSection('premium')}
-          >
-            View Premium
-          </Button>
         </motion.div>
 
         {/* Support link */}

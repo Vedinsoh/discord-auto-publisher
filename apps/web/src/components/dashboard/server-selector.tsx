@@ -8,12 +8,9 @@ import { Card } from '@/components/ui/card';
 import type { DiscordGuild } from '@/lib/api/types';
 import { getBotInviteUrl } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
-import type { DashboardUser } from './guild-context';
-import { UserBadge } from './user-badge';
 
 interface ServerSelectorProps {
   guilds: DiscordGuild[];
-  user: DashboardUser;
   error?: boolean;
 }
 
@@ -40,7 +37,7 @@ function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
   });
 }
 
-export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
+export function ServerSelector({ guilds, error }: ServerSelectorProps) {
   const sortedGuilds = sortGuilds(guilds);
   const armRefreshOnReturn = useRefreshOnReturn();
   return (
@@ -52,7 +49,6 @@ export function ServerSelector({ guilds, user, error }: ServerSelectorProps) {
               <h1 className="text-4xl text-white mb-2">Select a Server</h1>
               <p className="text-slate-400">Choose which server you&apos;d like to manage</p>
             </div>
-            <UserBadge user={user} />
           </div>
         </div>
 
