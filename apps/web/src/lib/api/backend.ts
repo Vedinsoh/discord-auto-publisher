@@ -17,10 +17,22 @@ interface BackendFetchOptions extends Omit<RequestInit, 'headers'> {
 export class BackendError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
+    /** Machine-readable reason from the backend error body, when present */
+    public code?: string
   ) {
     super(message);
     this.name = 'BackendError';
+  }
+}
+
+/** Pulls the APIResponse `code`/`message` out of an error body (JSON or raw text) */
+function parseErrorBody(body: string): { message?: string; code?: string } {
+  try {
+    const parsed = JSON.parse(body) as { message?: string; code?: string };
+    return { message: parsed.message, code: parsed.code };
+  } catch {
+    return {};
   }
 }
 
@@ -50,7 +62,8 @@ export async function backendFetch<T>(path: string, options?: BackendFetchOption
 
   if (!response.ok) {
     const body = await response.text();
-    throw new BackendError(response.status, body || response.statusText);
+    const { message, code } = parseErrorBody(body);
+    throw new BackendError(response.status, message || body || response.statusText, code);
   }
 
   const json = await response.json();

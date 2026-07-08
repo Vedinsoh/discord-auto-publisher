@@ -1,13 +1,23 @@
 'use server';
 
-import { backendFetch } from '@/lib/api/backend';
+import { BackendError, backendFetch } from '@/lib/api/backend';
 import type {
+  ChannelLimitReason,
   CheckoutResponse,
   DiscordGuild,
   GuildChannel,
   GuildDashboardData,
   SubscriptionDetail,
 } from '@/lib/api/types';
+
+/**
+ * Result of a mutation that the UI branches on. Thrown errors are sanitized
+ * across the server-action boundary, so mutations that need the failure reason
+ * (e.g. the channel-limit `code`) return it instead of throwing.
+ */
+export type MutationResult =
+  | { ok: true }
+  | { ok: false; status: number; code?: ChannelLimitReason };
 
 export async function getUserGuilds(): Promise<DiscordGuild[]> {
   return backendFetch<DiscordGuild[]>('/api/user/guilds');
@@ -21,10 +31,18 @@ export async function getGuildChannels(guildId: string): Promise<GuildChannel[]>
   return backendFetch<GuildChannel[]>(`/api/guild/${guildId}/channels`);
 }
 
-export async function enableChannel(guildId: string, channelId: string): Promise<void> {
-  await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
-    method: 'PUT',
-  });
+export async function enableChannel(guildId: string, channelId: string): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
+      method: 'PUT',
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code as ChannelLimitReason };
+    }
+    throw error;
+  }
 }
 
 export async function disableChannel(guildId: string, channelId: string): Promise<void> {
@@ -34,11 +52,19 @@ export async function disableChannel(guildId: string, channelId: string): Promis
 }
 
 /** MIGRATION: Remove after migration period (6 months) */
-export async function migrateGuild(guildId: string, channelIds: string[]): Promise<void> {
-  await backendFetch(`/api/guild/${guildId}/migrate`, {
-    method: 'POST',
-    body: JSON.stringify({ channelIds }),
-  });
+export async function migrateGuild(guildId: string, channelIds: string[]): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/migrate`, {
+      method: 'POST',
+      body: JSON.stringify({ channelIds }),
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code as ChannelLimitReason };
+    }
+    throw error;
+  }
 }
 
 export async function getSubscription(guildId: string): Promise<SubscriptionDetail | null> {

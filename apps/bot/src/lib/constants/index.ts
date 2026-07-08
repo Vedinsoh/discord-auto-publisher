@@ -4,6 +4,7 @@ const WEBSITE = `https://${HOSTNAME}`;
 export const links = {
   hostname: HOSTNAME,
   website: WEBSITE,
+  dashboard: `${WEBSITE}/dashboard`,
   premiumPage: `${WEBSITE}/premium`,
   supportGuildInvite: 'https://discord.gg/xcEeJkdQX8',
   botInvite: `https://discord.com/oauth2/authorize?client_id=739823232651100180&permissions=10240&integration_type=0&scope=bot+applications.commands`,

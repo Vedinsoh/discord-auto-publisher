@@ -3,6 +3,7 @@
 import { Hash, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { migrateGuild } from '@/lib/api/actions';
@@ -15,10 +16,36 @@ interface LegacyMigrateModalProps {
   channels: GuildChannel[];
   /** Max selectable channels, or null for unlimited (premium) */
   limit: number | null;
+  hasSubscription: boolean;
+  premiumBotPresent: boolean;
+  premiumPending: boolean;
   onClose: () => void;
 }
 
-export function LegacyMigrateModal({ guildId, channels, limit, onClose }: LegacyMigrateModalProps) {
+/** Over-limit guidance, branched to match why the guild is still capped. */
+function overSelectedMessage(
+  limit: number,
+  flags: { hasSubscription: boolean; premiumBotPresent: boolean; premiumPending: boolean }
+): string {
+  const reason = channelLimitReasonFromGuild(flags);
+  if (reason === 'LIMIT_PREMIUM_INVITE') {
+    return `You're on Premium, but the Premium bot isn't in this server yet — the free bot covers ${limit} channels until it takes over. Invite the Premium bot (see the banner above) to unlock unlimited channels, or deselect some.`;
+  }
+  if (reason === 'LIMIT_PREMIUM_PENDING') {
+    return `Premium is activating — the free bot covers ${limit} channels until the Premium bot can publish everywhere. Grant it permission in the Channels tab to unlock unlimited channels, or deselect some.`;
+  }
+  return `The free plan covers ${limit} channels. Deselect some, or upgrade to Premium for unlimited channels.`;
+}
+
+export function LegacyMigrateModal({
+  guildId,
+  channels,
+  limit,
+  hasSubscription,
+  premiumBotPresent,
+  premiumPending,
+  onClose,
+}: LegacyMigrateModalProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
@@ -49,13 +76,13 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
   const handleConfirm = () => {
     setError(false);
     startTransition(async () => {
-      try {
-        await migrateGuild(guildId, [...selected]);
+      const result = await migrateGuild(guildId, [...selected]);
+      if (result.ok) {
         onClose();
         router.refresh();
-      } catch {
-        setError(true);
+        return;
       }
+      setError(true);
     });
   };
 
@@ -67,7 +94,7 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
             <h3 className="text-xl text-white mb-1">Switch to the new system</h3>
             <p className="text-slate-400 text-sm">
               {overLimit
-                ? `${publishableCount} channels currently auto-publish. The free plan covers ${limit} — choose which ones keep publishing, or upgrade for unlimited.`
+                ? `${publishableCount} channels currently auto-publish. Only ${limit} can keep publishing right now — choose which ones.`
                 : 'Channels the bot currently publishes in are preselected. Unselected channels will stop publishing.'}
             </p>
           </div>
@@ -120,10 +147,9 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
         </div>
 
         <div className="p-6 pt-4 space-y-3">
-          {overSelected && (
+          {overSelected && limit !== null && (
             <p className="text-amber-400 text-sm">
-              The free plan covers {limit} channels. Deselect some, or upgrade to Premium for
-              unlimited channels.
+              {overSelectedMessage(limit, { hasSubscription, premiumBotPresent, premiumPending })}
             </p>
           )}
           {error && <p className="text-red-400 text-sm">Migration failed. Please try again.</p>}

@@ -2,17 +2,23 @@
 
 import { Hash, Loader2, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
+import {
+  ChannelLimitModal,
+  channelLimitReasonFromGuild,
+} from '@/components/dashboard/channel-limit-upsell';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
-import type { GuildChannel } from '@/lib/api/types';
+import type { ChannelLimitReason, GuildChannel } from '@/lib/api/types';
 
 interface ChannelConfigProps {
   guildId: string;
   channels: GuildChannel[];
   hasSubscription: boolean;
+  premiumBotPresent: boolean;
+  premiumPending: boolean;
   /** Max enabled channels for the guild's managing edition; 0 = unlimited */
   channelLimit: number;
   /** MIGRATION: false = legacy guild. Removed at sunset. */
@@ -84,11 +90,14 @@ export function ChannelConfig({
   guildId,
   channels,
   hasSubscription,
+  premiumBotPresent,
+  premiumPending,
   channelLimit,
   migrated,
 }: ChannelConfigProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [limitReason, setLimitReason] = useState<ChannelLimitReason | null>(null);
 
   // MIGRATION: hooks above must run unconditionally; early return only after
   if (!migrated) {
@@ -97,15 +106,23 @@ export function ChannelConfig({
 
   const handleToggleChannel = (channelId: string, enabled: boolean) => {
     startTransition(async () => {
-      try {
-        if (enabled) {
-          await disableChannel(guildId, channelId);
-        } else {
-          await enableChannel(guildId, channelId);
-        }
-      } finally {
+      if (enabled) {
+        await disableChannel(guildId, channelId);
         router.refresh();
+        return;
       }
+
+      const result = await enableChannel(guildId, channelId);
+      if (result.ok) {
+        router.refresh();
+        return;
+      }
+      // Cap hit: show the reason-appropriate upsell instead of a hard failure.
+      // Prefer the backend's code; fall back to the client mirror if absent.
+      setLimitReason(
+        result.code ??
+          channelLimitReasonFromGuild({ hasSubscription, premiumBotPresent, premiumPending })
+      );
     });
   };
 
@@ -178,6 +195,14 @@ export function ChannelConfig({
             This server doesn&apos;t have any announcement channels
           </p>
         </Card>
+      )}
+
+      {limitReason && (
+        <ChannelLimitModal
+          reason={limitReason}
+          guildId={guildId}
+          onClose={() => setLimitReason(null)}
+        />
       )}
     </div>
   );

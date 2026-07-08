@@ -9,6 +9,8 @@ export type APIResponse<T = object> = {
   status: number;
   data?: T;
   message: string;
+  /** Machine-readable reason, set on some error responses so clients can branch */
+  code?: string;
 };
 
 /**
@@ -16,10 +18,17 @@ export type APIResponse<T = object> = {
  */
 export class HttpError extends Error {
   statusCode: number;
+  /** Optional machine-readable reason forwarded to the client */
+  code?: string;
 
-  constructor(message: string, statusCode: number = StatusCodes.INTERNAL_SERVER_ERROR) {
+  constructor(
+    message: string,
+    statusCode: number = StatusCodes.INTERNAL_SERVER_ERROR,
+    code?: string
+  ) {
     super(message);
     this.statusCode = statusCode;
+    this.code = code;
     this.name = 'HttpError';
   }
 }
@@ -28,13 +37,15 @@ export class HttpError extends Error {
  * Create HTTP error with status code
  * @param message Error message
  * @param statusCode HTTP status code
+ * @param code Optional machine-readable reason forwarded to the client
  * @returns HttpError instance
  */
 export const createHttpError = (
   message: string,
-  statusCode: number = StatusCodes.INTERNAL_SERVER_ERROR
+  statusCode: number = StatusCodes.INTERNAL_SERVER_ERROR,
+  code?: string
 ): HttpError => {
-  return new HttpError(message, statusCode);
+  return new HttpError(message, statusCode, code);
 };
 
 /**
@@ -95,9 +106,11 @@ export const sendErrorResponse = (
 ): void => {
   const statusCode = getErrorStatusCode(error, defaultStatusCode);
   const message = getErrorMessage(error, defaultMessage);
+  const code = error instanceof HttpError ? error.code : undefined;
   res.status(statusCode).json({
     status: statusCode,
     message,
+    ...(code ? { code } : {}),
   });
 };
 

@@ -38,6 +38,9 @@ export function DashboardBanners() {
           guildId={guild.id}
           channels={data.channels}
           channelLimit={data.channelLimit}
+          hasSubscription={guild.hasSubscription}
+          premiumBotPresent={guild.premiumBotPresent}
+          premiumPending={data.premiumPending}
         />
       )}
     </div>
@@ -137,10 +140,16 @@ function LegacyMigrationBanner({
   guildId,
   channels,
   channelLimit,
+  hasSubscription,
+  premiumBotPresent,
+  premiumPending,
 }: {
   guildId: string;
   channels: GuildChannel[];
   channelLimit: number;
+  hasSubscription: boolean;
+  premiumBotPresent: boolean;
+  premiumPending: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -171,6 +180,9 @@ function LegacyMigrationBanner({
           guildId={guildId}
           channels={channels}
           limit={channelLimit === 0 ? null : channelLimit}
+          hasSubscription={hasSubscription}
+          premiumBotPresent={premiumBotPresent}
+          premiumPending={premiumPending}
           onClose={() => setModalOpen(false)}
         />
       )}

@@ -188,15 +188,15 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   }
 
   // Check if guild has hit the channels limit (by its managing edition)
-  const channelLimit = await Editions.getChannelLimit(guildId);
+  const { limit, reason } = await Editions.resolveChannelLimit(guildId);
   const countResult = await db
     .select({ count: count() })
     .from(channelTable)
     .where(eq(channelTable.guildId, guildId));
   const guildChannelsCount = countResult[0]?.count ?? 0;
 
-  if (channelLimit !== 0 && guildChannelsCount >= channelLimit) {
-    throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST);
+  if (limit !== 0 && guildChannelsCount >= limit) {
+    throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST, reason);
   }
 
   let dbCreated = false;

@@ -322,9 +322,13 @@ const migrate = async (guildId: Snowflake, channelIds: Snowflake[]): Promise<voi
       throw createHttpError('Guild is already migrated', StatusCodes.CONFLICT);
     }
 
-    const channelLimit = await Editions.getChannelLimit(guildId);
-    if (channelLimit !== 0 && channelIds.length > channelLimit) {
-      throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST);
+    const { limit, reason } = await Editions.resolveChannelLimit(guildId);
+    if (limit !== 0 && channelIds.length > limit) {
+      throw createHttpError(
+        'Guild has reached the channels limit',
+        StatusCodes.BAD_REQUEST,
+        reason
+      );
     }
 
     await db.transaction(async tx => {

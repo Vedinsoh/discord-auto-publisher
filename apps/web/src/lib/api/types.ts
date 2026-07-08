@@ -1,5 +1,6 @@
 export type {
   ChannelFilterRule,
+  ChannelLimitReason,
   CheckoutResponse,
   DiscordGuild,
   Edition,

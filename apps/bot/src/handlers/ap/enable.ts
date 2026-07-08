@@ -78,11 +78,25 @@ export async function chatInputEnable(
       }
 
       if (response.status === 400) {
+        // The backend tags a channel-limit rejection with a reason code so we
+        // can direct entitled guilds to finish premium setup instead of
+        // upselling a plan they already bought.
+        const code = await response
+          .clone()
+          .json()
+          .then(body => (body as { code?: string })?.code)
+          .catch(() => undefined);
+        const entitledButNotServing =
+          code === 'LIMIT_PREMIUM_INVITE' || code === 'LIMIT_PREMIUM_PENDING';
+
+        const limitContent = entitledButNotServing
+          ? `${emojis.crossmark} Your **Premium** bot isn't publishing in this server yet, so you're still capped at ${config.limits.channelsPerGuild} channels.\n\n` +
+            `Finish setting up Premium in the dashboard at [${links.hostname}](<${links.dashboard}>) to unlock unlimited channels.`
+          : `${emojis.crossmark} You have reached the maximum number of channels (${config.limits.channelsPerGuild}) for auto-publishing.\n\n` +
+            `✨ Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`;
+
         const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.crossmark} You have reached the maximum number of channels (${config.limits.channelsPerGuild}) for auto-publishing.\n\n` +
-              `✨ Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`
-          )
+          textDisplay.setContent(limitContent)
         );
 
         return interaction.editReply({

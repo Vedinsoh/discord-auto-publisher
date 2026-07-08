@@ -1,8 +1,9 @@
-import type { Edition } from '@ap/api-types';
+import type { ChannelLimitReason, Edition } from '@ap/api-types';
 import { botPresence, db } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, eq, isNull } from 'drizzle-orm';
 import { Handover } from './handover.js';
+import { isEntitledStatus, Subscriptions } from './subscriptions.js';
 
 const FREE_CHANNEL_LIMIT = 3;
 
@@ -34,14 +35,49 @@ const getManagingEdition = async (guildId: Snowflake): Promise<Edition> => {
 const channelLimitFor = (edition: Edition): number =>
   edition === 'premium' ? 0 : FREE_CHANNEL_LIMIT;
 
-/** Max enabled channels for a guild by its managing edition; 0 = unlimited */
-const getChannelLimit = async (guildId: Snowflake): Promise<number> =>
-  channelLimitFor(await getManagingEdition(guildId));
+/**
+ * Resolves a guild's channel cap plus the reason to surface if it's hit.
+ * The cap is keyed on the managing edition (the bot actually publishing) — the
+ * free bot never serves more than {@link FREE_CHANNEL_LIMIT} channels, even for
+ * an entitled guild whose premium bot hasn't taken over yet. `reason` is only
+ * meaningful when `limit !== 0` and directs the user to the right resolution:
+ * buy Premium (`LIMIT_FREE`), invite the premium bot (`LIMIT_PREMIUM_INVITE`),
+ * or grant it permissions to finish the handover (`LIMIT_PREMIUM_PENDING`).
+ */
+const resolveChannelLimit = async (
+  guildId: Snowflake
+): Promise<{ limit: number; reason: ChannelLimitReason }> => {
+  const active = await getActiveEditions(guildId);
+  const premiumActive = active.has('premium');
+  const freeActive = active.has('free');
+  const pending = premiumActive && freeActive ? await Handover.isPending(guildId) : false;
+  const managing: Edition = !premiumActive
+    ? 'free'
+    : !freeActive
+      ? 'premium'
+      : pending
+        ? 'free'
+        : 'premium';
+
+  const limit = channelLimitFor(managing);
+  if (limit === 0) return { limit, reason: 'LIMIT_FREE' };
+
+  // Capped (free is serving). Distinguish an entitled guild waiting on its
+  // premium bot from a genuinely free guild.
+  const sub = await Subscriptions.getByGuildId(guildId);
+  const entitled = sub ? isEntitledStatus(sub.status) : false;
+  const reason: ChannelLimitReason = !entitled
+    ? 'LIMIT_FREE'
+    : premiumActive
+      ? 'LIMIT_PREMIUM_PENDING'
+      : 'LIMIT_PREMIUM_INVITE';
+  return { limit, reason };
+};
 
 export const Editions = {
   getActiveEditions,
   isPresenceActive,
   getManagingEdition,
   channelLimitFor,
-  getChannelLimit,
+  resolveChannelLimit,
 };

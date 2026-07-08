@@ -3,6 +3,18 @@ import type { FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
 /** App edition identifier */
 export type Edition = 'free' | 'premium';
 
+/**
+ * Why a channel enable/migrate was rejected for hitting the per-guild cap.
+ * The cap is enforced against the managing edition (the bot actually
+ * publishing), so an entitled guild whose premium bot isn't serving yet is
+ * still capped — the reason directs the user to the right resolution.
+ * - `LIMIT_FREE` — no entitled subscription; upsell to buy Premium.
+ * - `LIMIT_PREMIUM_INVITE` — entitled but the premium bot was never invited.
+ * - `LIMIT_PREMIUM_PENDING` — entitled, premium bot present but handover pending
+ *   (needs publish permissions before it takes over).
+ */
+export type ChannelLimitReason = 'LIMIT_FREE' | 'LIMIT_PREMIUM_INVITE' | 'LIMIT_PREMIUM_PENDING';
+
 /** Guild entry from GET /api/user/guilds (per-edition bot presence) */
 export interface DiscordGuild {
   id: string;
