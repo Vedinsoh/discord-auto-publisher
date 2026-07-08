@@ -33,9 +33,7 @@ const fetchAnnouncementChannels = async (
   edition: Edition,
   guildId: string
 ): Promise<APIChannel[]> => {
-  const channels = (await Discord.restFor(edition).get(
-    Routes.guildChannels(guildId)
-  )) as APIChannel[];
+  const channels = await Discord.cachedGet<APIChannel[]>(edition, Routes.guildChannels(guildId));
 
   const categoryPositions = new Map<string, number>();
   for (const c of channels) {
@@ -94,28 +92,32 @@ export const GuildApi: Router = (() => {
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
       const migrated = !!guildRow?.migratedAt;
 
-      // canPublish drives migrate-modal preselection — computed (and cached)
-      // for legacy guilds only, to keep the extra REST calls off the hot path
-      const canPublishMap = migrated
-        ? null
-        : await Services.LegacyPerms.getCanPublishMap(
-            managingEdition,
-            guildId,
-            announcementChannels
-          );
-
-      // While a handover is pending, flag channels the premium bot cannot
-      // publish in yet (dashboard warning badges). Evaluation failure (e.g. a
-      // dangling marker after the premium bot was kicked) only omits the
-      // badges — it must never break the whole dashboard.
-      let premiumBlockedIds: Set<string> | null = null;
-      if (premiumPending) {
-        try {
-          premiumBlockedIds = new Set(await Services.Handover.getBlockedChannelIds(guildId));
-        } catch (error) {
-          logger.warn(error, `Blocked-channel evaluation failed for guild ${guildId}`);
-        }
-      }
+      // Two independent permission evaluations, run concurrently:
+      // - canPublish (legacy guilds only) drives migrate-modal preselection
+      // - premiumBlockedIds (pending handover only) flags channels the premium
+      //   bot cannot publish in yet. A handover eval failure (e.g. a dangling
+      //   marker after the premium bot was kicked) only omits the badges — it
+      //   must never break the whole dashboard.
+      // Both read guild channels/roles/member through the Discord read cache the
+      // Promise.all above already warmed, so the channel list is not re-fetched.
+      const [canPublishMap, premiumBlockedIds] = await Promise.all([
+        migrated
+          ? Promise.resolve<Record<string, boolean> | null>(null)
+          : Services.BotPermissions.getCanPublishMap(
+              managingEdition,
+              guildId,
+              announcementChannels
+            ),
+        (async (): Promise<Set<string> | null> => {
+          if (!premiumPending) return null;
+          try {
+            return new Set(await Services.Handover.getBlockedChannelIds(guildId));
+          } catch (error) {
+            logger.warn(error, `Blocked-channel evaluation failed for guild ${guildId}`);
+            return null;
+          }
+        })(),
+      ]);
 
       const enabledMap = new Map(channelRecords.map(ch => [ch.channelId, ch]));
 

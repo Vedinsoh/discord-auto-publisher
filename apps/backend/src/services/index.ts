@@ -5,7 +5,6 @@ import { Entitlements } from './entitlements.js';
 import { Guilds } from './guilds.js';
 import { Handover } from './handover.js';
 import { Info } from './info.js';
-import { LegacyPerms } from './legacyPerms.js';
 import { PaddleService } from './paddle.js';
 import { PresenceHeal } from './presenceHeal.js';
 import { Subscriptions } from './subscriptions.js';
@@ -18,7 +17,6 @@ export const Services = {
   Guilds,
   Handover,
   Info,
-  LegacyPerms,
   Paddle: PaddleService,
   PresenceHeal,
   Subscriptions,

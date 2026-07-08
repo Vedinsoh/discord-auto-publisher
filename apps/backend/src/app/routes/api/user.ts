@@ -68,14 +68,33 @@ export const User: Router = (() => {
 
       const guildIds = managedGuilds.map(g => g.id);
 
-      // Batch query: active bot presences per edition
-      const presences = await db
-        .select({ guildId: botPresence.guildId, edition: botPresence.edition })
-        .from(botPresence)
-        .where(and(inArray(botPresence.guildId, guildIds), isNull(botPresence.leftAt)));
+      // Independent per-guild batches — all keyed only on guildIds, so fetch
+      // them concurrently rather than in a waterfall.
+      // MIGRATION: the guild-migration query is removed after migration period.
+      const [presences, guildRows, subscriptions] = await Promise.all([
+        db
+          .select({ guildId: botPresence.guildId, edition: botPresence.edition })
+          .from(botPresence)
+          .where(and(inArray(botPresence.guildId, guildIds), isNull(botPresence.leftAt))),
+        db
+          .select({ guildId: guild.guildId, migratedAt: guild.migratedAt })
+          .from(guild)
+          .where(inArray(guild.guildId, guildIds)),
+        db
+          .select({ guildId: subscription.guildId, status: subscription.status })
+          .from(subscription)
+          .where(inArray(subscription.guildId, guildIds)),
+      ]);
+
       const freeGuildIds = new Set(presences.filter(p => p.edition === 'free').map(p => p.guildId));
       const premiumGuildIds = new Set(
         presences.filter(p => p.edition === 'premium').map(p => p.guildId)
+      );
+      const migratedGuildIds = new Set(
+        guildRows.filter(g => g.migratedAt !== null).map(g => g.guildId)
+      );
+      const subscribedGuildIds = new Set(
+        subscriptions.filter(s => isEntitledStatus(s.status)).map(s => s.guildId)
       );
 
       // Self-heal presences the event path cannot repair (re-auth of an
@@ -93,24 +112,6 @@ export const User: Router = (() => {
           if (healed.has('free')) freeGuildIds.add(g.id);
           if (healed.has('premium')) premiumGuildIds.add(g.id);
         })
-      );
-
-      // MIGRATION: Remove after migration period (6 months)
-      const guildRows = await db
-        .select({ guildId: guild.guildId, migratedAt: guild.migratedAt })
-        .from(guild)
-        .where(inArray(guild.guildId, guildIds));
-      const migratedGuildIds = new Set(
-        guildRows.filter(g => g.migratedAt !== null).map(g => g.guildId)
-      );
-
-      // Batch query: which guilds have active subscriptions
-      const subscriptions = await db
-        .select({ guildId: subscription.guildId, status: subscription.status })
-        .from(subscription)
-        .where(inArray(subscription.guildId, guildIds));
-      const subscribedGuildIds = new Set(
-        subscriptions.filter(s => isEntitledStatus(s.status)).map(s => s.guildId)
       );
 
       // Pending handover markers — only possible where both bots are present

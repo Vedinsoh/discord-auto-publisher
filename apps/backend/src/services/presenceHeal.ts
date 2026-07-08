@@ -1,5 +1,6 @@
 import type { Edition } from '@ap/api-types';
 import { db, guild } from '@ap/database';
+import { createTtlCache } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
 import { Discord } from './discord.js';
@@ -7,20 +8,11 @@ import { Guilds } from './guilds.js';
 import { applyJoinRails } from './joinRails.js';
 
 const CONFIRMED_ABSENT_TTL_MS = 30_000;
-const CACHE_PRUNE_THRESHOLD = 10_000;
 
 // Negative cache: guild+edition pairs recently confirmed absent at Discord.
 // In-memory is safe — the backend is single-instance (ADR 0006) — and the TTL
 // is short so an invite-return refresh is never stuck behind a stale entry.
-const confirmedAbsentAt = new Map<string, number>();
-
-const pruneExpiredEntries = (): void => {
-  if (confirmedAbsentAt.size < CACHE_PRUNE_THRESHOLD) return;
-  const now = Date.now();
-  for (const [key, at] of confirmedAbsentAt) {
-    if (now - at >= CONFIRMED_ABSENT_TTL_MS) confirmedAbsentAt.delete(key);
-  }
-};
+const confirmedAbsent = createTtlCache<true>(CONFIRMED_ABSENT_TTL_MS);
 
 /**
  * Dashboard-read self-heal for presence rows the event path can never repair:
@@ -51,13 +43,11 @@ const healAbsentEditions = async (
     if (!Discord.hasToken(edition)) continue;
 
     const cacheKey = `${guildId}:${edition}`;
-    const confirmedAt = confirmedAbsentAt.get(cacheKey);
-    if (confirmedAt && Date.now() - confirmedAt < CONFIRMED_ABSENT_TTL_MS) continue;
+    if (confirmedAbsent.get(cacheKey)) continue;
 
     try {
       if (!(await Discord.isBotInGuild(edition, guildId))) {
-        pruneExpiredEntries();
-        confirmedAbsentAt.set(cacheKey, Date.now());
+        confirmedAbsent.set(cacheKey, true);
         continue;
       }
 
@@ -65,7 +55,7 @@ const healAbsentEditions = async (
       // row has been behaving legacy since the missed event
       await db.insert(guild).values({ guildId }).onConflictDoNothing();
       await Guilds.activatePresence(guildId, edition);
-      confirmedAbsentAt.delete(cacheKey);
+      confirmedAbsent.delete(cacheKey);
       healed.add(edition);
       logger.info(`Presence heal: restored ${edition} presence for guild ${guildId}`);
     } catch (error) {

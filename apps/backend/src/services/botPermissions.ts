@@ -80,9 +80,9 @@ const getCanPublishMap = async (
   channels: APIChannel[]
 ): Promise<Record<string, boolean>> => {
   const [roles, member] = await Promise.all([
-    Discord.restFor(edition).get(Routes.guildRoles(guildId)) as Promise<APIRole[]>,
-    Discord.getBotUserId(edition).then(
-      id => Discord.restFor(edition).get(Routes.guildMember(guildId, id)) as Promise<APIGuildMember>
+    Discord.cachedGet<APIRole[]>(edition, Routes.guildRoles(guildId)),
+    Discord.getBotUserId(edition).then(id =>
+      Discord.cachedGet<APIGuildMember>(edition, Routes.guildMember(guildId, id))
     ),
   ]);
 

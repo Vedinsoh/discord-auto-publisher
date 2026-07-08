@@ -42,7 +42,7 @@ const clearPending = async (guildId: Snowflake): Promise<void> => {
  */
 const getBlockedChannelIds = async (guildId: Snowflake): Promise<Snowflake[]> => {
   const announcementChannels = (
-    (await Discord.restFor('premium').get(Routes.guildChannels(guildId))) as APIChannel[]
+    await Discord.cachedGet<APIChannel[]>('premium', Routes.guildChannels(guildId))
   ).filter(c => c.type === ChannelType.GuildAnnouncement);
 
   const [guildRow] = await db

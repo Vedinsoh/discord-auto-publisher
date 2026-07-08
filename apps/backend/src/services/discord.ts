@@ -1,5 +1,6 @@
 import type { Edition } from '@ap/api-types';
 import { env } from '@ap/config';
+import { createTtlCache } from '@ap/utils';
 import { DiscordAPIError, REST } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type APIUser, RESTJSONErrorCodes, Routes } from 'discord-api-types/v10';
@@ -28,6 +29,32 @@ const getBotUserId = async (edition: Edition): Promise<Snowflake> => {
   const user = (await restFor(edition).get(Routes.user())) as APIUser;
   botUserIds[edition] = user.id;
   return user.id;
+};
+
+const DISCORD_READ_CACHE_TTL_MS = 5 * 60 * 1000;
+
+/**
+ * In-memory cache for the guild-dashboard read paths (ADR 0007). Keyed by
+ * ROUTE ONLY: `GET /guilds/:id/channels` and `/roles` are guild-global (Discord
+ * returns all channels/roles regardless of the fetching bot's permissions), so
+ * a single entry is shared across editions — the free bot's fetch during a
+ * pending handover warms the cache for the premium bot's permission eval;
+ * `/members/:botId` self-namespaces by botId. `edition` only selects which
+ * present bot fetches a miss (a non-member gets 404/403); only 200 responses
+ * are cached, so a stray error never poisons the shared key.
+ *
+ * Explicit opt-in — deliberately NOT wired into `isBotInGuild`, whose
+ * `/members/:botId` call must stay a LIVE membership check (a stale cached
+ * member would report a departed bot as present and break presence self-heal).
+ */
+const discordReadCache = createTtlCache<unknown>(DISCORD_READ_CACHE_TTL_MS);
+
+const cachedGet = async <T>(edition: Edition, route: `/${string}`): Promise<T> => {
+  const cached = discordReadCache.get(route);
+  if (cached !== undefined) return cached as T;
+  const result = await restFor(edition).get(route);
+  discordReadCache.set(route, result);
+  return result as T;
 };
 
 /**
@@ -69,7 +96,7 @@ const leaveGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean
 };
 
 const USERNAME_CACHE_TTL_MS = 60 * 60 * 1000;
-const usernameCache = new Map<string, { username: string; expiresAt: number }>();
+const usernameCache = createTtlCache<string>(USERNAME_CACHE_TTL_MS);
 
 /**
  * Display name of a Discord user, resolved through the premium proxy and cached
@@ -78,16 +105,24 @@ const usernameCache = new Map<string, { username: string; expiresAt: number }>()
  */
 const getUsername = async (userId: string): Promise<string | null> => {
   const cached = usernameCache.get(userId);
-  if (cached && cached.expiresAt > Date.now()) return cached.username;
+  if (cached !== undefined) return cached;
 
   try {
     const user = (await restFor('premium').get(Routes.user(userId))) as APIUser;
     const username = user.global_name ?? user.username;
-    usernameCache.set(userId, { username, expiresAt: Date.now() + USERNAME_CACHE_TTL_MS });
+    usernameCache.set(userId, username);
     return username;
   } catch {
     return null;
   }
 };
 
-export const Discord = { restFor, hasToken, getBotUserId, isBotInGuild, leaveGuild, getUsername };
+export const Discord = {
+  restFor,
+  cachedGet,
+  hasToken,
+  getBotUserId,
+  isBotInGuild,
+  leaveGuild,
+  getUsername,
+};

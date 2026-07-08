@@ -6,8 +6,8 @@ export enum DatabaseIDs {
   DiscordAuth = 4,
   MigratedGuilds = 5,
   PaddleWebhookDedupe = 6,
-  // MIGRATION: dropped together with MigratedGuilds at sunset
-  LegacyGuildPerms = 7,
+  // 7 retired (was LegacyGuildPerms) — legacy canPublish maps now recompute from
+  // the backend's in-memory Discord read cache (ADR 0007)
   Alerts = 8,
   CrosspostQueuePremium = 9,
   SublimitCounterPremium = 10,
@@ -36,7 +36,6 @@ export enum Keys {
   Blocked = 'channel:blocked',
   MigratedGuild = 'migrated_guild',
   PaddleEvent = 'paddle_event',
-  LegacyPerms = 'legacy_perms',
   Alert = 'alert',
   PremiumPending = 'premium_pending',
 }
