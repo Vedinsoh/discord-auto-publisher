@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { links } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { Logo } from './logo';
 
@@ -23,7 +24,10 @@ const scrollLinks = [
   { label: 'Premium', sectionId: 'premium' },
 ];
 
-const routeLinks = [{ href: '/status', label: 'Status' }];
+const routeLinks = [
+  { href: '/status', label: 'Status', external: false },
+  { href: links.discordSupportServer, label: 'Join our server', external: true },
+];
 
 interface SessionUser {
   name?: string | null;
@@ -208,9 +212,12 @@ function NavbarInner() {
                 <Link
                   key={link.label}
                   href={link.href}
+                  target={link.external ? '_blank' : undefined}
                   className={cn(
                     'text-sm transition-colors',
-                    pathname === link.href ? 'text-blue-400' : 'text-slate-300 hover:text-white'
+                    !link.external && pathname === link.href
+                      ? 'text-blue-400'
+                      : 'text-slate-300 hover:text-white'
                   )}
                 >
                   {link.label}
@@ -252,9 +259,12 @@ function NavbarInner() {
               <Link
                 key={link.label}
                 href={link.href}
+                target={link.external ? '_blank' : undefined}
                 className={cn(
                   'block transition-colors py-2',
-                  pathname === link.href ? 'text-blue-400' : 'text-slate-300 hover:text-white'
+                  !link.external && pathname === link.href
+                    ? 'text-blue-400'
+                    : 'text-slate-300 hover:text-white'
                 )}
                 onClick={() => setMobileMenuOpen(false)}
               >
