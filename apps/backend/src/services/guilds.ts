@@ -219,8 +219,7 @@ const registerNewGuild = async (
     }
 
     // Must be read before activating our own presence
-    const freeActive =
-      edition === 'premium' ? await Editions.isPresenceActive(guildId, 'free') : false;
+    const freeActive = edition === 'premium' ? await Editions.isBotPresent(guildId, 'free') : false;
 
     const rows = await db
       .insert(guild)

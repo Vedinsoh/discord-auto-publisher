@@ -1,8 +1,8 @@
 import type { Edition } from '@ap/api-types';
 import { env } from '@ap/config';
-import { REST } from '@discordjs/rest';
+import { DiscordAPIError, REST } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
-import { type APIUser, Routes } from 'discord-api-types/v10';
+import { type APIUser, RESTJSONErrorCodes, Routes } from 'discord-api-types/v10';
 import { logger } from 'utils/logger.js';
 
 // One REST client per edition, each routed through its edition's proxy so
@@ -47,7 +47,11 @@ const isBotInGuild = async (edition: Edition, guildId: Snowflake): Promise<boole
 
 /**
  * Makes an edition's bot leave a guild. Idempotent: the bot may already be
- * gone (kick, guild deleted). Returns false when the leave call failed.
+ * gone (kick, guild deleted). Returns true when the bot is not in the guild
+ * after the call — including a `10004 Unknown Guild`, which means it was
+ * already absent (the desired state). Returns false only on a real failure
+ * (network / 5xx / actual double coverage), so callers like the handover swap
+ * alert only when a leave genuinely did not take effect.
  */
 const leaveGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean> => {
   try {
@@ -55,6 +59,10 @@ const leaveGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean
     logger.info(`Left guild ${guildId} (${edition} bot)`);
     return true;
   } catch (error) {
+    if (error instanceof DiscordAPIError && error.code === RESTJSONErrorCodes.UnknownGuild) {
+      logger.debug(`Guild ${guildId} already absent (${edition} bot): 10004`);
+      return true;
+    }
     logger.debug(error, `Could not leave guild ${guildId} (${edition} bot)`);
     return false;
   }

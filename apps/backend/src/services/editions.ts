@@ -16,7 +16,7 @@ const getActiveEditions = async (guildId: Snowflake): Promise<Set<Edition>> => {
   return new Set(rows.map(r => r.edition));
 };
 
-const isPresenceActive = async (guildId: Snowflake, edition: Edition): Promise<boolean> =>
+const isBotPresent = async (guildId: Snowflake, edition: Edition): Promise<boolean> =>
   (await getActiveEditions(guildId)).has(edition);
 
 /**
@@ -76,7 +76,7 @@ const resolveChannelLimit = async (
 
 export const Editions = {
   getActiveEditions,
-  isPresenceActive,
+  isBotPresent,
   getManagingEdition,
   channelLimitFor,
   resolveChannelLimit,
