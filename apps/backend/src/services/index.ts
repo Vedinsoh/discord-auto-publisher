@@ -7,6 +7,7 @@ import { Handover } from './handover.js';
 import { Info } from './info.js';
 import { PaddleService } from './paddle.js';
 import { PresenceHeal } from './presenceHeal.js';
+import { PublishState } from './publishState.js';
 import { Subscriptions } from './subscriptions.js';
 
 export const Services = {
@@ -19,5 +20,6 @@ export const Services = {
   Info,
   Paddle: PaddleService,
   PresenceHeal,
+  PublishState,
   Subscriptions,
 };

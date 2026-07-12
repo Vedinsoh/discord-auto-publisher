@@ -102,6 +102,23 @@ const pingHandoverEvaluate = async (guildId: Snowflake) => {
   });
 };
 
+// Publish-state push (ADR 0008): this edition's per-channel crosspost capability
+// computed off the gateway cache. `full` (a reconnect/join sweep) lets the
+// backend drop this edition's stale fields; incremental pushes only upsert.
+const pushChannelPermissions = async (
+  guildId: Snowflake,
+  channels: { channelId: Snowflake; canPublish: boolean; missing: string[] }[],
+  full: boolean
+) => {
+  return request(`/internal/channel-permissions/${guildId}`, {
+    method: RequestMethod.Post,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ edition, full, channels }),
+  });
+};
+
 // Info
 const getInfo = async () => {
   return request('/info');
@@ -159,6 +176,7 @@ export const Backend = {
   deleteGuild,
   registerNewGuild,
   pingHandoverEvaluate,
+  pushChannelPermissions,
   addFilter,
   removeFilter,
   getFilters,

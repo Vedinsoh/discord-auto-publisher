@@ -1,9 +1,5 @@
-import {
-  type GuildMember,
-  type NewsChannel,
-  PermissionsBitField,
-  type PermissionsString,
-} from 'discord.js';
+import { PUBLISH_PERMISSION_FLAGS } from '@ap/utils';
+import type { GuildMember, NewsChannel } from 'discord.js';
 
 export interface PermissionCheck {
   name: string;
@@ -16,35 +12,22 @@ export interface PermissionCheckResult {
   missing: PermissionCheck[];
 }
 
-const REQUIRED_PERMISSIONS: PermissionsString[] = [
-  'ViewChannel',
-  'SendMessages',
-  'ManageMessages',
-  'ReadMessageHistory',
-];
-
-const PERMISSION_NAMES: Partial<Record<PermissionsString, string>> = {
-  ViewChannel: 'View Channel',
-  SendMessages: 'Send Messages',
-  ManageMessages: 'Manage Messages',
-  ReadMessageHistory: 'Read Message History',
-};
-
 /**
- * Check if bot has all required permissions in a channel
+ * Check whether the bot has all canonical publish permissions in a channel.
+ * Uses the shared {@link PUBLISH_PERMISSION_FLAGS} (View + Send + Manage) so the
+ * commands agree exactly with the hot path and the backend gate.
  * @param botMember The bot's guild member
  * @param channel The channel to check permissions in
- * @returns Permission check result
  */
 export const checkChannelPermissions = (
   botMember: GuildMember,
   channel: NewsChannel
 ): PermissionCheckResult => {
-  const permissionsBitfield = botMember.permissionsIn(channel);
+  const bitfield = botMember.permissionsIn(channel).bitfield;
 
-  const permissions: PermissionCheck[] = REQUIRED_PERMISSIONS.map(perm => ({
-    name: PERMISSION_NAMES[perm] ?? perm,
-    has: permissionsBitfield.has(PermissionsBitField.Flags[perm]),
+  const permissions: PermissionCheck[] = PUBLISH_PERMISSION_FLAGS.map(({ bit, name }) => ({
+    name,
+    has: (bitfield & bit) === bit,
   }));
 
   const missing = permissions.filter(p => !p.has);

@@ -10,7 +10,8 @@
     "start": "bun run ."
   },
   "dependencies": {
-    "@ap/validations": "workspace:*"
+    "@ap/validations": "workspace:*",
+    "discord-api-types": "^0.38.37"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*"

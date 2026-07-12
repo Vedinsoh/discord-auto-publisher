@@ -47,9 +47,15 @@ export interface GuildChannel {
   enabled: boolean;
   filters: ChannelFilterRule[];
   filterMode: FilterMatchMode;
-  /** MIGRATION: present on legacy guilds only — migrate-modal preselection. */
+  /**
+   * Whether the guild's MANAGING bot can currently crosspost here (from the
+   * publish-state cache, ADR 0008). Present on every channel of the dashboard
+   * aggregate; also drives legacy migrate-modal preselection.
+   */
   canPublish?: boolean;
-  /** Present while a premium handover is pending — false = warning badge */
+  /** Canonical publish permissions the managing bot lacks here ([] when it can publish). */
+  missingPermissions?: string[];
+  /** Present while a premium handover is pending — false = "Premium bot needs access" badge */
   premiumBotHasPermissions?: boolean;
 }
 

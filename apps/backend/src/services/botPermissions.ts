@@ -1,4 +1,5 @@
 import type { Edition } from '@ap/api-types';
+import { missingPublishPermissions } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
 import {
   type APIChannel,
@@ -10,11 +11,8 @@ import {
 } from 'discord-api-types/v10';
 import { Discord } from './discord.js';
 
-/** Permissions a bot needs to crosspost in a channel */
-export const PUBLISH_PERMISSIONS =
-  PermissionFlagsBits.ViewChannel |
-  PermissionFlagsBits.SendMessages |
-  PermissionFlagsBits.ManageMessages;
+/** Publish capability of a bot in one channel: can it crosspost, and if not, what's missing. */
+export type PublishEntry = { canPublish: boolean; missing: string[] };
 
 /**
  * Effective channel permissions for a member: guild-level role union, then
@@ -71,14 +69,16 @@ const computeChannelPermissions = (
 };
 
 /**
- * `{channelId → canPublish}` for the given channels, evaluated for an
- * edition's bot via its proxy (two REST calls: guild roles + bot member).
+ * `{channelId → {canPublish, missing}}` for the given channels, evaluated for
+ * an edition's bot via its proxy (two REST calls: guild roles + bot member).
+ * This is the REST fallback for the bot-pushed publish-state cache (ADR 0008) —
+ * the bot normally supplies this data for free off its gateway cache.
  */
-const getCanPublishMap = async (
+const getPublishMap = async (
   edition: Edition,
   guildId: Snowflake,
   channels: APIChannel[]
-): Promise<Record<string, boolean>> => {
+): Promise<Record<string, PublishEntry>> => {
   const [roles, member] = await Promise.all([
     Discord.cachedGet<APIRole[]>(edition, Routes.guildRoles(guildId)),
     Discord.getBotUserId(edition).then(id =>
@@ -86,15 +86,16 @@ const getCanPublishMap = async (
     ),
   ]);
 
-  const map: Record<string, boolean> = {};
+  const map: Record<string, PublishEntry> = {};
   for (const channel of channels) {
     const permissions = computeChannelPermissions(guildId, member, roles, channel);
-    map[channel.id] = (permissions & PUBLISH_PERMISSIONS) === PUBLISH_PERMISSIONS;
+    const missing = missingPublishPermissions(permissions);
+    map[channel.id] = { canPublish: missing.length === 0, missing };
   }
 
   return map;
 };
 
 export const BotPermissions = {
-  getCanPublishMap,
+  getPublishMap,
 };

@@ -15,9 +15,11 @@ export class RoleUpdateListener extends Listener {
       (c): c is NewsChannel => c.type === ChannelType.GuildAnnouncement
     );
 
-    await Promise.all(
-      announcementChannels.map(channel => Services.Permissions.refreshChannel(channel))
-    );
+    // A role the bot holds changed — recompute every announcement channel.
+    await Services.Permissions.syncChannels(newRole.guild, [...announcementChannels.values()], {
+      full: false,
+      clearBlocked: true,
+    });
 
     // Premium + handover pending: the changed role permissions may unblock the swap
     await Services.Handover.pingIfPending(newRole.guild.id);

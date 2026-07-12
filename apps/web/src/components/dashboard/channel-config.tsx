@@ -37,6 +37,21 @@ function PremiumBlockedBadge({ channel }: { channel: GuildChannel }) {
 }
 
 /**
+ * Warning badge for an enabled channel where the managing bot currently lacks
+ * permission to publish — so nothing is actually being crossposted there.
+ */
+function NotPublishingBadge({ channel }: { channel: GuildChannel }) {
+  if (channel.canPublish !== false) return null;
+  const missing = channel.missingPermissions ?? [];
+  return (
+    <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
+      <TriangleAlert className="w-3 h-3 mr-1" />
+      {missing.length > 0 ? `Not publishing — needs ${missing.join(', ')}` : 'Not publishing'}
+    </Badge>
+  );
+}
+
+/**
  * MIGRATION: Legacy-guild view — read-only channel list with disabled toggles.
  * The legacy-mode banner + migrate modal live in the shell's banner stack
  * (dashboard-banners.tsx). Remove after migration period (6 months).
@@ -152,7 +167,13 @@ export function ChannelConfig({
               <div className="flex items-center gap-3">
                 <Hash className="w-5 h-5 text-slate-500" />
                 <span className="text-white text-lg">{channel.name}</span>
-                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Active</Badge>
+                {channel.canPublish === false ? (
+                  <NotPublishingBadge channel={channel} />
+                ) : (
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    Active
+                  </Badge>
+                )}
                 {channel.filters.length > 0 && (
                   <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
                     {channel.filters.length} filter

@@ -6,8 +6,8 @@ import { type APIChannel, ChannelType, Routes } from 'discord-api-types/v10';
 import { eq } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
-import { BotPermissions } from './botPermissions.js';
 import { Discord } from './discord.js';
+import { PublishState } from './publishState.js';
 
 /**
  * Premium handover: while the free bot is present, the premium bot idles behind
@@ -63,11 +63,13 @@ const getBlockedChannelIds = async (guildId: Snowflake): Promise<Snowflake[]> =>
 
   if (targets.length === 0) return [];
 
-  const [premiumCanPublish, freeCanPublish] = await Promise.all([
-    BotPermissions.getCanPublishMap('premium', guildId, targets),
-    BotPermissions.getCanPublishMap('free', guildId, targets),
+  const [premiumMap, freeMap] = await Promise.all([
+    PublishState.getEditionMap(guildId, 'premium', targets),
+    PublishState.getEditionMap(guildId, 'free', targets),
   ]);
-  return targets.filter(c => freeCanPublish[c.id] && !premiumCanPublish[c.id]).map(c => c.id);
+  return targets
+    .filter(c => freeMap[c.id]?.canPublish && !premiumMap[c.id]?.canPublish)
+    .map(c => c.id);
 };
 
 /**

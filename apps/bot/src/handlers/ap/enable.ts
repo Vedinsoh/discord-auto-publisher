@@ -119,6 +119,13 @@ export async function chatInputEnable(
       });
     }
 
+    // Seed publish-state for this channel so the dashboard reflects it at once
+    // (ADR 0008) — perms were just verified above, so this is a free push.
+    void Services.Permissions.syncChannels(botMember.guild, [channel], {
+      full: false,
+      clearBlocked: false,
+    });
+
     const successMessage =
       `${emojis.checkmark} Auto-publishing has been enabled in <#${channel.id}> channel!` +
       formatNotes([notes.rateLimit, config.isPremiumInstance && notes.publishDelay]);

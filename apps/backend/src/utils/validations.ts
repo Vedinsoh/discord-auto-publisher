@@ -47,6 +47,29 @@ export const GuildRegisterReqSchema = z.object({
   }),
 });
 
+/** Bot-pushed publish-state batch (ADR 0008): one edition's per-channel capability */
+export const PublishStatePushReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    edition: EditionSchema,
+    // A full sweep (bot reconnect) replaces the edition's stale fields; an
+    // incremental push (single permission event) only upserts.
+    full: z.boolean().optional(),
+    // 500 = Discord's per-guild channel cap
+    channels: z
+      .array(
+        z.object({
+          channelId: Validations.snowflakeId,
+          canPublish: z.boolean(),
+          missing: z.array(z.string()).max(16),
+        })
+      )
+      .max(500),
+  }),
+});
+
 export const GuildChannelReqSchema = z.object({
   params: z.object({
     guildId: Validations.snowflakeId,

@@ -98,22 +98,17 @@ export const GuildApi: Router = (() => {
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
       const migrated = !!guildRow?.migratedAt;
 
-      // Two independent permission evaluations, run concurrently:
-      // - canPublish (legacy guilds only) drives migrate-modal preselection
-      // - premiumBlockedIds (pending handover only) flags channels the premium
-      //   bot cannot publish in yet. A handover eval failure (e.g. a dangling
-      //   marker after the premium bot was kicked) only omits the badges — it
-      //   must never break the whole dashboard.
-      // Both read guild channels/roles/member through the Discord read cache the
-      // Promise.all above already warmed, so the channel list is not re-fetched.
-      const [canPublishMap, premiumBlockedIds] = await Promise.all([
-        migrated
-          ? Promise.resolve<Record<string, boolean> | null>(null)
-          : Services.BotPermissions.getCanPublishMap(
-              managingEdition,
-              guildId,
-              announcementChannels
-            ),
+      // Two evaluations, run concurrently, both served from the bot-pushed
+      // publish-state cache (ADR 0008) with a REST write-back fallback:
+      // - managingMap: the managing bot's publish capability per channel (drives
+      //   the "Active / Not publishing — missing X" indicator + migrate-modal)
+      // - premiumBlockedIds (pending handover only): channels the premium bot
+      //   cannot publish in yet where the free bot can — the "Premium bot needs
+      //   access" nudge. A handover eval failure (e.g. a dangling marker after
+      //   the premium bot was kicked) only omits that badge — never breaks the
+      //   whole dashboard.
+      const [managingMap, premiumBlockedIds] = await Promise.all([
+        Services.PublishState.getEditionMap(guildId, managingEdition, announcementChannels),
         (async (): Promise<Set<string> | null> => {
           if (!premiumPending) return null;
           try {
@@ -129,6 +124,7 @@ export const GuildApi: Router = (() => {
 
       const channels = announcementChannels.map(c => {
         const record = enabledMap.get(c.id);
+        const publish = managingMap[c.id];
         return {
           channelId: c.id,
           name: c.name ?? 'Unknown Channel',
@@ -136,7 +132,8 @@ export const GuildApi: Router = (() => {
           enabled: !!record,
           filters: record?.filters ?? [],
           filterMode: record?.filterMode ?? 'any',
-          ...(canPublishMap ? { canPublish: canPublishMap[c.id] ?? false } : {}),
+          canPublish: publish?.canPublish ?? false,
+          missingPermissions: publish?.missing ?? [],
           ...(premiumBlockedIds ? { premiumBotHasPermissions: !premiumBlockedIds.has(c.id) } : {}),
         };
       });

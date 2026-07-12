@@ -14,6 +14,8 @@ export enum DatabaseIDs {
   BlockedChannelsPremium = 11,
   // Premium handover markers (backend-owned; premium bot reads on its hot path)
   PremiumPending = 12,
+  // Per-guild publish-state hash (backend-owned; the bots push, dashboard + gate read)
+  PublishState = 13,
 }
 
 /** Proxy-owned logical DBs, keyed by the proxy's edition */
@@ -38,4 +40,5 @@ export enum Keys {
   PaddleEvent = 'paddle_event',
   Alert = 'alert',
   PremiumPending = 'premium_pending',
+  PublishState = 'publish_state',
 }

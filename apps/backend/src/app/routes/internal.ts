@@ -7,7 +7,7 @@ import {
 import express, { type Router } from 'express';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
-import { GuildReqSchema } from 'utils/validations.js';
+import { GuildReqSchema, PublishStatePushReqSchema } from 'utils/validations.js';
 
 export const Internal: Router = (() => {
   const router = express.Router();
@@ -30,6 +30,30 @@ export const Internal: Router = (() => {
       message: 'Handover evaluation started',
     } as APIResponse);
   });
+
+  /**
+   * POST /internal/channel-permissions/:guildId
+   * Publish-state push from a bot (ADR 0008): one edition's per-channel
+   * crosspost capability, computed off the bot's gateway cache. Stored for the
+   * dashboard + handover gate to read. Fire-and-forget — 202 immediately.
+   */
+  router.post(
+    '/channel-permissions/:guildId',
+    validateRequest(PublishStatePushReqSchema),
+    (req, res) => {
+      const { guildId } = req.params;
+      const { edition, full, channels } = req.body;
+
+      void Services.PublishState.writeGuildEdition(guildId, edition, channels, !!full).catch(
+        error => logger.error(error, `Publish-state write failed for guild ${guildId}`)
+      );
+
+      res.status(StatusCodes.ACCEPTED).json({
+        status: StatusCodes.ACCEPTED,
+        message: 'Publish-state accepted',
+      } as APIResponse);
+    }
+  );
 
   /**
    * POST /internal/reconcile/guilds
