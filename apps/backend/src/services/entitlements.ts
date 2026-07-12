@@ -19,17 +19,30 @@ const revokePremiumAccess = async (guildId: string): Promise<void> => {
 };
 
 /**
- * Detects an entitled → not-entitled transition and enforces it.
+ * Entitled → not-entitled transition: the one trigger for a premium-bot leave.
+ * A type guard so callers can safely read `current.guildId`. Shared by the
+ * webhook path ({@link enforceTransition}, single guild) and the reconcile
+ * cron, which collects these across a whole pass so a circuit breaker can catch
+ * a Paddle mass-cancel before any leave fires.
+ */
+const isRevocation = (
+  previous: Subscription | undefined,
+  current: Subscription | undefined
+): current is Subscription => {
+  if (!current) return false;
+  const wasEntitled = previous ? isEntitledStatus(previous.status) : false;
+  return wasEntitled && !isEntitledStatus(current.status);
+};
+
+/**
+ * Detects an entitled → not-entitled transition and enforces it (webhook path,
+ * single guild — no mass-action guard needed).
  */
 const enforceTransition = async (
   previous: Subscription | undefined,
   current: Subscription | undefined
 ): Promise<void> => {
-  if (!current) return;
-  const wasEntitled = previous ? isEntitledStatus(previous.status) : false;
-  const isNowEntitled = isEntitledStatus(current.status);
-
-  if (wasEntitled && !isNowEntitled) {
+  if (isRevocation(previous, current)) {
     await revokePremiumAccess(current.guildId);
   }
 };
@@ -37,4 +50,5 @@ const enforceTransition = async (
 export const Entitlements = {
   revokePremiumAccess,
   enforceTransition,
+  isRevocation,
 };

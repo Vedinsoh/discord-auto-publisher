@@ -1,6 +1,7 @@
 import { CronJob } from 'cron';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
+import { guardMassAction } from 'utils/massActionGuard.js';
 
 /**
  * Daily cron: reconciles local subscription state against the Paddle API.
@@ -15,6 +16,7 @@ export const isSubscriptionReconcileInFlight = () => inFlight;
 const reconcileSubscriptions = async () => {
   let processed = 0;
   let changed = 0;
+  const toRevoke = new Set<string>();
 
   for await (const paddleSub of Services.Paddle.listAllSubscriptions()) {
     processed++;
@@ -31,18 +33,45 @@ const reconcileSubscriptions = async () => {
       );
     }
 
-    await Services.Entitlements.enforceTransition(previous, current);
+    // Collect rather than leave inline — counting revocations across the whole
+    // pass lets the circuit breaker below catch a Paddle mass-cancel snapshot
+    // before a single bot leaves.
+    if (Services.Entitlements.isRevocation(previous, current)) toRevoke.add(current.guildId);
   }
 
-  // Backstop for missed/failed revocations: bot still present in a guild
-  // whose subscription is no longer entitled
-  const revoked = await Services.Subscriptions.getRevokedWithBotPresent();
-  for (const sub of revoked) {
-    logger.info(`Reconcile: re-enforcing revocation for guild ${sub.guildId} (${sub.status})`);
-    await Services.Entitlements.revokePremiumAccess(sub.guildId);
+  // Backstop for missed/failed revocations: bot still present in a guild whose
+  // subscription is already not entitled (no transition seen this pass).
+  for (const sub of await Services.Subscriptions.getRevokedWithBotPresent()) {
+    toRevoke.add(sub.guildId);
   }
 
-  logger.info(`Subscription reconcile finished: ${processed} checked, ${changed} corrected`);
+  // Only guilds the premium bot is actually in can be left; scope the count and
+  // the cap's population to premium presence so normal churn of already-departed
+  // lapses can't trip (or dodge) the breaker.
+  const present = await Services.Editions.filterPresent([...toRevoke], 'premium');
+  const population = await Services.Editions.countPresent('premium');
+
+  let revoked = 0;
+  const allowed = guardMassAction({
+    key: 'subscription-reconcile-revocation-cap',
+    action: 'revoke premium access',
+    count: present.length,
+    population,
+    context:
+      'Paddle may have reported a bad subscription snapshot — investigate before re-running.',
+  });
+
+  if (allowed) {
+    for (const guildId of present) {
+      logger.info(`Reconcile: enforcing revocation for guild ${guildId}`);
+      await Services.Entitlements.revokePremiumAccess(guildId);
+      revoked++;
+    }
+  }
+
+  logger.info(
+    `Subscription reconcile finished: ${processed} checked, ${changed} corrected, ${revoked} revoked`
+  );
 };
 
 export const runSubscriptionReconcile = async (): Promise<void> => {

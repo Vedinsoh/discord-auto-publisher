@@ -1,7 +1,7 @@
 import type { ChannelLimitReason, Edition } from '@ap/api-types';
 import { botPresence, db } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 import { Handover } from './handover.js';
 import { isEntitledStatus, Subscriptions } from './subscriptions.js';
 
@@ -18,6 +18,31 @@ const getActiveEditions = async (guildId: Snowflake): Promise<Set<Edition>> => {
 
 const isBotPresent = async (guildId: Snowflake, edition: Edition): Promise<boolean> =>
   (await getActiveEditions(guildId)).has(edition);
+
+/** How many guilds an edition's bot is currently in (`leftAt IS NULL`) */
+const countPresent = async (edition: Edition): Promise<number> => {
+  const [row] = await db
+    .select({ value: count() })
+    .from(botPresence)
+    .where(and(eq(botPresence.edition, edition), isNull(botPresence.leftAt)));
+  return row?.value ?? 0;
+};
+
+/** Subset of `guildIds` an edition's bot is currently in (`leftAt IS NULL`) */
+const filterPresent = async (guildIds: Snowflake[], edition: Edition): Promise<Snowflake[]> => {
+  if (guildIds.length === 0) return [];
+  const rows = await db
+    .select({ guildId: botPresence.guildId })
+    .from(botPresence)
+    .where(
+      and(
+        inArray(botPresence.guildId, guildIds),
+        eq(botPresence.edition, edition),
+        isNull(botPresence.leftAt)
+      )
+    );
+  return rows.map(r => r.guildId);
+};
 
 /**
  * The edition doing the work in a guild: premium once the handover swapped (or
@@ -77,6 +102,8 @@ const resolveChannelLimit = async (
 export const Editions = {
   getActiveEditions,
   isBotPresent,
+  countPresent,
+  filterPresent,
   getManagingEdition,
   channelLimitFor,
   resolveChannelLimit,

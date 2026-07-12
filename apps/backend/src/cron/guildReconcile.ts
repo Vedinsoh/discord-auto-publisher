@@ -11,6 +11,7 @@ import { Services } from 'services/index.js';
 import { applyJoinRails } from 'services/joinRails.js';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
+import { guardMassAction, massActionCap } from 'utils/massActionGuard.js';
 
 const PAGE_SIZE = 200;
 const BATCH_SIZE = 1000;
@@ -123,18 +124,15 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
     .filter(r => !liveIds.has(r.guildId) && r.joinedAt < ageGuard)
     .map(r => r.guildId);
 
-  const deletionCap = Math.max(50, Math.ceil(activeRows.length * 0.1));
-  const deletionsAborted = toSoftDelete.length > deletionCap;
+  const deletionsAborted = !guardMassAction({
+    key: `guild-reconcile-deletion-cap:${edition}`,
+    action: `soft-delete ${edition} presences`,
+    count: toSoftDelete.length,
+    population: activeRows.length,
+    context: "Discord's live guild list may be truncated — investigate before the next sweep.",
+  });
 
-  if (deletionsAborted) {
-    logger.error(
-      `Guild reconcile (${edition}): refusing to soft-delete ${toSoftDelete.length} presences (cap ${deletionCap}) — live list may be truncated`
-    );
-    alerter.send(`guild-reconcile-deletion-cap:${edition}`, {
-      title: 'Guild reconcile deletion cap tripped',
-      description: `Refused to soft-delete ${toSoftDelete.length} ${edition} presences (cap ${deletionCap}, ${activeRows.length} active). Discord's live guild list may be truncated — investigate before the next sweep.`,
-    });
-  } else {
+  if (!deletionsAborted) {
     for (const batch of chunk(toSoftDelete, BATCH_SIZE)) {
       await db
         .update(botPresence)
@@ -155,7 +153,7 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
   }
 
   logger.info(
-    `Guild reconcile (${edition}) finished: ${liveIds.size} live, ${toInsert.length} inserted, ${toRestore.length} restored, ${deletionsAborted ? `0 soft-deleted (ABORTED: ${toSoftDelete.length} > cap ${deletionCap})` : `${toSoftDelete.length} soft-deleted`}`
+    `Guild reconcile (${edition}) finished: ${liveIds.size} live, ${toInsert.length} inserted, ${toRestore.length} restored, ${deletionsAborted ? `0 soft-deleted (ABORTED: ${toSoftDelete.length} > cap ${massActionCap(activeRows.length)})` : `${toSoftDelete.length} soft-deleted`}`
   );
 
   return [...toInsert, ...toRestore];
