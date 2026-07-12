@@ -57,6 +57,12 @@ export const applyJoinRails = async (guildIds: Set<Snowflake>): Promise<void> =>
         logger.info(`Join rails: free bot leaving guild ${guildId} (premium is managing)`);
         await Discord.leaveGuild('free', guildId);
       }
+
+      // Enforce the channel-serving invariant once the managing edition has
+      // settled (ADR 0008): a no-op unless free manages over the cap (pause
+      // excess) or premium manages with paused rows (reactivate). A free bot
+      // that just left above still reads as managing==premium here → no trim.
+      await Editions.reconcileChannelServing(guildId);
     } catch (error) {
       logger.warn(error, `Join rails: check failed for guild ${guildId}`);
     }

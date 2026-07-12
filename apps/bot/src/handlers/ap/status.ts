@@ -22,7 +22,9 @@ export async function chatInputStatus(
   // If no channel is provided, list all enabled channels
   if (!channel) {
     try {
-      const channelIds = await Services.Channel.getGuildChannels(interaction.guildId);
+      const guildChannels = await Services.Channel.getGuildChannels(interaction.guildId);
+      const channelIds = guildChannels?.channelIds ?? null;
+      const pausedChannelIds = guildChannels?.pausedChannelIds ?? [];
 
       if (!channelIds || channelIds.length === 0) {
         const apCommandId = await interaction.client.application.commands
@@ -45,9 +47,16 @@ export async function chatInputStatus(
       const channelList = channelIds.map(id => `- <#${id}>`).join('\n');
       const count = channelIds.length;
 
+      // Paused channels are retained but over the free limit of 3 (ADR 0008) —
+      // surfaced so the user understands why they went quiet, with the path back.
+      const pausedSection =
+        pausedChannelIds.length > 0
+          ? `\n\n${emojis.warning} **${pausedChannelIds.length}** channel${pausedChannelIds.length !== 1 ? 's are' : ' is'} paused — over the free limit of 3. Upgrade to Premium to restore ${pausedChannelIds.length !== 1 ? 'them' : 'it'}:\n\n${pausedChannelIds.map(id => `- <#${id}>`).join('\n')}`
+          : '';
+
       const listContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${formatNotes([config.isPremiumInstance && notes.publishDelay])}`
+          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${pausedSection}${formatNotes([config.isPremiumInstance && notes.publishDelay])}`
         )
       );
 

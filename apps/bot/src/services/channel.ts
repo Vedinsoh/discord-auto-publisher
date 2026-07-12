@@ -105,9 +105,10 @@ const getStatus = async (channelId: Snowflake) => {
 };
 
 /**
- * Get all channels enabled for auto-publishing in a guild
+ * Get a guild's auto-publishing channels: serving channel IDs plus paused ones
+ * (retained but over the free limit, ADR 0008).
  * @param guildId The guild ID
- * @returns Array of channel IDs, or null if request fails
+ * @returns { channelIds, pausedChannelIds }, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
   try {
@@ -122,10 +123,13 @@ const getGuildChannels = async (guildId: Snowflake) => {
 
     const result = (await response.json()) as {
       status: number;
-      data: { channelIds: string[] };
+      data: { channelIds: string[]; pausedChannelIds?: string[] };
       message: string;
     };
-    return result.data.channelIds;
+    return {
+      channelIds: result.data.channelIds,
+      pausedChannelIds: result.data.pausedChannelIds ?? [],
+    };
   } catch (error) {
     logger.error(error, `Error getting guild channels ${guildId}`);
     return null;

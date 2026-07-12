@@ -1,11 +1,11 @@
 import type { Edition } from '@ap/api-types';
-import { botPresence, db, guild } from '@ap/database';
+import { botPresence, channel, db, guild } from '@ap/database';
 import { Keys } from '@ap/redis';
 import { CronJob } from 'cron';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-types/v10';
-import { and, countDistinct, eq, inArray, isNull, lt, max, sql } from 'drizzle-orm';
+import { and, count, countDistinct, eq, gt, inArray, isNull, lt, max, sql } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
 import { applyJoinRails } from 'services/joinRails.js';
@@ -210,6 +210,61 @@ const sweepPendingMarkers = async (): Promise<void> => {
   }
 };
 
+/**
+ * State-based backstop for the "free never serves >3" invariant (ADR 0008).
+ * The join rails only fire on presence changes / dashboard loads, so they miss
+ * guilds already over-limit at deploy time, the premium-kicked-then-free-invited
+ * case, and any live trim that threw. This finds every guild with more serving
+ * channels than the free cap, then trims the ones the free bot actually manages.
+ * Batch-guarded: a managing-edition regression that mislabels premium-managed
+ * guilds as free would try to pause a large fraction of the over-limit set, so
+ * the guard aborts rather than mass-pause.
+ */
+const enforceChannelLimitBackstop = async (): Promise<void> => {
+  const freeLimit = Services.Editions.channelLimitFor('free');
+
+  const overLimit = await db
+    .select({ guildId: channel.guildId })
+    .from(channel)
+    .where(isNull(channel.pausedAt))
+    .groupBy(channel.guildId)
+    .having(gt(count(), freeLimit));
+  if (overLimit.length === 0) return;
+
+  const freeManaged: Snowflake[] = [];
+  for (const { guildId } of overLimit) {
+    try {
+      if ((await Services.Editions.getManagingEdition(guildId)) === 'free') {
+        freeManaged.push(guildId);
+      }
+    } catch (error) {
+      logger.warn(error, `Channel-limit backstop: managing-edition check failed for ${guildId}`);
+    }
+  }
+  if (freeManaged.length === 0) return;
+
+  const allowed = guardMassAction({
+    key: 'channel-limit-backstop',
+    action: 'pause over-limit channels',
+    count: freeManaged.length,
+    population: overLimit.length,
+    context:
+      'A managing-edition regression could mass-pause channels — investigate before the next sweep.',
+  });
+  if (!allowed) return;
+
+  let enforced = 0;
+  for (const guildId of freeManaged) {
+    try {
+      await Services.Editions.reconcileChannelServing(guildId);
+      enforced++;
+    } catch (error) {
+      logger.warn(error, `Channel-limit backstop: enforce failed for guild ${guildId}`);
+    }
+  }
+  logger.info(`Channel-limit backstop: enforced ${enforced} over-limit free-managed guilds`);
+};
+
 /** Purge guilds whose last bot left more than 30 days ago (cascade + cache cleanup) */
 const purgeAbandonedGuilds = async (): Promise<void> => {
   const purgeCutoff = new Date(Date.now() - PURGE_AFTER_MS);
@@ -269,6 +324,8 @@ const reconcileGuilds = async () => {
       railCandidates.add(guildId);
     }
     await applyJoinRails(railCandidates);
+    // Needs reconciled presence rows to resolve managing edition correctly
+    await enforceChannelLimitBackstop();
   } else if (railCandidates.size > 0) {
     logger.warn(
       `Guild reconcile: skipping join rails for ${railCandidates.size} guilds (a sweep did not complete)`

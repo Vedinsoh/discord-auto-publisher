@@ -14,10 +14,15 @@ export const Guild: Router = (() => {
     const { guildId } = req.params;
 
     try {
-      const channelIds = await Services.Guilds.getChannels(guildId);
+      // channelIds = serving; pausedChannelIds = retained-but-paused (ADR 0008),
+      // surfaced separately by /ap status.
+      const [channelIds, pausedChannelIds] = await Promise.all([
+        Services.Guilds.getChannels(guildId),
+        Services.Guilds.getPausedChannels(guildId),
+      ]);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
-        data: { channelIds },
+        data: { channelIds, pausedChannelIds },
         message: 'Channels retrieved successfully',
       } as APIResponse);
     } catch (error) {

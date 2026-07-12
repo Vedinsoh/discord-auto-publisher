@@ -6,6 +6,7 @@ import { type APIChannel, ChannelType, Routes } from 'discord-api-types/v10';
 import { eq } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
+import { ChannelPausing } from './channels/pausing.js';
 import { Discord } from './discord.js';
 import { PublishState } from './publishState.js';
 
@@ -80,6 +81,10 @@ const getBlockedChannelIds = async (guildId: Snowflake): Promise<Snowflake[]> =>
 const swap = async (guildId: Snowflake): Promise<void> => {
   await clearPending(guildId);
   logger.info(`Premium handover swapped for guild ${guildId}`);
+
+  // Premium is now the managing edition (unlimited) — restore any channels the
+  // free bot had paused while it was over the 3-cap (ADR 0008).
+  await ChannelPausing.reactivateGuild(guildId);
 
   const left = await Discord.leaveGuild('free', guildId);
   if (!left) {

@@ -125,16 +125,20 @@ export const GuildApi: Router = (() => {
       const channels = announcementChannels.map(c => {
         const record = enabledMap.get(c.id);
         const publish = managingMap[c.id];
+        // Serving = a row exists AND is not paused (ADR 0008). A paused row is a
+        // disabled channel with retained config → surfaced via hasSavedSetup.
+        const serving = !!record && !record.pausedAt;
         return {
           channelId: c.id,
           name: c.name ?? 'Unknown Channel',
           type: c.type,
-          enabled: !!record,
+          enabled: serving,
           filters: record?.filters ?? [],
           filterMode: record?.filterMode ?? 'any',
           canPublish: publish?.canPublish ?? false,
           missingPermissions: publish?.missing ?? [],
           ...(premiumBlockedIds ? { premiumBotHasPermissions: !premiumBlockedIds.has(c.id) } : {}),
+          ...(record?.pausedAt ? { hasSavedSetup: true } : {}),
         };
       });
 

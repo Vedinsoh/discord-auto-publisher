@@ -1,8 +1,8 @@
 'use client';
 
-import { Crown, ExternalLink, Hourglass, Megaphone } from 'lucide-react';
+import { Crown, ExternalLink, Hourglass, Megaphone, PauseCircle, X } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,11 @@ import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 /**
  * Guild-level banner stack rendered in the dashboard shell, above the sidebar
  * and page content. Order: premium invite → premium pending → legacy
- * migration. Invite and pending are mutually exclusive (pending implies the
- * premium bot is present); the migration banner can stack with either.
- * None are dismissible — they nag until the state resolves (ADR 0006).
+ * migration → paused channels. Invite and pending are mutually exclusive
+ * (pending implies the premium bot is present); the migration banner can stack
+ * with either. Banners 1–3 are not dismissible — they nag until the state
+ * resolves (ADR 0006). The paused-channels banner is the lone dismissible
+ * exception (ADR 0008).
  */
 export function DashboardBanners() {
   const { guild, data } = useGuild();
@@ -25,7 +27,33 @@ export function DashboardBanners() {
   const showPremiumPending = data.premiumPending;
   const showMigration = !data.migrated;
 
-  if (!showPremiumInvite && !showPremiumPending && !showMigration) {
+  // Paused-channels state: free is the managing edition (channelLimit !== 0),
+  // channels are paused, and the guild is not entitled — mutually exclusive
+  // with the premium banners (which imply entitlement). ADR 0008.
+  const pausedCount = data.channels.filter(c => c.hasSavedSetup).length;
+  const overLimitPaused = data.channelLimit !== 0 && pausedCount > 0 && !guild.hasSubscription;
+
+  // Episode-scoped, per-browser dismissal: hidden until localStorage is read
+  // (avoids a flash + hydration mismatch); the marker is cleared whenever the
+  // guild is back under limit so a fresh downgrade re-alerts.
+  const dismissKey = `ap:pausedBannerDismissed:${guild.id}`;
+  const [pausedDismissed, setPausedDismissed] = useState(true);
+  useEffect(() => {
+    if (!overLimitPaused) {
+      window.localStorage.removeItem(dismissKey);
+      setPausedDismissed(true);
+      return;
+    }
+    setPausedDismissed(window.localStorage.getItem(dismissKey) === '1');
+  }, [overLimitPaused, dismissKey]);
+
+  const showPaused = overLimitPaused && !pausedDismissed;
+  const dismissPaused = () => {
+    window.localStorage.setItem(dismissKey, '1');
+    setPausedDismissed(true);
+  };
+
+  if (!showPremiumInvite && !showPremiumPending && !showMigration && !showPaused) {
     return null;
   }
 
@@ -43,7 +71,64 @@ export function DashboardBanners() {
           premiumPending={data.premiumPending}
         />
       )}
+      {showPaused && (
+        <PausedChannelsBanner
+          guildId={guild.id}
+          pausedCount={pausedCount}
+          onDismiss={dismissPaused}
+        />
+      )}
     </div>
+  );
+}
+
+/**
+ * Dismissible nag for a free guild sitting over the 3-channel limit with paused
+ * (retained) channels. Yellow (warning family). ADR 0008.
+ */
+function PausedChannelsBanner({
+  guildId,
+  pausedCount,
+  onDismiss,
+}: {
+  guildId: string;
+  pausedCount: number;
+  onDismiss: () => void;
+}) {
+  return (
+    <Card className="bg-yellow-500/10 border-yellow-500/30 p-6 relative">
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label="Dismiss"
+        className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
+      >
+        <X className="w-4 h-4" />
+      </button>
+      <div className="flex items-start gap-4">
+        <PauseCircle className="w-6 h-6 text-yellow-400 shrink-0 mt-1" />
+        <div className="flex-1">
+          <h3 className="text-white text-lg mb-1">
+            {pausedCount} channel{pausedCount !== 1 ? 's are' : ' is'} paused
+          </h3>
+          <p className="text-slate-300 text-sm mb-4">
+            This server is over the free limit of 3 channels. Their setup is saved and returns if
+            you upgrade to Premium.
+          </p>
+          <div className="flex items-center gap-4">
+            <Button className="bg-yellow-500 hover:bg-yellow-400 text-slate-950" asChild>
+              <Link href={`/dashboard/${guildId}/subscription`}>Upgrade to Premium</Link>
+            </Button>
+            <Link
+              href={`/dashboard/${guildId}/channels`}
+              className="text-blue-400 hover:underline text-sm"
+            >
+              Manage channels
+            </Link>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
 

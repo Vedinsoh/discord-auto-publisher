@@ -4,7 +4,7 @@ import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { and, eq, isNull, lt, max, notExists, notInArray, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, isNull, lt, max, notExists, notInArray, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { Discord } from './discord.js';
 import { Editions } from './editions.js';
@@ -33,10 +33,11 @@ const find = async (guildId: Snowflake) => {
  */
 const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   try {
+    // Serving channels only — paused rows are retained but not published (ADR 0008)
     const rows = await db
       .select({ channelId: channel.channelId })
       .from(channel)
-      .where(eq(channel.guildId, guildId));
+      .where(and(eq(channel.guildId, guildId), isNull(channel.pausedAt)));
 
     const channelIds = rows.map(r => r.channelId);
 
@@ -46,6 +47,20 @@ const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   } catch (error) {
     logger.error(error);
     throw new Error('Failed to retrieve channels');
+  }
+};
+
+/** Paused (retained-but-not-serving) channel IDs for a guild (ADR 0008) */
+const getPausedChannels = async (guildId: Snowflake): Promise<string[]> => {
+  try {
+    const rows = await db
+      .select({ channelId: channel.channelId })
+      .from(channel)
+      .where(and(eq(channel.guildId, guildId), isNotNull(channel.pausedAt)));
+    return rows.map(r => r.channelId);
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to retrieve paused channels');
   }
 };
 
@@ -270,6 +285,13 @@ const registerNewGuild = async (
       }
     }
 
+    // Enforce the "free never serves >3" invariant at the point the managing
+    // edition settles (ADR 0008): free just (re)joined over the cap → pause the
+    // excess; premium is the sole/managing bot → reactivate any paused channel.
+    if (rows[0]?.migratedAt) {
+      await Editions.reconcileChannelServing(guildId);
+    }
+
     logger.debug(`Registered ${edition} presence for guild ${guildId} in DB and cache`);
   } catch (error) {
     logger.error(error);
@@ -285,7 +307,9 @@ const registerNewGuild = async (
  * @param guildId ID of the guild
  */
 const syncMigratedGuildCache = async (guildId: Snowflake): Promise<void> => {
-  const records = await getChannelRecords(guildId);
+  // Serving channels only — a paused channel must never be written to the
+  // allowlist (ADR 0008); reconcileChannelServing repauses excess right after.
+  const records = await getServingChannelRecords(guildId);
 
   if (records.length > 0) {
     await Data.Channels.Cache.setMany(
@@ -374,11 +398,15 @@ const migrate = async (guildId: Snowflake, channelIds: Snowflake[]): Promise<voi
  */
 const getChannelRecords = async (guildId: Snowflake) => {
   try {
+    // All rows incl. pausedAt — the dashboard renders paused channels (as
+    // disabled, with a "Saved setup" tag). Cache population uses the
+    // serving-only variant below instead.
     const rows = await db
       .select({
         channelId: channel.channelId,
         filters: channel.filters,
         filterMode: channel.filterMode,
+        pausedAt: channel.pausedAt,
       })
       .from(channel)
       .where(eq(channel.guildId, guildId));
@@ -392,10 +420,25 @@ const getChannelRecords = async (guildId: Snowflake) => {
   }
 };
 
+/** Serving channel records only (`pausedAt IS NULL`) — for allowlist cache population */
+const getServingChannelRecords = async (guildId: Snowflake) => {
+  const rows = await db
+    .select({
+      channelId: channel.channelId,
+      filters: channel.filters,
+      filterMode: channel.filterMode,
+    })
+    .from(channel)
+    .where(and(eq(channel.guildId, guildId), isNull(channel.pausedAt)));
+  return rows;
+};
+
 export const Guilds = {
   find,
   getChannels,
+  getPausedChannels,
   getChannelRecords,
+  getServingChannelRecords,
   softDelete,
   purge,
   activatePresence,

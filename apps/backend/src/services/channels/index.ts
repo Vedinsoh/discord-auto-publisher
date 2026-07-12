@@ -3,7 +3,7 @@ import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { asc, count, eq, gt, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
 import { Editions } from 'services/editions.js';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
@@ -22,6 +22,8 @@ const initialize = async () => {
 
     // Phase 1: Sync DB → cache (cursor-based batching)
     while (true) {
+      // Serving channels only — paused rows (pausedAt set) are deliberately
+      // absent from the allowlist; loading them would re-serve them on restart.
       const batch = await db
         .select({
           channelId: channelTable.channelId,
@@ -29,7 +31,12 @@ const initialize = async () => {
           filterMode: channelTable.filterMode,
         })
         .from(channelTable)
-        .where(cursor ? gt(channelTable.channelId, cursor) : undefined)
+        .where(
+          and(
+            isNull(channelTable.pausedAt),
+            cursor ? gt(channelTable.channelId, cursor) : undefined
+          )
+        )
         .orderBy(asc(channelTable.channelId))
         .limit(BATCH_SIZE);
 
@@ -83,10 +90,17 @@ const initialize = async () => {
     let dbCursor: string | undefined;
 
     while (true) {
+      // Serving only: a paused channel must not survive in the cache, so it is
+      // treated as "not in DB" here and swept out as stale.
       const dbBatch = await db
         .select({ channelId: channelTable.channelId })
         .from(channelTable)
-        .where(dbCursor ? gt(channelTable.channelId, dbCursor) : undefined)
+        .where(
+          and(
+            isNull(channelTable.pausedAt),
+            dbCursor ? gt(channelTable.channelId, dbCursor) : undefined
+          )
+        )
         .orderBy(asc(channelTable.channelId))
         .limit(BATCH_SIZE);
 
@@ -151,6 +165,12 @@ const get = async (channelId: Snowflake) => {
     // Cache miss - fallback to DB
     const dbChannel = await find(channelId);
 
+    // A paused channel is intentionally absent from the cache — treat it as not
+    // serving and never repair the cache (that would re-serve it).
+    if (dbChannel?.pausedAt) {
+      return null;
+    }
+
     if (dbChannel) {
       // Repair cache
       await Data.Channels.Cache.set(
@@ -181,19 +201,42 @@ const get = async (channelId: Snowflake) => {
  * @param channelId ID of the channel
  */
 const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
-  // Check if channel already exists
-  const existingChannel = await get(channelId);
-  if (existingChannel) {
-    throw createHttpError('Channel already exists', StatusCodes.CONFLICT);
-  }
-
-  // Check if guild has hit the channels limit (by its managing edition)
+  // The limit counts SERVING channels only (paused rows are retained but not
+  // served, ADR 0008), so both "register new" and "unpause existing" go through
+  // the same cap gate.
   const { limit, reason } = await Editions.resolveChannelLimit(guildId);
-  const countResult = await db
+  const [servingCount] = await db
     .select({ count: count() })
     .from(channelTable)
-    .where(eq(channelTable.guildId, guildId));
-  const guildChannelsCount = countResult[0]?.count ?? 0;
+    .where(and(eq(channelTable.guildId, guildId), isNull(channelTable.pausedAt)));
+  const guildChannelsCount = servingCount?.count ?? 0;
+
+  // Enable = register-or-unpause. A serving row is a real conflict; a paused row
+  // is reactivated in place (restoring its filters), never duplicated.
+  const existing = await find(channelId);
+  if (existing) {
+    if (!existing.pausedAt) {
+      throw createHttpError('Channel already exists', StatusCodes.CONFLICT);
+    }
+    if (limit !== 0 && guildChannelsCount >= limit) {
+      throw createHttpError(
+        'Guild has reached the channels limit',
+        StatusCodes.BAD_REQUEST,
+        reason
+      );
+    }
+    await db
+      .update(channelTable)
+      .set({ pausedAt: null })
+      .where(eq(channelTable.channelId, channelId));
+    await Data.Channels.Cache.set(
+      channelId,
+      existing.filters ?? [],
+      (existing.filterMode as FilterMatchMode) || FilterMatchMode.Any
+    );
+    logger.debug(`Unpaused channel ${channelId} for guild ${guildId}`);
+    return;
+  }
 
   if (limit !== 0 && guildChannelsCount >= limit) {
     throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST, reason);

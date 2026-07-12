@@ -1,5 +1,5 @@
 {
-  "id": "f18830ac-a654-46c5-b3d5-d794d8d09809",
+  "id": "a30d0307-7d5e-4e74-af24-ef83dfd2b0f1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -39,8 +39,12 @@
           "name": "bot_presence_guild_id_guild_guild_id_fk",
           "tableFrom": "bot_presence",
           "tableTo": "guild",
-          "columnsFrom": ["guild_id"],
-          "columnsTo": ["guild_id"],
+          "columnsFrom": [
+            "guild_id"
+          ],
+          "columnsTo": [
+            "guild_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -48,7 +52,10 @@
       "compositePrimaryKeys": {
         "bot_presence_guild_id_edition_pk": {
           "name": "bot_presence_guild_id_edition_pk",
-          "columns": ["guild_id", "edition"]
+          "columns": [
+            "guild_id",
+            "edition"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -91,6 +98,12 @@
           "notNull": true,
           "default": "'any'"
         },
+        "paused_at": {
+          "name": "paused_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -128,8 +141,12 @@
           "name": "channel_guild_id_guild_guild_id_fk",
           "tableFrom": "channel",
           "tableTo": "guild",
-          "columnsFrom": ["guild_id"],
-          "columnsTo": ["guild_id"],
+          "columnsFrom": [
+            "guild_id"
+          ],
+          "columnsTo": [
+            "guild_id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -284,12 +301,16 @@
         "subscription_guild_id_unique": {
           "name": "subscription_guild_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["guild_id"]
+          "columns": [
+            "guild_id"
+          ]
         },
         "subscription_paddle_subscription_id_unique": {
           "name": "subscription_paddle_subscription_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["paddle_subscription_id"]
+          "columns": [
+            "paddle_subscription_id"
+          ]
         }
       },
       "policies": {},

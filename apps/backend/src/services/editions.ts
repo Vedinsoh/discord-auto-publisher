@@ -2,6 +2,7 @@ import type { ChannelLimitReason, Edition } from '@ap/api-types';
 import { botPresence, db } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, count, eq, inArray, isNull } from 'drizzle-orm';
+import { ChannelPausing } from './channels/pausing.js';
 import { Handover } from './handover.js';
 import { isEntitledStatus, Subscriptions } from './subscriptions.js';
 
@@ -99,6 +100,24 @@ const resolveChannelLimit = async (
   return { limit, reason };
 };
 
+/**
+ * Bring a guild's serving channels in line with its managing edition (ADR 0008):
+ * premium managing (unlimited) → reactivate every paused channel; free managing
+ * (capped) → pause the newest excess beyond the cap. The one call the free-join
+ * rail, `registerNewGuild`, and the reconcile backstop share — idempotent, a
+ * no-op when already consistent (free with ≤cap serving, or premium with none
+ * paused). This is where the "free never serves >3" invariant is enforced —
+ * NOT the billing/revocation path.
+ */
+const reconcileChannelServing = async (guildId: Snowflake): Promise<void> => {
+  const limit = channelLimitFor(await getManagingEdition(guildId));
+  if (limit === 0) {
+    await ChannelPausing.reactivateGuild(guildId);
+  } else {
+    await ChannelPausing.pauseExcess(guildId, limit);
+  }
+};
+
 export const Editions = {
   getActiveEditions,
   isBotPresent,
@@ -107,4 +126,5 @@ export const Editions = {
   getManagingEdition,
   channelLimitFor,
   resolveChannelLimit,
+  reconcileChannelServing,
 };
