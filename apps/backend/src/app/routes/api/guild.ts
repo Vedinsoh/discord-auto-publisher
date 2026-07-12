@@ -1,6 +1,12 @@
 import type { Edition } from '@ap/api-types';
 import { env } from '@ap/config';
-import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
+import {
+  type APIResponse,
+  createHttpError,
+  StatusCodes,
+  sendErrorResponse,
+  validateRequest,
+} from '@ap/express';
 import { type APIChannel, ChannelType, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
@@ -372,6 +378,20 @@ export const GuildApi: Router = (() => {
       }
 
       try {
+        // Gate: a guild must be migrated (allowlist model) before it can buy
+        // Premium — Premium's value (per-channel filters/control) lives on
+        // registered channel rows, which only exist post-migration. Enforced
+        // here as well as in the UI: the UI alone is not a real gate.
+        // MIGRATION: Remove this guard after migration period (6 months)
+        const guildRecord = await Services.Guilds.find(guildId);
+        if (!guildRecord?.migratedAt) {
+          throw createHttpError(
+            'Guild must be migrated before upgrading to Premium',
+            StatusCodes.CONFLICT,
+            'NOT_MIGRATED'
+          );
+        }
+
         // Guard: one subscription per guild
         const existing = await Services.Subscriptions.getByGuildId(guildId);
         if (existing && isEntitledStatus(existing.status)) {

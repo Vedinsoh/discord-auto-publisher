@@ -34,7 +34,9 @@ function overSelectedMessage(
   if (reason === 'LIMIT_PREMIUM_PENDING') {
     return `Premium is activating — the free bot covers ${limit} channels until the Premium bot can publish everywhere. Grant it permission in the Channels tab to unlock unlimited channels, or deselect some.`;
   }
-  return `The free plan covers ${limit} channels. Deselect some, or upgrade to Premium for unlimited channels.`;
+  // No "upgrade now" here: on a legacy/unsubscribed guild the upgrade is gated
+  // behind finishing this switch, so the CTA is "switch now, upgrade right after".
+  return `You can enable up to ${limit} channels now. Deselect some to switch — right after, you can upgrade to Premium to add unlimited channels.`;
 }
 
 export function LegacyMigrateModal({

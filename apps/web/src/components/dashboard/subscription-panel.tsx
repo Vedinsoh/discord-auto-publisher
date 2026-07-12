@@ -8,11 +8,14 @@ import {
   Crown,
   ExternalLink,
   Loader2,
+  Lock,
   Sparkles,
   UserRound,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useGuild } from '@/components/dashboard/guild-context';
+import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -294,9 +297,16 @@ function ActiveSubscription({
 type BillingInterval = 'month' | 'year';
 
 function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: string }) {
+  const { guild, data } = useGuild();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
   const [billingInterval, setBillingInterval] = useState<BillingInterval>('year');
+  const [migrateOpen, setMigrateOpen] = useState(false);
+
+  // A guild must be migrated (allowlist model) before it can buy Premium —
+  // Premium configures per-channel filters, which need registered channels.
+  // MIGRATION: Remove this gate after migration period (6 months)
+  const migrated = data.migrated;
 
   const router = useRouter();
   const paddle = usePaddle(
@@ -308,7 +318,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
   );
 
   const handleUpgrade = useCallback(() => {
-    if (!paddle) return;
+    if (!paddle || !migrated) return;
     setError(false);
     startTransition(async () => {
       try {
@@ -318,7 +328,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
         setError(true);
       }
     });
-  }, [guildId, billingInterval, paddle]);
+  }, [guildId, billingInterval, paddle, migrated]);
 
   return (
     <div className="space-y-6">
@@ -348,6 +358,44 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
         <Card className="bg-red-500/10 border-red-500/30 p-4">
           <p className="text-red-400 text-sm">Failed to create checkout. Please try again.</p>
         </Card>
+      )}
+
+      {/* MIGRATION: Remove this setup gate after migration period (6 months) */}
+      {!migrated && (
+        <Card className="bg-amber-500/10 border-amber-500/30 p-6">
+          <div className="flex items-start gap-4">
+            <Lock className="w-6 h-6 text-amber-400 shrink-0 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-white text-lg mb-1">Finish channel setup to unlock Premium</h3>
+              <p className="text-slate-300 text-sm mb-4">
+                Auto Publisher is currently running in legacy mode, and migration is required to
+                unlock Premium features. Premium adds per-channel filters and control &mdash; which
+                start from choosing which channels to manage.
+              </p>
+              <Button
+                onClick={() => setMigrateOpen(true)}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950"
+              >
+                Set up channels
+              </Button>
+              <p className="text-slate-500 text-sm mt-3">
+                Takes a few seconds. You can upgrade right after.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {migrateOpen && (
+        <LegacyMigrateModal
+          guildId={guildId}
+          channels={data.channels}
+          limit={data.channelLimit === 0 ? null : data.channelLimit}
+          hasSubscription={guild.hasSubscription}
+          premiumBotPresent={guild.premiumBotPresent}
+          premiumPending={data.premiumPending}
+          onClose={() => setMigrateOpen(false)}
+        />
       )}
 
       <div className="relative">
@@ -417,22 +465,35 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
             ))}
           </ul>
 
-          <Button
-            className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
-            onClick={handleUpgrade}
-            disabled={isPending || !paddle}
-          >
-            {isPending ? (
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            ) : (
-              <Crown className="w-5 h-5 mr-2" />
-            )}
-            {isPending ? 'Upgrading...' : 'Upgrade to Premium'}
-          </Button>
+          {/* Locked until migrated: disabled buttons swallow hover, so the
+              native tooltip rides the wrapping span. MIGRATION: unwrap after
+              migration period (6 months) */}
+          <span className="block" title={migrated ? undefined : 'Finish channel setup first'}>
+            <Button
+              className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
+              onClick={handleUpgrade}
+              disabled={isPending || !paddle || !migrated}
+            >
+              {!migrated ? (
+                <Lock className="w-5 h-5 mr-2" />
+              ) : isPending ? (
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              ) : (
+                <Crown className="w-5 h-5 mr-2" />
+              )}
+              {isPending ? 'Upgrading...' : 'Upgrade to Premium'}
+            </Button>
+          </span>
 
-          <p className="text-slate-500 text-sm text-center mt-4">
-            Secure payment via Paddle &bull; Cancel anytime &bull; 7-day money-back guarantee
-          </p>
+          {migrated ? (
+            <p className="text-slate-500 text-sm text-center mt-4">
+              Secure payment via Paddle &bull; Cancel anytime &bull; 7-day money-back guarantee
+            </p>
+          ) : (
+            <p className="text-amber-400/80 text-sm text-center mt-4">
+              Finish channel setup above to unlock checkout.
+            </p>
+          )}
         </Card>
       </div>
     </div>
