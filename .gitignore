@@ -58,3 +58,6 @@ supabase/.temp
 
 # Next.js
 next-env.d.ts
+
+# Firecrawl
+.firecrawl
