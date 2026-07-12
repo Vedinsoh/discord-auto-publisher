@@ -6,7 +6,7 @@ import {
   type Paddle,
   type PaddleEventData,
 } from '@paddle/paddle-js';
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 const CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
 const ENVIRONMENT =
@@ -18,7 +18,13 @@ const ENVIRONMENT =
  */
 export function usePaddle(onCheckoutCompleted?: () => void) {
   const [paddle, setPaddle] = useState<Paddle | null>(null);
+  // Holds the instance so the eventCallback (registered before .then resolves)
+  // can close the overlay on completion
+  const paddleRef = useRef<Paddle | null>(null);
   const handleCheckoutCompleted = useEffectEvent(() => {
+    // The overlay does not auto-close on completion; close it so the redirected
+    // success view isn't hidden behind it
+    paddleRef.current?.Checkout.close();
     onCheckoutCompleted?.();
   });
 
@@ -29,11 +35,15 @@ export function usePaddle(onCheckoutCompleted?: () => void) {
       token: CLIENT_TOKEN,
       environment: ENVIRONMENT,
       // Settings must live here: they are ignored by Checkout.open() when a
-      // transactionId is passed
+      // transactionId is passed. multi-page forces the stepped layout (details →
+      // address → payment) whose address step exposes the "Add tax number"
+      // business/VAT option — the express/one-page variant skips it entirely.
       checkout: {
         settings: {
           displayMode: 'overlay',
           theme: 'dark',
+          variant: 'multi-page',
+          showAddTaxId: true,
         },
       },
       eventCallback: (event: PaddleEventData) => {
@@ -43,7 +53,10 @@ export function usePaddle(onCheckoutCompleted?: () => void) {
       },
     })
       .then(instance => {
-        if (instance) setPaddle(instance);
+        if (instance) {
+          paddleRef.current = instance;
+          setPaddle(instance);
+        }
       })
       .catch(() => setPaddle(null));
   }, []);
