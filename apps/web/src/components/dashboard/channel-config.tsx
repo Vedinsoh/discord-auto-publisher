@@ -97,6 +97,7 @@ export function ChannelConfig({
 }: ChannelConfigProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [pendingChannelId, setPendingChannelId] = useState<string | null>(null);
   const [limitReason, setLimitReason] = useState<ChannelLimitReason | null>(null);
 
   // MIGRATION: hooks above must run unconditionally; early return only after
@@ -105,24 +106,29 @@ export function ChannelConfig({
   }
 
   const handleToggleChannel = (channelId: string, enabled: boolean) => {
+    setPendingChannelId(channelId);
     startTransition(async () => {
-      if (enabled) {
-        await disableChannel(guildId, channelId);
-        router.refresh();
-        return;
-      }
+      try {
+        if (enabled) {
+          await disableChannel(guildId, channelId);
+          router.refresh();
+          return;
+        }
 
-      const result = await enableChannel(guildId, channelId);
-      if (result.ok) {
-        router.refresh();
-        return;
+        const result = await enableChannel(guildId, channelId);
+        if (result.ok) {
+          router.refresh();
+          return;
+        }
+        // Cap hit: show the reason-appropriate upsell instead of a hard failure.
+        // Prefer the backend's code; fall back to the client mirror if absent.
+        setLimitReason(
+          result.code ??
+            channelLimitReasonFromGuild({ hasSubscription, premiumBotPresent, premiumPending })
+        );
+      } finally {
+        setPendingChannelId(null);
       }
-      // Cap hit: show the reason-appropriate upsell instead of a hard failure.
-      // Prefer the backend's code; fall back to the client mirror if absent.
-      setLimitReason(
-        result.code ??
-          channelLimitReasonFromGuild({ hasSubscription, premiumBotPresent, premiumPending })
-      );
     });
   };
 
@@ -156,10 +162,12 @@ export function ChannelConfig({
                 <PremiumBlockedBadge channel={channel} />
               </div>
               <div className="flex items-center gap-2">
-                {isPending && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+                {isPending && pendingChannelId === channel.channelId && (
+                  <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                )}
                 <Switch
                   checked={true}
-                  disabled={isPending}
+                  disabled={isPending && pendingChannelId === channel.channelId}
                   onCheckedChange={() => handleToggleChannel(channel.channelId, true)}
                 />
               </div>
@@ -175,10 +183,12 @@ export function ChannelConfig({
                 <PremiumBlockedBadge channel={channel} />
               </div>
               <div className="flex items-center gap-2">
-                {isPending && <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />}
+                {isPending && pendingChannelId === channel.channelId && (
+                  <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                )}
                 <Switch
                   checked={false}
-                  disabled={isPending}
+                  disabled={isPending && pendingChannelId === channel.channelId}
                   onCheckedChange={() => handleToggleChannel(channel.channelId, false)}
                 />
               </div>
