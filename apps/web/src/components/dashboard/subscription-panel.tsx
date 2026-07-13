@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Loader2,
   Lock,
-  Sparkles,
   UserRound,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -21,8 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
-import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
-import { usePaddle } from '@/lib/paddle';
+import { guildIconUrl } from '@/lib/discord';
 import {
   formatUsd,
   PREMIUM_PRICE_MONTHLY_USD,
@@ -31,14 +29,11 @@ import {
   PREMIUM_YEARLY_SAVINGS_PERCENT,
   PREMIUM_YEARLY_SAVINGS_USD,
 } from '@/lib/pricing';
-import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 interface SubscriptionPanelProps {
   guildId: string;
   guildName: string;
   subscription: SubscriptionData | null;
-  premiumBotPresent: boolean;
-  checkoutSuccess?: boolean;
 }
 
 const premiumBenefits = [
@@ -86,23 +81,13 @@ const intervalLabels: Record<string, string> = {
   year: 'Yearly',
 };
 
-export function SubscriptionPanel({
-  guildId,
-  guildName,
-  subscription,
-  premiumBotPresent,
-  checkoutSuccess,
-}: SubscriptionPanelProps) {
+export function SubscriptionPanel({ guildId, guildName, subscription }: SubscriptionPanelProps) {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl text-white mb-2">Subscription Management</h2>
         <p className="text-slate-400">Manage your premium subscription for this server</p>
       </div>
-
-      {checkoutSuccess && (
-        <CheckoutSuccessCard guildId={guildId} premiumBotPresent={premiumBotPresent} />
-      )}
 
       {subscription &&
       (subscription.status === 'active' ||
@@ -113,57 +98,6 @@ export function SubscriptionPanel({
         <FreeSubscription guildId={guildId} guildName={guildName} />
       )}
     </div>
-  );
-}
-
-function CheckoutSuccessCard({
-  guildId,
-  premiumBotPresent,
-}: {
-  guildId: string;
-  premiumBotPresent: boolean;
-}) {
-  const armRefreshOnReturn = useRefreshOnReturn();
-  // Locked to the subscribed guild: the premium entitlement gate makes the
-  // bot self-leave any other guild
-  const inviteUrl = PREMIUM_BOT_CLIENT_ID
-    ? getBotInviteUrl('premium', guildId, { lockGuildSelect: true })
-    : null;
-  return (
-    <Card className="bg-green-500/10 border-green-500/30 p-6">
-      <div className="flex items-start gap-3">
-        <Sparkles className="w-6 h-6 text-green-400 shrink-0 mt-0.5" />
-        <div>
-          <h3 className="text-white text-lg mb-2">Payment successful!</h3>
-          <p className="text-slate-400 mb-4">
-            Your premium subscription is being activated. This may take a few moments.
-          </p>
-          {!premiumBotPresent && inviteUrl && (
-            <>
-              <p className="text-slate-400 mb-3">
-                Invite the Premium bot to your server to get started:
-              </p>
-              <Button className="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
-                <a
-                  href={inviteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={armRefreshOnReturn}
-                >
-                  Invite Premium Bot
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </a>
-              </Button>
-              <p className="text-slate-500 text-sm mt-3">
-                Bot permissions don&apos;t transfer between apps: the free bot keeps publishing
-                until the Premium bot can publish in all your channels, then hands over and leaves
-                automatically. Channels that still need access are flagged on the Channels tab.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-    </Card>
   );
 }
 
@@ -271,7 +205,7 @@ function ActiveSubscription({
             >
               <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
                 <CreditCard className="w-4 h-4 mr-2" />
-                Manage Billing
+                Manage subscription
                 <ExternalLink className="w-3 h-3 ml-2" />
               </a>
             </Button>
@@ -309,26 +243,26 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
   const migrated = data.migrated;
 
   const router = useRouter();
-  const paddle = usePaddle(
-    useCallback(() => {
-      // Webhook activates the subscription; success card covers the gap
-      router.push(`/dashboard/${guildId}/subscription?success=true`);
-      router.refresh();
-    }, [guildId, router])
-  );
 
   const handleUpgrade = useCallback(() => {
-    if (!paddle || !migrated) return;
+    if (!migrated) return;
     setError(false);
     startTransition(async () => {
       try {
-        const { transactionId } = await createCheckout(guildId, billingInterval);
-        paddle.Checkout.open({ transactionId });
+        const { transactionId } = await createCheckout(guild.id, billingInterval);
+        // Unified checkout: the /checkout page loads Paddle.js and auto-opens the
+        // inline checkout from _ptxn. Guild name + icon ride the query string for
+        // the on-page server indicator (cosmetic — the guild is bound in the
+        // transaction's server-set custom_data).
+        const params = new URLSearchParams({ _ptxn: transactionId, g: guildName });
+        const iconUrl = guildIconUrl(guild.id, guild.icon);
+        if (iconUrl) params.set('icon', iconUrl);
+        router.push(`/checkout?${params.toString()}`);
       } catch {
         setError(true);
       }
     });
-  }, [guildId, billingInterval, paddle, migrated]);
+  }, [guild.id, guild.icon, guildName, billingInterval, migrated, router]);
 
   return (
     <div className="space-y-6">
@@ -472,7 +406,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
             <Button
               className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
               onClick={handleUpgrade}
-              disabled={isPending || !paddle || !migrated}
+              disabled={isPending || !migrated}
             >
               {!migrated ? (
                 <Lock className="w-5 h-5 mr-2" />

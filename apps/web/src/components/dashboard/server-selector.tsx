@@ -6,17 +6,13 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { DiscordGuild } from '@/lib/api/types';
+import { guildIconUrl } from '@/lib/discord';
 import { getBotInviteUrl } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 interface ServerSelectorProps {
   guilds: DiscordGuild[];
   error?: boolean;
-}
-
-function guildIconUrl(guild: DiscordGuild): string | null {
-  if (!guild.icon) return null;
-  return `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.webp?size=128`;
 }
 
 function hasBotPresent(guild: DiscordGuild): boolean {
@@ -62,7 +58,7 @@ export function ServerSelector({ guilds, error }: ServerSelectorProps) {
           <>
             <div className="grid md:grid-cols-2 gap-4">
               {sortedGuilds.map(guild => {
-                const iconUrl = guildIconUrl(guild);
+                const iconUrl = guildIconUrl(guild.id, guild.icon);
                 const botAbsent = !hasBotPresent(guild);
                 const content = (
                   <Card

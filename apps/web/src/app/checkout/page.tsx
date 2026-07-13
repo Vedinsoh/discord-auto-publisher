@@ -1,0 +1,133 @@
+'use client';
+
+import type { PaddleEventData } from '@paddle/paddle-js';
+import { Check } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useState } from 'react';
+import { usePaddle } from '@/lib/paddle';
+
+// Paddle.js injects the inline checkout iframe into the element matching this class
+// (frameTarget). It must be in the DOM before the ?_ptxn auto-open fires.
+const CHECKOUT_CONTAINER_CLASS = 'checkout-container';
+
+/**
+ * Paddle default payment link host. Every customer-facing Paddle link (abandoned
+ * checkout recovery ?_paction=recovery, past-due payment-method updates, any
+ * API-generated checkout.url) points here with ?_ptxn={transactionId}. Loading
+ * Paddle.js with inline settings makes it auto-open that transaction inline — no
+ * imperative Checkout.open(). We act on _ptxn only and ignore _paction.
+ *
+ * Fulfillment is webhook-driven regardless of this page; the UX just deposits the
+ * customer back into the funnel.
+ */
+export default function CheckoutPage() {
+  // useSearchParams needs a Suspense boundary so a production build doesn't error
+  // trying to statically prerender this public route.
+  return (
+    <Suspense>
+      <CheckoutInner />
+    </Suspense>
+  );
+}
+
+function CheckoutInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const transactionId = searchParams.get('_ptxn');
+  // Guild name for the "subscribing X" indicator. Present on the in-app upgrade
+  // flow (panel passes it); absent on Paddle-sent links (recovery/dunning) where
+  // we fall back to a neutral label. Cosmetic only — the guild is bound in the
+  // transaction's server-set custom_data.
+  const guildName = searchParams.get('g');
+  const guildIcon = searchParams.get('icon');
+  const [genericSuccess, setGenericSuccess] = useState(false);
+
+  const onCompleted = useCallback(
+    (event: PaddleEventData) => {
+      // discord_guild_id is server-set in custom_data at transaction creation, so
+      // it rides recovery checkouts. Absent (e.g. a Paddle Retain payment-method
+      // transaction) → generic success. Subscription is already active via webhook.
+      const customData = event.data?.custom_data as { discord_guild_id?: string } | undefined;
+      const guildId = customData?.discord_guild_id;
+      if (guildId) {
+        router.push(`/dashboard/${guildId}/subscription?success=true`);
+        return;
+      }
+      setGenericSuccess(true);
+    },
+    [router]
+  );
+
+  // No page-level loader: Paddle's inline frame renders its own spinner while it
+  // loads, so a second one here just doubles up.
+  usePaddle({
+    onCompleted,
+    settings: {
+      displayMode: 'inline',
+      frameTarget: CHECKOUT_CONTAINER_CLASS,
+      frameInitialHeight: 450,
+      frameStyle: 'width: 100%; min-width: 312px; background-color: transparent; border: none;',
+    },
+  });
+
+  // No transaction to resume — nothing for Paddle.js to open. Send home.
+  useEffect(() => {
+    if (!transactionId) router.replace('/');
+  }, [transactionId, router]);
+
+  if (genericSuccess) {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4 pt-16 text-center">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
+          <Check className="h-6 w-6 text-emerald-400" />
+        </div>
+        <h1 className="mb-2 text-2xl text-white">You&apos;re all set</h1>
+        <p className="mb-6 text-slate-400">Your payment went through. Thanks!</p>
+        <Link
+          href="/dashboard"
+          className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm text-white transition-colors hover:bg-indigo-500"
+        >
+          Go to dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 pt-28 pb-16">
+      <div className="mb-8 flex flex-col items-center text-center">
+        <h1 className="mb-4 text-2xl text-white">Complete your purchase</h1>
+        {/* Server indicator only when we actually know the server (in-app upgrade
+            flow passes it); Paddle-sent links have no guild name, so no card. */}
+        {guildName && (
+          <div className="inline-flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-linear-to-br from-blue-500 to-blue-600">
+              {guildIcon ? (
+                <Image
+                  src={guildIcon}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-semibold text-white">
+                  {guildName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="text-left leading-tight">
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Upgrading to Premium
+              </p>
+              <p className="text-sm text-white">{guildName}</p>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className={CHECKOUT_CONTAINER_CLASS} />
+    </div>
+  );
+}
