@@ -4,7 +4,6 @@ import {
   AlertCircle,
   Calendar,
   Check,
-  CreditCard,
   Crown,
   ExternalLink,
   Loader2,
@@ -18,6 +17,7 @@ import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal'
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
@@ -108,10 +108,12 @@ function ActiveSubscription({
   guildId: string;
   subscription: SubscriptionData;
 }) {
-  // The dashboard aggregate carries only the summary — portal URL and
-  // subscriber attribution come from the dedicated subscription endpoint
-  // (creates a Paddle portal session on demand, so it is not fetched eagerly)
+  // The branch (manage button vs "managed by @X") is known at first paint from
+  // the aggregate's isSubscriber flag. The detail endpoint is fetched only for
+  // the portal URL (a Paddle round-trip) and the co-admin's username — both
+  // resolve into skeletons that hold their footprint until the fetch lands.
   const [detail, setDetail] = useState<SubscriptionDetail | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,7 +122,7 @@ function ActiveSubscription({
         if (!cancelled) setDetail(result);
       })
       .catch(() => {
-        // Non-fatal: panel renders without the billing footer
+        if (!cancelled) setFailed(true);
       });
     return () => {
       cancelled = true;
@@ -196,30 +198,39 @@ function ActiveSubscription({
           ))}
         </ul>
 
-        {detail?.isSubscriber && detail.portalUrl && (
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
-              asChild
-            >
-              <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Manage subscription
-                <ExternalLink className="w-3 h-3 ml-2" />
-              </a>
-            </Button>
-          </div>
-        )}
-
-        {detail && !detail.isSubscriber && (
+        {subscription.isSubscriber ? (
+          failed || (detail && !detail.portalUrl) ? (
+            <p className="text-slate-500 text-sm">Couldn&apos;t load billing controls.</p>
+          ) : detail?.portalUrl ? (
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1 border-blue-500/30 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200"
+                asChild
+              >
+                <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
+                  Manage subscription
+                  <ExternalLink className="w-3 h-3 ml-2" />
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <Skeleton className="h-9 w-full rounded-md bg-slate-800" />
+          )
+        ) : (
           <div className="flex items-center gap-2 text-slate-400 text-sm bg-slate-900/50 rounded-lg p-4 border border-slate-800">
             <UserRound className="w-4 h-4 shrink-0" />
-            <span>
+            <span className="flex items-center gap-1">
               Billing is managed by{' '}
-              <span className="text-slate-300">
-                @{detail.subscriber.username ?? detail.subscriber.id}
-              </span>
+              {failed ? (
+                <span className="text-slate-300">another member</span>
+              ) : detail ? (
+                <span className="text-slate-300">
+                  @{detail.subscriber.username ?? detail.subscriber.id}
+                </span>
+              ) : (
+                <Skeleton className="inline-block h-4 w-24 bg-slate-800" />
+              )}
             </span>
           </div>
         )}

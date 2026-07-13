@@ -49,7 +49,15 @@ const createCheckoutTransaction = async (params: {
 };
 
 /**
- * Creates a Customer Portal session and returns the overview URL.
+ * Creates a Customer Portal session and returns a deep link into the portal.
+ *
+ * When a subscription ID is passed we return its `updateSubscriptionPaymentMethod`
+ * deep link, NOT `general.overview`: it lands the customer on *that* subscription's
+ * page in the portal (cancel, plan, invoices all reachable from there), whereas
+ * `general.overview` is account-wide and lists every subscription the customer has.
+ * The button is opened from a specific guild's settings, so it must target that
+ * guild's subscription. Do not "simplify" this back to `general.overview`.
+ * Falls back to the overview if Paddle returns no per-subscription link.
  */
 const createPortalSession = async (
   paddleCustomerId: string,
@@ -60,7 +68,10 @@ const createPortalSession = async (
       paddleCustomerId,
       paddleSubscriptionId ? [paddleSubscriptionId] : []
     );
-    return session.urls.general.overview;
+    return (
+      session.urls.subscriptions[0]?.updateSubscriptionPaymentMethod ??
+      session.urls.general.overview
+    );
   } catch (error) {
     logger.error(error, 'Failed to create Paddle portal session');
     throw new Error('Failed to create portal session');

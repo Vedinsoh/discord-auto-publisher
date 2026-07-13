@@ -160,6 +160,7 @@ export const GuildApi: Router = (() => {
                     ? { action: sub.scheduledChangeAction, effectiveAt: sub.scheduledChangeAt }
                     : null,
                 canceledAt: sub.canceledAt,
+                isSubscriber: req.discordUser?.id === sub.subscriberDiscordUserId,
               }
             : null,
         },

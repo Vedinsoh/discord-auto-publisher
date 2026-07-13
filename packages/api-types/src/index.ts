@@ -84,6 +84,8 @@ export interface SubscriptionData {
   currentPeriodEndsAt: string | null;
   scheduledChange: SubscriptionScheduledChange | null;
   canceledAt: string | null;
+  /** Whether the current requester is the subscriber (drives the manage-vs-note branch at first paint) */
+  isSubscriber: boolean;
 }
 
 /** The Discord user who paid for the subscription */
@@ -99,7 +101,6 @@ export interface SubscriptionSubscriber {
  */
 export interface SubscriptionDetail extends SubscriptionData {
   portalUrl: string | null;
-  isSubscriber: boolean;
   subscriber: SubscriptionSubscriber;
 }
 
