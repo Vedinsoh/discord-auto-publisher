@@ -41,12 +41,15 @@ if [ "$WATCH" = true ]; then
   echo "📦 Building and starting services with file watching..."
 
   # Run Docker Compose from project root with watch mode
-  docker compose $BOT_COMPOSE_FILES_DEV up --watch $SERVICES
+  # --build so the initial image reflects current source (watch syncs edits after)
+  docker compose $BOT_COMPOSE_FILES_DEV up --build --watch $SERVICES
 else
   echo "📦 Building and starting services..."
 
   # Run Docker Compose from project root
-  docker compose $BOT_COMPOSE_FILES_DEV up -d $SERVICES
+  # --build so a code change since the last start is actually picked up
+  # (layer cache keeps this fast — only the source-copy layer re-runs)
+  docker compose $BOT_COMPOSE_FILES_DEV up -d --build $SERVICES
   echo "✅ Development environment started!"
 
   # Show continuous logs after starting

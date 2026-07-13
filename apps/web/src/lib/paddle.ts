@@ -35,14 +35,15 @@ export function usePaddle(onCheckoutCompleted?: () => void) {
       token: CLIENT_TOKEN,
       environment: ENVIRONMENT,
       // Settings must live here: they are ignored by Checkout.open() when a
-      // transactionId is passed. multi-page forces the stepped layout (details →
-      // address → payment) whose address step exposes the "Add tax number"
-      // business/VAT option — the express/one-page variant skips it entirely.
+      // transactionId is passed. showAddTaxId keeps the "Add tax number"
+      // (business/VAT) option available; note it only renders when the checkout
+      // actually shows a collection step — a transaction pre-bound to a customer
+      // with a complete address skips collection entirely (see the checkout
+      // route's customerId handling).
       checkout: {
         settings: {
           displayMode: 'overlay',
           theme: 'dark',
-          variant: 'multi-page',
           showAddTaxId: true,
         },
       },

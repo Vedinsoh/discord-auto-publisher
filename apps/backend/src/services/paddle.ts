@@ -27,16 +27,17 @@ const createCheckoutTransaction = async (params: {
   discordGuildId: string;
   discordUserId: string;
   priceId: string;
-  paddleCustomerId?: string;
 }): Promise<{ transactionId: string }> => {
   try {
+    // No customerId: the transaction stays open so the checkout collects address
+    // + optional business/VAT details. Paddle resolves/links the customer by the
+    // email entered at checkout.
     const transaction = await ensurePaddle().transactions.create({
       items: [{ priceId: params.priceId, quantity: 1 }],
       customData: {
         discord_guild_id: params.discordGuildId,
         discord_user_id: params.discordUserId,
       },
-      ...(params.paddleCustomerId && { customerId: params.paddleCustomerId }),
     });
 
     logger.debug(`Created Paddle transaction ${transaction.id} for guild ${params.discordGuildId}`);

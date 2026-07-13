@@ -403,15 +403,15 @@ export const GuildApi: Router = (() => {
           return;
         }
 
-        // Reuse the Paddle customer from the user's newest subscription (any
-        // guild); otherwise the checkout collects email and creates the customer.
-        const latestSub = await Services.Subscriptions.getLatestBySubscriberDiscordUserId(userId);
-
+        // No customer pre-bind: the checkout always runs its collection step so
+        // customers can self-serve business/VAT details ("Add tax number").
+        // Binding an existing customerId hands Paddle a complete address, which
+        // skips collection entirely. Paddle re-links the customer by email, so
+        // repeat buyers keep one customer as long as they reuse their email.
         const result = await Services.Paddle.createCheckoutTransaction({
           discordGuildId: guildId,
           discordUserId: userId,
           priceId,
-          paddleCustomerId: latestSub?.paddleCustomerId,
         });
 
         res.status(StatusCodes.OK).json({
