@@ -1,6 +1,6 @@
 'use client';
 
-import { Crown, Filter, Hash } from 'lucide-react';
+import { Crown, Filter, Hash, Home } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { DashboardBanners } from './dashboard-banners';
 
 const tabs = [
+  { id: 'overview', label: 'Overview', icon: Home, premiumOnly: false },
   { id: 'channels', label: 'Channels', icon: Hash, premiumOnly: false },
   { id: 'filters', label: 'Filters', icon: Filter, premiumOnly: true },
   { id: 'subscription', label: 'Subscription', icon: Crown, premiumOnly: false },
@@ -30,39 +31,31 @@ export function GuildDashboardShell({ guild, children }: GuildDashboardShellProp
 
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <Link
-                href="/dashboard"
-                className="text-blue-400 hover:text-blue-300 text-sm mb-2 flex items-center gap-1"
-              >
-                &larr; Back to servers
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-2xl overflow-hidden">
-                  {iconUrl ? (
-                    <Image
-                      src={iconUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      width={48}
-                      height={48}
-                    />
-                  ) : (
-                    <span className="text-white text-lg font-semibold">
-                      {guild.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h1 className="text-3xl text-white flex items-center gap-2">
-                    {guild.name}
-                    {guild.hasSubscription && <Crown className="w-6 h-6 text-yellow-500" />}
-                  </h1>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-2xl overflow-hidden">
+                {iconUrl ? (
+                  <Image
+                    src={iconUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    width={48}
+                    height={48}
+                  />
+                ) : (
+                  <span className="text-white text-lg font-semibold">
+                    {guild.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl text-white flex items-center gap-2">
+                  {guild.name}
+                  {guild.hasSubscription && <Crown className="w-6 h-6 text-yellow-500" />}
+                </h1>
               </div>
             </div>
           </div>

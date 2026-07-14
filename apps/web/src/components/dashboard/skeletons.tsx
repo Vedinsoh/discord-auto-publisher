@@ -5,17 +5,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function ServerSelectorSkeleton() {
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-md mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl text-white mb-2">Select a Server</h1>
-              <p className="text-slate-400">Choose which server you&apos;d like to manage</p>
-            </div>
-            <Skeleton className="h-10 w-10 rounded-full bg-slate-800" />
+            <h1 className="text-4xl text-white">Select a Server</h1>
           </div>
         </div>
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-2">
           <ServerCardSkeleton />
           <ServerCardSkeleton />
           <ServerCardSkeleton />
@@ -30,21 +26,13 @@ export function ServerSelectorSkeleton() {
 
 function ServerCardSkeleton() {
   return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-start gap-4">
-          <Skeleton className="w-16 h-16 rounded-xl bg-slate-800 shrink-0" />
-          <div className="flex-1 min-w-0 space-y-2">
-            <Skeleton className="h-6 w-36 bg-slate-800" />
-            <Skeleton className="h-5 w-20 rounded-full bg-slate-800" />
-          </div>
+    <Card className="bg-slate-900/50 border-slate-800 py-3 px-4">
+      <div className="flex items-center justify-between h-12">
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-12 h-12 rounded-xl bg-slate-800 shrink-0" />
+          <Skeleton className="h-5 w-36 bg-slate-800" />
         </div>
-      </div>
-      <div className="pt-4 border-t border-slate-800">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-4 w-20 bg-slate-800" />
-          <Skeleton className="h-4 w-16 bg-slate-800" />
-        </div>
+        <Skeleton className="w-6 h-6 rounded bg-slate-800 shrink-0" />
       </div>
     </Card>
   );
@@ -73,11 +61,17 @@ export function ChannelConfigSkeleton() {
         <Skeleton className="h-8 w-64 bg-slate-800 mb-2" />
         <Skeleton className="h-5 w-96 bg-slate-800" />
       </div>
-      <div className="space-y-3">
-        <ChannelCardSkeleton />
-        <ChannelCardSkeleton />
-        <ChannelCardSkeleton />
-        <ChannelCardSkeleton />
+      <div className="grid md:grid-cols-2 md:divide-x divide-slate-800 gap-6 md:gap-0">
+        <div className="space-y-3 md:pr-6">
+          <Skeleton className="h-4 w-20 bg-slate-800" />
+          <ChannelCardSkeleton />
+          <ChannelCardSkeleton />
+        </div>
+        <div className="space-y-3 md:pl-6">
+          <Skeleton className="h-4 w-20 bg-slate-800" />
+          <ChannelCardSkeleton />
+          <ChannelCardSkeleton />
+        </div>
       </div>
     </div>
   );
@@ -167,7 +161,7 @@ export function SubscriptionPanelSkeleton() {
 export function GuildDashboardShellSkeleton() {
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Header skeleton */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">

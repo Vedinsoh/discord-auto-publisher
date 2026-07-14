@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, ChevronRight, Crown, Plus, Sparkles, TriangleAlert } from 'lucide-react';
+import { ChevronRight, Crown, Plus, TriangleAlert } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -38,13 +38,10 @@ export function ServerSelector({ guilds, error }: ServerSelectorProps) {
   const armRefreshOnReturn = useRefreshOnReturn();
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-md mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl text-white mb-2">Select a Server</h1>
-              <p className="text-slate-400">Choose which server you&apos;d like to manage</p>
-            </div>
+            <h1 className="text-4xl text-white">Select a Server</h1>
           </div>
         </div>
 
@@ -56,22 +53,22 @@ export function ServerSelector({ guilds, error }: ServerSelectorProps) {
           </Card>
         ) : (
           <>
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-2">
               {sortedGuilds.map(guild => {
                 const iconUrl = guildIconUrl(guild.id, guild.icon);
                 const botAbsent = !hasBotPresent(guild);
                 const content = (
                   <Card
                     key={guild.id}
-                    className={`p-6 transition-all group cursor-pointer ${
+                    className={`py-3 px-4 transition-all group cursor-pointer ${
                       botAbsent
-                        ? 'bg-slate-900/30 border-slate-800/50 opacity-60 hover:opacity-100 hover:border-blue-500/50'
-                        : 'bg-slate-900/50 border-slate-800 hover:border-blue-500/50'
+                        ? 'bg-slate-900/30 border-slate-800/50 opacity-60 hover:opacity-100 hover:border-blue-500/50 hover:bg-blue-800/10'
+                        : 'bg-slate-900/50 border-slate-800 hover:border-blue-500/50 hover:bg-blue-800/20'
                     }`}
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-3xl shrink-0 overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-3xl shrink-0 overflow-hidden">
                           {iconUrl ? (
                             <Image
                               src={iconUrl}
@@ -87,7 +84,7 @@ export function ServerSelector({ guilds, error }: ServerSelectorProps) {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2">
                             <h3 className="text-white text-lg truncate">{guild.name}</h3>
                             {guild.hasSubscription && (
                               <Crown className="w-5 h-5 text-yellow-500 shrink-0" />
@@ -99,55 +96,14 @@ export function ServerSelector({ guilds, error }: ServerSelectorProps) {
                               </Badge>
                             )}
                           </div>
-                          {guild.premiumPending ? (
-                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              Premium activating
-                            </Badge>
-                          ) : guild.hasSubscription ? (
-                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                              Premium Active
-                            </Badge>
-                          ) : guild.premiumBotPresent ? (
-                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-                              <Sparkles className="w-3 h-3 mr-1" />
-                              Premium Bot
-                            </Badge>
-                          ) : guild.freeBotPresent ? (
-                            <Badge className="bg-slate-700/50 text-slate-400 border-slate-600">
-                              Free Plan
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-slate-800/50 text-slate-500 border-slate-700 group-hover:bg-blue-500/20 group-hover:text-blue-400 group-hover:border-blue-500/30 transition-colors">
-                              <Bot className="w-3 h-3 mr-1" />
-                              <span className="group-hover:hidden">Bot not added</span>
-                              <span className="hidden group-hover:inline">Add bot to server</span>
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       {botAbsent ? (
-                        <Plus className="w-8 h-8 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        <Plus className="w-6 h-6 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                       ) : (
-                        <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
+                        <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
                       )}
                     </div>
-
-                    {hasBotPresent(guild) && (
-                      <div className="pt-4 border-t border-slate-800">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-slate-500">
-                            {guild.hasSubscription
-                              ? 'Premium'
-                              : guild.premiumBotPresent
-                                ? 'Premium Bot'
-                                : 'Free'}{' '}
-                            plan
-                          </span>
-                          <span className="text-blue-400 group-hover:underline">Manage &rarr;</span>
-                        </div>
-                      </div>
-                    )}
                   </Card>
                 );
 

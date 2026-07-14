@@ -1,6 +1,6 @@
 'use client';
 
-import { Hash, Loader2, TriangleAlert } from 'lucide-react';
+import { Loader2, Megaphone, TriangleAlert } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import {
@@ -69,7 +69,7 @@ function LegacyChannelView({ channels }: { channels: GuildChannel[] }) {
           <Card key={channel.channelId} className="bg-slate-900/30 border-slate-800/50 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Hash className="w-5 h-5 text-slate-500" />
+                <Megaphone className="w-5 h-5 text-slate-500" />
                 <span className="text-slate-300 text-lg">{channel.name}</span>
                 {channel.canPublish ? (
                   <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
@@ -90,7 +90,7 @@ function LegacyChannelView({ channels }: { channels: GuildChannel[] }) {
 
       {channels.length === 0 && (
         <Card className="bg-slate-900/50 border-slate-800 p-12 text-center">
-          <Hash className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <Megaphone className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <p className="text-slate-400 mb-2">No announcement channels</p>
           <p className="text-slate-500 text-sm">
             This server doesn&apos;t have any announcement channels
@@ -127,12 +127,14 @@ export function ChannelConfig({
         if (enabled) {
           await disableChannel(guildId, channelId);
           router.refresh();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         }
 
         const result = await enableChannel(guildId, channelId);
         if (result.ok) {
           router.refresh();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         }
         // Cap hit: show the reason-appropriate upsell instead of a hard failure.
@@ -150,6 +152,61 @@ export function ChannelConfig({
   const enabledChannels = channels.filter(c => c.enabled);
   const disabledChannels = channels.filter(c => !c.enabled);
 
+  const renderEnabledCard = (channel: GuildChannel) => (
+    <Card key={channel.channelId} className="bg-green-500/2 border-green-500/40 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Megaphone className="w-5 h-5 text-green-500" />
+          <span className="text-white text-md">{channel.name}</span>
+          {channel.canPublish === false && <NotPublishingBadge channel={channel} />}
+          {channel.filters.length > 0 && (
+            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+              {channel.filters.length} filter
+              {channel.filters.length !== 1 && 's'}
+            </Badge>
+          )}
+          <PremiumBlockedBadge channel={channel} />
+        </div>
+        <div className="flex items-center gap-2">
+          {isPending && pendingChannelId === channel.channelId && (
+            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+          )}
+          <Switch
+            checked={true}
+            disabled={isPending && pendingChannelId === channel.channelId}
+            onCheckedChange={() => handleToggleChannel(channel.channelId, true)}
+          />
+        </div>
+      </div>
+    </Card>
+  );
+
+  const renderDisabledCard = (channel: GuildChannel) => (
+    <Card key={channel.channelId} className="bg-slate-900/30 border-slate-800/50 p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Megaphone className="w-5 h-5 text-slate-600" />
+          <span className="text-slate-400 text-md">{channel.name}</span>
+          {/* Retained config from an over-limit pause (ADR 0009) — subtle, not a managed state */}
+          {channel.hasSavedSetup && (
+            <Badge className="bg-slate-800/50 text-slate-500 border-slate-700">Saved setup</Badge>
+          )}
+          <PremiumBlockedBadge channel={channel} />
+        </div>
+        <div className="flex items-center gap-2">
+          {isPending && pendingChannelId === channel.channelId && (
+            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+          )}
+          <Switch
+            checked={false}
+            disabled={isPending && pendingChannelId === channel.channelId}
+            onCheckedChange={() => handleToggleChannel(channel.channelId, false)}
+          />
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -160,73 +217,34 @@ export function ChannelConfig({
         </p>
       </div>
 
-      <div className="space-y-3">
-        {enabledChannels.map(channel => (
-          <Card key={channel.channelId} className="bg-slate-900/50 border-slate-800 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Hash className="w-5 h-5 text-slate-500" />
-                <span className="text-white text-lg">{channel.name}</span>
-                {channel.canPublish === false ? (
-                  <NotPublishingBadge channel={channel} />
-                ) : (
-                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                    Active
-                  </Badge>
-                )}
-                {channel.filters.length > 0 && (
-                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    {channel.filters.length} filter
-                    {channel.filters.length !== 1 && 's'}
-                  </Badge>
-                )}
-                <PremiumBlockedBadge channel={channel} />
-              </div>
-              <div className="flex items-center gap-2">
-                {isPending && pendingChannelId === channel.channelId && (
-                  <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                )}
-                <Switch
-                  checked={true}
-                  disabled={isPending && pendingChannelId === channel.channelId}
-                  onCheckedChange={() => handleToggleChannel(channel.channelId, true)}
-                />
-              </div>
-            </div>
-          </Card>
-        ))}
-        {disabledChannels.map(channel => (
-          <Card key={channel.channelId} className="bg-slate-900/30 border-slate-800/50 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Hash className="w-5 h-5 text-slate-600" />
-                <span className="text-slate-400 text-lg">{channel.name}</span>
-                {/* Retained config from an over-limit pause (ADR 0009) — subtle, not a managed state */}
-                {channel.hasSavedSetup && (
-                  <Badge className="bg-slate-800/50 text-slate-500 border-slate-700">
-                    Saved setup
-                  </Badge>
-                )}
-                <PremiumBlockedBadge channel={channel} />
-              </div>
-              <div className="flex items-center gap-2">
-                {isPending && pendingChannelId === channel.channelId && (
-                  <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-                )}
-                <Switch
-                  checked={false}
-                  disabled={isPending && pendingChannelId === channel.channelId}
-                  onCheckedChange={() => handleToggleChannel(channel.channelId, false)}
-                />
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      {channels.length > 0 && (
+        <div className="grid md:grid-cols-2 md:divide-x divide-slate-800 gap-6 md:gap-0">
+          <div className="space-y-3 md:pr-6 order-2 md:order-1">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-slate-500">
+              Disabled<span className="ml-3 text-slate-600">{disabledChannels.length}</span>
+            </h3>
+            {disabledChannels.length > 0 ? (
+              <div className="space-y-3">{disabledChannels.map(renderDisabledCard)}</div>
+            ) : (
+              <p className="text-slate-600 text-sm py-4">No disabled channels</p>
+            )}
+          </div>
+          <div className="space-y-3 md:pl-6 order-1 md:order-2">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-slate-500">
+              Enabled<span className="ml-3 text-slate-600">{enabledChannels.length}</span>
+            </h3>
+            {enabledChannels.length > 0 ? (
+              <div className="space-y-3">{enabledChannels.map(renderEnabledCard)}</div>
+            ) : (
+              <p className="text-slate-600 text-sm py-4">No enabled channels</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {channels.length === 0 && (
         <Card className="bg-slate-900/50 border-slate-800 p-12 text-center">
-          <Hash className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <Megaphone className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <p className="text-slate-400 mb-2">No announcement channels</p>
           <p className="text-slate-500 text-sm">
             This server doesn&apos;t have any announcement channels
