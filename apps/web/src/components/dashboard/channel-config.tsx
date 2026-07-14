@@ -7,6 +7,7 @@ import {
   ChannelLimitModal,
   channelLimitReasonFromGuild,
 } from '@/components/dashboard/channel-limit-upsell';
+import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -61,7 +62,8 @@ function LegacyChannelView({ channels }: { channels: GuildChannel[] }) {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl text-white mb-2">Channel Configuration</h2>
-        <p className="text-slate-400">Manage Auto Publisher for your announcement channels</p>
+        <p className="text-slate-400 mb-3">Manage Auto Publisher for your announcement channels</p>
+        <PublishLimitNote />
       </div>
 
       <div className="space-y-3">
@@ -211,10 +213,11 @@ export function ChannelConfig({
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl text-white mb-2">Channel Configuration</h2>
-        <p className="text-slate-400">
+        <p className="text-slate-400 mb-3">
           Manage Auto Publisher for your announcement channels
           {!hasSubscription && channelLimit !== 0 && ` (Free plan: up to ${channelLimit} channels)`}
         </p>
+        <PublishLimitNote />
       </div>
 
       {channels.length > 0 && (

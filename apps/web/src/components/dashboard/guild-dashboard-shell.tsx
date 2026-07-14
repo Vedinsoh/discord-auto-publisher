@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { DiscordGuild } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
-import { DashboardBanners } from './dashboard-banners';
+import { useGuildAttention } from './use-guild-attention';
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: Home, premiumOnly: false },
@@ -28,6 +28,9 @@ interface GuildDashboardShellProps {
 export function GuildDashboardShell({ guild, children }: GuildDashboardShellProps) {
   const pathname = usePathname();
   const iconUrl = guildIconUrl(guild);
+  // Attention badge on the Overview tab, visible from every tab (shell is inside
+  // GuildProvider). Shared count so it never drifts from the banner stack.
+  const { badgeCount } = useGuildAttention();
 
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
@@ -61,9 +64,6 @@ export function GuildDashboardShell({ guild, children }: GuildDashboardShellProp
           </div>
         </div>
 
-        {/* Guild-level banners, above sidebar and page content */}
-        <DashboardBanners />
-
         {/* Dashboard Grid with Sidebar */}
         <div className="grid lg:grid-cols-[250px_1fr] gap-6">
           {/* Sidebar Navigation */}
@@ -85,6 +85,14 @@ export function GuildDashboardShell({ guild, children }: GuildDashboardShellProp
                 >
                   <tab.icon className="w-5 h-5" />
                   <span>{tab.label}</span>
+                  {tab.id === 'overview' && badgeCount > 0 && (
+                    <output
+                      className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-xs font-medium"
+                      aria-label={`${badgeCount} item${badgeCount !== 1 ? 's' : ''} need attention`}
+                    >
+                      {badgeCount}
+                    </output>
+                  )}
                   {tab.premiumOnly && (
                     <Crown className="w-4 h-4 ml-auto group-hover:text-yellow-500" />
                   )}

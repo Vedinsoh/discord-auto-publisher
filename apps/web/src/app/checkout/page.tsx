@@ -52,7 +52,7 @@ function CheckoutInner() {
       const customData = event.data?.custom_data as { discord_guild_id?: string } | undefined;
       const guildId = customData?.discord_guild_id;
       if (guildId) {
-        router.push(`/dashboard/${guildId}/subscription?success=true`);
+        router.push(`/dashboard/${guildId}/overview?success=true`);
         return;
       }
       setGenericSuccess(true);
