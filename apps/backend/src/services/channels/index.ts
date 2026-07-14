@@ -202,7 +202,7 @@ const get = async (channelId: Snowflake) => {
  */
 const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   // The limit counts SERVING channels only (paused rows are retained but not
-  // served, ADR 0008), so both "register new" and "unpause existing" go through
+  // served, ADR 0009), so both "register new" and "unpause existing" go through
   // the same cap gate.
   const { limit, reason } = await Editions.resolveChannelLimit(guildId);
   const [servingCount] = await db

@@ -1,4 +1,4 @@
-# ADR 0008: Paused channels on premium downgrade
+# ADR 0009: Paused channels on premium downgrade
 
 ## Status
 

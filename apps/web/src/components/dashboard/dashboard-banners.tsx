@@ -50,7 +50,7 @@ function usePersistentDismissal(key: string): [boolean, () => void] {
  * (pending implies the premium bot is present); the migration banner can stack
  * with either. Banners 1–3 are not dismissible — they nag until the state
  * resolves (ADR 0006). The paused-channels banner is the lone dismissible
- * exception (ADR 0008). The checkout-success banner sits at the very top and is
+ * exception (ADR 0009). The checkout-success banner sits at the very top and is
  * query-param-scoped (`?success=true`, set only by the post-checkout redirect);
  * it carries no invite CTA — the premium-invite banner right below owns that.
  */
@@ -65,7 +65,7 @@ export function DashboardBanners() {
 
   // Paused-channels state: free is the managing edition (channelLimit !== 0),
   // channels are paused, and the guild is not entitled — mutually exclusive
-  // with the premium banners (which imply entitlement). ADR 0008.
+  // with the premium banners (which imply entitlement). ADR 0009.
   const pausedCount = data.channels.filter(c => c.hasSavedSetup).length;
   const overLimitPaused = data.channelLimit !== 0 && pausedCount > 0 && !guild.hasSubscription;
 
@@ -141,7 +141,7 @@ function CheckoutSuccessBanner() {
 
 /**
  * Dismissible nag for a free guild sitting over the 3-channel limit with paused
- * (retained) channels. Yellow (warning family). ADR 0008.
+ * (retained) channels. Yellow (warning family). ADR 0009.
  */
 function PausedChannelsBanner({
   guildId,

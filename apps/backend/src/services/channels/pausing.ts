@@ -6,7 +6,7 @@ import { and, asc, eq, inArray, isNotNull, isNull } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 
 /**
- * Channel soft-pause primitives (ADR 0008). Pure DB + cache operations with NO
+ * Channel soft-pause primitives (ADR 0009). Pure DB + cache operations with NO
  * edition/managing-edition awareness — the CALLER decides when to pause or
  * reactivate (that decision lives in `Editions.reconcileChannelServing`, which
  * this module deliberately does not import, so `handover.ts` can reactivate on

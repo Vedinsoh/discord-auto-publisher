@@ -106,7 +106,7 @@ const getStatus = async (channelId: Snowflake) => {
 
 /**
  * Get a guild's auto-publishing channels: serving channel IDs plus paused ones
- * (retained but over the free limit, ADR 0008).
+ * (retained but over the free limit, ADR 0009).
  * @param guildId The guild ID
  * @returns { channelIds, pausedChannelIds }, or null if request fails
  */
@@ -144,6 +144,19 @@ const isEnabled = async (channelId: Snowflake) => {
   }
 };
 
+/**
+ * Bust the backend's cached candidate-channel list for a guild (ADR 0007
+ * amendment) after an announcement-channel membership change. Fire-and-forget:
+ * a failure just means the dashboard waits out the 5-min TTL.
+ */
+const invalidateGuildCache = async (guildId: Snowflake) => {
+  try {
+    await Data.API.Backend.invalidateGuildChannels(guildId);
+  } catch (error) {
+    logger.warn(error, `Failed to invalidate channel cache for guild ${guildId}`);
+  }
+};
+
 export const Channel = {
   fetchChannel,
   fetchNewsChannel,
@@ -152,4 +165,5 @@ export const Channel = {
   getStatus,
   getGuildChannels,
   isEnabled,
+  invalidateGuildCache,
 };

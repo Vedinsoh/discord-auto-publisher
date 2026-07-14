@@ -1,8 +1,16 @@
-# Bot-pushed publish-state cache
+# ADR 0008: Bot-pushed publish-state cache
+
+## Status
+
+Accepted — 2026-07-12.
+
+## Context
 
 The dashboard and the premium handover gate both need to know whether a bot can actually publish (crosspost) in each channel. Computing that in the backend costs Discord REST (guild roles + bot member per edition) on every dashboard load and every handover evaluation — and the codebase's first rule is to be conservative with Discord REST (Cloudflare invalid-request ban). But the bot already computes the exact same answer for free on its gateway cache (`permissionsFor(members.me)`), and already reacts to the events that change it (`channelUpdate` / `guildMemberUpdate` / `roleUpdate`).
 
-**Decision:** the bot is the source of truth for per-channel publish capability. It computes `canPublish` + the missing-permission set from its gateway cache and **pushes** it to the backend on those permission events (batched per guild) and on a full sweep at shard `ready` / `guildCreate`. The backend stores it in a per-guild Redis hash (`publish_state:{guildId}`, DB 13); the dashboard and the handover gate **read** that hash instead of computing via REST. REST (`getCanPublishMap`) survives only as a write-back fallback when a channel's state is missing (freshly enabled, post-flush).
+## Decision
+
+The bot is the source of truth for per-channel publish capability. It computes `canPublish` + the missing-permission set from its gateway cache and **pushes** it to the backend on those permission events (batched per guild) and on a full sweep at shard `ready` / `guildCreate`. The backend stores it in a per-guild Redis hash (`publish_state:{guildId}`, DB 13); the dashboard and the handover gate **read** that hash instead of computing via REST. REST (`getCanPublishMap`) survives only as a write-back fallback when a channel's state is missing (freshly enabled, post-flush).
 
 ## Considered options
 

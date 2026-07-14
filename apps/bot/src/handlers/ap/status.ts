@@ -47,7 +47,7 @@ export async function chatInputStatus(
       const channelList = channelIds.map(id => `- <#${id}>`).join('\n');
       const count = channelIds.length;
 
-      // Paused channels are retained but over the free limit of 3 (ADR 0008) —
+      // Paused channels are retained but over the free limit of 3 (ADR 0009) —
       // surfaced so the user understands why they went quiet, with the path back.
       const pausedSection =
         pausedChannelIds.length > 0

@@ -58,6 +58,19 @@ const cachedGet = async <T>(edition: Edition, route: `/${string}`): Promise<T> =
 };
 
 /**
+ * Evict a guild's cached channel list (ADR 0007 amendment). Called by
+ * `POST /internal/guild/:guildId/channels/invalidate` when a bot observes an
+ * announcement-channel MEMBERSHIP change (created / deleted / type-cross), so a
+ * new candidate appears — and a deleted one disappears — without waiting out
+ * the 5-min TTL. Narrow by design: `/roles` and `/members/:botId` are left on
+ * TTL (permission-ping eviction stays rejected), and a rename/reposition is not
+ * evicted (cosmetic, higher-churn). The key matches `cachedGet`'s route key.
+ */
+const evictGuildChannels = (guildId: Snowflake): void => {
+  discordReadCache.delete(Routes.guildChannels(guildId));
+};
+
+/**
  * Live membership check: whether an edition's bot is currently in the guild.
  * Errors (including network failures) report false — callers use this to
  * avoid evicting the OTHER bot, so the safe answer is "not present".
@@ -120,6 +133,7 @@ const getUsername = async (userId: string): Promise<string | null> => {
 export const Discord = {
   restFor,
   cachedGet,
+  evictGuildChannels,
   hasToken,
   getBotUserId,
   isBotInGuild,

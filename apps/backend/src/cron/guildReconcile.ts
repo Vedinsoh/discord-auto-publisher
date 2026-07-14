@@ -211,7 +211,7 @@ const sweepPendingMarkers = async (): Promise<void> => {
 };
 
 /**
- * State-based backstop for the "free never serves >3" invariant (ADR 0008).
+ * State-based backstop for the "free never serves >3" invariant (ADR 0009).
  * The join rails only fire on presence changes / dashboard loads, so they miss
  * guilds already over-limit at deploy time, the premium-kicked-then-free-invited
  * case, and any live trim that threw. This finds every guild with more serving

@@ -5,6 +5,7 @@ import {
   runSubscriptionReconcile,
 } from 'cron/subscriptionReconcile.js';
 import express, { type Router } from 'express';
+import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { GuildReqSchema, PublishStatePushReqSchema } from 'utils/validations.js';
@@ -51,6 +52,28 @@ export const Internal: Router = (() => {
       res.status(StatusCodes.ACCEPTED).json({
         status: StatusCodes.ACCEPTED,
         message: 'Publish-state accepted',
+      } as APIResponse);
+    }
+  );
+
+  /**
+   * POST /internal/guild/:guildId/channels/invalidate
+   * Channel-list membership-change ping from a bot (ADR 0007 amendment): an
+   * announcement channel was created/deleted or crossed the type boundary, so
+   * the cached candidate list is stale. Evicts only this guild's `/channels`
+   * cache entry (permission entries stay on TTL). Fire-and-forget — 202.
+   */
+  router.post(
+    '/guild/:guildId/channels/invalidate',
+    validateRequest(GuildReqSchema),
+    (req, res) => {
+      const { guildId } = req.params;
+
+      Discord.evictGuildChannels(guildId);
+
+      res.status(StatusCodes.ACCEPTED).json({
+        status: StatusCodes.ACCEPTED,
+        message: 'Channel cache invalidated',
       } as APIResponse);
     }
   );

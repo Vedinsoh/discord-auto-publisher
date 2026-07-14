@@ -33,7 +33,7 @@ const find = async (guildId: Snowflake) => {
  */
 const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   try {
-    // Serving channels only — paused rows are retained but not published (ADR 0008)
+    // Serving channels only — paused rows are retained but not published (ADR 0009)
     const rows = await db
       .select({ channelId: channel.channelId })
       .from(channel)
@@ -50,7 +50,7 @@ const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   }
 };
 
-/** Paused (retained-but-not-serving) channel IDs for a guild (ADR 0008) */
+/** Paused (retained-but-not-serving) channel IDs for a guild (ADR 0009) */
 const getPausedChannels = async (guildId: Snowflake): Promise<string[]> => {
   try {
     const rows = await db
@@ -286,7 +286,7 @@ const registerNewGuild = async (
     }
 
     // Enforce the "free never serves >3" invariant at the point the managing
-    // edition settles (ADR 0008): free just (re)joined over the cap → pause the
+    // edition settles (ADR 0009): free just (re)joined over the cap → pause the
     // excess; premium is the sole/managing bot → reactivate any paused channel.
     if (rows[0]?.migratedAt) {
       await Editions.reconcileChannelServing(guildId);
@@ -308,7 +308,7 @@ const registerNewGuild = async (
  */
 const syncMigratedGuildCache = async (guildId: Snowflake): Promise<void> => {
   // Serving channels only — a paused channel must never be written to the
-  // allowlist (ADR 0008); reconcileChannelServing repauses excess right after.
+  // allowlist (ADR 0009); reconcileChannelServing repauses excess right after.
   const records = await getServingChannelRecords(guildId);
 
   if (records.length > 0) {

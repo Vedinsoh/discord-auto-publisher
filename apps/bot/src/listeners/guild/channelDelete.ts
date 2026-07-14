@@ -17,5 +17,9 @@ export class ChannelDeleteListener extends Listener {
 
     // Disable channel in DB & cache
     await Services.Channel.disable(channel.id);
+
+    // Membership change → bust the backend's cached candidate list (ADR 0007
+    // amendment) so the deleted channel stops appearing without the 5-min wait.
+    await Services.Channel.invalidateGuildCache(channel.guildId);
   }
 }

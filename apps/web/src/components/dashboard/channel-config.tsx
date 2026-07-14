@@ -201,7 +201,7 @@ export function ChannelConfig({
               <div className="flex items-center gap-3">
                 <Hash className="w-5 h-5 text-slate-600" />
                 <span className="text-slate-400 text-lg">{channel.name}</span>
-                {/* Retained config from an over-limit pause (ADR 0008) — subtle, not a managed state */}
+                {/* Retained config from an over-limit pause (ADR 0009) — subtle, not a managed state */}
                 {channel.hasSavedSetup && (
                   <Badge className="bg-slate-800/50 text-slate-500 border-slate-700">
                     Saved setup

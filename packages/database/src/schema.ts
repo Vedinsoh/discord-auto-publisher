@@ -73,7 +73,7 @@ export const channel = pgTable(
     // over its 3-channel limit: the row + config are retained but the channel is
     // absent from the Channels allowlist and excluded from the limit count.
     // Reactivated (set back to NULL) when the managing edition becomes premium.
-    // Only ever written by the trim — never by a user/bot toggle (ADR 0008).
+    // Only ever written by the trim — never by a user/bot toggle (ADR 0009).
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })

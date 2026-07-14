@@ -119,6 +119,15 @@ const pushChannelPermissions = async (
   });
 };
 
+// Channel-list cache invalidation (ADR 0007 amendment): an announcement channel
+// was created/deleted or crossed the type boundary — bust the backend's cached
+// candidate list so the dashboard reflects it without the 5-min TTL wait.
+const invalidateGuildChannels = async (guildId: Snowflake) => {
+  return request(`/internal/guild/${guildId}/channels/invalidate`, {
+    method: RequestMethod.Post,
+  });
+};
+
 // Info
 const getInfo = async () => {
   return request('/info');
@@ -177,6 +186,7 @@ export const Backend = {
   registerNewGuild,
   pingHandoverEvaluate,
   pushChannelPermissions,
+  invalidateGuildChannels,
   addFilter,
   removeFilter,
   getFilters,

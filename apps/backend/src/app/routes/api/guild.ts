@@ -125,7 +125,7 @@ export const GuildApi: Router = (() => {
       const channels = announcementChannels.map(c => {
         const record = enabledMap.get(c.id);
         const publish = managingMap[c.id];
-        // Serving = a row exists AND is not paused (ADR 0008). A paused row is a
+        // Serving = a row exists AND is not paused (ADR 0009). A paused row is a
         // disabled channel with retained config → surfaced via hasSavedSetup.
         const serving = !!record && !record.pausedAt;
         return {

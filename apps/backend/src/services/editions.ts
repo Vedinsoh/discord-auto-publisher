@@ -101,7 +101,7 @@ const resolveChannelLimit = async (
 };
 
 /**
- * Bring a guild's serving channels in line with its managing edition (ADR 0008):
+ * Bring a guild's serving channels in line with its managing edition (ADR 0009):
  * premium managing (unlimited) → reactivate every paused channel; free managing
  * (capped) → pause the newest excess beyond the cap. The one call the free-join
  * rail, `registerNewGuild`, and the reconcile backstop share — idempotent, a

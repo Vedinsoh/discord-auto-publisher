@@ -14,7 +14,7 @@ export const Guild: Router = (() => {
     const { guildId } = req.params;
 
     try {
-      // channelIds = serving; pausedChannelIds = retained-but-paused (ADR 0008),
+      // channelIds = serving; pausedChannelIds = retained-but-paused (ADR 0009),
       // surfaced separately by /ap status.
       const [channelIds, pausedChannelIds] = await Promise.all([
         Services.Guilds.getChannels(guildId),

@@ -83,7 +83,7 @@ const swap = async (guildId: Snowflake): Promise<void> => {
   logger.info(`Premium handover swapped for guild ${guildId}`);
 
   // Premium is now the managing edition (unlimited) — restore any channels the
-  // free bot had paused while it was over the 3-cap (ADR 0008).
+  // free bot had paused while it was over the 3-cap (ADR 0009).
   await ChannelPausing.reactivateGuild(guildId);
 
   const left = await Discord.leaveGuild('free', guildId);

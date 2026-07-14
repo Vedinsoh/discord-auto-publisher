@@ -59,7 +59,7 @@ export interface GuildChannel {
   premiumBotHasPermissions?: boolean;
   /**
    * True for a disabled channel whose config is retained because it was paused
-   * by the over-limit trim (ADR 0008) — drives the muted "Saved setup" tag.
+   * by the over-limit trim (ADR 0009) — drives the muted "Saved setup" tag.
    * Only ever true when `enabled` is false.
    */
   hasSavedSetup?: boolean;
