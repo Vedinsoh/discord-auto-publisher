@@ -1,6 +1,12 @@
 import type { Edition } from '@ap/api-types';
 import { botPresence, db, guild, subscription } from '@ap/database';
-import { type APIResponse, StatusCodes, sendErrorResponse } from '@ap/express';
+import {
+  type APIResponse,
+  discordGuildsCacheKey,
+  GUILDS_CACHE_TTL_SECONDS,
+  StatusCodes,
+  sendErrorResponse,
+} from '@ap/express';
 import { Keys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import { and, inArray, isNull } from 'drizzle-orm';
@@ -51,6 +57,19 @@ export const User: Router = (() => {
       }
 
       const allGuilds: DiscordPartialGuild[] = await response.json();
+
+      // Warm the shared per-token guild-list cache that requireGuildPermission
+      // reads. The layout awaits this endpoint before GET /api/guild/:guildId,
+      // so the middleware read-hits this instead of firing its own (redundant,
+      // occasionally 429'ing) /users/@me/guilds call. Cache the raw full list —
+      // membership checks in the middleware need guilds the user does NOT manage
+      // too. Fire-and-forget: a cache-write failure must not fail the request.
+      Data.Drivers.Redis.DiscordAuth.set(
+        discordGuildsCacheKey(token),
+        JSON.stringify(allGuilds),
+        'EX',
+        GUILDS_CACHE_TTL_SECONDS
+      ).catch(() => {});
 
       // Filter to guilds with MANAGE_GUILD permission
       const managedGuilds = allGuilds.filter(

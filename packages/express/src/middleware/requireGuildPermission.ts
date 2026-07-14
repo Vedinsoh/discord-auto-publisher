@@ -2,8 +2,20 @@ import { createHash } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-const GUILDS_CACHE_TTL_SECONDS = 60;
+export const GUILDS_CACHE_TTL_SECONDS = 60;
 const MANAGE_GUILD = BigInt(0x20);
+
+/**
+ * Redis key for a requester's cached `/users/@me/guilds` response, namespaced by
+ * a hash of their OAuth token. Exported so `GET /api/user/guilds` can warm the
+ * same entry it fetches — the two used to fetch Discord independently, and the
+ * redundant second call (this middleware's) intermittently 429'd, surfacing as a
+ * spurious "Failed to verify guild membership" 401.
+ */
+export function discordGuildsCacheKey(token: string): string {
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  return `discord_guilds:${tokenHash}`;
+}
 
 type RedisLike = {
   get(key: string): Promise<string | null>;
@@ -39,8 +51,7 @@ export function createRequireGuildPermission(redisClient: RedisLike) {
     }
 
     try {
-      const tokenHash = createHash('sha256').update(token).digest('hex');
-      const cacheKey = `discord_guilds:${tokenHash}`;
+      const cacheKey = discordGuildsCacheKey(token);
 
       let guilds: DiscordPartialGuild[];
 

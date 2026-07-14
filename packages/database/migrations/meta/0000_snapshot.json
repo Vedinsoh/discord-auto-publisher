@@ -39,12 +39,8 @@
           "name": "bot_presence_guild_id_guild_guild_id_fk",
           "tableFrom": "bot_presence",
           "tableTo": "guild",
-          "columnsFrom": [
-            "guild_id"
-          ],
-          "columnsTo": [
-            "guild_id"
-          ],
+          "columnsFrom": ["guild_id"],
+          "columnsTo": ["guild_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -52,10 +48,7 @@
       "compositePrimaryKeys": {
         "bot_presence_guild_id_edition_pk": {
           "name": "bot_presence_guild_id_edition_pk",
-          "columns": [
-            "guild_id",
-            "edition"
-          ]
+          "columns": ["guild_id", "edition"]
         }
       },
       "uniqueConstraints": {},
@@ -141,12 +134,8 @@
           "name": "channel_guild_id_guild_guild_id_fk",
           "tableFrom": "channel",
           "tableTo": "guild",
-          "columnsFrom": [
-            "guild_id"
-          ],
-          "columnsTo": [
-            "guild_id"
-          ],
+          "columnsFrom": ["guild_id"],
+          "columnsTo": ["guild_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -301,16 +290,12 @@
         "subscription_guild_id_unique": {
           "name": "subscription_guild_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "guild_id"
-          ]
+          "columns": ["guild_id"]
         },
         "subscription_paddle_subscription_id_unique": {
           "name": "subscription_paddle_subscription_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "paddle_subscription_id"
-          ]
+          "columns": ["paddle_subscription_id"]
         }
       },
       "policies": {},
