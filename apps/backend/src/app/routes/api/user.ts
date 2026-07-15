@@ -1,4 +1,3 @@
-import type { Edition } from '@ap/api-types';
 import { botPresence, db, guild, subscription } from '@ap/database';
 import {
   type APIResponse,
@@ -11,7 +10,6 @@ import { Keys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import { and, inArray, isNull } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
-import { Services } from 'services/index.js';
 import { isEntitledStatus } from 'services/subscriptions.js';
 
 const MANAGE_GUILD = BigInt(0x20);
@@ -43,33 +41,48 @@ export const User: Router = (() => {
     }
 
     try {
-      // Fetch user's guilds from Discord
-      const response = await fetch('https://discord.com/api/v10/users/@me/guilds', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const cacheKey = discordGuildsCacheKey(token);
 
-      if (!response.ok) {
-        res.status(StatusCodes.BAD_GATEWAY).json({
-          status: StatusCodes.BAD_GATEWAY,
-          message: 'Failed to fetch guilds from Discord',
-        } as APIResponse);
-        return;
+      // Read through the shared per-token guild-list cache (the same key
+      // requireGuildPermission reads). A hit skips the user-token
+      // /users/@me/guilds call entirely; a miss fetches and warms it. The
+      // membership check in the middleware needs guilds the user does NOT
+      // manage too, so the raw full list is cached. Presence/subscription
+      // below are still composed live from Postgres, so only the raw Discord
+      // list is cached — the derived flags never go stale.
+      let allGuilds: DiscordPartialGuild[] | null = null;
+      const cached = await Data.Drivers.Redis.DiscordAuth.get(cacheKey).catch(() => null);
+      if (cached) {
+        try {
+          allGuilds = JSON.parse(cached) as DiscordPartialGuild[];
+        } catch {
+          allGuilds = null;
+        }
       }
 
-      const allGuilds: DiscordPartialGuild[] = await response.json();
+      if (!allGuilds) {
+        const response = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      // Warm the shared per-token guild-list cache that requireGuildPermission
-      // reads. The layout awaits this endpoint before GET /api/guild/:guildId,
-      // so the middleware read-hits this instead of firing its own (redundant,
-      // occasionally 429'ing) /users/@me/guilds call. Cache the raw full list —
-      // membership checks in the middleware need guilds the user does NOT manage
-      // too. Fire-and-forget: a cache-write failure must not fail the request.
-      Data.Drivers.Redis.DiscordAuth.set(
-        discordGuildsCacheKey(token),
-        JSON.stringify(allGuilds),
-        'EX',
-        GUILDS_CACHE_TTL_SECONDS
-      ).catch(() => {});
+        if (!response.ok) {
+          res.status(StatusCodes.BAD_GATEWAY).json({
+            status: StatusCodes.BAD_GATEWAY,
+            message: 'Failed to fetch guilds from Discord',
+          } as APIResponse);
+          return;
+        }
+
+        allGuilds = (await response.json()) as DiscordPartialGuild[];
+
+        // Fire-and-forget warm: a cache-write failure must not fail the request.
+        Data.Drivers.Redis.DiscordAuth.set(
+          cacheKey,
+          JSON.stringify(allGuilds),
+          'EX',
+          GUILDS_CACHE_TTL_SECONDS
+        ).catch(() => {});
+      }
 
       // Filter to guilds with MANAGE_GUILD permission
       const managedGuilds = allGuilds.filter(
@@ -116,22 +129,12 @@ export const User: Router = (() => {
         subscriptions.filter(s => isEntitledStatus(s.status)).map(s => s.guildId)
       );
 
-      // Self-heal presences the event path cannot repair (re-auth of an
-      // already-present bot fires no gateway event; rows lost to DB resets) —
-      // the invite-return refresh must show the bot immediately, not after the
-      // nightly reconcile
-      await Promise.all(
-        managedGuilds.map(async g => {
-          const absentEditions: Edition[] = [];
-          if (!freeGuildIds.has(g.id)) absentEditions.push('free');
-          if (!premiumGuildIds.has(g.id)) absentEditions.push('premium');
-          if (absentEditions.length === 0) return;
-
-          const healed = await Services.PresenceHeal.healAbsentEditions(g.id, absentEditions);
-          if (healed.has('free')) freeGuildIds.add(g.id);
-          if (healed.has('premium')) premiumGuildIds.add(g.id);
-        })
-      );
+      // Presence is read live from Postgres here; the event path
+      // (guildCreate/guildDelete + nightly reconcile) keeps it honest. The
+      // one gap the event path cannot repair — re-authorizing a bot already a
+      // member fires no gateway event — is healed on the guild-detail read
+      // (GET /api/guild/:guildId), scoped to the one guild being opened rather
+      // than a fan-out over every managed guild here (ADR 0007, 2026-07-15).
 
       // Pending handover markers — only possible where both bots are present
       const bothPresentIds = guildIds.filter(id => freeGuildIds.has(id) && premiumGuildIds.has(id));

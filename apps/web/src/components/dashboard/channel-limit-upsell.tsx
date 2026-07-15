@@ -57,7 +57,12 @@ export function ChannelLimitCta({
     if (!inviteUrl) return null;
     return (
       <Button className="bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
-        <a href={inviteUrl} target="_blank" rel="noopener noreferrer" onClick={armRefreshOnReturn}>
+        <a
+          href={inviteUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => armRefreshOnReturn()}
+        >
           Invite Premium Bot
           <ExternalLink className="w-4 h-4 ml-2" />
         </a>

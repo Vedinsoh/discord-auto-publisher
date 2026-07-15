@@ -1,27 +1,49 @@
 'use client';
 
-import { createContext, useContext } from 'react';
+import { createContext, use, useContext } from 'react';
+import { useCurrentGuild } from '@/components/dashboard/guild-list-context';
 import type { DiscordGuild, GuildDashboardData } from '@/lib/api/types';
 
 interface GuildContextValue {
-  guild: DiscordGuild;
-  data: GuildDashboardData;
+  guildId: string;
+  dataPromise: Promise<GuildDashboardData>;
 }
 
 const GuildContext = createContext<GuildContextValue | null>(null);
 
-interface GuildProviderProps extends GuildContextValue {
-  children: React.ReactNode;
+/**
+ * Provides the current guild's identity (resolved synchronously from the guild
+ * list) plus its detail payload as a PROMISE. `useGuild()` unwraps the promise
+ * with `use()`, so only components that read guild detail suspend — the shell
+ * chrome (switcher/tabs), which needs only the list + route param, renders
+ * immediately (ADR 0007, 2026-07-15). The identity comes from the list because
+ * the detail payload carries no name/icon (fetching them would cost a Discord
+ * call).
+ */
+export function GuildProvider({
+  guildId,
+  dataPromise,
+  children,
+}: GuildContextValue & { children: React.ReactNode }) {
+  return <GuildContext.Provider value={{ guildId, dataPromise }}>{children}</GuildContext.Provider>;
 }
 
-export function GuildProvider({ guild, data, children }: GuildProviderProps) {
-  return <GuildContext.Provider value={{ guild, data }}>{children}</GuildContext.Provider>;
-}
-
-export function useGuild() {
+/**
+ * Current guild identity + detail data. SUSPENDS the calling component until
+ * the detail promise resolves (wrap consumers in a Suspense boundary); THROWS
+ * to the nearest error boundary if the detail read fails. Must be called within
+ * a GuildProvider whose guild is present in the list (the shell redirects a
+ * missing guild before rendering children).
+ */
+export function useGuild(): { guild: DiscordGuild; data: GuildDashboardData } {
   const context = useContext(GuildContext);
   if (!context) {
     throw new Error('useGuild must be used within GuildProvider');
   }
-  return context;
+  const data = use(context.dataPromise);
+  const guild = useCurrentGuild(context.guildId);
+  if (!guild) {
+    throw new Error('useGuild: current guild not in list');
+  }
+  return { guild, data };
 }

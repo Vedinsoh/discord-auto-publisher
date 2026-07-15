@@ -1,24 +1,10 @@
-import { redirect } from 'next/navigation';
 import { ServerSelector } from '@/components/dashboard/server-selector';
-import { getUserGuilds } from '@/lib/api/actions';
-import type { DiscordGuild } from '@/lib/api/types';
-import { auth } from '@/lib/auth';
 
-export default async function DashboardPage() {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect('/dashboard');
-  }
-
-  let guilds: DiscordGuild[];
-  let error = false;
-  try {
-    guilds = await getUserGuilds();
-  } catch {
-    guilds = [];
-    error = true;
-  }
-
-  return <ServerSelector guilds={guilds} error={error} />;
+/**
+ * Server-list page. Auth + the guild list are handled by the shared
+ * `dashboard/layout`; ServerSelector reads the list from GuildListProvider
+ * (ADR 0007, 2026-07-15), so this page holds no data-fetching of its own.
+ */
+export default function DashboardPage() {
+  return <ServerSelector />;
 }

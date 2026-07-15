@@ -75,25 +75,32 @@ export const GuildApi: Router = (() => {
 
     try {
       // Self-heal before reading presence-derived state — the invite-return
-      // refresh lands here, and re-authorizing an already-present bot fires no
-      // gateway event, so a missing row would otherwise stick until the
-      // nightly reconcile
-      const activeEditions = await Services.Editions.getActiveEditions(guildId);
-      const absentEditions = (['free', 'premium'] as Edition[]).filter(e => !activeEditions.has(e));
+      // lands here, and re-authorizing an already-present bot fires no gateway
+      // event, so a missing row would otherwise stick until the nightly
+      // reconcile. Premium is entitlement-gated: a non-entitled guild's only
+      // "present" outcome is the revocation leave (owned by the nightly
+      // reconcile), so skip the premium member-fetch there (ADR 0007). Fetch
+      // the subscription up front so the gate can read entitlement.
+      const [activeEditions, sub] = await Promise.all([
+        Services.Editions.getActiveEditions(guildId),
+        Services.Subscriptions.getByGuildId(guildId),
+      ]);
+      const entitled = !!sub && isEntitledStatus(sub.status);
+      const absentEditions = (['free', 'premium'] as Edition[]).filter(
+        e => !activeEditions.has(e) && (e !== 'premium' || entitled)
+      );
       if (absentEditions.length > 0) {
         await Services.PresenceHeal.healAbsentEditions(guildId, absentEditions);
       }
 
       const managingEdition = await Services.Editions.getManagingEdition(guildId);
 
-      const [channelRecords, announcementChannels, guildRow, sub, premiumPending] =
-        await Promise.all([
-          Services.Guilds.getChannelRecords(guildId),
-          fetchAnnouncementChannels(managingEdition, guildId),
-          Services.Guilds.find(guildId),
-          Services.Subscriptions.getByGuildId(guildId),
-          Services.Handover.isPending(guildId),
-        ]);
+      const [channelRecords, announcementChannels, guildRow, premiumPending] = await Promise.all([
+        Services.Guilds.getChannelRecords(guildId),
+        fetchAnnouncementChannels(managingEdition, guildId),
+        Services.Guilds.find(guildId),
+        Services.Handover.isPending(guildId),
+      ]);
 
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
       const migrated = !!guildRow?.migratedAt;

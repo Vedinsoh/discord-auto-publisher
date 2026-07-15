@@ -177,7 +177,7 @@ function PremiumInviteBanner({ guildId }: { guildId: string }) {
                   href={inviteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={armRefreshOnReturn}
+                  onClick={() => armRefreshOnReturn()}
                 >
                   Invite Premium Bot
                   <ExternalLink className="w-4 h-4 ml-2" />

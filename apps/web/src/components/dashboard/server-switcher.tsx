@@ -3,6 +3,7 @@
 import { Check, ChevronDown, Crown, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useGuildList } from '@/components/dashboard/guild-list-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,6 @@ import { guildIconUrl } from '@/lib/discord';
 import { cn } from '@/lib/utils';
 
 interface GuildSwitcherProps {
-  guilds: DiscordGuild[];
   current: DiscordGuild;
 }
 
@@ -56,7 +56,8 @@ function GuildAvatar({ guild, size }: { guild: DiscordGuild; size: number }) {
   );
 }
 
-export function GuildSwitcher({ guilds, current }: GuildSwitcherProps) {
+export function GuildSwitcher({ current }: GuildSwitcherProps) {
+  const { guilds } = useGuildList();
   const items = switchableGuilds(guilds);
 
   return (

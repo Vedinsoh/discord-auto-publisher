@@ -3,17 +3,15 @@
 import { ChevronRight, Crown, Plus, TriangleAlert } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef } from 'react';
+import { useGuildList } from '@/components/dashboard/guild-list-context';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { DiscordGuild } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
 import { getBotInviteUrl } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
-
-interface ServerSelectorProps {
-  guilds: DiscordGuild[];
-  error?: boolean;
-}
 
 function hasBotPresent(guild: DiscordGuild): boolean {
   return guild.freeBotPresent || guild.premiumBotPresent;
@@ -33,9 +31,28 @@ function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
   });
 }
 
-export function ServerSelector({ guilds, error }: ServerSelectorProps) {
+export function ServerSelector() {
+  const { guilds, error } = useGuildList();
   const sortedGuilds = sortGuilds(guilds);
   const armRefreshOnReturn = useRefreshOnReturn();
+  const router = useRouter();
+  // Guild the user just clicked "invite" for. On return, useRefreshOnReturn
+  // re-fetches the list; once THAT guild shows a bot present, we navigate into
+  // it. We never navigate to a still-botless guild (the invite may have been
+  // cancelled, or guildCreate hasn't landed) — that would bounce with a Discord
+  // "Missing Access". If it stays absent, the user just stays on the list.
+  const pendingInviteRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const target = pendingInviteRef.current;
+    if (!target) return;
+    const invited = guilds.find(g => g.id === target);
+    if (invited && hasBotPresent(invited)) {
+      pendingInviteRef.current = null;
+      router.push(`/dashboard/${target}`);
+    }
+  }, [guilds, router]);
+
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
       <div className="max-w-md mx-auto">
@@ -125,7 +142,10 @@ export function ServerSelector({ guilds, error }: ServerSelectorProps) {
                       href={inviteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={armRefreshOnReturn}
+                      onClick={() => {
+                        pendingInviteRef.current = guild.id;
+                        armRefreshOnReturn();
+                      }}
                       className="block"
                     >
                       {content}
