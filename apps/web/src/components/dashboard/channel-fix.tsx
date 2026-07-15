@@ -117,7 +117,7 @@ function ChannelFixModal({
               <p className="text-slate-300 text-sm mb-4">{intro}</p>
               <ol className="space-y-1 text-slate-400 text-sm list-decimal list-inside">
                 <li>
-                  Locate the <span className="text-slate-200">#{channel.name}</span>
+                  Locate the <span className="text-slate-200">#{channel.name}</span> channel
                 </li>
                 <li>Open the channel’s settings</li>
                 <li>Go to Permissions tab</li>
