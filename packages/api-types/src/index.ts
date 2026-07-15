@@ -53,8 +53,6 @@ export interface GuildChannel {
    * aggregate; also drives legacy migrate-modal preselection.
    */
   canPublish?: boolean;
-  /** Canonical publish permissions the managing bot lacks here ([] when it can publish). */
-  missingPermissions?: string[];
   /** Present while a premium handover is pending — false = "Premium bot needs access" badge */
   premiumBotHasPermissions?: boolean;
   /**

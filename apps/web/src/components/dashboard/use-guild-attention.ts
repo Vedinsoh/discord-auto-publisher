@@ -49,9 +49,10 @@ export interface GuildAttention {
   /** Enabled channels the managing bot currently can't publish in (migrated only) */
   needsFixingCount: number;
   /**
-   * Distinct attention items for the Overview sidebar badge: each active nag
-   * banner counts 1, plus 1 when any channel needs permission fixing. The
-   * positive checkout-success card and premium-handover access gaps never count.
+   * Attention items for the Overview sidebar badge: each active nag banner
+   * counts 1, plus one per enabled channel that needs permission fixing
+   * (`needsFixingCount`). The positive checkout-success card and premium-handover
+   * access gaps never count.
    */
   badgeCount: number;
   /** Dismiss the paused-channels banner (episode-scoped, per-browser). */
@@ -98,7 +99,7 @@ export function useGuildAttention(): GuildAttention {
     (showPremiumPending ? 1 : 0) +
     (showMigration ? 1 : 0) +
     (showPaused ? 1 : 0) +
-    (needsFixingCount > 0 ? 1 : 0);
+    needsFixingCount;
 
   return {
     showPremiumInvite,

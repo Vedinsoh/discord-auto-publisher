@@ -1,7 +1,8 @@
 'use client';
 
-import { CheckCircle2, Megaphone, PauseCircle, TriangleAlert } from 'lucide-react';
+import { Check, CheckCircle2, Megaphone, PauseCircle, X } from 'lucide-react';
 import Link from 'next/link';
+import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
@@ -29,10 +30,6 @@ function MigratedStatus({ guildId, channels }: { guildId: string; channels: Guil
   const { needsFixingCount, badgeCount } = useGuildAttention();
 
   const enabled = channels.filter(c => c.enabled);
-  // canPublish === false is the only "broken" state; undefined = unknown, treated
-  // as publishing (mirrors the Channels tab's NotPublishingBadge condition).
-  const blocked = enabled.filter(c => c.canPublish === false);
-  const publishing = enabled.filter(c => c.canPublish !== false);
   const paused = channels.filter(c => c.hasSavedSetup);
 
   // Positive hero only when nothing anywhere needs attention (no banners, no
@@ -78,13 +75,18 @@ function MigratedStatus({ guildId, channels }: { guildId: string; channels: Guil
         </Card>
       ) : (
         <div className="space-y-3">
-          {/* Problems first, then healthy, then retained/paused config. */}
-          {blocked.map(channel => (
-            <BlockedRow key={channel.channelId} channel={channel} guildId={guildId} />
-          ))}
-          {publishing.map(channel => (
-            <PublishingRow key={channel.channelId} channel={channel} />
-          ))}
+          {/* Server (sidebar) order — same array as the Channels tab, no status
+              regrouping, so a channel sits in the same place on both. The row
+              color signals status; canPublish === false is the only "broken"
+              state (undefined = unknown, treated as publishing). Retained/paused
+              config trails, matching the Channels tab's Disabled column. */}
+          {enabled.map(channel =>
+            channel.canPublish === false ? (
+              <BlockedRow key={channel.channelId} channel={channel} />
+            ) : (
+              <PublishingRow key={channel.channelId} channel={channel} />
+            )
+          )}
           {paused.map(channel => (
             <PausedRow key={channel.channelId} channel={channel} />
           ))}
@@ -94,38 +96,46 @@ function MigratedStatus({ guildId, channels }: { guildId: string; channels: Guil
   );
 }
 
+// Publishing row — green when healthy, yellow when the premium bot can't take
+// over yet (still publishing via the free bot, but a latent problem to fix). Card
+// color is shared with the Channels tab so a channel reads the same on both.
 function PublishingRow({ channel }: { channel: GuildChannel }) {
+  const style = channelStatusStyle(channel);
   return (
-    <Card className="bg-green-500/2 border-green-500/40 p-4">
+    <Card className={`${style.card} p-4`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Megaphone className="w-5 h-5 text-green-500 shrink-0" />
+          <Megaphone className={`w-5 h-5 ${style.icon} shrink-0`} />
           <span className="text-white text-md truncate">{channel.name}</span>
         </div>
-        <span className="text-green-500/80 text-sm shrink-0">Publishing</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="flex items-center gap-1 text-green-500/80 text-sm">
+            <Check className="w-4 h-4" />
+            Publishing
+          </span>
+          <ChannelFixButton channel={channel} />
+        </div>
       </div>
     </Card>
   );
 }
 
-function BlockedRow({ channel, guildId }: { channel: GuildChannel; guildId: string }) {
-  const missing = channel.missingPermissions ?? [];
+function BlockedRow({ channel }: { channel: GuildChannel }) {
+  const style = channelStatusStyle(channel);
   return (
-    <Card className="bg-red-500/5 border-red-500/30 p-4">
+    <Card className={`${style.card} p-4`}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <TriangleAlert className="w-5 h-5 text-red-400 shrink-0" />
+          <Megaphone className={`w-5 h-5 ${style.icon} shrink-0`} />
           <span className="text-white text-md truncate">{channel.name}</span>
-          <span className="text-red-400 text-sm shrink-0">
-            {missing.length > 0 ? `Not publishing — needs ${missing.join(', ')}` : 'Not publishing'}
-          </span>
         </div>
-        <Link
-          href={`/dashboard/${guildId}/channels`}
-          className="text-blue-400 hover:underline text-sm shrink-0"
-        >
-          Fix
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="flex items-center gap-1 text-red-400 text-sm">
+            <X className="w-4 h-4" />
+            Not publishing
+          </span>
+          <ChannelFixButton channel={channel} />
+        </div>
       </div>
     </Card>
   );

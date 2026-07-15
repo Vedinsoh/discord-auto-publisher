@@ -1,8 +1,9 @@
 'use client';
 
-import { Loader2, Megaphone, TriangleAlert } from 'lucide-react';
+import { Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
 import {
   ChannelLimitModal,
   channelLimitReasonFromGuild,
@@ -24,32 +25,6 @@ interface ChannelConfigProps {
   channelLimit: number;
   /** MIGRATION: false = legacy guild. Removed at sunset. */
   migrated: boolean;
-}
-
-/** Warning badge for channels the premium bot cannot publish in yet */
-function PremiumBlockedBadge({ channel }: { channel: GuildChannel }) {
-  if (channel.premiumBotHasPermissions !== false) return null;
-  return (
-    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">
-      <TriangleAlert className="w-3 h-3 mr-1" />
-      Premium bot needs access
-    </Badge>
-  );
-}
-
-/**
- * Warning badge for an enabled channel where the managing bot currently lacks
- * permission to publish — so nothing is actually being crossposted there.
- */
-function NotPublishingBadge({ channel }: { channel: GuildChannel }) {
-  if (channel.canPublish !== false) return null;
-  const missing = channel.missingPermissions ?? [];
-  return (
-    <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
-      <TriangleAlert className="w-3 h-3 mr-1" />
-      {missing.length > 0 ? `Not publishing — needs ${missing.join(', ')}` : 'Not publishing'}
-    </Badge>
-  );
 }
 
 /**
@@ -82,7 +57,6 @@ function LegacyChannelView({ channels }: { channels: GuildChannel[] }) {
                     Missing permissions
                   </Badge>
                 )}
-                <PremiumBlockedBadge channel={channel} />
               </div>
               <Switch checked={!!channel.canPublish} disabled />
             </div>
@@ -154,34 +128,36 @@ export function ChannelConfig({
   const enabledChannels = channels.filter(c => c.enabled);
   const disabledChannels = channels.filter(c => !c.enabled);
 
-  const renderEnabledCard = (channel: GuildChannel) => (
-    <Card key={channel.channelId} className="bg-green-500/2 border-green-500/40 p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Megaphone className="w-5 h-5 text-green-500" />
-          <span className="text-white text-md">{channel.name}</span>
-          {channel.canPublish === false && <NotPublishingBadge channel={channel} />}
-          {channel.filters.length > 0 && (
-            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-              {channel.filters.length} filter
-              {channel.filters.length !== 1 && 's'}
-            </Badge>
-          )}
-          <PremiumBlockedBadge channel={channel} />
+  const renderEnabledCard = (channel: GuildChannel) => {
+    const style = channelStatusStyle(channel);
+    return (
+      <Card key={channel.channelId} className={`${style.card} p-4`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Megaphone className={`w-5 h-5 ${style.icon}`} />
+            <span className="text-white text-md">{channel.name}</span>
+            {channel.filters.length > 0 && (
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                {channel.filters.length} filter
+                {channel.filters.length !== 1 && 's'}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <ChannelFixButton channel={channel} />
+            {isPending && pendingChannelId === channel.channelId && (
+              <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+            )}
+            <Switch
+              checked={true}
+              disabled={isPending && pendingChannelId === channel.channelId}
+              onCheckedChange={() => handleToggleChannel(channel.channelId, true)}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {isPending && pendingChannelId === channel.channelId && (
-            <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
-          )}
-          <Switch
-            checked={true}
-            disabled={isPending && pendingChannelId === channel.channelId}
-            onCheckedChange={() => handleToggleChannel(channel.channelId, true)}
-          />
-        </div>
-      </div>
-    </Card>
-  );
+      </Card>
+    );
+  };
 
   const renderDisabledCard = (channel: GuildChannel) => (
     <Card key={channel.channelId} className="bg-slate-900/30 border-slate-800/50 p-4">
@@ -193,7 +169,6 @@ export function ChannelConfig({
           {channel.hasSavedSetup && (
             <Badge className="bg-slate-800/50 text-slate-500 border-slate-700">Saved setup</Badge>
           )}
-          <PremiumBlockedBadge channel={channel} />
         </div>
         <div className="flex items-center gap-2">
           {isPending && pendingChannelId === channel.channelId && (

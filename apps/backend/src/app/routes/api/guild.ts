@@ -101,7 +101,7 @@ export const GuildApi: Router = (() => {
       // Two evaluations, run concurrently, both served from the bot-pushed
       // publish-state cache (ADR 0008) with a REST write-back fallback:
       // - managingMap: the managing bot's publish capability per channel (drives
-      //   the "Active / Not publishing — missing X" indicator + migrate-modal)
+      //   the "Publishing / Not publishing" indicator + migrate-modal preselection)
       // - premiumBlockedIds (pending handover only): channels the premium bot
       //   cannot publish in yet where the free bot can — the "Premium bot needs
       //   access" nudge. A handover eval failure (e.g. a dangling marker after
@@ -136,7 +136,6 @@ export const GuildApi: Router = (() => {
           filters: record?.filters ?? [],
           filterMode: record?.filterMode ?? 'any',
           canPublish: publish?.canPublish ?? false,
-          missingPermissions: publish?.missing ?? [],
           ...(premiumBlockedIds ? { premiumBotHasPermissions: !premiumBlockedIds.has(c.id) } : {}),
           ...(record?.pausedAt ? { hasSavedSetup: true } : {}),
         };

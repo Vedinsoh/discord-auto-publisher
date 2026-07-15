@@ -55,7 +55,9 @@ async function GuildShellLoader({
 
   return (
     <GuildDataProvider guild={guild} guildId={guildId}>
-      <GuildDashboardShell guild={guild}>{children}</GuildDashboardShell>
+      <GuildDashboardShell guild={guild} guilds={guilds}>
+        {children}
+      </GuildDashboardShell>
     </GuildDataProvider>
   );
 }

@@ -162,26 +162,17 @@ export function GuildDashboardShellSkeleton() {
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
       <div className="max-w-6xl mx-auto">
-        {/* Header skeleton */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <Skeleton className="h-4 w-28 bg-slate-800 mb-2" />
-              <div className="flex items-center gap-3">
-                <Skeleton className="w-12 h-12 rounded-lg bg-slate-800" />
-                <Skeleton className="h-9 w-48 bg-slate-800" />
-              </div>
-            </div>
-            <Skeleton className="h-10 w-10 rounded-full bg-slate-800" />
-          </div>
-        </div>
         {/* Grid skeleton */}
         <div className="grid lg:grid-cols-[250px_1fr] gap-6">
           {/* Sidebar */}
           <div className="space-y-2">
-            <Skeleton className="h-12 w-full rounded-lg bg-slate-800" />
-            <Skeleton className="h-12 w-full rounded-lg bg-slate-800" />
-            <Skeleton className="h-12 w-full rounded-lg bg-slate-800" />
+            {/* Server switcher */}
+            <Skeleton className="h-15 w-full rounded-lg bg-slate-800" />
+            <div className="h-px bg-slate-800 my-6" />
+            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
+            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
+            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
+            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
           </div>
           {/* Content */}
           <div>
