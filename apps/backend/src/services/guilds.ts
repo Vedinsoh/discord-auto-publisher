@@ -252,6 +252,13 @@ const registerNewGuild = async (
 
     await activatePresence(guildId, edition);
 
+    // A bot receives no gateway events while kicked, so a channel created or
+    // deleted during the absent window never fired the observe-based eviction.
+    // Re-invite closes that window with a bot confirmed present: flush the
+    // stale channel-list read cache before the handover eval (reads the same
+    // entry) and later dashboard reads re-fetch live (ADR 0007 amendment).
+    Discord.evictGuildChannels(guildId);
+
     if (announcementChannelIds) {
       await pruneStaleChannels(guildId, announcementChannelIds);
     }
