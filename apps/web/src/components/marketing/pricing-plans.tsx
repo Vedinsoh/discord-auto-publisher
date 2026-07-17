@@ -23,7 +23,7 @@ export function PricingPlans() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
       {/* Monthly */}
-      <Card className="bg-slate-900/50 border-blue-500/40 p-8 flex flex-col">
+      <Card className="bg-slate-900/50 border-blue-600/40 p-8 flex flex-col">
         <div className="mb-6">
           <h3 className="text-white text-xl font-semibold mb-2">Monthly</h3>
           <div className="flex items-baseline gap-2">
@@ -49,17 +49,17 @@ export function PricingPlans() {
         <Button
           size="lg"
           variant="outline"
-          className="w-full bg-slate-800/50 hover:bg-slate-800 text-white border-slate-700"
+          className="w-full bg-linear-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 text-white border-0 group"
           asChild
         >
           <Link href="/dashboard?upgrade=month">Choose Monthly</Link>
         </Button>
       </Card>
 
-      {/* Annual — Most Popular */}
+      {/* Annual — Best Value */}
       <div className="relative">
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 text-xs font-semibold bg-linear-to-r from-blue-500 to-blue-600 text-white px-4 py-1 rounded-full shadow-lg shadow-blue-500/30 whitespace-nowrap">
-          Most Popular
+          Best Value
         </span>
         <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 to-purple-500/20 blur-3xl" />
         <Card className="relative bg-linear-to-br from-blue-500/10 to-purple-500/10 border-blue-500/40 p-8 flex flex-col h-full">
