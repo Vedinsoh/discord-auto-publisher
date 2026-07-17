@@ -1,6 +1,15 @@
 'use client';
 
-import { Check, Crown, ExternalLink, Hourglass, Megaphone, PauseCircle, X } from 'lucide-react';
+import {
+  Check,
+  Crown,
+  ExternalLink,
+  Hourglass,
+  Megaphone,
+  PauseCircle,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -16,10 +25,11 @@ import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 /**
  * Guild-level banner stack, rendered inside the Overview tab (moved off the
  * dashboard shell — see ADR 0006 / CONTEXT "Overview banner stack"). Order:
- * checkout success → premium invite → premium pending → legacy migration →
- * paused channels. Invite and pending are mutually exclusive (pending implies
- * the premium bot is present); the migration banner can stack with either.
- * Banners 1–3 are not dismissible — they nag until the state resolves. The
+ * checkout success → misconfigured channels → premium invite → premium pending →
+ * legacy migration → paused channels. Misconfigured (red) is the only current
+ * outage, so it leads the warnings. Invite and pending are mutually exclusive
+ * (pending implies the premium bot is present); the migration banner can stack
+ * with either. Banners 1–4 are not dismissible — they nag until the state resolves. The
  * paused-channels banner is the lone dismissible exception (ADR 0009). The
  * checkout-success banner sits at the very top and is query-param-scoped
  * (`?success=true`, set only by the post-checkout redirect to this tab); it
@@ -31,6 +41,8 @@ export function DashboardBanners() {
   const { guild, data } = useGuild();
   const searchParams = useSearchParams();
   const {
+    showMisconfigured,
+    needsFixingCount,
     showPremiumInvite,
     showPremiumPending,
     showMigration,
@@ -43,6 +55,7 @@ export function DashboardBanners() {
 
   if (
     !showCheckoutSuccess &&
+    !showMisconfigured &&
     !showPremiumInvite &&
     !showPremiumPending &&
     !showMigration &&
@@ -54,6 +67,7 @@ export function DashboardBanners() {
   return (
     <div className="space-y-6">
       {showCheckoutSuccess && <CheckoutSuccessBanner />}
+      {showMisconfigured && <MisconfiguredChannelsBanner count={needsFixingCount} />}
       {showPremiumInvite && <PremiumInviteBanner guildId={guild.id} />}
       {showPremiumPending && <PremiumPendingBanner guildId={guild.id} channels={data.channels} />}
       {showMigration && (
@@ -92,6 +106,33 @@ function CheckoutSuccessBanner() {
           <h3 className="text-white text-lg mb-1">Payment successful</h3>
           <p className="text-slate-300 text-sm">
             Your Premium subscription is being activated. This may take a few moments.
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Nag for a migrated guild with ≥1 enabled channel the managing bot can't publish
+ * in (`canPublish === false`). Red — the only current outage in the stack, so it
+ * leads the warnings. Any number of broken channels collapse into this one banner;
+ * the per-channel detail + Fix affordance lives in the channel list below on the
+ * same tab. Not dismissible — it clears when permissions are restored.
+ */
+function MisconfiguredChannelsBanner({ count }: { count: number }) {
+  return (
+    <Card className="bg-red-500/10 border-red-500/30 p-6">
+      <div className="flex items-start gap-4">
+        <TriangleAlert className="w-6 h-6 text-red-400 shrink-0 mt-1" />
+        <div className="flex-1">
+          <h3 className="text-white text-lg mb-1">
+            {count === 1 ? "A channel isn't publishing" : "Some channels aren't publishing"}
+          </h3>
+          <p className="text-slate-300 text-sm">
+            {count === 1 ? 'One of your enabled channels is' : 'One or more enabled channels are'}{' '}
+            missing the permissions the bot needs. See the channel list below to fix{' '}
+            {count === 1 ? 'it' : 'them'}.
           </p>
         </div>
       </div>

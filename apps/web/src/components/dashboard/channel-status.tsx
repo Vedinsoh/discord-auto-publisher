@@ -1,7 +1,18 @@
 'use client';
 
-import { Check, CheckCircle2, Megaphone, PauseCircle, X } from 'lucide-react';
+import {
+  Check,
+  CheckCircle2,
+  Crown,
+  type LucideIcon,
+  Megaphone,
+  PauseCircle,
+  Sparkles,
+  TriangleAlert,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
@@ -26,54 +37,92 @@ export function ChannelStatus() {
   );
 }
 
+interface HeaderState {
+  icon: LucideIcon;
+  iconColor: string;
+  title: string;
+  subtitle: ReactNode;
+}
+
+/**
+ * The channel-status header, driven by channel publishing health ONLY —
+ * deliberately decoupled from the attention badge so an unrelated banner (paused,
+ * premium-pending) never demotes it. Precedence: Welcome → Issues → Complete
+ * Premium setup → All good. Paused channels never drive it (their sole purpose is
+ * preserving setup for a later re-upgrade — surfaced as muted rows + the
+ * dismissible banner, never a header nag). See CONTEXT "Guild Overview tab".
+ */
+function StatusHeader({ icon: Icon, iconColor, title, subtitle }: HeaderState) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon className={`w-7 h-7 ${iconColor} shrink-0`} />
+      <div>
+        <h2 className="text-2xl text-white">{title}</h2>
+        <p className="text-slate-400">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
 function MigratedStatus({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
-  const { needsFixingCount, badgeCount } = useGuildAttention();
+  const { needsFixingCount, showPremiumPending } = useGuildAttention();
 
   const enabled = channels.filter(c => c.enabled);
   const paused = channels.filter(c => c.hasSavedSetup);
 
-  // Positive hero only when nothing anywhere needs attention (no banners, no
-  // channel fixes) — scoped to the healthy state, not just channel permissions.
-  const allClear = badgeCount === 0 && enabled.length > 0;
+  const header: HeaderState =
+    enabled.length === 0
+      ? {
+          icon: Sparkles,
+          iconColor: 'text-blue-400',
+          title: 'Get started',
+          subtitle:
+            channels.length > 0 ? (
+              <>
+                Enable an announcement channel in the{' '}
+                <Link
+                  href={`/dashboard/${guildId}/channels`}
+                  className="text-blue-400 hover:underline"
+                >
+                  Channels tab
+                </Link>{' '}
+                to start auto-publishing.
+              </>
+            ) : (
+              'This server has no announcement channels yet. Create one in Discord, then enable it here.'
+            ),
+        }
+      : needsFixingCount > 0
+        ? {
+            icon: TriangleAlert,
+            iconColor: 'text-red-400',
+            title:
+              needsFixingCount === 1
+                ? "1 channel isn't publishing"
+                : `${needsFixingCount} channels aren't publishing`,
+            subtitle: 'Grant the missing permissions — see the list below.',
+          }
+        : showPremiumPending
+          ? {
+              icon: Crown,
+              iconColor: 'text-purple-400',
+              title: 'Complete your Premium setup',
+              subtitle: 'Grant your Premium bot permission in the highlighted channels.',
+            }
+          : {
+              icon: CheckCircle2,
+              iconColor: 'text-green-500',
+              title: 'All good',
+              subtitle: `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`,
+            };
 
   return (
     <div className="space-y-6">
-      {allClear ? (
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-7 h-7 text-green-500 shrink-0" />
-          <div>
-            <h2 className="text-2xl text-white">All good</h2>
-            <p className="text-slate-400">
-              Publishing in {enabled.length} channel{enabled.length !== 1 && 's'}
-            </p>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <h2 className="text-2xl text-white mb-2">Channel status</h2>
-          <p className="text-slate-400">
-            {needsFixingCount > 0
-              ? `${needsFixingCount} channel${needsFixingCount !== 1 ? 's need' : ' needs'} attention`
-              : `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`}
-          </p>
-        </div>
-      )}
+      <StatusHeader {...header} />
 
       <PublishLimitNote />
 
-      {enabled.length === 0 && paused.length === 0 ? (
-        <Card className="bg-slate-900/50 border-slate-800 p-12 text-center">
-          <Megaphone className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 mb-2">No channels are publishing yet</p>
-          <p className="text-slate-500 text-sm">
-            Enable an announcement channel in the{' '}
-            <Link href={`/dashboard/${guildId}/channels`} className="text-blue-400 hover:underline">
-              Channels tab
-            </Link>{' '}
-            to start auto-publishing.
-          </p>
-        </Card>
-      ) : (
+      {enabled.length === 0 && paused.length === 0 ? null : (
         <div className="space-y-3">
           {/* Server (sidebar) order — same array as the Channels tab, no status
               regrouping, so a channel sits in the same place on both. The row

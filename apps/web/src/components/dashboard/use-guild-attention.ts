@@ -48,10 +48,14 @@ export interface GuildAttention {
   pausedCount: number;
   /** Enabled channels the managing bot currently can't publish in (migrated only) */
   needsFixingCount: number;
+  /** ≥1 enabled channel the managing bot can't publish in (migrated only) — drives the misconfigured banner */
+  showMisconfigured: boolean;
   /**
-   * Attention items for the Overview sidebar badge: each active nag banner
-   * counts 1, plus one per enabled channel that needs permission fixing
-   * (`needsFixingCount`). The positive checkout-success card and premium-handover
+   * Attention items for the Overview sidebar badge: one per active nag banner
+   * (misconfigured channels, premium invite, premium pending, legacy migration,
+   * paused). Any number of broken channels collapse into the single misconfigured
+   * banner, so they count once regardless of how many (reversing the old
+   * per-channel tally). The positive checkout-success card and premium-handover
    * access gaps never count.
    */
   badgeCount: number;
@@ -93,13 +97,16 @@ export function useGuildAttention(): GuildAttention {
   const needsFixingCount = data.migrated
     ? data.channels.filter(c => c.enabled && c.canPublish === false).length
     : 0;
+  // Any number of broken channels surface as one red banner (badge = 1), not a
+  // per-channel tally. The per-channel detail + Fix lives in the channel list.
+  const showMisconfigured = needsFixingCount > 0;
 
   const badgeCount =
+    (showMisconfigured ? 1 : 0) +
     (showPremiumInvite ? 1 : 0) +
     (showPremiumPending ? 1 : 0) +
     (showMigration ? 1 : 0) +
-    (showPaused ? 1 : 0) +
-    needsFixingCount;
+    (showPaused ? 1 : 0);
 
   return {
     showPremiumInvite,
@@ -108,6 +115,7 @@ export function useGuildAttention(): GuildAttention {
     showPaused,
     pausedCount,
     needsFixingCount,
+    showMisconfigured,
     badgeCount,
     dismissPaused,
   };
