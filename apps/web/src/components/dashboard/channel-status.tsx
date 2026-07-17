@@ -64,10 +64,19 @@ function StatusHeader({ icon: Icon, iconColor, title, subtitle }: HeaderState) {
   );
 }
 
+// Overview sort key: broken (red) first, then premium-gap (yellow), then healthy
+// (green). Mirrors channelFixVariant's precedence — canPublish is the live outage,
+// premiumBotHasPermissions the latent handover gap.
+function statusRank(channel: GuildChannel): number {
+  if (channel.canPublish === false) return 0;
+  if (channel.premiumBotHasPermissions === false) return 1;
+  return 2;
+}
+
 function MigratedStatus({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
   const { needsFixingCount, showPremiumPending } = useGuildAttention();
 
-  const enabled = channels.filter(c => c.enabled);
+  const enabled = channels.filter(c => c.enabled).sort((a, b) => statusRank(a) - statusRank(b));
   const paused = channels.filter(c => c.hasSavedSetup);
 
   const header: HeaderState =
@@ -124,11 +133,13 @@ function MigratedStatus({ guildId, channels }: { guildId: string; channels: Guil
 
       {enabled.length === 0 && paused.length === 0 ? null : (
         <div className="space-y-3">
-          {/* Server (sidebar) order — same array as the Channels tab, no status
-              regrouping, so a channel sits in the same place on both. The row
-              color signals status; canPublish === false is the only "broken"
-              state (undefined = unknown, treated as publishing). Retained/paused
-              config trails, matching the Channels tab's Disabled column. */}
+          {/* Status order — the Overview is an attention surface, so it regroups
+              by health (broken → premium-gap → healthy) rather than mirroring the
+              Channels tab's sidebar order. Sidebar order is preserved within each
+              status group (stable sort over the pre-sorted array). The row color
+              signals status; canPublish === false is the only "broken" state
+              (undefined = unknown, treated as publishing). Retained/paused config
+              trails, matching the Channels tab's Disabled column. */}
           {enabled.map(channel =>
             channel.canPublish === false ? (
               <BlockedRow key={channel.channelId} channel={channel} />
