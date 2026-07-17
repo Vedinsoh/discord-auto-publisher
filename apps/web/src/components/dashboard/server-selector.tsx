@@ -3,8 +3,8 @@
 import { ChevronRight, Crown, Plus, TriangleAlert } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef } from 'react';
 import { useGuildList } from '@/components/dashboard/guild-list-context';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -36,6 +36,30 @@ export function ServerSelector() {
   const sortedGuilds = sortGuilds(guilds);
   const armRefreshOnReturn = useRefreshOnReturn();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Set when the user arrived via a Premium page plan CTA (/dashboard?upgrade=
+  // month|year). The flag's PRESENCE (any value) is the "wants to buy" signal:
+  // a free guild then routes straight to its subscription tab; premium guilds
+  // and plain visits land on /overview as usual. Intent-scoped on purpose — an
+  // unconditional redirect would nag every free visit onto the pay page. The
+  // VALUE is the interval they picked, forwarded so the panel preselects it.
+  const upgradeParam = searchParams.get('upgrade');
+  const upgradeIntent = upgradeParam !== null;
+  const upgradeInterval = upgradeParam === 'month' || upgradeParam === 'year' ? upgradeParam : null;
+
+  // Free guild + upgrade intent → subscription tab (carrying the chosen
+  // interval); otherwise the guild root, which redirects to /overview.
+  const guildHref = useCallback(
+    (guild: DiscordGuild): string => {
+      if (upgradeIntent && !guild.hasSubscription) {
+        return upgradeInterval
+          ? `/dashboard/${guild.id}/subscription?upgrade=${upgradeInterval}`
+          : `/dashboard/${guild.id}/subscription`;
+      }
+      return `/dashboard/${guild.id}`;
+    },
+    [upgradeIntent, upgradeInterval]
+  );
   // Guild the user just clicked "invite" for. On return, useRefreshOnReturn
   // re-fetches the list; once THAT guild shows a bot present, we navigate into
   // it. We never navigate to a still-botless guild (the invite may have been
@@ -49,9 +73,9 @@ export function ServerSelector() {
     const invited = guilds.find(g => g.id === target);
     if (invited && hasBotPresent(invited)) {
       pendingInviteRef.current = null;
-      router.push(`/dashboard/${target}`);
+      router.push(guildHref(invited));
     }
-  }, [guilds, router]);
+  }, [guilds, router, guildHref]);
 
   return (
     <div className="min-h-screen px-4 pt-24 pb-16">
@@ -154,7 +178,7 @@ export function ServerSelector() {
                 }
 
                 return (
-                  <Link key={guild.id} href={`/dashboard/${guild.id}`} className="block">
+                  <Link key={guild.id} href={guildHref(guild)} className="block">
                     {content}
                   </Link>
                 );

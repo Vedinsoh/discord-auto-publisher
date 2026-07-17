@@ -10,7 +10,7 @@ import {
   Lock,
   UserRound,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
+import { FREE_PLAN_FEATURES, PREMIUM_PLAN_FEATURES } from '@/lib/plans';
 import {
   formatUsd,
   PREMIUM_PRICE_MONTHLY_USD,
@@ -36,22 +37,11 @@ interface SubscriptionPanelProps {
   subscription: SubscriptionData | null;
 }
 
-const premiumBenefits = [
-  'Priority publishing',
-  'Unlimited channels',
-  'Advanced filters',
-  'Priority support',
-];
-
-const upgradeBenefits = [
-  'Priority publishing queue',
-  'Unlimited channels',
-  'Advanced message filters',
-  'Priority 24/7 support',
-  'Cancel anytime',
-];
-
-const freePlanFeatures = ['Basic auto-publishing', 'Limited to 3 channels', 'Standard support'];
+// Honest feature lists shared with the public /premium page so free/paid value
+// reads the same everywhere (@/lib/plans is the single source).
+const premiumBenefits = PREMIUM_PLAN_FEATURES;
+const upgradeBenefits = PREMIUM_PLAN_FEATURES;
+const freePlanFeatures = FREE_PLAN_FEATURES;
 
 const statusLabels: Record<string, { label: string; className: string }> = {
   active: {
@@ -243,9 +233,15 @@ type BillingInterval = 'month' | 'year';
 
 function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: string }) {
   const { guild, data } = useGuild();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<BillingInterval>('year');
+  // Preselect the interval the user picked on the public /premium page
+  // (?upgrade=month|year, forwarded by the server selector); default to yearly,
+  // which matches the "from $4.17/mo" framing shown everywhere else.
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>(
+    searchParams.get('upgrade') === 'month' ? 'month' : 'year'
+  );
   const [migrateOpen, setMigrateOpen] = useState(false);
 
   // A guild must be migrated (allowlist model) before it can buy Premium —
@@ -432,7 +428,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
 
           {migrated ? (
             <p className="text-slate-500 text-sm text-center mt-4">
-              Secure payment via Paddle &bull; Cancel anytime &bull; 7-day money-back guarantee
+              Secure payment via Paddle &bull; Cancel anytime
             </p>
           ) : (
             <p className="text-amber-400/80 text-sm text-center mt-4">

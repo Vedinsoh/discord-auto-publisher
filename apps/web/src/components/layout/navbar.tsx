@@ -19,12 +19,10 @@ import { links } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { Logo } from './logo';
 
-const scrollLinks = [
-  { label: 'How It Works', sectionId: 'how-it-works' },
-  { label: 'Premium', sectionId: 'premium' },
-];
+const scrollLinks = [{ label: 'How It Works', sectionId: 'how-it-works' }];
 
 const routeLinks = [
+  { href: '/premium', label: 'Premium', external: false },
   { href: '/status', label: 'Status', external: false },
   { href: links.discordSupportServer, label: 'Join our server', external: true },
 ];
