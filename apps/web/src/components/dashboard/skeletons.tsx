@@ -131,28 +131,30 @@ export function SubscriptionPanelSkeleton() {
         <Skeleton className="h-8 w-72 bg-slate-800 mb-2" />
         <Skeleton className="h-5 w-80 bg-slate-800" />
       </div>
-      <Card className="bg-slate-900/50 border-slate-800 p-6">
-        <div className="flex items-start gap-4">
-          <Skeleton className="w-12 h-12 rounded-lg bg-slate-800 shrink-0" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-6 w-52 bg-slate-800" />
-            <Skeleton className="h-5 w-80 bg-slate-800" />
-            <div className="space-y-2 pt-2">
-              <Skeleton className="h-4 w-40 bg-slate-800" />
-              <Skeleton className="h-4 w-36 bg-slate-800" />
-              <Skeleton className="h-4 w-32 bg-slate-800" />
+      <div className="max-w-md mx-auto space-y-6">
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
+          <div className="flex items-start gap-4">
+            <Skeleton className="w-12 h-12 rounded-lg bg-slate-800 shrink-0" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-6 w-52 bg-slate-800" />
+              <Skeleton className="h-5 w-80 bg-slate-800" />
+              <div className="space-y-2 pt-2">
+                <Skeleton className="h-4 w-40 bg-slate-800" />
+                <Skeleton className="h-4 w-36 bg-slate-800" />
+                <Skeleton className="h-4 w-32 bg-slate-800" />
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
-      <Card className="bg-slate-900/50 border-slate-800 p-8">
-        <div className="text-center space-y-4">
-          <Skeleton className="w-16 h-16 rounded-xl bg-slate-800 mx-auto" />
-          <Skeleton className="h-8 w-56 bg-slate-800 mx-auto" />
-          <Skeleton className="h-5 w-64 bg-slate-800 mx-auto" />
-          <Skeleton className="h-12 w-40 bg-slate-800 mx-auto" />
-        </div>
-      </Card>
+        </Card>
+        <Card className="bg-slate-900/50 border-slate-800 p-8">
+          <div className="text-center space-y-4">
+            <Skeleton className="w-16 h-16 rounded-xl bg-slate-800 mx-auto" />
+            <Skeleton className="h-8 w-56 bg-slate-800 mx-auto" />
+            <Skeleton className="h-5 w-64 bg-slate-800 mx-auto" />
+            <Skeleton className="h-12 w-40 bg-slate-800 mx-auto" />
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
