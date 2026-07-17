@@ -1,11 +1,17 @@
 'use client';
 
-import { Hash, Loader2, X } from 'lucide-react';
+import { Hash, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { migrateGuild } from '@/lib/api/actions';
 import type { GuildChannel } from '@/lib/api/types';
 
@@ -89,26 +95,22 @@ export function LegacyMigrateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-      <Card className="bg-slate-900 border-slate-700 w-full max-w-lg max-h-[85vh] flex flex-col">
-        <div className="flex items-start justify-between p-6 pb-4">
-          <div>
-            <h3 className="text-xl text-white mb-1">Switch to the new system</h3>
-            <p className="text-slate-400 text-sm">
-              {overLimit
-                ? `${publishableCount} channels currently auto-publish. Only ${limit} can keep publishing right now — choose which ones.`
-                : 'Channels the bot currently publishes in are preselected. Unselected channels will stop publishing.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors shrink-0 ml-4"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog
+      open
+      onOpenChange={open => {
+        // Don't let a stray backdrop/ESC close mid-migration.
+        if (!open && !isPending) onClose();
+      }}
+    >
+      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0">
+        <DialogHeader className="p-6 pb-4 pr-10">
+          <DialogTitle>Switch to the new system</DialogTitle>
+          <DialogDescription>
+            {overLimit
+              ? `${publishableCount} channels currently auto-publish. Only ${limit} can keep publishing right now — choose which ones.`
+              : 'Channels the bot currently publishes in are preselected. Unselected channels will stop publishing.'}
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="px-6 space-y-2 overflow-y-auto flex-1">
           {channels.map(channel => {
@@ -174,7 +176,7 @@ export function LegacyMigrateModal({
             </Button>
           </div>
         </div>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

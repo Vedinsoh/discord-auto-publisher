@@ -1,9 +1,16 @@
 'use client';
 
-import { Crown, ExternalLink, Hourglass, X } from 'lucide-react';
+import { Crown, ExternalLink, Hourglass } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { ChannelLimitReason } from '@/lib/api/types';
 import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
@@ -99,32 +106,29 @@ export function ChannelLimitModal({
   const Icon = reason === 'LIMIT_PREMIUM_PENDING' ? Hourglass : Crown;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-      <Card className="bg-slate-900 border-slate-700 w-full max-w-lg">
-        <div className="flex items-start justify-between p-6 pb-4">
-          <div className="flex items-start gap-4">
+    <Dialog
+      open
+      onOpenChange={open => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <div className="flex items-start gap-4 pr-6">
             <Icon className="w-6 h-6 text-purple-400 shrink-0 mt-1" />
             <div>
-              <h3 className="text-xl text-white mb-1">{copy.heading}</h3>
-              <p className="text-slate-300 text-sm">{copy.body}</p>
+              <DialogTitle>{copy.heading}</DialogTitle>
+              <DialogDescription className="mt-1">{copy.body}</DialogDescription>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-500 hover:text-white transition-colors shrink-0 ml-4"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="flex justify-end gap-3 p-6 pt-2">
+        </DialogHeader>
+        <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-slate-700 text-slate-300">
             Close
           </Button>
           <ChannelLimitCta reason={reason} guildId={guildId} />
-        </div>
-      </Card>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

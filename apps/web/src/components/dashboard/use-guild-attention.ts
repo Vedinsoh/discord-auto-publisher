@@ -14,7 +14,7 @@ const dismissalListeners = new Set<() => void>();
  * mismatch) and without a synchronous setState inside an effect (React flags that
  * as cascading renders).
  */
-function usePersistentDismissal(key: string): [boolean, () => void] {
+export function usePersistentDismissal(key: string): [boolean, () => void] {
   const subscribe = useCallback((onStoreChange: () => void) => {
     dismissalListeners.add(onStoreChange);
     window.addEventListener('storage', onStoreChange);
