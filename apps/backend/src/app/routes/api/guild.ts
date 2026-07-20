@@ -233,12 +233,24 @@ export const GuildApi: Router = (() => {
 
   /**
    * DELETE /api/guild/:guildId/channel/:channelId
-   * Disable channel for auto-publishing
+   * Disable channel for auto-publishing. Scoped to THIS guild — the channel
+   * row is deleted by channelId (its PK), so without a guild-ownership check a
+   * guild admin could disable a channel registered under a different guild.
    */
   router.delete('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
-    const { channelId } = req.params;
+    const { guildId, channelId } = req.params;
 
     try {
+      const record = await Services.Channels.find(channelId);
+
+      if (record && record.guildId !== guildId) {
+        res.status(StatusCodes.BAD_REQUEST).json({
+          status: StatusCodes.BAD_REQUEST,
+          message: 'Channel does not belong to this guild',
+        } as APIResponse);
+        return;
+      }
+
       await Services.Channels.remove(channelId);
 
       res.status(StatusCodes.OK).json({
