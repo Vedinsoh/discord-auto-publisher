@@ -22,40 +22,6 @@ import {
 export function PricingPlans() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
-      {/* Monthly */}
-      <Card className="bg-slate-900/50 border-blue-600/40 p-8 flex flex-col">
-        <div className="mb-6">
-          <h3 className="text-white text-xl font-semibold mb-2">Monthly</h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold text-white">
-              {formatUsd(PREMIUM_PRICE_MONTHLY_USD)}
-            </span>
-            <span className="text-slate-400">/month</span>
-          </div>
-          <p className="text-slate-400 text-sm mt-2">Billed monthly. Cancel anytime.</p>
-        </div>
-
-        <ul className="space-y-3 mb-8 flex-1">
-          {PREMIUM_PLAN_FEATURES.map(feature => (
-            <li key={feature} className="flex items-start gap-3 text-slate-300">
-              <div className="w-5 h-5 bg-slate-700/50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3 h-3 text-slate-300" />
-              </div>
-              <span>{feature}</span>
-            </li>
-          ))}
-        </ul>
-
-        <Button
-          size="lg"
-          variant="outline"
-          className="w-full bg-linear-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 text-white border-0 group"
-          asChild
-        >
-          <Link href="/dashboard?upgrade=month">Choose Monthly</Link>
-        </Button>
-      </Card>
-
       {/* Annual — Best Value */}
       <div className="relative">
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 text-xs font-semibold bg-linear-to-r from-blue-500 to-blue-600 text-white px-4 py-1 rounded-full shadow-lg shadow-blue-500/30 whitespace-nowrap">
@@ -107,6 +73,40 @@ export function PricingPlans() {
           </Button>
         </Card>
       </div>
+
+      {/* Monthly */}
+      <Card className="bg-slate-900/50 border-blue-600/40 p-8 flex flex-col">
+        <div className="mb-6">
+          <h3 className="text-white text-xl font-semibold mb-2">Monthly</h3>
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-bold text-white">
+              {formatUsd(PREMIUM_PRICE_MONTHLY_USD)}
+            </span>
+            <span className="text-slate-400">/month</span>
+          </div>
+          <p className="text-slate-400 text-sm mt-2">Billed monthly. Cancel anytime.</p>
+        </div>
+
+        <ul className="space-y-3 mb-8 flex-1">
+          {PREMIUM_PLAN_FEATURES.map(feature => (
+            <li key={feature} className="flex items-start gap-3 text-slate-300">
+              <div className="w-5 h-5 bg-slate-700/50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-3 h-3 text-slate-300" />
+              </div>
+              <span>{feature}</span>
+            </li>
+          ))}
+        </ul>
+
+        <Button
+          size="lg"
+          variant="outline"
+          className="w-full bg-linear-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 text-white border-0 group"
+          asChild
+        >
+          <Link href="/dashboard?upgrade=month">Choose Monthly</Link>
+        </Button>
+      </Card>
     </div>
   );
 }
