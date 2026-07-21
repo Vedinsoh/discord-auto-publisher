@@ -1,6 +1,7 @@
 'use client';
 
-import { ChevronDown, CreditCard, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
+// CreditCard: re-add when the Subscriptions menu item is restored (see below).
+import { ChevronDown, LayoutDashboard, LogOut, Menu, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -22,7 +23,8 @@ import { Logo } from './logo';
 const routeLinks = [
   { href: '/how-it-works', label: 'How It Works', external: false },
   { href: '/premium', label: 'Premium', external: false },
-  { href: '/status', label: 'Status', external: false },
+  // TODO: re-enable when the Status page is ready.
+  // { href: '/status', label: 'Status', external: false },
   { href: links.discordSupportServer, label: 'Join our server', external: true },
 ];
 
@@ -88,7 +90,7 @@ function NavUserDesktop() {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger className="group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-slate-800/50">
         <UserAvatar user={user} size={32} />
-        <span className="max-w-[10rem] truncate text-sm text-white">{displayNameOf(user)}</span>
+        <span className="max-w-40 truncate text-sm text-white">{displayNameOf(user)}</span>
         <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
@@ -98,10 +100,12 @@ function NavUserDesktop() {
             Dashboard
           </Link>
         </DropdownMenuItem>
+        {/* TODO: re-enable when Subscriptions is ready (re-add the CreditCard import).
         <DropdownMenuItem disabled>
           <CreditCard className="h-4 w-4" />
           Subscriptions
         </DropdownMenuItem>
+        */}
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onSelect={() => signOut({ redirectTo: '/' })}>
           <LogOut className="h-4 w-4" />
@@ -146,10 +150,12 @@ function NavUserMobile({ onNavigate }: { onNavigate: () => void }) {
         <LayoutDashboard className="h-4 w-4" />
         Dashboard
       </Link>
+      {/* TODO: re-enable when Subscriptions is ready (re-add the CreditCard import).
       <span className="flex cursor-not-allowed items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-600">
         <CreditCard className="h-4 w-4" />
         Subscriptions
       </span>
+      */}
       <button
         type="button"
         onClick={() => signOut({ redirectTo: '/' })}
