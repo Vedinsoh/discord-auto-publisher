@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { migrateGuild } from '@/lib/api/actions';
+import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { GuildChannel } from '@/lib/api/types';
 
 // MIGRATION: Remove this component after migration period (6 months)
@@ -90,6 +91,8 @@ export function LegacyMigrateModal({
         router.refresh();
         return;
       }
+      // Dead Discord token: re-login instead of a generic failure (ADR 0010).
+      if (signInOnAuthExpired(result.status)) return;
       setError(true);
     });
   };

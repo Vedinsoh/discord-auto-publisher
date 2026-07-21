@@ -26,6 +26,21 @@ export class BackendError extends Error {
   }
 }
 
+/**
+ * A 401 from any backend call behind `createDiscordAuth` — the Discord OAuth
+ * token embedded in the session has expired (or the session/token is missing),
+ * even though the NextAuth session is still "valid". Reactive re-login handles
+ * it (ADR 0010). Extends BackendError so existing `instanceof BackendError`
+ * checks still see it (status 401); `requireGuildPermission` uses 403, so a 401
+ * here is unambiguously dead auth, never insufficient-permission.
+ */
+export class AuthExpiredError extends BackendError {
+  constructor(message = 'Discord authorization expired') {
+    super(401, message);
+    this.name = 'AuthExpiredError';
+  }
+}
+
 /** Pulls the APIResponse `code`/`message` out of an error body (JSON or raw text) */
 function parseErrorBody(body: string): { message?: string; code?: string } {
   try {
@@ -40,13 +55,13 @@ export async function backendFetch<T>(path: string, options?: BackendFetchOption
   const session = await auth();
 
   if (!session) {
-    throw new BackendError(401, 'Not authenticated');
+    throw new AuthExpiredError('Not authenticated');
   }
 
   const token = await getDiscordAccessToken();
 
   if (!token) {
-    throw new BackendError(401, 'No Discord access token');
+    throw new AuthExpiredError('No Discord access token');
   }
 
   const url = `${getBackendUrl()}${path}`;
@@ -63,6 +78,9 @@ export async function backendFetch<T>(path: string, options?: BackendFetchOption
   if (!response.ok) {
     const body = await response.text();
     const { message, code } = parseErrorBody(body);
+    if (response.status === 401) {
+      throw new AuthExpiredError(message || body || response.statusText);
+    }
     throw new BackendError(response.status, message || body || response.statusText, code);
   }
 

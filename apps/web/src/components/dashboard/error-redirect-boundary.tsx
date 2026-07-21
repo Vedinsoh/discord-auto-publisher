@@ -2,14 +2,22 @@
 
 import { useRouter } from 'next/navigation';
 import { Component, type ReactNode, useEffect } from 'react';
+import { AuthExpiredSignal } from '@/lib/api/auth-expired';
 
 interface ErrorBoundaryProps {
   fallback: ReactNode;
+  /**
+   * Rendered instead of `fallback` when the caught error is an AuthExpiredSignal
+   * (dead Discord token), so the boundary can route to re-login rather than the
+   * generic server-list redirect (ADR 0010). Omit to treat auth-expiry like any
+   * other error (used by the badge boundary, which just renders null).
+   */
+  authFallback?: ReactNode;
   children: ReactNode;
 }
 
 interface ErrorBoundaryState {
-  hasError: boolean;
+  error: Error | null;
 }
 
 /**
@@ -19,14 +27,18 @@ interface ErrorBoundaryState {
  * catches. Key it by guildId so switching guilds resets a prior error.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false };
+  state: ErrorBoundaryState = { error: null };
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { error };
   }
 
   render(): ReactNode {
-    return this.state.hasError ? this.props.fallback : this.props.children;
+    if (!this.state.error) return this.props.children;
+    if (this.props.authFallback && this.state.error instanceof AuthExpiredSignal) {
+      return this.props.authFallback;
+    }
+    return this.props.fallback;
   }
 }
 

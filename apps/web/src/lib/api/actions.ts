@@ -45,10 +45,20 @@ export async function enableChannel(guildId: string, channelId: string): Promise
   }
 }
 
-export async function disableChannel(guildId: string, channelId: string): Promise<void> {
-  await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
-    method: 'DELETE',
-  });
+export async function disableChannel(guildId: string, channelId: string): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
+      method: 'DELETE',
+    });
+    return { ok: true };
+  } catch (error) {
+    // Surface the status (esp. 401 = dead token) so the client can re-login
+    // rather than silently swallowing a sanitized thrown error (ADR 0010).
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code as ChannelLimitReason };
+    }
+    throw error;
+  }
 }
 
 /** MIGRATION: Remove after migration period (6 months) */

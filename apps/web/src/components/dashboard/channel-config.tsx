@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
+import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { ChannelLimitReason, GuildChannel } from '@/lib/api/types';
 
 interface ChannelConfigProps {
@@ -109,17 +110,20 @@ export function ChannelConfig({
     setPendingChannelId(channelId);
     startTransition(async () => {
       try {
-        if (enabled) {
-          await disableChannel(guildId, channelId);
+        const result = enabled
+          ? await disableChannel(guildId, channelId)
+          : await enableChannel(guildId, channelId);
+        if (result.ok) {
           router.refresh();
           window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         }
-
-        const result = await enableChannel(guildId, channelId);
-        if (result.ok) {
+        // Dead Discord token: re-login instead of a generic failure (ADR 0010).
+        if (signInOnAuthExpired(result.status)) return;
+        // Disable never hits the channel cap, so a non-auth failure there is a
+        // transient error — a refresh re-syncs the toggle to server truth.
+        if (enabled) {
           router.refresh();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
         }
         // Cap hit: show the reason-appropriate upsell instead of a hard failure.

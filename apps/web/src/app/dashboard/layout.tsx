@@ -4,6 +4,7 @@ import { AuthRedirect } from '@/components/auth/auth-redirect';
 import { DashboardLoadingSkeleton } from '@/components/dashboard/dashboard-loading';
 import { GuildListProvider } from '@/components/dashboard/guild-list-context';
 import { getUserGuilds } from '@/lib/api/actions';
+import { AuthExpiredError } from '@/lib/api/backend';
 import type { DiscordGuild } from '@/lib/api/types';
 import { auth } from '@/lib/auth';
 
@@ -43,7 +44,12 @@ async function GuildListLoader({ children }: { children: React.ReactNode }) {
   let error = false;
   try {
     guilds = await getUserGuilds();
-  } catch {
+  } catch (e) {
+    // A dead Discord token (session valid, token expired) is not a generic
+    // failure — re-login instead of the "Something went wrong" card (ADR 0010).
+    if (e instanceof AuthExpiredError) {
+      return <AuthRedirect callbackUrl="/dashboard" />;
+    }
     error = true;
   }
 

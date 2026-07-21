@@ -4,6 +4,8 @@ import { Crown, Filter, Hash, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
+import { AuthRedirect } from '@/components/auth/auth-redirect';
+import type { AuthExpiredSentinel } from '@/lib/api/auth-expired';
 import type { GuildDashboardData } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary, RedirectTo } from './error-redirect-boundary';
@@ -22,7 +24,7 @@ const tabs = [
 
 interface GuildDashboardShellProps {
   guildId: string;
-  dataPromise: Promise<GuildDashboardData>;
+  dataPromise: Promise<GuildDashboardData | AuthExpiredSentinel>;
   children: React.ReactNode;
 }
 
@@ -71,6 +73,7 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
                     <ChannelConfigSkeleton />
                   </RedirectTo>
                 }
+                authFallback={<AuthRedirect callbackUrl={`/dashboard/${guildId}`} />}
               >
                 <Suspense fallback={<ChannelConfigSkeleton />}>{children}</Suspense>
               </ErrorBoundary>
