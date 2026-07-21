@@ -158,8 +158,7 @@ export async function chatInputStatus(
         .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
         .join('\n');
       const warningContent =
-        "Until these are granted, messages here won't be published. The channel stays enabled and resumes on its own once the permissions are restored.";
-      const actionContent = 'Grant the missing permissions to resume auto-publishing.';
+        "Until these are granted, messages here can't get published. Bot will automatically resume publishing once the permissions are restored.";
 
       const warningContainer = new ContainerBuilder()
         .addTextDisplayComponents(textDisplay => textDisplay.setContent(title))
@@ -167,8 +166,7 @@ export async function chatInputStatus(
         .addTextDisplayComponents(textDisplay => textDisplay.setContent(content))
         .addTextDisplayComponents(textDisplay => textDisplay.setContent(permissionsList))
         .addSeparatorComponents(separator => separator)
-        .addTextDisplayComponents(textDisplay => textDisplay.setContent(warningContent))
-        .addTextDisplayComponents(textDisplay => textDisplay.setContent(actionContent));
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(warningContent));
 
       return interaction.editReply({
         flags: [MessageFlags.IsComponentsV2],
