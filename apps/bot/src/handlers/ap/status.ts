@@ -1,6 +1,7 @@
 import { config } from '@ap/config';
+import { PUBLISH_PERMISSION_FLAGS } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
-import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
+import { ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
@@ -44,7 +45,24 @@ export async function chatInputStatus(
         });
       }
 
-      const channelList = channelIds.map(id => `- <#${id}>`).join('\n');
+      // Per-channel publish-permission check (cache-only, mirrors the dashboard's
+      // canPublish so Discord and web report identical okay/not-okay states). A
+      // channel is flagged when the bot lacks View/Send/Manage or can't resolve
+      // it at all (deleted / no ViewChannel). Skipped only if the bot member
+      // can't be resolved, to avoid mislabelling every channel as broken.
+      const botMember = await interaction.guild?.members.me?.fetch();
+      const misconfiguredIds = botMember
+        ? channelIds.filter(id => {
+            const resolved = botMember.guild.channels.cache.get(id);
+            if (!resolved || resolved.type !== ChannelType.GuildAnnouncement) return true;
+            return !checkChannelPermissions(botMember, resolved).hasAll;
+          })
+        : [];
+      const misconfiguredSet = new Set(misconfiguredIds);
+
+      const channelList = channelIds
+        .map(id => (misconfiguredSet.has(id) ? `- ${emojis.warning} <#${id}>` : `- <#${id}>`))
+        .join('\n');
       const count = channelIds.length;
 
       // Paused channels are retained but over the free limit of 3 (ADR 0009) —
@@ -59,6 +77,24 @@ export async function chatInputStatus(
           `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${pausedSection}${formatNotes([config.isPremiumInstance && notes.publishDelay])}`
         )
       );
+
+      // At least one channel is misconfigured → separator + fix instructions that
+      // match the dashboard's "fix" flow (same required permissions, same "resumes
+      // on its own" promise). No auto-disable exists; the setup is retained.
+      if (misconfiguredSet.size > 0) {
+        const n = misconfiguredSet.size;
+        const fixTitle = `### ${emojis.warning} **${n}** channel${n !== 1 ? 's' : ''} can't publish`;
+        const fixContent = `Auto Publisher is missing permissions in the ${emojis.warning}-flagged channel${n !== 1 ? 's' : ''} above, so ${n !== 1 ? "they won't" : "it won't"} publish. Grant ${n !== 1 ? 'them' : 'it'} these permissions and publishing resumes on its own:`;
+        const permissionsList = PUBLISH_PERMISSION_FLAGS.map(perm => `- \`${perm.name}\``).join(
+          '\n'
+        );
+
+        listContainer
+          .addSeparatorComponents(separator => separator)
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(fixTitle))
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(fixContent))
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(permissionsList));
+      }
 
       return interaction.editReply({
         flags: [MessageFlags.IsComponentsV2],
@@ -122,9 +158,8 @@ export async function chatInputStatus(
         .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
         .join('\n');
       const warningContent =
-        '**Warning:** The channel will be automatically disabled from auto-publishing after an extended period if permissions are not fixed.';
-      const actionContent =
-        'Please grant the missing permissions to ensure auto-publishing continues working.';
+        "Until these are granted, messages here won't be published. The channel stays enabled and resumes on its own once the permissions are restored.";
+      const actionContent = 'Grant the missing permissions to resume auto-publishing.';
 
       const warningContainer = new ContainerBuilder()
         .addTextDisplayComponents(textDisplay => textDisplay.setContent(title))
