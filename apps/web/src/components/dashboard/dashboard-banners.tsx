@@ -205,11 +205,11 @@ function PremiumInviteBanner({ guildId }: { guildId: string }) {
         <Crown className="w-6 h-6 text-purple-400 shrink-0 mt-1" />
         <div className="flex-1">
           <h3 className="text-white text-lg mb-1">
-            Your Premium subscription isn&apos;t active on this server yet
+            Premium is active — invite the Premium bot to switch over
           </h3>
           <p className="text-slate-300 text-sm mb-4">
-            Invite the Premium bot to start using your subscription — your channels and settings are
-            kept.
+            Your subscription is active. Invite the Premium bot to this server to start using it —
+            your channels and settings are kept.
           </p>
           {inviteUrl && (
             <>
@@ -254,8 +254,8 @@ function PremiumPendingBanner({
         <div className="flex-1">
           <h3 className="text-white text-lg mb-1">Premium bot is waiting to take over</h3>
           <p className="text-slate-300 text-sm">
-            The free bot keeps publishing until the Premium bot can publish in every configured
-            channel — permissions don&apos;t transfer between bots.{' '}
+            Your subscription is active. The free bot keeps publishing until your Premium bot has
+            permission in every channel — permissions don&apos;t carry over between bots.{' '}
             {blockedCount > 0 ? (
               <>
                 Grant the Premium bot access to the {blockedCount} flagged channel
