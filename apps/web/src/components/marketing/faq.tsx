@@ -1,32 +1,92 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { links } from '@/lib/constants';
 
-const faqs = [
+const ANNOUNCEMENT_CHANNELS_HELP =
+  'https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channels-';
+
+function InlineLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="text-blue-400 underline-offset-2 hover:text-blue-300 hover:underline"
+    >
+      {children}
+    </a>
+  );
+}
+
+const faqs: { question: string; answer: ReactNode }[] = [
   {
-    question: 'Does Auto Publisher work with all announcement channels?',
-    answer:
-      'Yes! Auto Publisher works with any Discord announcement channel. Simply invite the bot and it will automatically detect and monitor your announcement channels.',
+    question: 'What does Auto Publisher do?',
+    answer: (
+      <>
+        It automatically publishes messages posted in your{' '}
+        <InlineLink href={ANNOUNCEMENT_CHANNELS_HELP}>announcement channels</InlineLink> — the same
+        as pressing the publish button yourself — so every message reaches the servers that follow
+        your channel. It is especially handy for messages from other bots or webhooks that you would
+        otherwise have to publish by hand. Note: Auto Publisher never creates messages; it only
+        publishes ones already posted by you, another bot, or a webhook.
+      </>
+    ),
   },
   {
-    question: 'How fast does Auto Publisher publish messages?',
-    answer:
-      'Auto Publisher typically publishes messages in under 1 second. Our premium plan offers even faster publishing times with priority processing.',
+    question: 'How do I set it up?',
+    answer: (
+      <>
+        Invite the bot, then use <code className="text-slate-200">/ap enable</code> or the web
+        dashboard to choose the announcement channels it should manage. Make sure the bot has these
+        permissions in each of those channels:{' '}
+        <span className="text-slate-200">View Channel, Send Messages, and Manage Messages</span>.
+      </>
+    ),
   },
   {
-    question: 'Can I disable Auto Publisher for specific channels?',
-    answer:
-      'Absolutely! You have full control over which channels Auto Publisher monitors. You can enable or disable specific channels at any time using simple commands.',
+    question: 'Can I temporarily turn it off for specific channels?',
+    answer: (
+      <>
+        Yes. Run <code className="text-slate-200">/ap disable</code> or toggle the channel off in
+        the dashboard at any time. Auto Publisher only manages the channels you enable.
+      </>
+    ),
   },
   {
-    question: 'Is there a message limit?',
-    answer:
-      'The free version has no hard message limit, but premium users get priority processing and additional automation features for high-volume servers.',
+    question: 'Why is there sometimes a delay before a message publishes?',
+    answer: (
+      <>
+        During busy periods Auto Publisher paces out publishing to stay within Discord&apos;s rate
+        limits so it never gets blocked. This is normal — even instant publishes take a moment to
+        reach every following server, depending on how many follow your channel.
+      </>
+    ),
+  },
+  {
+    question: 'Why can only 10 messages per channel per hour be published?',
+    answer: (
+      <>
+        That is a hard limit set by Discord, not by us — even a person cannot publish more than 10
+        messages per channel per hour. There is no way around it.
+      </>
+    ),
+  },
+  {
+    question: 'Can I self-host the bot?',
+    answer: (
+      <>
+        Yes. The project is open source on <InlineLink href={links.githubRepo}>GitHub</InlineLink>,
+        but Auto Publisher is built to run at scale across many servers and we do not provide
+        support for self-hosted instances. Use at your own risk.
+      </>
+    ),
   },
 ];
 

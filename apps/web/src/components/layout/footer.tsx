@@ -5,6 +5,7 @@ import { Logo } from './logo';
 
 const quickLinks = [
   { href: '/', label: 'Home' },
+  { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/status', label: 'Status' },

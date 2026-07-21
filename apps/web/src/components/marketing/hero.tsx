@@ -8,13 +8,6 @@ import { formatNumberFull } from '@/lib/utils';
 import { Button } from '../ui/button';
 
 export function Hero() {
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const headlineWords = 'Automate Your Discord Announcements'.split(' ');
 
   return (
@@ -109,9 +102,9 @@ export function Hero() {
             variant="outline"
             size="xl"
             className="bg-slate-800/50 hover:bg-slate-800 text-white px-8 py-4 rounded-lg border-slate-700 transition-all hover:-translate-y-0.5"
-            onClick={() => scrollToSection('how-it-works')}
+            asChild
           >
-            How It Works
+            <Link href="/how-it-works">How It Works</Link>
           </Button>
         </motion.div>
 

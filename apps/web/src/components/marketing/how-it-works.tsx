@@ -1,4 +1,5 @@
-import { CheckCircle, type LucideIcon, Plus, Settings, Zap } from 'lucide-react';
+import { ArrowRight, CheckCircle, type LucideIcon, Plus, Settings, Zap } from 'lucide-react';
+import Link from 'next/link';
 
 interface Step {
   icon: LucideIcon;
@@ -11,21 +12,20 @@ const steps: Step[] = [
   {
     icon: Plus,
     title: 'Invite the Bot',
-    description:
-      'Add Auto Publisher to your Discord server with a single click. No complex setup required.',
+    description: 'Add Auto Publisher to your Discord server with a single click.',
     color: 'blue',
   },
   {
     icon: Settings,
     title: 'Configure Channels',
     description:
-      'Run /help to select which announcement channels you want Auto Publisher to monitor and manage.',
+      'Use /ap enable or the web dashboard to choose which announcement channels Auto Publisher manages.',
     color: 'purple',
   },
   {
     icon: Zap,
-    title: 'Post Your Message',
-    description: 'Create your announcement in any designated channel as you normally would.',
+    title: 'Send Your Message',
+    description: 'Post your announcement in any designated channel as you normally would.',
     color: 'cyan',
   },
   {
@@ -60,15 +60,23 @@ const colorMap = {
   },
 };
 
-export function HowItWorks() {
+interface HowItWorksProps {
+  title?: string;
+  description?: string;
+  /** Render a "Read the full guide" link below the steps (used on the homepage teaser). */
+  showGuideCta?: boolean;
+}
+
+export function HowItWorks({
+  title = 'How It Works',
+  description = 'Getting started with Auto Publisher is simple. Follow these easy steps to automate your announcements.',
+  showGuideCta = false,
+}: HowItWorksProps = {}) {
   return (
     <section id="how-it-works" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
       <div className="text-center mb-16">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">How It Works</h2>
-        <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto">
-          Getting started with Auto Publisher is simple. Follow these easy steps to automate your
-          announcements.
-        </p>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">{title}</h2>
+        <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto">{description}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
@@ -117,6 +125,18 @@ export function HowItWorks() {
           );
         })}
       </div>
+
+      {showGuideCta && (
+        <div className="mt-14 text-center">
+          <Link
+            href="/how-it-works"
+            className="inline-flex items-center gap-2 font-medium text-blue-400 transition-colors hover:text-blue-300 group"
+          >
+            Read the full guide
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

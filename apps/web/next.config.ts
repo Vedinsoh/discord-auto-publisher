@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/help',
+        destination: '/how-it-works',
+        permanent: true,
+      },
+    ];
+  },
   experimental: {
     // Client Router Cache reuse for dynamic routes (default 0 = refetch every
     // navigation). 60s makes returning to an already-opened guild instant with

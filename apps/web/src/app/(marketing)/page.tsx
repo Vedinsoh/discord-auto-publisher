@@ -1,5 +1,4 @@
 import { DiscordMockup } from '@/components/marketing/discord-mockup';
-import { FAQ } from '@/components/marketing/faq';
 import { Hero } from '@/components/marketing/hero';
 import { HowItWorks } from '@/components/marketing/how-it-works';
 import { PricingTeaser } from '@/components/marketing/pricing-teaser';
@@ -11,8 +10,7 @@ export default function Home() {
       <Hero />
       <Stats />
       <DiscordMockup />
-      <HowItWorks />
-      <FAQ />
+      <HowItWorks showGuideCta />
       <PricingTeaser />
     </>
   );

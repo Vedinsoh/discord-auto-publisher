@@ -4,7 +4,7 @@ import { ChevronDown, CreditCard, LayoutDashboard, LogOut, Menu, X } from 'lucid
 import { motion } from 'motion/react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,8 @@ import { links } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { Logo } from './logo';
 
-const scrollLinks = [{ label: 'How It Works', sectionId: 'how-it-works' }];
-
 const routeLinks = [
+  { href: '/how-it-works', label: 'How It Works', external: false },
   { href: '/premium', label: 'Premium', external: false },
   { href: '/status', label: 'Status', external: false },
   { href: links.discordSupportServer, label: 'Join our server', external: true },
@@ -166,19 +165,6 @@ function NavUserMobile({ onNavigate }: { onNavigate: () => void }) {
 function NavbarInner() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-
-  const scrollToSection = (sectionId: string) => {
-    setMobileMenuOpen(false);
-    if (pathname !== '/') {
-      router.push('/');
-      setTimeout(() => {
-        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
     <motion.nav
@@ -197,16 +183,6 @@ function NavbarInner() {
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
-              {scrollLinks.map(link => (
-                <button
-                  key={link.label}
-                  type="button"
-                  onClick={() => scrollToSection(link.sectionId)}
-                  className="text-sm text-slate-300 hover:text-white transition-colors"
-                >
-                  {link.label}
-                </button>
-              ))}
               {routeLinks.map(link => (
                 <Link
                   key={link.label}
@@ -244,16 +220,6 @@ function NavbarInner() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-slate-900/95 backdrop-blur-lg border-b border-slate-800">
           <div className="px-4 py-4 space-y-3">
-            {scrollLinks.map(link => (
-              <button
-                key={link.label}
-                type="button"
-                onClick={() => scrollToSection(link.sectionId)}
-                className="block text-slate-300 hover:text-white transition-colors py-2 w-full text-left"
-              >
-                {link.label}
-              </button>
-            ))}
             {routeLinks.map(link => (
               <Link
                 key={link.label}
