@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
 import { AuthRedirect } from '@/components/auth/auth-redirect';
-import type { AuthExpiredSentinel } from '@/lib/api/auth-expired';
+import type { GuildLoadFailure } from '@/lib/api/auth-expired';
 import type { GuildDashboardData } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 import { ErrorBoundary, RedirectTo } from './error-redirect-boundary';
 import { GuildProvider } from './guild-context';
-import { useCurrentGuild } from './guild-list-context';
+import { GuildErrorCard } from './guild-error-card';
+import { useCurrentGuild, useGuildList } from './guild-list-context';
 import { GuildSwitcher } from './server-switcher';
 import { ChannelConfigSkeleton, GuildDashboardShellSkeleton } from './skeletons';
 import { useGuildAttention } from './use-guild-attention';
@@ -24,26 +25,38 @@ const tabs = [
 
 interface GuildDashboardShellProps {
   guildId: string;
-  dataPromise: Promise<GuildDashboardData | AuthExpiredSentinel>;
+  dataPromise: Promise<GuildDashboardData | GuildLoadFailure>;
   children: React.ReactNode;
 }
 
 export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDashboardShellProps) {
   const guild = useCurrentGuild(guildId);
+  const { error } = useGuildList();
   const router = useRouter();
 
-  // A guild missing from the seeded list = the user gained access mid-session
-  // and deep-linked, or the list fetch failed. Fall back to the server list and
-  // refresh so the shared layout re-seeds from the server. Rare; simplest path.
+  // A guild missing from a CLEANLY-loaded list = the user lost access, the bot
+  // was removed, or a bad deep-link. Eject to the server list (it shows the
+  // invite CTA / omits the guild). But a missing guild because the list FETCH
+  // failed (`error`) is transient — stay put and let the user retry in place,
+  // rather than bouncing to a server list that failed the same way (ADR 0010).
   useEffect(() => {
-    if (!guild) {
+    if (!guild && !error) {
       router.replace('/dashboard');
       router.refresh();
     }
-  }, [guild, router]);
+  }, [guild, error, router]);
 
   if (!guild) {
-    return <GuildDashboardShellSkeleton />;
+    // List load failed → retry in place; otherwise we're mid-redirect.
+    return error ? (
+      <div className="min-h-screen px-4 pt-24 pb-16">
+        <div className="max-w-6xl mx-auto">
+          <GuildErrorCard />
+        </div>
+      </div>
+    ) : (
+      <GuildDashboardShellSkeleton />
+    );
   }
 
   return (
@@ -74,6 +87,7 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
                   </RedirectTo>
                 }
                 authFallback={<AuthRedirect callbackUrl={`/dashboard/${guildId}`} />}
+                transientFallback={<GuildErrorCard />}
               >
                 <Suspense fallback={<ChannelConfigSkeleton />}>{children}</Suspense>
               </ErrorBoundary>

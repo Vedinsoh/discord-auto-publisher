@@ -2,14 +2,22 @@
 
 import { createContext, use, useContext } from 'react';
 import { useCurrentGuild } from '@/components/dashboard/guild-list-context';
-import { type AuthExpiredSentinel, AuthExpiredSignal, isAuthExpired } from '@/lib/api/auth-expired';
+import {
+  AuthExpiredSignal,
+  type GuildLoadFailure,
+  GuildUnavailableSignal,
+  isAuthExpired,
+  isGuildUnavailable,
+  isTransientError,
+  TransientErrorSignal,
+} from '@/lib/api/auth-expired';
 import type { DiscordGuild, GuildDashboardData } from '@/lib/api/types';
 
 interface GuildContextValue {
   guildId: string;
-  // May resolve to the auth-expired sentinel; useGuild() turns that into a
-  // client-side throw the shell's error boundary routes to re-login (ADR 0010).
-  dataPromise: Promise<GuildDashboardData | AuthExpiredSentinel>;
+  // May resolve to a failure sentinel; useGuild() turns that into a typed
+  // client-side throw the shell's error boundary routes per kind (ADR 0010).
+  dataPromise: Promise<GuildDashboardData | GuildLoadFailure>;
 }
 
 const GuildContext = createContext<GuildContextValue | null>(null);
@@ -44,10 +52,17 @@ export function useGuild(): { guild: DiscordGuild; data: GuildDashboardData } {
     throw new Error('useGuild must be used within GuildProvider');
   }
   const data = use(context.dataPromise);
-  // Dead Discord token: re-throw as a typed signal so the shell's error boundary
-  // routes to re-login instead of the generic server-list redirect (ADR 0010).
+  // A failure sentinel: re-throw as a typed signal so the shell's error boundary
+  // routes each kind to its recovery — re-login, server-list redirect, or an
+  // in-place retry card (ADR 0010).
   if (isAuthExpired(data)) {
     throw new AuthExpiredSignal();
+  }
+  if (isGuildUnavailable(data)) {
+    throw new GuildUnavailableSignal();
+  }
+  if (isTransientError(data)) {
+    throw new TransientErrorSignal();
   }
   const guild = useCurrentGuild(context.guildId);
   if (!guild) {

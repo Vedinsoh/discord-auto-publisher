@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Component, type ReactNode, useEffect } from 'react';
-import { AuthExpiredSignal } from '@/lib/api/auth-expired';
+import { AuthExpiredSignal, TransientErrorSignal } from '@/lib/api/auth-expired';
 
 interface ErrorBoundaryProps {
   fallback: ReactNode;
@@ -13,6 +13,13 @@ interface ErrorBoundaryProps {
    * other error (used by the badge boundary, which just renders null).
    */
   authFallback?: ReactNode;
+  /**
+   * Rendered instead of `fallback` when the caught error is a TransientErrorSignal
+   * (upstream 5xx / network blip), so the boundary can offer an in-place retry
+   * rather than ejecting to the server list (ADR 0010). Omit to treat a transient
+   * failure like any other error (redirect via `fallback`).
+   */
+  transientFallback?: ReactNode;
   children: ReactNode;
 }
 
@@ -37,6 +44,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.error) return this.props.children;
     if (this.props.authFallback && this.state.error instanceof AuthExpiredSignal) {
       return this.props.authFallback;
+    }
+    if (this.props.transientFallback && this.state.error instanceof TransientErrorSignal) {
+      return this.props.transientFallback;
     }
     return this.props.fallback;
   }

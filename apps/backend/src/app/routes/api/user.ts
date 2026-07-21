@@ -66,9 +66,22 @@ export const User: Router = (() => {
         });
 
         if (!response.ok) {
-          res.status(StatusCodes.BAD_GATEWAY).json({
-            status: StatusCodes.BAD_GATEWAY,
-            message: 'Failed to fetch guilds from Discord',
+          // A dead user token surfaces HERE, not in createDiscordAuth, when the
+          // 5 min auth cache is still warm but this 60s guild-list cache has
+          // expired. Map Discord's 401 to a 401 so the web's reactive re-login
+          // fires (ADR 0010) — a flattened 502 would be swallowed as a generic
+          // error and eject the user to the server list. Any other upstream
+          // failure (429/5xx) stays a transient 502 the web retries in place.
+          const status =
+            response.status === StatusCodes.UNAUTHORIZED
+              ? StatusCodes.UNAUTHORIZED
+              : StatusCodes.BAD_GATEWAY;
+          res.status(status).json({
+            status,
+            message:
+              status === StatusCodes.UNAUTHORIZED
+                ? 'Invalid or expired Discord token'
+                : 'Failed to fetch guilds from Discord',
           } as APIResponse);
           return;
         }

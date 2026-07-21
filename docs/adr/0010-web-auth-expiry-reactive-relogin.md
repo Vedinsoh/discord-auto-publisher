@@ -18,3 +18,21 @@ The NextAuth session (JWT, rolling `maxAge: 3d`) outlives the embedded Discord O
 - **Two-hop fallback for the streamed promise** (let the guild-detail 401 redirect to the server list, which re-hits seam 1). Rejected: the redirect re-runs `getUserGuilds()`, and the backend auth middleware caches only 200s, so the dead token re-hits `GET /users/@me` — a wasted backend request plus a wasted Discord validation call, against the "be conservative with Discord REST" rule, for an uglier double-bounce.
 - **Proactive expiry check** (store `expires_at`, redirect before calling the backend). Rejected: it's the Layer-2 plumbing we cut, and it can't catch revocation, so the reactive 401 path is needed anyway — it would be strictly more code eliminating nothing.
 - **Next.js middleware seam.** Impossible: middleware sees only the structurally-valid cookie; only Discord knows the token is dead.
+
+## Amendment (2026-07-21): secondary Discord fetches masked the 401
+
+The decision above assumed "every `/api/*` route only 401s on a dead token, because it's behind `createDiscordAuth`." That held for routes whose only Discord dependency *is* the middleware, but **two routes make a second, in-handler Discord call** the middleware's 401 mapping never sees:
+
+- `GET /api/user/guilds` re-fetches `/users/@me/guilds` (user token) on its **60 s** guild-list cache miss.
+- `requireGuildPermission` (guild-detail route) does the same on its own 60 s miss.
+
+`createDiscordAuth`'s validation is cached for **5 min**. So there is a window — auth cache still warm, guild cache already cold — where a dead token is NOT caught by the middleware and instead surfaces on that second fetch. The list route flattened Discord's 401 into a **502**; the middleware over-broadly mapped **all** failures (incl. transient 429/5xx) to **401**. Neither matched the seam-1 contract:
+
+- The 502 was swallowed as a generic error → `GuildListLoader` seeded an empty list → `GuildDashboardShell` saw the guild "missing" and ejected to `/dashboard`, and reactive re-login never fired. This was the reported "refresh after the guild cache expires bounces me off the guild page" bug.
+- The over-broad 401 fired a needless full OAuth round-trip on a transient blip.
+
+**Fix (keeps the reactive-only decision; closes the classification gap):**
+
+- Both in-handler fetches split by Discord status: **401 → 401** (re-login), **anything else → 502** (transient, retried in place). `user.ts` `/guilds` and `requireGuildPermission.ts`.
+- A **botless** guild-detail read now returns a distinct **409 `BOT_NOT_PRESENT`** (checked from `bot_presence` in Postgres, no Discord call) instead of the generic 500 a downstream Discord 404 produced — so the client can tell *permanent-unavailable* (redirect) from *transient* (retry). `guild.ts` detail route.
+- Web: the streamed guild-detail promise now maps to **three** sentinels — `AUTH_EXPIRED` (401), `GUILD_UNAVAILABLE` (403/404/409), `TRANSIENT_ERROR` (5xx/network) — extending the single auth sentinel this ADR introduced (RSC sanitization still forces the sentinel indirection). `useGuild` throws a typed signal per kind; the error boundary gained a `transientFallback` (in-place retry card); `GuildDashboardShell` now distinguishes a *failed* list load (`useGuildList().error` → stay + retry) from a *genuinely-absent* guild (silent redirect to the server list, which owns the invite CTA). Retry is manual (`router.refresh`) — no auto-retry loop against a still-failing upstream.

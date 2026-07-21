@@ -67,9 +67,20 @@ export function createRequireGuildPermission(redisClient: RedisLike) {
         });
 
         if (!response.ok) {
-          res.status(StatusCodes.UNAUTHORIZED).json({
-            status: StatusCodes.UNAUTHORIZED,
-            message: 'Failed to verify guild membership',
+          // Only a genuine Discord 401 means a dead token (→ reactive re-login,
+          // ADR 0010). A transient 429/5xx must NOT masquerade as auth-expiry,
+          // or a blip forces a needless full OAuth round-trip; surface those as
+          // a 502 the web retries in place.
+          const status =
+            response.status === StatusCodes.UNAUTHORIZED
+              ? StatusCodes.UNAUTHORIZED
+              : StatusCodes.BAD_GATEWAY;
+          res.status(status).json({
+            status,
+            message:
+              status === StatusCodes.UNAUTHORIZED
+                ? 'Invalid or expired Discord token'
+                : 'Failed to verify guild membership',
           });
           return;
         }
