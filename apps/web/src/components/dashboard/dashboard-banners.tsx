@@ -421,12 +421,21 @@ function LegacyMigrationBanner({
               it is retired. Migrate now to keep publishing without interruption, choose exactly
               which channels publish, and unlock new features.
             </p>
-            <Button
-              onClick={() => setModalOpen(true)}
-              className="bg-amber-500 hover:bg-amber-400 text-slate-950"
-            >
-              Migrate now
-            </Button>
+            <div className="flex flex-wrap items-center gap-4">
+              <Button
+                onClick={() => setModalOpen(true)}
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950"
+              >
+                Migrate now
+              </Button>
+              <Link
+                href="/migration"
+                target="_blank"
+                className="text-sm text-amber-300 hover:text-amber-200 transition-colors"
+              >
+                Learn what is changing
+              </Link>
+            </div>
           </div>
         </div>
       </Card>
