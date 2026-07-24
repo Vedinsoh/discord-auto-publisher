@@ -8,7 +8,8 @@ const quickLinks = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
   { href: '/dashboard', label: 'Dashboard' },
-  { href: '/status', label: 'Status' },
+  // TODO: re-enable when the Status page is ready.
+  // { href: '/status', label: 'Status' },
 ];
 
 const supportLinks = [
