@@ -3,11 +3,13 @@ import { env } from '@ap/config';
 import {
   type APIResponse,
   createHttpError,
+  HttpError,
   StatusCodes,
   sendErrorResponse,
   validateRequest,
 } from '@ap/express';
 import type { CreateFilter } from '@ap/validations';
+import { DiscordAPIError, HTTPError } from '@discordjs/rest';
 import { type APIChannel, type APIRole, ChannelType, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
@@ -224,6 +226,19 @@ export const GuildApi: Router = (() => {
         message: 'Guild data retrieved successfully',
       } as APIResponse);
     } catch (error) {
+      // Diagnostic (Phase 1, ADR 0010): the web maps any non-401/403/404/409
+      // here to a transient retry card. Log the actual upstream trigger — proxy
+      // 504 / Discord 5xx / connection blip — so we can confirm the real cause
+      // before hardening this read path. Intentional control-flow throws (the
+      // 409 BOT_NOT_PRESENT above) are HttpErrors and expected, so skip them.
+      if (!(error instanceof HttpError)) {
+        const discordStatus =
+          error instanceof DiscordAPIError || error instanceof HTTPError ? error.status : undefined;
+        logger.warn(
+          { err: error, guildId, discordStatus },
+          `Guild-detail read failed (surfaces as transient) for guild ${guildId}`
+        );
+      }
       sendErrorResponse(res, error, 'Failed to retrieve guild data');
     }
   });

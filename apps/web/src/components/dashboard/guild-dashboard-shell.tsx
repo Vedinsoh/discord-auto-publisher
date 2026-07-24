@@ -4,16 +4,16 @@ import { Crown, Filter, Hash, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
-import { AuthRedirect } from '@/components/auth/auth-redirect';
 import type { GuildLoadFailure } from '@/lib/api/auth-expired';
 import type { GuildDashboardData } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
-import { ErrorBoundary, RedirectTo } from './error-redirect-boundary';
+import { ErrorBoundary } from './error-redirect-boundary';
 import { GuildProvider } from './guild-context';
+import { GuildDetailBoundary } from './guild-detail-boundary';
 import { GuildErrorCard } from './guild-error-card';
 import { useCurrentGuild, useGuildList } from './guild-list-context';
 import { GuildSwitcher } from './server-switcher';
-import { ChannelConfigSkeleton, GuildDashboardShellSkeleton } from './skeletons';
+import { GuildDashboardShellSkeleton } from './skeletons';
 import { useGuildAttention } from './use-guild-attention';
 
 const tabs = [
@@ -76,21 +76,14 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
             </div>
 
             {/* Main Content Area — the only region that suspends on guild detail.
-                A detail read failure (botless/unauthorized guild) throws at the
-                child's useGuild() and this boundary redirects to the server list. */}
+                A detail read failure throws at the child's useGuild(); the
+                boundary redirects (unavailable), re-logs in (auth), or silently
+                auto-retries then offers a manual card (transient). Keyed by
+                guildId so the retry orchestrator resets on a guild switch. */}
             <div>
-              <ErrorBoundary
-                key={guildId}
-                fallback={
-                  <RedirectTo path="/dashboard">
-                    <ChannelConfigSkeleton />
-                  </RedirectTo>
-                }
-                authFallback={<AuthRedirect callbackUrl={`/dashboard/${guildId}`} />}
-                transientFallback={<GuildErrorCard />}
-              >
-                <Suspense fallback={<ChannelConfigSkeleton />}>{children}</Suspense>
-              </ErrorBoundary>
+              <GuildDetailBoundary key={guildId} guildId={guildId}>
+                {children}
+              </GuildDetailBoundary>
             </div>
           </div>
         </div>

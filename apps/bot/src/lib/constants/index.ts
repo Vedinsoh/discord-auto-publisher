@@ -23,7 +23,7 @@ export const emojis = {
 };
 
 export const notes = {
-  rateLimit: 'Discord only allows up to 10 messages to be published per hour per channel!',
+  rateLimit: 'Discord allows up to 10 messages to be published per hour per channel.',
   publishDelayFree:
     "Messages may be delayed during busy periods to respect Discord's rate limits — but every message will be published. Upgrade to Premium for faster publishing.",
   publishDelayPremium:

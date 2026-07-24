@@ -20,6 +20,15 @@ interface ErrorBoundaryProps {
    * failure like any other error (redirect via `fallback`).
    */
   transientFallback?: ReactNode;
+  /**
+   * Clears a caught error when any element changes between renders (shallow
+   * compare), re-mounting `children` so a streamed promise is re-consumed. A
+   * class error boundary never self-resets; `router.refresh()` alone gets a
+   * fresh server promise but the latched boundary keeps rendering the fallback
+   * and never reads it. Retry orchestration bumps a value here to recover
+   * (ADR 0010). Omit to keep the old behaviour (reset only via React `key`).
+   */
+  resetKeys?: readonly unknown[];
   children: ReactNode;
 }
 
@@ -27,17 +36,30 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
+function resetKeysChanged(a?: readonly unknown[], b?: readonly unknown[]): boolean {
+  if (a === b) return false;
+  if (!a || !b || a.length !== b.length) return true;
+  return a.some((value, index) => !Object.is(value, b[index]));
+}
+
 /**
  * Minimal client error boundary. The guild-detail payload is streamed as a
  * promise consumed with `use()`; a rejection (botless/unauthorized guild, or a
  * transient backend error) throws at the consuming component, which this
- * catches. Key it by guildId so switching guilds resets a prior error.
+ * catches. Key it by guildId so switching guilds resets a prior error; pass
+ * `resetKeys` to clear an error in place (retry).
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { error };
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps): void {
+    if (this.state.error && resetKeysChanged(prevProps.resetKeys, this.props.resetKeys)) {
+      this.setState({ error: null });
+    }
   }
 
   render(): ReactNode {
