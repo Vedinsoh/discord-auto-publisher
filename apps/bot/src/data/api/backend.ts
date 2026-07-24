@@ -128,6 +128,15 @@ const invalidateGuildChannels = async (guildId: Snowflake) => {
   });
 };
 
+// Role-list cache invalidation: a role was created/updated/deleted, so the
+// backend's cached role list (backing the dashboard's mention-filter picker) is
+// stale. Premium bot only (filters are premium-only).
+const invalidateGuildRoles = async (guildId: Snowflake) => {
+  return request(`/internal/guild/${guildId}/roles/invalidate`, {
+    method: RequestMethod.Post,
+  });
+};
+
 // Info
 const getInfo = async () => {
   return request('/info');
@@ -187,6 +196,7 @@ export const Backend = {
   pingHandoverEvaluate,
   pushChannelPermissions,
   invalidateGuildChannels,
+  invalidateGuildRoles,
   addFilter,
   removeFilter,
   getFilters,

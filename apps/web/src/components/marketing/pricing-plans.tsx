@@ -22,8 +22,9 @@ import {
 export function PricingPlans() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
-      {/* Annual — Best Value */}
-      <div className="relative">
+      {/* Annual — Best Value. DOM-first so it stacks on top on mobile; ordered
+          to the right on md+ via CSS order. */}
+      <div className="relative md:order-2">
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 text-xs font-semibold bg-linear-to-r from-blue-500 to-blue-600 text-white px-4 py-1 rounded-full shadow-lg shadow-blue-500/30 whitespace-nowrap">
           Best Value
         </span>
@@ -75,7 +76,7 @@ export function PricingPlans() {
       </div>
 
       {/* Monthly */}
-      <Card className="bg-slate-900/50 border-blue-600/40 p-8 flex flex-col">
+      <Card className="bg-slate-900/50 border-blue-600/40 p-8 flex flex-col md:order-1">
         <div className="mb-6">
           <h3 className="text-white text-xl font-semibold mb-2">Monthly</h3>
           <div className="flex items-baseline gap-2">

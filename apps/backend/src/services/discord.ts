@@ -73,6 +73,18 @@ const evictGuildChannels = (guildId: Snowflake): void => {
 };
 
 /**
+ * Evict a guild's cached role list. Pinged by the premium bot's role
+ * create/update/delete listeners (`POST /internal/guild/:guildId/roles/invalidate`)
+ * so the dashboard's mention-filter role picker reflects a rename/create/delete
+ * without waiting out the 5-min TTL. Only the premium bot pings (filters are
+ * premium-only), so the free bot's role churn never reaches here. The key
+ * matches `cachedGet`'s route key.
+ */
+const evictGuildRoles = (guildId: Snowflake): void => {
+  discordReadCache.delete(Routes.guildRoles(guildId));
+};
+
+/**
  * Live membership check: whether an edition's bot is currently in the guild.
  * Errors (including network failures) report false — callers use this to
  * avoid evicting the OTHER bot, so the safe answer is "not present".
@@ -136,6 +148,7 @@ export const Discord = {
   restFor,
   cachedGet,
   evictGuildChannels,
+  evictGuildRoles,
   hasToken,
   getBotUserId,
   isBotInGuild,

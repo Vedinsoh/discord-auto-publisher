@@ -1,5 +1,7 @@
 import type { FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
 
+export type { FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
+
 /** App edition identifier */
 export type Edition = 'free' | 'premium';
 
@@ -28,6 +30,14 @@ export interface DiscordGuild {
   /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
   migrated: boolean;
   hasSubscription: boolean;
+}
+
+/** Guild role for the mention-filter picker (subset of Discord's role object) */
+export interface GuildRole {
+  id: string;
+  name: string;
+  /** Discord role color as an integer (0 = no color / default) */
+  color: number;
 }
 
 /** Channel filter rule (JSON-serialized) */

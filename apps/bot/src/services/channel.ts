@@ -157,6 +157,19 @@ const invalidateGuildCache = async (guildId: Snowflake) => {
   }
 };
 
+/**
+ * Bust the backend's cached role list for a guild after a role change, so the
+ * dashboard's mention-filter picker reflects it without the 5-min TTL wait.
+ * Fire-and-forget — a failure just means the picker waits out the TTL.
+ */
+const invalidateGuildRoles = async (guildId: Snowflake) => {
+  try {
+    await Data.API.Backend.invalidateGuildRoles(guildId);
+  } catch (error) {
+    logger.warn(error, `Failed to invalidate role cache for guild ${guildId}`);
+  }
+};
+
 export const Channel = {
   fetchChannel,
   fetchNewsChannel,
@@ -166,4 +179,5 @@ export const Channel = {
   getGuildChannels,
   isEnabled,
   invalidateGuildCache,
+  invalidateGuildRoles,
 };

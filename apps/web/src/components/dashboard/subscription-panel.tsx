@@ -79,16 +79,16 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
         <p className="text-slate-400">Manage your premium subscription for this server</p>
       </div>
 
-      <div className="max-w-md mx-auto">
-        {subscription &&
-        (subscription.status === 'active' ||
-          subscription.status === 'trialing' ||
-          subscription.status === 'past_due') ? (
+      {subscription &&
+      (subscription.status === 'active' ||
+        subscription.status === 'trialing' ||
+        subscription.status === 'past_due') ? (
+        <div className="max-w-md mx-auto">
           <ActiveSubscription guildId={guildId} subscription={subscription} />
-        ) : (
-          <FreeSubscription guildId={guildId} guildName={guildName} />
-        )}
-      </div>
+        </div>
+      ) : (
+        <FreeSubscription guildId={guildId} guildName={guildName} />
+      )}
     </div>
   );
 }
@@ -278,60 +278,63 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
   }, [guild.id, guild.icon, guildName, billingInterval, migrated, router]);
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-slate-900/50 border-slate-800 p-6">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center shrink-0">
-            <AlertCircle className="w-6 h-6 text-slate-500" />
-          </div>
-          <div>
-            <h3 className="text-white text-lg mb-2">You&apos;re on the Free Plan</h3>
-            <p className="text-slate-400 mb-4">
-              Upgrade to Premium to unlock advanced features and priority support
-            </p>
-            <ul className="space-y-2">
-              {freePlanFeatures.map(feature => (
-                <li key={feature} className="flex items-center gap-2 text-slate-400 text-sm">
-                  <Check className="w-4 h-4 text-slate-600" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </Card>
-
-      {error && (
-        <Card className="bg-red-500/10 border-red-500/30 p-4">
-          <p className="text-red-400 text-sm">Failed to create checkout. Please try again.</p>
-        </Card>
-      )}
-
-      {/* MIGRATION: Remove this setup gate after migration period (6 months) */}
-      {!migrated && (
-        <Card className="bg-amber-500/10 border-amber-500/30 p-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      {/* Left column: current plan + migration gate */}
+      <div className="space-y-6">
+        <Card className="bg-slate-900/50 border-slate-800 p-6">
           <div className="flex items-start gap-4">
-            <Lock className="w-6 h-6 text-amber-400 shrink-0 mt-1" />
-            <div className="flex-1">
-              <h3 className="text-white text-lg mb-1">Finish channel setup to unlock Premium</h3>
-              <p className="text-slate-300 text-sm mb-4">
-                Auto Publisher is currently running in legacy mode, and migration is required to
-                unlock Premium features. Premium adds per-channel filters and control &mdash; which
-                start from choosing which channels to manage.
+            <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center shrink-0">
+              <AlertCircle className="w-6 h-6 text-slate-500" />
+            </div>
+            <div>
+              <h3 className="text-white text-lg mb-2">You&apos;re on the Free Plan</h3>
+              <p className="text-slate-400 mb-4">
+                Upgrade to Premium to unlock advanced features and priority support
               </p>
-              <Button
-                onClick={() => setMigrateOpen(true)}
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950"
-              >
-                Set up channels
-              </Button>
-              <p className="text-slate-500 text-sm mt-3">
-                Takes a few seconds. You can upgrade right after.
-              </p>
+              <ul className="space-y-2">
+                {freePlanFeatures.map(feature => (
+                  <li key={feature} className="flex items-center gap-2 text-slate-400 text-sm">
+                    <Check className="w-4 h-4 text-slate-600" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </Card>
-      )}
+
+        {error && (
+          <Card className="bg-red-500/10 border-red-500/30 p-4">
+            <p className="text-red-400 text-sm">Failed to create checkout. Please try again.</p>
+          </Card>
+        )}
+
+        {/* MIGRATION: Remove this setup gate after migration period (6 months) */}
+        {!migrated && (
+          <Card className="bg-amber-500/10 border-amber-500/30 p-6">
+            <div className="flex items-start gap-4">
+              <Lock className="w-6 h-6 text-amber-400 shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-white text-lg mb-1">Finish channel setup to unlock Premium</h3>
+                <p className="text-slate-300 text-sm mb-4">
+                  Auto Publisher is currently running in legacy mode, and migration is required to
+                  unlock Premium features. Premium adds per-channel filters and control &mdash;
+                  which start from choosing which channels to manage.
+                </p>
+                <Button
+                  onClick={() => setMigrateOpen(true)}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950"
+                >
+                  Set up channels
+                </Button>
+                <p className="text-slate-500 text-sm mt-3">
+                  Takes a few seconds. You can upgrade right after.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
 
       {migrateOpen && (
         <LegacyMigrateModal
@@ -345,6 +348,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
         />
       )}
 
+      {/* Right column: upgrade */}
       <div className="relative">
         <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 to-purple-500/20 blur-3xl" />
         <Card className="relative bg-linear-to-br from-blue-500/10 to-purple-500/10 border-blue-500/30 p-8">

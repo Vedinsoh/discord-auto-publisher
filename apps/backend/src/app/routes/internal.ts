@@ -79,6 +79,23 @@ export const Internal: Router = (() => {
   );
 
   /**
+   * POST /internal/guild/:guildId/roles/invalidate
+   * Role-change ping from the premium bot: a role was created/updated/deleted,
+   * so the cached role list backing the dashboard's mention-filter picker is
+   * stale. Evicts only this guild's `/roles` cache entry. Fire-and-forget — 202.
+   */
+  router.post('/guild/:guildId/roles/invalidate', validateRequest(GuildReqSchema), (req, res) => {
+    const { guildId } = req.params;
+
+    Discord.evictGuildRoles(guildId);
+
+    res.status(StatusCodes.ACCEPTED).json({
+      status: StatusCodes.ACCEPTED,
+      message: 'Role cache invalidated',
+    } as APIResponse);
+  });
+
+  /**
    * POST /internal/reconcile/guilds
    * Manually trigger the guild presence reconciliation sweep (Docker-internal).
    * 409 if a sweep is already in flight, otherwise 202 + async run.

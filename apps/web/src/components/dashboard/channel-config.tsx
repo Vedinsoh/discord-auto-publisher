@@ -128,8 +128,9 @@ export function ChannelConfig({
         }
         // Cap hit: show the reason-appropriate upsell instead of a hard failure.
         // Prefer the backend's code; fall back to the client mirror if absent.
+        // enable only ever fails with a channel-limit code (or none).
         setLimitReason(
-          result.code ??
+          (result.code as ChannelLimitReason | undefined) ??
             channelLimitReasonFromGuild({ hasSubscription, premiumBotPresent, premiumPending })
         );
       } finally {

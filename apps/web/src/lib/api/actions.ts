@@ -5,19 +5,21 @@ import type {
   ChannelLimitReason,
   CheckoutResponse,
   DiscordGuild,
+  FilterInput,
+  FilterMatchMode,
   GuildChannel,
   GuildDashboardData,
+  GuildRole,
   SubscriptionDetail,
 } from '@/lib/api/types';
 
 /**
  * Result of a mutation that the UI branches on. Thrown errors are sanitized
  * across the server-action boundary, so mutations that need the failure reason
- * (e.g. the channel-limit `code`) return it instead of throwing.
+ * (e.g. the channel-limit `code` or a `PREMIUM_INACTIVE` filter rejection)
+ * return it instead of throwing.
  */
-export type MutationResult =
-  | { ok: true }
-  | { ok: false; status: number; code?: ChannelLimitReason };
+export type MutationResult = { ok: true } | { ok: false; status: number; code?: string };
 
 export async function getUserGuilds(): Promise<DiscordGuild[]> {
   return backendFetch<DiscordGuild[]>('/api/user/guilds');
@@ -89,4 +91,99 @@ export async function createCheckout(
     method: 'POST',
     body: JSON.stringify({ interval }),
   });
+}
+
+export async function getGuildRoles(guildId: string): Promise<GuildRole[]> {
+  return backendFetch<GuildRole[]>(`/api/guild/${guildId}/roles`);
+}
+
+/**
+ * Keyword values are stored lowercased (the evaluator matches case-insensitively
+ * against lowercased content); mirror the bot's `normalizeFilterValues` from
+ * `@ap/utils` so dashboard-added filters behave identically to command-added
+ * ones. Inlined rather than importing `@ap/utils` — its barrel pulls in
+ * discord.js helpers that use BigInt literals the web's TS target rejects.
+ */
+function toFilterBody(data: FilterInput) {
+  return {
+    type: data.type,
+    mode: data.mode,
+    values: data.type === 'keyword' ? data.values.map(value => value.toLowerCase()) : data.values,
+  };
+}
+
+export async function addFilter(
+  guildId: string,
+  channelId: string,
+  data: FilterInput
+): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/channel/${channelId}/filter`, {
+      method: 'POST',
+      body: JSON.stringify(toFilterBody(data)),
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code };
+    }
+    throw error;
+  }
+}
+
+export async function updateFilter(
+  guildId: string,
+  channelId: string,
+  filterId: string,
+  data: FilterInput
+): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/channel/${channelId}/filter/${filterId}`, {
+      method: 'PUT',
+      body: JSON.stringify(toFilterBody(data)),
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code };
+    }
+    throw error;
+  }
+}
+
+export async function removeFilter(
+  guildId: string,
+  channelId: string,
+  filterId: string
+): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/channel/${channelId}/filter/${filterId}`, {
+      method: 'DELETE',
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code };
+    }
+    throw error;
+  }
+}
+
+export async function setFilterMode(
+  guildId: string,
+  channelId: string,
+  mode: FilterMatchMode
+): Promise<MutationResult> {
+  try {
+    await backendFetch(`/api/guild/${guildId}/channel/${channelId}/filter-mode`, {
+      method: 'PUT',
+      body: JSON.stringify({ mode }),
+    });
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code };
+    }
+    throw error;
+  }
 }
