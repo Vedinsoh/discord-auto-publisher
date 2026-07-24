@@ -15,6 +15,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
 import { useGuild } from '@/components/dashboard/guild-context';
+import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import { Card } from '@/components/ui/card';
@@ -31,9 +32,13 @@ import type { GuildChannel } from '@/lib/api/types';
 export function ChannelStatus() {
   const { guild, data } = useGuild();
   return data.migrated ? (
-    <MigratedStatus guildId={guild.id} channels={data.channels} />
+    <MigratedStatus
+      guildId={guild.id}
+      channels={data.channels}
+      hasSubscription={guild.hasSubscription}
+    />
   ) : (
-    <LegacyStatus channels={data.channels} />
+    <LegacyStatus channels={data.channels} hasSubscription={guild.hasSubscription} />
   );
 }
 
@@ -73,7 +78,15 @@ function statusRank(channel: GuildChannel): number {
   return 2;
 }
 
-function MigratedStatus({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
+function MigratedStatus({
+  guildId,
+  channels,
+  hasSubscription,
+}: {
+  guildId: string;
+  channels: GuildChannel[];
+  hasSubscription: boolean;
+}) {
   const { needsFixingCount, showPremiumPending } = useGuildAttention();
 
   const enabled = channels.filter(c => c.enabled).sort((a, b) => statusRank(a) - statusRank(b));
@@ -129,7 +142,10 @@ function MigratedStatus({ guildId, channels }: { guildId: string; channels: Guil
     <div className="space-y-6">
       <StatusHeader {...header} />
 
-      <PublishLimitNote />
+      <div className="space-y-1.5">
+        <PublishLimitNote />
+        <PublishDelayNote hasSubscription={hasSubscription} />
+      </div>
 
       {enabled.length === 0 && paused.length === 0 ? null : (
         <div className="space-y-3">
@@ -220,7 +236,13 @@ function PausedRow({ channel }: { channel: GuildChannel }) {
  * allowlist to itemize. Show a minimal summary; the migrate banner above does the
  * steering. Remove with the rest of the migration UX at sunset.
  */
-function LegacyStatus({ channels }: { channels: GuildChannel[] }) {
+function LegacyStatus({
+  channels,
+  hasSubscription,
+}: {
+  channels: GuildChannel[];
+  hasSubscription: boolean;
+}) {
   const publishing = channels.filter(c => c.canPublish !== false).length;
   const total = channels.length;
 
@@ -233,7 +255,10 @@ function LegacyStatus({ channels }: { channels: GuildChannel[] }) {
         </p>
       </div>
 
-      <PublishLimitNote />
+      <div className="space-y-1.5">
+        <PublishLimitNote />
+        <PublishDelayNote hasSubscription={hasSubscription} />
+      </div>
 
       <Card className="bg-slate-900/50 border-slate-800 p-6">
         {total > 0 ? (

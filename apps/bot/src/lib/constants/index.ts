@@ -24,8 +24,10 @@ export const emojis = {
 
 export const notes = {
   rateLimit: 'Discord only allows up to 10 messages to be published per hour per channel!',
-  publishDelay:
-    'Messages might have delays in publishing due to Discord limits. Rest assured, I will ensure it gets published as soon as possible!',
+  publishDelayFree:
+    "Messages may be delayed during busy periods to respect Discord's rate limits — but every message will be published. Upgrade to Premium for faster publishing.",
+  publishDelayPremium:
+    'Messages are published almost instantly — Premium runs on dedicated capacity, so delays stay rare even at peak times.',
   permissionsExtendedDisable:
     "Don't keep permissions disabled for too long, as the bot will automatically disable channels that lack proper permissions for an extended period.",
 } as const;

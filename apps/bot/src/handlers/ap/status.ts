@@ -74,7 +74,7 @@ export async function chatInputStatus(
 
       const listContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${pausedSection}${formatNotes([config.isPremiumInstance && notes.publishDelay])}`
+          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${pausedSection}${formatNotes([config.isPremiumInstance ? notes.publishDelayPremium : notes.publishDelayFree])}`
         )
       );
 
@@ -177,7 +177,9 @@ export async function chatInputStatus(
     const enabledContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
         `${emojis.checkmark} Auto-publishing is **enabled** in <#${channel.id}> channel.` +
-          formatNotes([config.isPremiumInstance && notes.publishDelay])
+          formatNotes([
+            config.isPremiumInstance ? notes.publishDelayPremium : notes.publishDelayFree,
+          ])
       )
     );
 

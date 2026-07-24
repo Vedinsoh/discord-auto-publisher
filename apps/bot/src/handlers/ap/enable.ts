@@ -128,7 +128,10 @@ export async function chatInputEnable(
 
     const successMessage =
       `${emojis.checkmark} Auto-publishing has been enabled in <#${channel.id}> channel!` +
-      formatNotes([notes.rateLimit, config.isPremiumInstance && notes.publishDelay]);
+      formatNotes([
+        notes.rateLimit,
+        config.isPremiumInstance ? notes.publishDelayPremium : notes.publishDelayFree,
+      ]);
 
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(successMessage)

@@ -4,6 +4,7 @@ import { Hash, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
+import { publishDelayCopy } from '@/components/dashboard/publish-delay-note';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -154,6 +155,7 @@ export function LegacyMigrateModal({
         </div>
 
         <div className="p-6 pt-4 space-y-3">
+          <p className="text-slate-500 text-sm">{publishDelayCopy(hasSubscription)}</p>
           {overSelected && limit !== null && (
             <p className="text-amber-400 text-sm">
               {overSelectedMessage(limit, { hasSubscription, premiumBotPresent, premiumPending })}

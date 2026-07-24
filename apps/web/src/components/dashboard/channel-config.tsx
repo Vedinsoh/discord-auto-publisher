@@ -12,6 +12,7 @@ import {
   ChannelLimitModal,
   channelLimitReasonFromGuild,
 } from '@/components/dashboard/channel-limit-upsell';
+import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { usePersistentDismissal } from '@/components/dashboard/use-guild-attention';
 import { Badge } from '@/components/ui/badge';
@@ -38,13 +39,22 @@ interface ChannelConfigProps {
  * The legacy-mode banner + migrate modal live in the shell's banner stack
  * (dashboard-banners.tsx). Remove after migration period (6 months).
  */
-function LegacyChannelView({ channels }: { channels: GuildChannel[] }) {
+function LegacyChannelView({
+  channels,
+  hasSubscription,
+}: {
+  channels: GuildChannel[];
+  hasSubscription: boolean;
+}) {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl text-white mb-2">Channel Configuration</h2>
         <p className="text-slate-400 mb-3">Manage Auto Publisher for your announcement channels</p>
-        <PublishLimitNote />
+        <div className="space-y-1.5">
+          <PublishLimitNote />
+          <PublishDelayNote hasSubscription={hasSubscription} />
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -103,7 +113,7 @@ export function ChannelConfig({
 
   // MIGRATION: hooks above must run unconditionally; early return only after
   if (!migrated) {
-    return <LegacyChannelView channels={channels} />;
+    return <LegacyChannelView channels={channels} hasSubscription={hasSubscription} />;
   }
 
   const handleToggleChannel = (channelId: string, enabled: boolean) => {
@@ -223,7 +233,10 @@ export function ChannelConfig({
           Manage Auto Publisher for your announcement channels
           {!hasSubscription && channelLimit !== 0 && ` (Free plan: up to ${channelLimit} channels)`}
         </p>
-        <PublishLimitNote />
+        <div className="space-y-1.5">
+          <PublishLimitNote />
+          <PublishDelayNote hasSubscription={hasSubscription} />
+        </div>
       </div>
 
       {channels.length > 0 && (
@@ -272,6 +285,7 @@ export function ChannelConfig({
       {guideChannel && (
         <ChannelEnableGuideModal
           channelName={guideChannel.name}
+          hasSubscription={hasSubscription}
           onConfirm={confirmEnableFromGuide}
           onCancel={() => setGuideChannel(null)}
         />

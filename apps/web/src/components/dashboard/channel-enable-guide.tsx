@@ -1,8 +1,9 @@
 'use client';
 
-import { Megaphone, TriangleAlert, X } from 'lucide-react';
+import { Clock, Megaphone, TriangleAlert, X } from 'lucide-react';
 import { useState } from 'react';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { publishDelayCopy } from '@/components/dashboard/publish-delay-note';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -26,10 +27,13 @@ export const ENABLE_GUIDE_DISMISS_KEY = 'ap:enableGuideDismissed';
  */
 export function ChannelEnableGuideModal({
   channelName,
+  hasSubscription,
   onConfirm,
   onCancel,
 }: {
   channelName: string;
+  /** Entitled guild → minimal-delay copy; else the free reassurance + upsell. */
+  hasSubscription: boolean;
   /** Commit: enable the channel. `dontShowAgain` = persist the global opt-out. */
   onConfirm: (dontShowAgain: boolean) => void;
   /** Abort: leave the channel disabled. Fired by the corner X and ESC. */
@@ -73,13 +77,19 @@ export function ChannelEnableGuideModal({
           <PermissionSteps channelName={channelName} />
         </div>
 
-        <div className="ml-10 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-          <p className="text-sm text-amber-200/90">
-            Discord allows up to{' '}
-            <span className="font-medium text-amber-100">10 published messages per hour</span> per
-            channel.
-          </p>
+        <div className="ml-10 flex flex-col gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+          <div className="flex items-start gap-2">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <p className="text-sm text-amber-200/90">
+              Discord allows up to{' '}
+              <span className="font-medium text-amber-100">10 published messages per hour</span> per
+              channel.
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <p className="text-sm text-amber-200/90">{publishDelayCopy(hasSubscription)}</p>
+          </div>
         </div>
 
         <div className="ml-10 flex items-center gap-2">
