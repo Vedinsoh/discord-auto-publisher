@@ -138,31 +138,31 @@
  * Toasts exit like the message: fade + slide down (translateY(6px)), no scale.
  */
 
-/* Bot message: 0.5s delay, quick pop-in (colorless), then green bg + border fade in at 5.0s */
+/* Bot message: 0.5s delay, quick pop-in with a slate border, then green bg + border fade in at 5.0s */
 @keyframes heroMessage {
 	0% {
 		opacity: 0;
 		transform: translateY(6px);
 		background-color: rgba(74, 222, 128, 0);
-		border-color: rgba(74, 222, 128, 0);
+		border-color: rgba(148, 163, 184, 0.18);
 	}
 	5.263% {
 		opacity: 0;
 		transform: translateY(6px);
 		background-color: rgba(74, 222, 128, 0);
-		border-color: rgba(74, 222, 128, 0);
+		border-color: rgba(148, 163, 184, 0.18);
 	}
 	10.526% {
 		opacity: 1;
 		transform: none;
 		background-color: rgba(74, 222, 128, 0);
-		border-color: rgba(74, 222, 128, 0);
+		border-color: rgba(148, 163, 184, 0.18);
 	}
 	52.632% {
 		opacity: 1;
 		transform: none;
 		background-color: rgba(74, 222, 128, 0);
-		border-color: rgba(74, 222, 128, 0);
+		border-color: rgba(148, 163, 184, 0.18);
 	}
 	55.263% {
 		background-color: rgba(74, 222, 128, 0.05);
@@ -178,7 +178,7 @@
 		opacity: 0;
 		transform: translateY(6px);
 		background-color: rgba(74, 222, 128, 0);
-		border-color: rgba(74, 222, 128, 0);
+		border-color: rgba(148, 163, 184, 0.18);
 	}
 }
 /* "Published to N servers" tag: appears with the success toast at 5.0s */

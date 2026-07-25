@@ -66,7 +66,7 @@ export function HeroDemo() {
                     </span>
                   </div>
                   <div className="mt-0.5 text-[13.5px] leading-normal text-slate-300">
-                    v2 patch notes are live, huge thanks to everyone who tested. 🚀
+                    Game update is live, huge thanks to everyone who tested! 🚀
                   </div>
                 </div>
               </div>
