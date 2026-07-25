@@ -245,7 +245,9 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   let dbCreated = false;
 
   try {
-    // Ensure guild exists; enabling a channel migrates a legacy guild
+    // Ensure guild exists; enabling a channel migrates a legacy guild.
+    // MIGRATION: at sunset the guild-exists upsert stays, but the `migratedAt`
+    // value + COALESCE set are dropped (no legacy guilds left to migrate).
     await db
       .insert(guild)
       .values({ guildId, migratedAt: new Date() })

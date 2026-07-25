@@ -89,7 +89,8 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
   const knownIds = new Set(rows.map(r => r.guildId));
 
   // Unknown guilds have been running legacy since the missed guildCreate —
-  // inserting with migratedAt = NULL is behavior-preserving
+  // inserting with migratedAt = NULL is behavior-preserving.
+  // MIGRATION: at sunset this is a plain guild-exists insert (no migratedAt column).
   const toInsert = [...liveIds].filter(id => !knownIds.has(id));
   for (const batch of chunk(toInsert, BATCH_SIZE)) {
     await db

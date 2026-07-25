@@ -21,6 +21,8 @@ const isCrosspostable = (message: Message): boolean => {
  *  2. sync permission check (cache-only)
  *  3. premium handover latch (in-memory once active; Redis only while pending)
  *  4. allowlist gate for migrated guilds (Redis: MigratedGuilds + Channels)
+ *     MIGRATION: at sunset every guild is allowlist-model — this becomes an
+ *     unconditional Channels check ("allowlist gate", MigratedGuilds dropped)
  *  5. premium filter eval (HTTP to backend)
  *  6. 5s delay if URL without embed (lets Discord generate embeds first)
  *  7. fire-and-forget to proxy
@@ -30,6 +32,8 @@ const handle = async (message: Message, channel: NewsChannel) => {
   if (!Services.Permissions.canCrosspostInChannel(channel)) return;
   if (!(await Services.Handover.isActive(channel.guildId))) return;
 
+  // MIGRATION: at sunset drop the `isMigrated` wrapper — the allowlist check
+  // runs unconditionally (legacy guilds no longer exist).
   if (await Services.Guild.isMigrated(channel.guildId)) {
     if (!(await Services.Channel.isEnabled(channel.id))) return;
   }

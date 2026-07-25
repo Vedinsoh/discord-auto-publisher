@@ -4,6 +4,7 @@ export enum DatabaseIDs {
   SublimitCounter = 2,
   BlockedChannels = 3,
   DiscordAuth = 4,
+  // MIGRATION: retired at sunset (v6→v7 migration markers, derived from guild.migratedAt)
   MigratedGuilds = 5,
   PaddleWebhookDedupe = 6,
   // 7 retired (was LegacyGuildPerms) — legacy canPublish maps now recompute from
@@ -36,6 +37,7 @@ export enum Keys {
   Channel = 'channel',
   Sublimit = 'channel:sublimit',
   Blocked = 'channel:blocked',
+  // MIGRATION: removed at sunset with the MigratedGuilds DB
   MigratedGuild = 'migrated_guild',
   PaddleEvent = 'paddle_event',
   Alert = 'alert',

@@ -1,3 +1,5 @@
+// MIGRATION: entire module removed at sunset (MigratedGuilds Redis DB 5 retired;
+// the bot's allowlist gate becomes unconditional).
 import { Keys } from '@ap/redis';
 import type { Snowflake } from 'discord.js';
 import { Redis } from './redis.js';

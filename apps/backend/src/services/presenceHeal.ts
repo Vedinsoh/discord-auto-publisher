@@ -52,7 +52,8 @@ const healAbsentEditions = async (
       }
 
       // Same shape as the reconcile sweep insert: a guild running without a
-      // row has been behaving legacy since the missed event
+      // row has been behaving legacy since the missed event.
+      // MIGRATION: no change at sunset (already a plain guild-exists insert).
       await db.insert(guild).values({ guildId }).onConflictDoNothing();
       await Guilds.activatePresence(guildId, edition);
       confirmedAbsent.delete(cacheKey);

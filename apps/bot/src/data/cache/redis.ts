@@ -3,6 +3,7 @@ import { createRedisClient, DatabaseIDs, type RedisClient } from '@ap/redis';
 import { logger } from 'utils/logger.js';
 
 const channelsClient = await createRedisClient(DatabaseIDs.Channels, logger);
+// MIGRATION: MigratedGuilds client removed at sunset (DB 5 retired).
 const migratedGuildsClient = await createRedisClient(DatabaseIDs.MigratedGuilds, logger);
 // Handover markers are only read by the premium bot's hot path
 const premiumPendingClient = config.isPremiumInstance

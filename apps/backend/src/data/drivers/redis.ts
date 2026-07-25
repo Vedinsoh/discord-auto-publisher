@@ -2,6 +2,7 @@ import { createRedisClient, DatabaseIDs, type RedisClient } from '@ap/redis';
 import { logger } from 'utils/logger.js';
 
 const channelsClient = await createRedisClient(DatabaseIDs.Channels, logger);
+// MIGRATION: MigratedGuilds client + all its usages removed at sunset (DB 5 retired).
 const migratedGuildsClient = await createRedisClient(DatabaseIDs.MigratedGuilds, logger);
 const discordAuthClient = await createRedisClient(DatabaseIDs.DiscordAuth, logger);
 const paddleWebhookDedupeClient = await createRedisClient(DatabaseIDs.PaddleWebhookDedupe, logger);

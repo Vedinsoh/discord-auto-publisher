@@ -213,6 +213,9 @@ const activatePresence = async (guildId: Snowflake, edition: Edition): Promise<v
  * @param edition edition of the bot that joined
  * @param announcementChannelIds live announcement channels from the GUILD_CREATE payload
  */
+// MIGRATION: at sunset every guild is allowlist-model — drop `migratedAt` from
+// the guild insert below and make the two `rows[0]?.migratedAt` guards
+// unconditional (a re-invited guild always rebuilds its channel cache + serving).
 const registerNewGuild = async (
   guildId: Snowflake,
   edition: Edition,
@@ -267,7 +270,10 @@ const registerNewGuild = async (
     // must stay legacy. Full sync (entries first, marker last) rather than a
     // bare marker write: a re-invited guild must get its channel entries back
     // even if Redis lost them while the guild had no bot.
-    // MIGRATION: After transition (6 months), remove the sync call
+    // MIGRATION: at sunset drop the `rows[0]?.migratedAt` guard (this runs
+    // unconditionally — the Channels allowlist cache is permanent, so the
+    // channel-entry rebuild stays); only the `MigratedGuilds` marker write
+    // inside syncMigratedGuildCache goes away.
     if (rows[0]?.migratedAt) {
       await syncMigratedGuildCache(guildId);
     }
@@ -295,6 +301,8 @@ const registerNewGuild = async (
     // Enforce the "free never serves >3" invariant at the point the managing
     // edition settles (ADR 0009): free just (re)joined over the cap → pause the
     // excess; premium is the sole/managing bot → reactivate any paused channel.
+    // MIGRATION: at sunset drop the `rows[0]?.migratedAt` guard — every guild is
+    // allowlist-model, so serving reconciliation always applies.
     if (rows[0]?.migratedAt) {
       await Editions.reconcileChannelServing(guildId);
     }

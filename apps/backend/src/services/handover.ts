@@ -52,6 +52,9 @@ const getBlockedChannelIds = async (guildId: Snowflake): Promise<Snowflake[]> =>
     .where(eq(guild.guildId, guildId))
     .limit(1);
 
+  // MIGRATION: at sunset drop the legacy default (`targets = announcementChannels`)
+  // and the `migratedAt` branch — every guild is allowlist-model, so targets are
+  // always the registered channels.
   let targets = announcementChannels;
   if (guildRow?.migratedAt) {
     const registered = await db
