@@ -1,14 +1,14 @@
-import { Github, MessageCircle } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { links } from '@/lib/constants';
 import { Logo } from './logo';
 
 const quickLinks = [
   { href: '/', label: 'Home' },
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/migration', label: 'Migration Guide' },
+  { href: links.githubRepo, label: 'GitHub' },
   // TODO: re-enable when the Status page is ready.
   // { href: '/status', label: 'Status' },
 ];
@@ -17,12 +17,7 @@ const supportLinks = [
   { href: links.discordSupportServer, label: 'Support Server' },
   { href: '#', label: 'Terms of Service' },
   { href: '#', label: 'Privacy Policy' },
-  { href: '#', label: 'Contact' },
-];
-
-const socialLinks = [
-  { href: links.githubRepo, icon: Github, label: 'GitHub' },
-  { href: links.discordSupportServer, icon: MessageCircle, label: 'Discord' },
+  { href: '/migration', label: 'Migration Guide' },
 ];
 
 export function Footer() {
@@ -74,23 +69,18 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-slate-500 text-sm">
-            &copy; 2020&ndash;{new Date().getFullYear()} Auto Publisher. All rights reserved.
-          </p>
+        <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-sm">
+          <p>&copy; 2020&ndash;{new Date().getFullYear()} Auto Publisher. All rights reserved.</p>
 
-          <div className="flex items-center gap-3">
-            {socialLinks.map(link => (
-              <Link
-                key={link.label}
-                href={link.href}
-                target="_blank"
-                className="w-10 h-10 bg-slate-800 hover:bg-slate-700 rounded-lg flex items-center justify-center transition-colors"
-                aria-label={link.label}
-              >
-                <link.icon className="w-5 h-5 text-slate-400" />
-              </Link>
-            ))}
+          <div className="flex items-center gap-1">
+            Crafted with <Heart className="h-4 w-4" /> by{' '}
+            <Link
+              href={links.githubAuthor}
+              target="_blank"
+              className="text-blue-400 hover:text-blue-500 transition-colors"
+            >
+              Vedinsoh
+            </Link>
           </div>
         </div>
       </div>

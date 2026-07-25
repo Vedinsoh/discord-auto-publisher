@@ -25,7 +25,7 @@ const routeLinks = [
   { href: '/premium', label: 'Premium', external: false },
   // TODO: re-enable when the Status page is ready.
   // { href: '/status', label: 'Status', external: false },
-  { href: links.discordSupportServer, label: 'Join our server', external: true },
+  { href: links.githubRepo, label: 'GitHub', external: true },
 ];
 
 interface SessionUser {
