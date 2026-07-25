@@ -36,7 +36,21 @@ export function HeroDemo() {
 
             <div className="flex flex-1 flex-col gap-2 p-4">
               {/* Bot message: pops in colorless, then gains green background + border with the success toast */}
-              <div className="animate-hero-message flex gap-2.75 rounded-[11px] border border-transparent px-3 py-2.5 text-[13.5px] leading-normal">
+              <div className="animate-hero-message relative flex gap-2.75 rounded-[11px] border border-transparent px-3 py-2.5 text-[13.5px] leading-normal">
+                {/* Discord-style publish action: active megaphone until 5.0s, then greys out ("Published") */}
+                <div className="animate-hero-publish-btn group absolute -top-2 right-4 flex size-7 items-center justify-center rounded-lg border border-indigo-400/12 bg-slate-800/90 shadow-[0_6px_16px_-8px_rgba(0,0,0,.8)]">
+                  <Megaphone className="size-3.5" />
+                  {/* Tooltip: centered over the button; each label is its own pill so it
+                      hugs its text (no trailing space). Label swaps with the publish phase. */}
+                  <div className="pointer-events-none absolute bottom-full left-1/2 mb-1 grid -translate-x-1/2 justify-items-center opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="animate-hero-publish-label-pre col-start-1 row-start-1 whitespace-nowrap rounded-md border border-indigo-400/15 bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-lg">
+                      Publish
+                    </span>
+                    <span className="animate-hero-publish-label-post col-start-1 row-start-1 whitespace-nowrap rounded-md border border-indigo-400/15 bg-slate-950 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-lg">
+                      Published
+                    </span>
+                  </div>
+                </div>
                 <div className="flex size-9 shrink-0 rounded-full items-center justify-center bg-linear-to-br from-slate-700 to-slate-800 text-white">
                   <Newspaper className="size-4.25" />
                 </div>

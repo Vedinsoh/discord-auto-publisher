@@ -124,20 +124,21 @@
 	}
 }
 /*
- * Coordinated hero-demo timeline. Every element below shares a 9s cycle so
- * their keyframe percentages map to the same wall-clock times (keyframe % ->
- * time is always linear; only interpolation between stops is eased):
- *   0.00s   0%       bot message pops in, container still colorless
- *   0.50s   5.56%    message fully in
- *   0.50s   5.56%    pending toast starts
- *   4.50s   50%      pending gone (4s on screen); success + container color + tag start
- *   7.50s   83.33%   success toast holds until here (3s on screen), then fades out
- *   8.25s   91.67%   message + tag hold until here, then fade out
- *   9.00s   100%     reset / loop
+ * Coordinated hero-demo timeline. Every element shares a 9.5s cycle so their
+ * keyframe percentages map to the same wall-clock times (keyframe % -> time is
+ * always linear; only interpolation between stops is eased):
+ *   0.00s   0%        idle (0.5s lead-in delay; message hidden)
+ *   0.50s   5.263%    message begins pop-in
+ *   1.00s   10.526%   message fully in; pending toast starts
+ *   5.00s   52.632%   pending gone (4s on screen); success + container color + tag + publish-btn grey-out start
+ *   5.25s   55.263%   container green, tag in, publish button greyed ("Published")
+ *   8.00s   84.211%   success toast holds until here (3s on screen), then fades
+ *   8.75s   92.105%   message + tag + button hold until here, then fade out
+ *   9.50s   100%      reset / loop
  * Toasts exit like the message: fade + slide down (translateY(6px)), no scale.
  */
 
-/* Bot message: quick pop-in (colorless), then green bg + border fade in at 4.5s */
+/* Bot message: 0.5s delay, quick pop-in (colorless), then green bg + border fade in at 5.0s */
 @keyframes heroMessage {
 	0% {
 		opacity: 0;
@@ -145,23 +146,29 @@
 		background-color: rgba(74, 222, 128, 0);
 		border-color: rgba(74, 222, 128, 0);
 	}
-	5.56% {
+	5.263% {
+		opacity: 0;
+		transform: translateY(6px);
+		background-color: rgba(74, 222, 128, 0);
+		border-color: rgba(74, 222, 128, 0);
+	}
+	10.526% {
 		opacity: 1;
 		transform: none;
 		background-color: rgba(74, 222, 128, 0);
 		border-color: rgba(74, 222, 128, 0);
 	}
-	50% {
+	52.632% {
 		opacity: 1;
 		transform: none;
 		background-color: rgba(74, 222, 128, 0);
 		border-color: rgba(74, 222, 128, 0);
 	}
-	52.78% {
+	55.263% {
 		background-color: rgba(74, 222, 128, 0.05);
 		border-color: rgba(74, 222, 128, 0.2);
 	}
-	91.67% {
+	92.105% {
 		opacity: 1;
 		transform: none;
 		background-color: rgba(74, 222, 128, 0.05);
@@ -174,18 +181,18 @@
 		border-color: rgba(74, 222, 128, 0);
 	}
 }
-/* "Published to N servers" tag: appears with the success toast at 4.5s */
+/* "Published to N servers" tag: appears with the success toast at 5.0s */
 @keyframes heroTag {
 	0%,
-	50% {
+	52.632% {
 		opacity: 0;
 		transform: translateY(4px);
 	}
-	52.78% {
+	55.263% {
 		opacity: 1;
 		transform: none;
 	}
-	91.67% {
+	92.105% {
 		opacity: 1;
 		transform: none;
 	}
@@ -194,43 +201,98 @@
 		transform: translateY(4px);
 	}
 }
-/* Pending toast: 0.5s -> 4.5s (4s on screen); exits like the message (fade + slide down) */
+/* Publish action button: active (white) icon until 5.0s, then greys out ("Published") at 5.25s */
+@keyframes heroPublishBtn {
+	0%,
+	5.263% {
+		opacity: 0;
+		color: rgb(226, 232, 240);
+		cursor: pointer;
+	}
+	10.526% {
+		opacity: 1;
+		color: rgb(226, 232, 240);
+		cursor: pointer;
+	}
+	52.632% {
+		opacity: 1;
+		color: rgb(226, 232, 240);
+		cursor: pointer;
+	}
+	55.263% {
+		opacity: 1;
+		color: rgb(71, 85, 105);
+		cursor: default;
+	}
+	92.105% {
+		opacity: 1;
+		color: rgb(71, 85, 105);
+		cursor: default;
+	}
+	100% {
+		opacity: 0;
+		color: rgb(71, 85, 105);
+		cursor: default;
+	}
+}
+/* Tooltip label swap: "Publish" before publish, "Published" after (visible only on hover) */
+@keyframes heroPublishLabelPre {
+	0%,
+	52.632% {
+		opacity: 1;
+	}
+	55.263%,
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes heroPublishLabelPost {
+	0%,
+	52.632% {
+		opacity: 0;
+	}
+	55.263%,
+	100% {
+		opacity: 1;
+	}
+}
+/* Pending toast: 1.0s -> 5.0s (4s on screen); exits like the message (fade + slide down) */
 @keyframes heroToastPending {
 	0%,
-	5.56% {
+	10.526% {
 		opacity: 0;
 		transform: translateY(12px) scale(0.95);
 	}
-	7.78% {
+	12.632% {
 		opacity: 1;
 		transform: none;
 	}
-	47.22% {
+	50% {
 		opacity: 1;
 		transform: none;
 	}
-	50%,
+	52.632%,
 	100% {
 		opacity: 0;
 		transform: translateY(6px);
 	}
 }
-/* Success toast: replaces pending at 4.5s, holds 3s to 7.5s; exits like the message */
+/* Success toast: replaces pending at 5.0s, holds 3s to 8.0s; exits like the message */
 @keyframes heroToastSuccess {
 	0%,
-	50% {
+	52.632% {
 		opacity: 0;
 		transform: translateY(12px) scale(0.95);
 	}
-	52.78% {
+	55.263% {
 		opacity: 1;
 		transform: none;
 	}
-	83.33% {
+	84.211% {
 		opacity: 1;
 		transform: none;
 	}
-	91.67%,
+	92.105%,
 	100% {
 		opacity: 0;
 		transform: translateY(6px);
@@ -247,14 +309,23 @@
 	animation: livePing 2s infinite;
 }
 .animate-hero-message {
-	animation: heroMessage 9s ease-in-out infinite;
+	animation: heroMessage 9.5s ease-in-out infinite;
 }
 .animate-hero-tag {
-	animation: heroTag 9s ease-in-out infinite;
+	animation: heroTag 9.5s ease-in-out infinite;
+}
+.animate-hero-publish-btn {
+	animation: heroPublishBtn 9.5s ease-in-out infinite;
+}
+.animate-hero-publish-label-pre {
+	animation: heroPublishLabelPre 9.5s ease-in-out infinite;
+}
+.animate-hero-publish-label-post {
+	animation: heroPublishLabelPost 9.5s ease-in-out infinite;
 }
 .animate-hero-toast-pending {
-	animation: heroToastPending 9s ease-in-out infinite;
+	animation: heroToastPending 9.5s ease-in-out infinite;
 }
 .animate-hero-toast-success {
-	animation: heroToastSuccess 9s ease-in-out infinite;
+	animation: heroToastSuccess 9.5s ease-in-out infinite;
 }
