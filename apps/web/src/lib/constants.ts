@@ -10,5 +10,5 @@ export const links = {
 
 export const values = {
   activeServers: 17000,
-  messagesPublished: 4500000,
+  messagesPublished: 100_000_000,
 };
