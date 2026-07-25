@@ -1,4 +1,4 @@
-import { Check, Hash, LoaderCircle, Megaphone, Newspaper } from 'lucide-react';
+import { Check, CheckCheck, Hash, LoaderCircle, Megaphone, Newspaper } from 'lucide-react';
 import { values } from '@/lib/constants';
 import { formatNumberFull } from '@/lib/utils';
 
@@ -71,7 +71,7 @@ export function HeroDemo() {
                 </div>
               </div>
               <div className="animate-hero-tag inline-flex items-center gap-1.5 text-[12px] font-semibold text-green-300 ml-2">
-                <Megaphone className="size-4" /> Published to {serverCount} servers
+                <CheckCheck className="size-4" /> Published to {serverCount} servers
               </div>
             </div>
           </div>

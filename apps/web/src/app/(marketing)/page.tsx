@@ -1,6 +1,6 @@
 import { Hero } from '@/components/marketing/hero';
 import { HowItWorks } from '@/components/marketing/how-it-works';
-import { PricingTeaser } from '@/components/marketing/pricing-teaser';
+import { FinalCta } from '@/components/marketing/final-cta';
 import { Stats } from '@/components/marketing/stats';
 
 export default function Home() {
@@ -9,7 +9,7 @@ export default function Home() {
       <Hero />
       <Stats />
       <HowItWorks showGuideCta />
-      <PricingTeaser />
+      <FinalCta />
     </>
   );
 }
