@@ -183,9 +183,9 @@ function NavbarInner() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-12">
-            <Link href="/" className="flex items-center gap-4">
-              <Logo className="w-8 h-8" color="white" />
-              <span className="text-white text-xl font-semibold">Auto Publisher</span>
+            <Link href="/" className="flex items-center gap-3">
+              <Logo className="w-8 h-8" />
+              <span className="text-white text-base font-semibold">Auto Publisher</span>
             </Link>
 
             <div className="hidden md:flex items-center gap-8">

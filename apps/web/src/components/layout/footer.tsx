@@ -31,9 +31,9 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div className="sm:col-span-2">
-            <Link href="/" className="flex items-center gap-4 mb-4">
-              <Logo className="w-8 h-8" color="white" />
-              <span className="text-white text-xl font-semibold">Auto Publisher</span>
+            <Link href="/" className="flex items-center gap-3 mb-4">
+              <Logo className="w-8 h-8" />
+              <span className="text-white text-base font-semibold">Auto Publisher</span>
             </Link>
             <p className="text-slate-400 max-w-sm">
               The most reliable Discord bot for automatically publishing announcement channel

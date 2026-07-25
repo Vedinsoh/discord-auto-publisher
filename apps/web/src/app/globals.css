@@ -92,3 +92,169 @@
 		scroll-behavior: smooth;
 	}
 }
+
+/* Marketing hero demo animations (ported from design proposal) */
+@keyframes floaty {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+@keyframes glowBreath {
+	0%,
+	100% {
+		opacity: 0.5;
+	}
+	50% {
+		opacity: 0.9;
+	}
+}
+@keyframes livePing {
+	0% {
+		box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55);
+	}
+	70% {
+		box-shadow: 0 0 0 8px rgba(74, 222, 128, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+	}
+}
+/*
+ * Coordinated hero-demo timeline. Every element below shares a 9s cycle so
+ * their keyframe percentages map to the same wall-clock times (keyframe % ->
+ * time is always linear; only interpolation between stops is eased):
+ *   0.00s   0%       bot message pops in, container still colorless
+ *   0.50s   5.56%    message fully in
+ *   0.50s   5.56%    pending toast starts
+ *   4.50s   50%      pending gone (4s on screen); success + container color + tag start
+ *   7.50s   83.33%   success toast holds until here (3s on screen), then fades out
+ *   8.25s   91.67%   message + tag hold until here, then fade out
+ *   9.00s   100%     reset / loop
+ * Toasts exit like the message: fade + slide down (translateY(6px)), no scale.
+ */
+
+/* Bot message: quick pop-in (colorless), then green bg + border fade in at 4.5s */
+@keyframes heroMessage {
+	0% {
+		opacity: 0;
+		transform: translateY(6px);
+		background-color: rgba(74, 222, 128, 0);
+		border-color: rgba(74, 222, 128, 0);
+	}
+	5.56% {
+		opacity: 1;
+		transform: none;
+		background-color: rgba(74, 222, 128, 0);
+		border-color: rgba(74, 222, 128, 0);
+	}
+	50% {
+		opacity: 1;
+		transform: none;
+		background-color: rgba(74, 222, 128, 0);
+		border-color: rgba(74, 222, 128, 0);
+	}
+	52.78% {
+		background-color: rgba(74, 222, 128, 0.05);
+		border-color: rgba(74, 222, 128, 0.2);
+	}
+	91.67% {
+		opacity: 1;
+		transform: none;
+		background-color: rgba(74, 222, 128, 0.05);
+		border-color: rgba(74, 222, 128, 0.2);
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(6px);
+		background-color: rgba(74, 222, 128, 0);
+		border-color: rgba(74, 222, 128, 0);
+	}
+}
+/* "Published to N servers" tag: appears with the success toast at 4.5s */
+@keyframes heroTag {
+	0%,
+	50% {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	52.78% {
+		opacity: 1;
+		transform: none;
+	}
+	91.67% {
+		opacity: 1;
+		transform: none;
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+}
+/* Pending toast: 0.5s -> 4.5s (4s on screen); exits like the message (fade + slide down) */
+@keyframes heroToastPending {
+	0%,
+	5.56% {
+		opacity: 0;
+		transform: translateY(12px) scale(0.95);
+	}
+	7.78% {
+		opacity: 1;
+		transform: none;
+	}
+	47.22% {
+		opacity: 1;
+		transform: none;
+	}
+	50%,
+	100% {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
+/* Success toast: replaces pending at 4.5s, holds 3s to 7.5s; exits like the message */
+@keyframes heroToastSuccess {
+	0%,
+	50% {
+		opacity: 0;
+		transform: translateY(12px) scale(0.95);
+	}
+	52.78% {
+		opacity: 1;
+		transform: none;
+	}
+	83.33% {
+		opacity: 1;
+		transform: none;
+	}
+	91.67%,
+	100% {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
+
+.animate-floaty {
+	animation: floaty 7s ease-in-out infinite;
+}
+.animate-glow-breath {
+	animation: glowBreath 5s ease-in-out infinite;
+}
+.animate-live-ping {
+	animation: livePing 2s infinite;
+}
+.animate-hero-message {
+	animation: heroMessage 9s ease-in-out infinite;
+}
+.animate-hero-tag {
+	animation: heroTag 9s ease-in-out infinite;
+}
+.animate-hero-toast-pending {
+	animation: heroToastPending 9s ease-in-out infinite;
+}
+.animate-hero-toast-success {
+	animation: heroToastSuccess 9s ease-in-out infinite;
+}

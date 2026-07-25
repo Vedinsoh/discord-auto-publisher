@@ -1,118 +1,124 @@
 'use client';
 
-import { ArrowRight, MessageCircle, Sparkles } from 'lucide-react';
+import { ArrowRight, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
 import { links, values } from '@/lib/constants';
 import { formatNumberFull } from '@/lib/utils';
 import { Button } from '../ui/button';
+import { HeroDemo } from './hero-demo';
 
 export function Hero() {
-  const headlineWords = 'Automate Your Discord Announcements'.split(' ');
-
   return (
-    <section
-      id="home"
-      className="relative mx-auto flex max-w-7xl flex-col items-center justify-center pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden"
-    >
-      {/* Background blurs */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="absolute inset-0 overflow-hidden pointer-events-none"
-      >
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
-      </motion.div>
+    <section id="home" className="relative mx-auto max-w-7xl px-4 pt-32 pb-20 sm:px-6 lg:px-8">
+      <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-15">
+        {/* Left column */}
+        <div className="relative z-10 text-center lg:text-left">
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(120,150,255,.2)] bg-blue-500/10 px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider text-[#8fb4ff]"
+          >
+            <span className="animate-live-ping inline-block size-1.5 rounded-full bg-green-400" />
+            Trusted by {formatNumberFull(values.activeServers)} servers
+          </motion.div>
 
-      <div className="text-center relative z-10">
-        {/* Headline with word-by-word animation */}
-        <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-white mb-6 max-w-4xl mx-auto leading-tight">
-          {headlineWords.map((word, index) => (
+          {/* Headline with word-by-word animation */}
+          <h1 className="mb-6 text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
             <motion.span
-              key={word}
               initial={{ opacity: 0, filter: 'blur(4px)', y: 10 }}
               animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
               transition={{
                 duration: 0.2,
-                delay: 0.05 + index * 0.05,
+                delay: 0.05 * 0.05,
                 ease: 'easeInOut',
               }}
               className="mr-2 inline-block"
             >
-              {word}
+              Your announcements,
             </motion.span>
-          ))}
-          <motion.span
-            initial={{ opacity: 0, filter: 'blur(4px)', y: 10 }}
-            animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-            transition={{
-              duration: 0.2,
-              delay: 0.05 + headlineWords.length * 0.05,
-              ease: 'easeInOut',
-            }}
-            className="inline-block text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-blue-600"
-          >
-            Easily
-          </motion.span>
-        </h1>
+            <motion.span
+              initial={{ opacity: 0, filter: 'blur(4px)', y: 10 }}
+              animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              transition={{
+                duration: 0.2,
+                delay: 0.05 + 1 * 0.05,
+                ease: 'easeInOut',
+              }}
+              className="inline-block bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent"
+            >
+              published automatically.
+            </motion.span>
+          </h1>
 
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2, delay: 0.4 }}
-          className="text-lg sm:text-xl text-slate-300 mb-10 max-w-2xl mx-auto"
-        >
-          Auto Publisher automatically publishes messages in your announcement channels, ensuring
-          your community never misses important updates.
-        </motion.p>
-
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2, delay: 0.5 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-4"
-        >
-          <Button
-            size="xl"
-            className="bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-lg transition-all shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 border-0 group hover:-translate-y-0.5"
-            asChild
+          {/* Subtext */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.4 }}
+            className="mb-10 max-w-2xl text-lg text-slate-300 sm:text-xl lg:mx-0 mx-auto"
           >
-            <Link href={links.discordBotInvite} target="_blank">
-              Invite Bot
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            Auto Publisher watches your announcement channels and instantly publishes every message,
+            so your community never misses an update. No manual clicks, ever.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.2, delay: 0.5 }}
+            className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start justify-center"
+          >
+            <Button
+              size="xl"
+              className="group rounded-lg border-0 bg-linear-to-r from-blue-500 to-blue-600 px-8 py-4 text-white shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
+              asChild
+            >
+              <Link href={links.discordBotInvite} target="_blank">
+                Invite Bot
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="xl"
+              className="rounded-lg border-slate-700 bg-slate-800/50 px-8 py-4 text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
+              asChild
+            >
+              <Link href="/how-it-works">How It Works</Link>
+            </Button>
+          </motion.div>
+
+          {/* Support link */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, delay: 0.6 }}
+            className="mt-8"
+          >
+            <Link
+              href={links.discordSupportServer}
+              target="_blank"
+              className="group inline-flex items-center gap-2 text-slate-400 transition-colors hover:text-blue-400"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span className="text-sm">Need help? Join our support server</span>
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
-          </Button>
+          </motion.div>
+        </div>
 
-          <Button
-            variant="outline"
-            size="xl"
-            className="bg-slate-800/50 hover:bg-slate-800 text-white px-8 py-4 rounded-lg border-slate-700 transition-all hover:-translate-y-0.5"
-            asChild
-          >
-            <Link href="/how-it-works">How It Works</Link>
-          </Button>
-        </motion.div>
-
-        {/* Support link */}
+        {/* Right column: animated demo */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, delay: 0.6 }}
-          className="mt-8"
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="relative z-10"
         >
-          <Link
-            href={links.discordSupportServer}
-            target="_blank"
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-blue-400 transition-colors group"
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span className="text-sm">Need help? Join our support server</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <HeroDemo />
         </motion.div>
       </div>
     </section>
