@@ -3,10 +3,7 @@
 import { Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
-import {
-  ChannelEnableGuideModal,
-  ENABLE_GUIDE_DISMISS_KEY,
-} from '@/components/dashboard/channel-enable-guide';
+import { ChannelEnableGuideModal } from '@/components/dashboard/channel-enable-guide';
 import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
 import {
   ChannelLimitModal,
@@ -14,7 +11,6 @@ import {
 } from '@/components/dashboard/channel-limit-upsell';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
-import { usePersistentDismissal } from '@/components/dashboard/use-guild-attention';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -108,8 +104,6 @@ export function ChannelConfig({
   const [limitReason, setLimitReason] = useState<ChannelLimitReason | null>(null);
   // Channel awaiting the enable guide acknowledgment (null = no guide open).
   const [guideChannel, setGuideChannel] = useState<GuildChannel | null>(null);
-  // Global, per-browser "don't show the enable guide again" opt-out.
-  const [guideDismissed, dismissGuide] = usePersistentDismissal(ENABLE_GUIDE_DISMISS_KEY);
 
   // MIGRATION: hooks above must run unconditionally; early return only after
   if (!migrated) {
@@ -149,19 +143,14 @@ export function ChannelConfig({
     });
   };
 
-  // Enabling goes through the guide gate unless the user opted out. The channel
-  // is only registered on "I understand"; aborting leaves it disabled.
+  // Enabling always goes through the guide gate. The channel is only registered
+  // on "I granted the permissions"; aborting leaves it disabled.
   const requestEnable = (channel: GuildChannel) => {
-    if (guideDismissed) {
-      handleToggleChannel(channel.channelId, false);
-    } else {
-      setGuideChannel(channel);
-    }
+    setGuideChannel(channel);
   };
 
-  const confirmEnableFromGuide = (dontShowAgain: boolean) => {
+  const confirmEnableFromGuide = () => {
     const channel = guideChannel;
-    if (dontShowAgain) dismissGuide();
     setGuideChannel(null);
     if (channel) handleToggleChannel(channel.channelId, false);
   };

@@ -1,7 +1,6 @@
 'use client';
 
 import { Clock, Megaphone, TriangleAlert, X } from 'lucide-react';
-import { useState } from 'react';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
 import { publishDelayCopy } from '@/components/dashboard/publish-delay-note';
 import {
@@ -13,17 +12,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-
-/** localStorage key for the global "don't show the enable guide again" opt-out. */
-export const ENABLE_GUIDE_DISMISS_KEY = 'ap:enableGuideDismissed';
 
 /**
  * Acknowledgment gate shown before enabling a channel from the Channels tab
  * (CONTEXT "Channel enable guide"). Built on AlertDialog: it interrupts and
- * requires a response, so it does NOT close on outside click. "I understand"
- * commits (fires the enable); the corner X or ESC aborts (no enable). The
- * "Don't show this again" opt-out is written by the caller — only on commit.
+ * requires a response, so it does NOT close on outside click. "I granted the permissions" commits (fires the enable);
+ * the corner X or ESC aborts (no enable).
  */
 export function ChannelEnableGuideModal({
   channelName,
@@ -34,13 +28,11 @@ export function ChannelEnableGuideModal({
   channelName: string;
   /** Entitled guild → minimal-delay copy; else the free reassurance + upsell. */
   hasSubscription: boolean;
-  /** Commit: enable the channel. `dontShowAgain` = persist the global opt-out. */
-  onConfirm: (dontShowAgain: boolean) => void;
+  /** Commit: enable the channel. */
+  onConfirm: () => void;
   /** Abort: leave the channel disabled. Fired by the corner X and ESC. */
   onCancel: () => void;
 }) {
-  const [dontShowAgain, setDontShowAgain] = useState(false);
-
   return (
     <AlertDialog
       open
@@ -92,22 +84,10 @@ export function ChannelEnableGuideModal({
           </div>
         </div>
 
-        <div className="ml-10 flex items-center gap-2">
-          <Checkbox
-            id="enable-guide-optout"
-            checked={dontShowAgain}
-            onCheckedChange={value => setDontShowAgain(value === true)}
-          />
-          <label
-            htmlFor="enable-guide-optout"
-            className="cursor-pointer text-sm text-slate-400 select-none"
-          >
-            Don’t show this again
-          </label>
-        </div>
-
         <AlertDialogFooter>
-          <Button onClick={() => onConfirm(dontShowAgain)}>I understand</Button>
+          <Button className="w-full" onClick={onConfirm}>
+            I granted the permissions
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
