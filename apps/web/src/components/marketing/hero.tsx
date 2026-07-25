@@ -3,8 +3,7 @@
 import { ArrowRight, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { links, values } from '@/lib/constants';
-import { formatNumberFull } from '@/lib/utils';
+import { links } from '@/lib/constants';
 import { Button } from '../ui/button';
 import { HeroDemo } from './hero-demo';
 
@@ -14,17 +13,6 @@ export function Hero() {
       <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-15">
         {/* Left column */}
         <div className="relative z-10 text-center lg:text-left">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-[rgba(120,150,255,.2)] bg-blue-500/10 px-3.5 py-1.5 font-mono text-xs uppercase tracking-wider text-[#8fb4ff]"
-          >
-            <span className="animate-live-ping inline-block size-1.5 rounded-full bg-green-400" />
-            Trusted by {formatNumberFull(values.activeServers)} servers
-          </motion.div>
-
           {/* Headline with word-by-word animation */}
           <h1 className="mb-6 text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
             <motion.span

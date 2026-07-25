@@ -53,16 +53,16 @@ export default function HowItWorksPage() {
 
       <HowItWorks
         title="Get started in four steps"
-        description="Auto Publisher does the work for you. Here is the whole flow, start to finish."
+        description="Auto Publisher does the work for you. Set it up once. Forget about it forever."
       />
 
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-12">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">What the bot needs</h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
-            Give Auto Publisher these permissions in every announcement channel you want it to
-            manage. It only ever publishes messages... from you, another bot, or a webhook — it
-            never creates them.
+            Auto Publisher needs these permissions in every announcement channel that&apos;s
+            enabled. It only ever publishes messages, from you, another bot, or a webhook — it never
+            creates them.
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export default function HowItWorksPage() {
 
       <PlanComparison />
 
-      <FAQ />
+      <FAQ id="faq" />
 
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/50 px-6 py-10 text-center backdrop-blur-sm">

@@ -90,9 +90,9 @@ const faqs: { question: string; answer: ReactNode }[] = [
   },
 ];
 
-export function FAQ() {
+export function FAQ({ id }: { id: string }) {
   return (
-    <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <section id={id} className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
       <div className="text-center mb-12">
         <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
           Frequently Asked Questions

@@ -70,7 +70,9 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-sm">
-          <p>&copy; 2020&ndash;{new Date().getFullYear()} Auto Publisher. All rights reserved.</p>
+          <p>
+            Copyright &copy; 2020&ndash;{new Date().getFullYear()} PWN Ltd. All rights reserved.
+          </p>
 
           <div className="flex items-center gap-1">
             Crafted with <Heart className="h-4 w-4" /> by{' '}

@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle, type LucideIcon, Plus, Settings, Zap } from 'lucide-react';
+import { ArrowRight, ListTodo, type LucideIcon, Plus, Radio, Send } from 'lucide-react';
 import Link from 'next/link';
 
 interface Step {
@@ -11,28 +11,27 @@ interface Step {
 const steps: Step[] = [
   {
     icon: Plus,
-    title: 'Invite the Bot',
-    description: 'Add Auto Publisher to your Discord server with a single click.',
+    title: 'Invite the bot',
+    description: 'Add Auto Publisher to your Discord server in two clicks.',
     color: 'blue',
   },
   {
-    icon: Settings,
-    title: 'Configure Channels',
-    description:
-      'Use /ap enable or the web dashboard to choose which announcement channels Auto Publisher manages.',
+    icon: ListTodo,
+    title: 'Pick your channels',
+    description: 'Choose which announcement channels should auto-publish.',
     color: 'purple',
   },
   {
-    icon: Zap,
-    title: 'Send Your Message',
-    description: 'Post your announcement in any designated channel as you normally would.',
+    icon: Radio,
+    title: 'We watch for messages',
+    description:
+      'The moment a message lands in a selected channel, Auto Publisher detects it instantly.',
     color: 'cyan',
   },
   {
-    icon: CheckCircle,
-    title: 'Auto-Publish',
-    description:
-      "Auto Publisher automatically publishes channel messages to all following servers. That's it!",
+    icon: Send,
+    title: 'Auto-published!',
+    description: "It's published to every server automatically — no manual publishes, ever again.",
     color: 'green',
   },
 ];
@@ -119,7 +118,7 @@ export function HowItWorks({
 
               {/* Connector line between steps */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-4 w-8 h-0.5 bg-linear-to-r from-slate-700 to-transparent transition-all duration-150 group-hover:from-slate-500" />
+                <div className="hidden lg:block absolute top-1/2 -right-8 w-8 h-0.5 bg-linear-to-r from-slate-700 to-transparent transition-all duration-150 group-hover:from-slate-500" />
               )}
             </div>
           );
