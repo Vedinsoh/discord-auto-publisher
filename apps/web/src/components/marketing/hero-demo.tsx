@@ -141,7 +141,7 @@ export function HeroDemo() {
           </div>
         </div>
         {/* Floating toast - pending */}
-        <div className="animate-hero-toast-pending absolute -right-2.5 bottom-6 z-20 inline-flex items-center gap-2.5 rounded-[14px]  bg-blue-950/30 px-4 py-3 shadow-[0_20px_50px_-18px_rgba(0,0,0,.8)]">
+        <div className="animate-hero-toast-pending absolute -right-2.5 bottom-6 z-20 inline-flex items-center gap-2.5 rounded-[14px]  bg-blue-950/75 px-4 py-3 shadow-[0_20px_50px_-18px_rgba(0,0,0,.8)]">
           <Image
             src="/auto-publisher.png"
             alt="Auto Publisher"

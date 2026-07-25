@@ -12,7 +12,7 @@ export const FREE_PLAN_FEATURES = [
 
 export const PREMIUM_PLAN_FEATURES = [
   'Unlimited channels',
+  'Near-instant publishing',
   'Advanced message filters',
-  'Priority publishing',
   'Priority support',
 ];
