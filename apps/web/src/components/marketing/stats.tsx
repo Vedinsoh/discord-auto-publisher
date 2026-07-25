@@ -7,7 +7,7 @@ import { formatNumber, formatNumberFull } from '@/lib/utils';
 const stats = [
   { value: formatNumberFull(values.activeServers), label: 'Active Servers' },
   { value: formatNumber(values.messagesPublished), label: 'Messages Published' },
-  { value: '<1s', label: 'Average Publish Time With Premium' },
+  { value: '99,9%', label: 'Uptime' },
 ];
 
 export function Stats() {
