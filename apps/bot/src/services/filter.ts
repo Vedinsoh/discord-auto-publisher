@@ -1,4 +1,5 @@
 import { config } from '@ap/config';
+import { anyKeywordMatches } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
 import type { Message, NewsChannel } from 'discord.js';
 import { Services } from './index.js';
@@ -73,8 +74,8 @@ const matchesFilter = (
 ): boolean => {
   switch (filter.type) {
     case FilterType.Keyword: {
-      // Check if content contains any of the keywords (keywords are stored in lowercase)
-      return filter.values.some(keyword => content.includes(keyword));
+      // Whole-word matching with `*` wildcards (see @ap/utils keyword matcher).
+      return anyKeywordMatches(content, filter.values);
     }
 
     case FilterType.Mention: {

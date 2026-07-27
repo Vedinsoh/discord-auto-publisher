@@ -48,6 +48,12 @@ export const FilterSchema = z.object({
   createdAt: z.date(),
 });
 
+/** A keyword that is empty or only `*`s matches everything — reject it as a no-op. */
+const isNoOpKeyword = (value: string): boolean => {
+  const collapsed = value.trim().replace(/\*+/g, '*');
+  return collapsed.length === 0 || collapsed === '*';
+};
+
 export const CreateFilterSchema = z
   .object({
     type: FilterTypeSchema,
@@ -69,7 +75,10 @@ export const CreateFilterSchema = z
     {
       message: 'Maximum amount of values exceeded for filter type',
     }
-  );
+  )
+  .refine(filter => filter.type !== FilterType.Keyword || !filter.values.some(isNoOpKeyword), {
+    message: 'A keyword cannot be empty or only wildcards',
+  });
 
 export type Filter = z.infer<typeof FilterSchema>;
 export type CreateFilter = z.infer<typeof CreateFilterSchema>;

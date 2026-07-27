@@ -271,7 +271,7 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
       const keywordLabel = new LabelBuilder()
         .setLabel('Keywords (max 20)')
         .setDescription(
-          'Enter words to look for in messages. Use commas to separate multiple keywords.'
+          'Comma-separated. Matches whole words. Wildcards: spam* (starts), *spam (ends), *spam* (contains).'
         )
         .setTextInputComponent(keywordInput);
 

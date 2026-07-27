@@ -1,6 +1,7 @@
 'use client';
 
 import { Loader2, Megaphone } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -185,10 +186,15 @@ export function ChannelConfig({
             <Megaphone className={`w-5 h-5 ${style.icon}`} />
             <span className="text-white text-md">{channel.name}</span>
             {channel.filters.length > 0 && (
-              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
-                {channel.filters.length} filter
-                {channel.filters.length !== 1 && 's'}
-              </Badge>
+              <Link
+                href={`/dashboard/${guildId}/filters?channel=${channel.channelId}`}
+                aria-label={`Edit filters for ${channel.name}`}
+              >
+                <Badge className="cursor-pointer border-blue-500/30 bg-blue-500/20 text-blue-400 transition-colors hover:bg-blue-500/30">
+                  {channel.filters.length} filter
+                  {channel.filters.length !== 1 && 's'}
+                </Badge>
+              </Link>
             )}
           </div>
           <div className="flex items-center gap-2">

@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
-  FILTER_MODE_OPTIONS,
   FILTER_TYPE_OPTIONS,
+  FILTER_VALUE_LABELS,
+  filterSentence,
+  isNoOpKeyword,
+  KEYWORD_WILDCARD_EXAMPLES,
   MAX_VALUES,
   roleColorHex,
   SNOWFLAKE_REGEX,
@@ -35,6 +38,8 @@ interface FilterEditorModalProps {
   guildId: string;
   channelId: string;
   channelName: string;
+  /** allow = "only publish if matches", block = "never publish if matches". Fixed once set. */
+  mode: FilterMode;
   /** null = create a new filter; otherwise edit this one (its type is fixed). */
   filter: ChannelFilterRule | null;
   roles: GuildRole[];
@@ -42,15 +47,11 @@ interface FilterEditorModalProps {
   onClose: () => void;
 }
 
-const MODE_HELPER: Record<FilterMode, string> = {
-  allow: 'Only publish messages that match this rule.',
-  block: 'Never publish messages that match this rule.',
-};
-
 export function FilterEditorModal({
   guildId,
   channelId,
   channelName,
+  mode,
   filter,
   roles,
   rolesById,
@@ -62,7 +63,6 @@ export function FilterEditorModal({
 
   const isEdit = filter !== null;
 
-  const [mode, setMode] = useState<FilterMode>(filter?.mode ?? 'allow');
   const [type, setType] = useState<FilterType>(filter?.type ?? 'keyword');
 
   // keyword / webhook / author values
@@ -135,18 +135,22 @@ export function FilterEditorModal({
     >
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit filter' : 'Add filter'}</DialogTitle>
-          <DialogDescription>
-            #{channelName} — control which messages auto-publish.
-          </DialogDescription>
+          <DialogTitle>
+            {isEdit ? 'Edit' : 'Add'} {mode === 'block' ? 'block' : 'allow'} rule
+          </DialogTitle>
+          <DialogDescription>#{channelName}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Mode */}
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium text-slate-200">Rule</p>
-            <SegmentedControl options={FILTER_MODE_OPTIONS} value={mode} onChange={setMode} />
-            <p className="text-xs text-slate-500">{MODE_HELPER[mode]}</p>
+          {/* Live plain-English preview of what this rule does. */}
+          <div
+            className={`rounded-lg border px-3 py-2 text-sm ${
+              mode === 'block'
+                ? 'border-red-500/30 bg-red-500/10 text-red-200'
+                : 'border-green-500/30 bg-green-500/10 text-green-200'
+            }`}
+          >
+            {filterSentence(mode, type)}
           </div>
 
           {/* Type */}
@@ -168,24 +172,37 @@ export function FilterEditorModal({
 
           {/* Values */}
           <div className="space-y-1.5">
-            <p className="text-sm font-medium text-slate-200">
-              {type === 'keyword' && 'Keywords'}
-              {type === 'webhook' && 'Webhook IDs'}
-              {type === 'author' && 'User IDs'}
-              {type === 'mention' && 'Roles & users'}
-            </p>
+            <p className="text-sm font-medium text-slate-200">{FILTER_VALUE_LABELS[type]}</p>
 
             {type === 'keyword' && (
-              <TagInput
-                values={values}
-                onChange={setValues}
-                maxItems={max}
-                placeholder="Type a keyword, press Enter"
-                transform={value => value.toLowerCase()}
-                validate={value =>
-                  value.length > 200 ? 'Keyword is too long (max 200 chars)' : null
-                }
-              />
+              <>
+                <TagInput
+                  values={values}
+                  onChange={setValues}
+                  maxItems={max}
+                  placeholder="Type a keyword, press Enter"
+                  transform={value => value.trim().toLowerCase()}
+                  validate={value =>
+                    value.length > 200
+                      ? 'Keyword is too long (max 200 chars)'
+                      : isNoOpKeyword(value)
+                        ? 'Keyword cannot be empty or only wildcards'
+                        : null
+                  }
+                />
+                <p className="text-xs text-slate-500">
+                  Matches whole words.{' '}
+                  {KEYWORD_WILDCARD_EXAMPLES.map((example, index) => (
+                    <span key={example.pattern}>
+                      {index > 0 && ' · '}
+                      <code className="rounded bg-slate-800 px-1 font-mono text-slate-300">
+                        {example.pattern}
+                      </code>{' '}
+                      {example.hint}
+                    </span>
+                  ))}
+                </p>
+              </>
             )}
 
             {type === 'webhook' && (

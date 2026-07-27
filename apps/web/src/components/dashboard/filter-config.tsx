@@ -1,9 +1,19 @@
 'use client';
 
-import { Filter as FilterIcon, Hash, Loader2, Lock, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  Ban,
+  Check,
+  Filter as FilterIcon,
+  Hash,
+  Loader2,
+  Lock,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
   ChannelLimitCta,
@@ -16,6 +26,12 @@ import {
   MAX_FILTERS_PER_CHANNEL,
   roleColorHex,
 } from '@/components/dashboard/filter-meta';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +47,14 @@ import { Card } from '@/components/ui/card';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { getGuildRoles, removeFilter, setFilterMode } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
-import type { ChannelFilterRule, FilterMatchMode, GuildChannel, GuildRole } from '@/lib/api/types';
+import type {
+  ChannelFilterRule,
+  FilterMatchMode,
+  FilterMode,
+  GuildChannel,
+  GuildRole,
+} from '@/lib/api/types';
+import { cn } from '@/lib/utils';
 
 interface FilterManagerProps {
   guildId: string;
@@ -71,6 +94,54 @@ function ValueChip({
   );
 }
 
+/** One filter's type label + value chips + edit/delete actions. */
+function FilterRow({
+  filter,
+  rolesById,
+  isActive,
+  onEdit,
+  onDelete,
+}: {
+  filter: ChannelFilterRule;
+  rolesById: Record<string, GuildRole>;
+  isActive: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 py-3 last:border-0">
+      <span className="text-sm text-slate-300">
+        {FILTER_TYPE_LABELS[filter.type] ?? filter.type}
+      </span>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {filter.values.map(value => (
+          <ValueChip key={value} filter={filter} value={value} rolesById={rolesById} />
+        ))}
+      </div>
+      {isActive && (
+        <div className="ml-auto flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Edit filter"
+            onClick={onEdit}
+            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Delete filter"
+            onClick={onDelete}
+            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FilterManager({
   guildId,
   channels,
@@ -85,6 +156,7 @@ export function FilterManager({
   const [editor, setEditor] = useState<{
     channelId: string;
     channelName: string;
+    mode: FilterMode;
     filter: ChannelFilterRule | null;
   } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -110,10 +182,29 @@ export function FilterManager({
 
   const enabledChannels = channels.filter(channel => channel.enabled);
 
+  // Deep-link target: the Channels page links its filter pill here with
+  // `?channel=<id>` so we open (and scroll to) that channel's accordion. With no
+  // such param, every channel starts collapsed.
+  const searchParams = useSearchParams();
+  const requestedChannelId = searchParams.get('channel');
+  const targetChannelId =
+    requestedChannelId && enabledChannels.some(c => c.channelId === requestedChannelId)
+      ? requestedChannelId
+      : undefined;
+
+  const accordionRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!requestedChannelId) return;
+    accordionRef.current
+      ?.querySelector(`[data-channel-id="${requestedChannelId}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [requestedChannelId]);
+
   const handleModeChange = (channelId: string, mode: FilterMatchMode) => {
     startTransition(async () => {
       const result = await setFilterMode(guildId, channelId, mode);
       if (result.ok) {
+        toast.success(`Now publishing if a message matches ${mode} allow rules`);
         router.refresh();
         return;
       }
@@ -178,116 +269,138 @@ export function FilterManager({
           </p>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {enabledChannels.map(channel => {
-            const atFilterLimit = channel.filters.length >= MAX_FILTERS_PER_CHANNEL;
-            return (
-              <Card key={channel.channelId} className="border-slate-800 bg-slate-900/50 p-6">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <Hash className="h-5 w-5 text-blue-400" />
-                    <h3 className="text-lg text-white">{channel.name}</h3>
-                    <Badge className="border-slate-600 bg-slate-700/50 text-xs text-slate-400">
-                      {channel.filters.length}/{MAX_FILTERS_PER_CHANNEL}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">Match</span>
-                    <SegmentedControl
-                      options={MATCH_MODE_OPTIONS}
-                      value={channel.filterMode}
-                      onChange={mode => handleModeChange(channel.channelId, mode)}
-                      disabled={!isActive || isPending}
-                      size="sm"
-                    />
-                  </div>
-                </div>
+        <div ref={accordionRef}>
+          <Accordion type="single" collapsible defaultValue={targetChannelId} className="space-y-4">
+            {enabledChannels.map(channel => {
+              const blockFilters = channel.filters.filter(f => f.mode === 'block');
+              const allowFilters = channel.filters.filter(f => f.mode === 'allow');
+              const atFilterLimit = channel.filters.length >= MAX_FILTERS_PER_CHANNEL;
+              const hasRules = channel.filters.length > 0;
 
-                <div className="space-y-2">
-                  {channel.filters.length === 0 && (
-                    <p className="py-2 text-sm text-slate-500">
-                      No filters — this channel publishes every message.
-                    </p>
-                  )}
-                  {channel.filters.map(filter => (
-                    <div
-                      key={filter.id}
-                      className="flex flex-wrap items-center gap-3 border-b border-slate-800 py-3 last:border-0"
-                    >
-                      <Badge
-                        className={
-                          filter.mode === 'allow'
-                            ? 'border-green-500/30 bg-green-500/20 text-green-400'
-                            : 'border-red-500/30 bg-red-500/20 text-red-400'
-                        }
-                      >
-                        {filter.mode}
-                      </Badge>
-                      <span className="text-sm text-slate-300">
-                        {FILTER_TYPE_LABELS[filter.type] ?? filter.type}
-                      </span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {filter.values.map(value => (
-                          <ValueChip
-                            key={value}
-                            filter={filter}
-                            value={value}
-                            rolesById={rolesById}
-                          />
-                        ))}
-                      </div>
-                      {isActive && (
-                        <div className="ml-auto flex items-center gap-1">
-                          <button
-                            type="button"
-                            aria-label="Edit filter"
-                            onClick={() =>
-                              setEditor({
-                                channelId: channel.channelId,
-                                channelName: channel.name,
-                                filter,
-                              })
-                            }
-                            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Delete filter"
-                            onClick={() =>
-                              setDeleteTarget({ channelId: channel.channelId, filter })
-                            }
-                            className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+              const openEditor = (mode: FilterMode, filter: ChannelFilterRule | null) =>
+                setEditor({
+                  channelId: channel.channelId,
+                  channelName: channel.name,
+                  mode,
+                  filter,
+                });
 
-                {isActive && (
+              const addButton = (mode: FilterMode, label: string) =>
+                isActive && (
                   <button
                     type="button"
                     disabled={atFilterLimit}
-                    onClick={() =>
-                      setEditor({
-                        channelId: channel.channelId,
-                        channelName: channel.name,
-                        filter: null,
-                      })
-                    }
-                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300 disabled:cursor-not-allowed disabled:text-slate-600"
+                    onClick={() => openEditor(mode, null)}
+                    className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300 disabled:cursor-not-allowed disabled:text-slate-600"
                   >
                     <Plus className="h-4 w-4" />
-                    {atFilterLimit ? 'Filter limit reached' : 'Add filter'}
+                    {atFilterLimit ? 'Filter limit reached' : label}
                   </button>
-                )}
-              </Card>
-            );
-          })}
+                );
+
+              return (
+                <AccordionItem
+                  key={channel.channelId}
+                  value={channel.channelId}
+                  data-channel-id={channel.channelId}
+                  className={cn(
+                    'overflow-hidden rounded-xl border transition-colors',
+                    hasRules
+                      ? 'border-blue-500/20 bg-blue-500/[0.04] hover:border-blue-500/40 data-[state=open]:border-blue-500/40'
+                      : 'border-slate-800 bg-slate-900/50 hover:border-slate-700 data-[state=open]:border-slate-700'
+                  )}
+                >
+                  <AccordionTrigger className="cursor-pointer px-6 py-4 hover:no-underline [&>svg]:text-slate-400">
+                    <div className="flex items-center gap-2">
+                      <Hash className="h-5 w-5 text-blue-400" />
+                      <span className="text-lg text-white">{channel.name}</span>
+                      <Badge className="border-slate-600 bg-slate-700/50 text-xs text-slate-400">
+                        {channel.filters.length}/{MAX_FILTERS_PER_CHANNEL}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <div className="grid gap-6 md:grid-cols-2 md:gap-0 md:divide-x divide-slate-800">
+                      {/* Block rules */}
+                      <section className="md:pr-6">
+                        <div className="mb-1 flex items-center gap-2">
+                          <Ban className="h-4 w-4 text-red-400" />
+                          <h4 className="text-sm font-medium text-white">Block rules</h4>
+                        </div>
+                        <p className="mb-2 text-xs text-slate-500">
+                          A message is never published if it matches any block rule.
+                        </p>
+                        {blockFilters.length === 0 ? (
+                          <p className="py-1 text-sm text-slate-500">No block rules.</p>
+                        ) : (
+                          <div>
+                            {blockFilters.map(filter => (
+                              <FilterRow
+                                key={filter.id}
+                                filter={filter}
+                                rolesById={rolesById}
+                                isActive={isActive}
+                                onEdit={() => openEditor('block', filter)}
+                                onDelete={() =>
+                                  setDeleteTarget({ channelId: channel.channelId, filter })
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {addButton('block', 'Add block rule')}
+                      </section>
+
+                      {/* Allow rules */}
+                      <section className="md:pl-6">
+                        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Check className="h-4 w-4 text-green-400" />
+                            <h4 className="text-sm font-medium text-white">Allow rules</h4>
+                          </div>
+                          {allowFilters.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-slate-500">Publish if matching</span>
+                              <SegmentedControl
+                                options={MATCH_MODE_OPTIONS}
+                                value={channel.filterMode}
+                                onChange={mode => handleModeChange(channel.channelId, mode)}
+                                disabled={!isActive || isPending}
+                                size="sm"
+                              />
+                              <span className="text-xs text-slate-500">rules</span>
+                            </div>
+                          )}
+                        </div>
+                        <p className="mb-2 text-xs text-slate-500">
+                          With no allow rules, every message publishes unless a block rule matches.
+                        </p>
+                        {allowFilters.length === 0 ? (
+                          <p className="py-1 text-sm text-slate-500">No allow rules.</p>
+                        ) : (
+                          <div>
+                            {allowFilters.map(filter => (
+                              <FilterRow
+                                key={filter.id}
+                                filter={filter}
+                                rolesById={rolesById}
+                                isActive={isActive}
+                                onEdit={() => openEditor('allow', filter)}
+                                onDelete={() =>
+                                  setDeleteTarget({ channelId: channel.channelId, filter })
+                                }
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {addButton('allow', 'Add allow rule')}
+                      </section>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
         </div>
       )}
 
@@ -296,6 +409,7 @@ export function FilterManager({
           guildId={guildId}
           channelId={editor.channelId}
           channelName={editor.channelName}
+          mode={editor.mode}
           filter={editor.filter}
           roles={roles}
           rolesById={rolesById}
