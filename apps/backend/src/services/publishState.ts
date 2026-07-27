@@ -105,7 +105,18 @@ const getEditionMap = async (
   }
 
   if (misses.length > 0) {
-    const computed = await BotPermissions.getPublishMap(edition, guildId, misses);
+    let computed: Record<string, PublishEntry>;
+    try {
+      computed = await BotPermissions.getPublishMap(edition, guildId, misses);
+    } catch (error) {
+      // REST fallback blipped (Discord/proxy). Degrade to a usable read instead
+      // of throwing (the docstring's "Never throws" contract): default the misses
+      // to not-publishing and skip the write-back so a failure is never persisted.
+      // Self-heals on the next load once the misses recompute successfully.
+      logger.warn(error, `Failed to compute publish-state for guild ${guildId} (${edition})`);
+      for (const channel of misses) map[channel.id] = { canPublish: false, missing: [] };
+      return map;
+    }
     const seeded = misses.map(channel => {
       const entry = computed[channel.id] ?? { canPublish: false, missing: [] };
       map[channel.id] = entry;

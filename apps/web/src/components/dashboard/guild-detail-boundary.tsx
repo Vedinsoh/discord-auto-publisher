@@ -21,8 +21,8 @@ import { ChannelConfigSkeleton } from './skeletons';
 // couple of paced client retries recover them invisibly — the user never sees
 // the error card for a momentary hiccup (ADR 0010). Bounded + manual-after: a
 // persistent outage can't spin an unbounded refresh loop.
-const MAX_AUTO_RETRIES = 2;
-const BACKOFF_MS = [500, 1500, 3000];
+const MAX_AUTO_RETRIES = 3;
+const BACKOFF_MS = [500, 1500, 3000, 5000];
 
 interface GuildDetailBoundaryProps {
   guildId: string;

@@ -32,6 +32,7 @@ const getBotUserId = async (edition: Edition): Promise<Snowflake> => {
 };
 
 const DISCORD_READ_CACHE_TTL_MS = 5 * 60 * 1000;
+const LKG_TTL_MS = 60 * 60 * 1000;
 
 /**
  * In-memory cache for the guild-dashboard read paths (ADR 0007). Keyed by
@@ -49,12 +50,36 @@ const DISCORD_READ_CACHE_TTL_MS = 5 * 60 * 1000;
  */
 const discordReadCache = createTtlCache<unknown>(DISCORD_READ_CACHE_TTL_MS);
 
+/**
+ * Last-known-good store for stale-while-error (ADR 0007 amendment). Holds the
+ * most recent 200 per route for 1h (longer than the 5-min fresh TTL). When a
+ * live fetch on a fresh-cache miss FAILS, `cachedGet` serves this stale value
+ * as a 200 instead of throwing, so a momentary Discord/proxy blip can never turn
+ * a guild-dashboard read into a 500 → "temporarily unavailable" card. Deliberately
+ * NOT cleared by `evictGuildChannels`/`evictGuildRoles`: eviction forces a fresh
+ * fetch for correctness on a membership change; the stale value only surfaces if
+ * that fresh fetch itself fails. Genuine bot-absence is owned upstream by the
+ * presence layer (`healAbsentEditions` throws 409 before any `cachedGet` runs), so
+ * serving stale on ANY error here is safe.
+ */
+const lastKnownGood = createTtlCache<unknown>(LKG_TTL_MS);
+
 const cachedGet = async <T>(edition: Edition, route: `/${string}`): Promise<T> => {
   const cached = discordReadCache.get(route);
   if (cached !== undefined) return cached as T;
-  const result = await restFor(edition).get(route);
-  discordReadCache.set(route, result);
-  return result as T;
+  try {
+    const result = await restFor(edition).get(route);
+    discordReadCache.set(route, result);
+    lastKnownGood.set(route, result);
+    return result as T;
+  } catch (error) {
+    const stale = lastKnownGood.get(route);
+    if (stale !== undefined) {
+      logger.warn(error, `Discord read failed for ${route}; serving last-known-good (stale)`);
+      return stale as T;
+    }
+    throw error;
+  }
 };
 
 /**
