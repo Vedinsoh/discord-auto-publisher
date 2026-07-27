@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { links } from '@/lib/constants';
 import { Button } from '../ui/button';
 import { HeroDemo } from './hero-demo';
+import { InviteBotButton } from './invite-bot-button';
 
 export function Hero() {
   return (
@@ -59,16 +60,14 @@ export function Hero() {
             transition={{ duration: 0.2, delay: 0.5 }}
             className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start justify-center"
           >
-            <Button
+            <InviteBotButton
               size="xl"
               className="group rounded-lg border-0 bg-linear-to-r from-blue-500 to-blue-600 px-8 py-4 text-white shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
-              asChild
+              showDashboardNudge
             >
-              <Link href={links.discordBotInvite} target="_blank">
-                Invite Bot
-                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </Button>
+              Invite Bot
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </InviteBotButton>
 
             <Button
               variant="outline"

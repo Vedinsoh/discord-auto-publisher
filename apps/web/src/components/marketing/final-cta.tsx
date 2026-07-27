@@ -1,8 +1,7 @@
 import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import { links, values } from '@/lib/constants';
+import { values } from '@/lib/constants';
 import { formatNumberFull } from '@/lib/utils';
-import { Button } from '../ui/button';
+import { InviteBotButton } from './invite-bot-button';
 
 /**
  * Closing CTA on the homepage — a single, centered invite card.
@@ -18,16 +17,14 @@ export function FinalCta() {
           Join {formatNumberFull(values.activeServers)} servers already publishing on autopilot.
         </p>
 
-        <Button
+        <InviteBotButton
           size="xl"
           className="group relative z-10 mt-10 rounded-xl border-0 bg-linear-to-r from-blue-500 to-blue-600 px-8 py-4 text-white shadow-lg shadow-blue-500/40 transition-all hover:-translate-y-0.5 hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/60"
-          asChild
+          showDashboardNudge
         >
-          <Link href={links.discordBotInvite} target="_blank">
-            <Plus className="h-5 w-5" />
-            Invite Auto Publisher
-          </Link>
-        </Button>
+          <Plus className="h-5 w-5" />
+          Invite Auto Publisher
+        </InviteBotButton>
 
         {/* Bottom glow */}
         <div

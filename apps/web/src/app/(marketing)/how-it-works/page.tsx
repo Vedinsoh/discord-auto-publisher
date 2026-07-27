@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { CommandsReference } from '@/components/marketing/commands-reference';
 import { FAQ } from '@/components/marketing/faq';
 import { HowItWorks } from '@/components/marketing/how-it-works';
+import { InviteBotButton } from '@/components/marketing/invite-bot-button';
 import { PlanComparison } from '@/components/marketing/plan-comparison';
 import { Button } from '@/components/ui/button';
 import { links } from '@/lib/constants';
@@ -30,16 +31,14 @@ export default function HowItWorksPage() {
           your first invite to commands, permissions, and advanced filters.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button
+          <InviteBotButton
             size="lg"
             className="bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 group"
-            asChild
+            showDashboardNudge
           >
-            <Link href={links.discordBotInvite} target="_blank">
-              Invite Bot
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </Button>
+            Invite Bot
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </InviteBotButton>
           <Link
             href={links.discordSupportServer}
             target="_blank"
