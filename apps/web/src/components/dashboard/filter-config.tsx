@@ -4,6 +4,7 @@ import { Filter as FilterIcon, Hash, Loader2, Lock, Pencil, Plus, Trash2 } from 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import {
   ChannelLimitCta,
   channelLimitReasonFromGuild,
@@ -116,7 +117,8 @@ export function FilterManager({
         router.refresh();
         return;
       }
-      signInOnAuthExpired(result.status);
+      if (signInOnAuthExpired(result.status)) return;
+      toast.error("Couldn't update match mode");
     });
   };
 
@@ -127,10 +129,12 @@ export function FilterManager({
       const result = await removeFilter(guildId, target.channelId, target.filter.id);
       setDeleteTarget(null);
       if (result.ok) {
+        toast.success('Filter deleted');
         router.refresh();
         return;
       }
-      signInOnAuthExpired(result.status);
+      if (signInOnAuthExpired(result.status)) return;
+      toast.error("Couldn't delete the filter", { description: 'Please try again.' });
     });
   };
 

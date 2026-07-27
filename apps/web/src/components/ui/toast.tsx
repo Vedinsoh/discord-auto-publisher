@@ -1,17 +1,10 @@
 'use client';
 
-import { Toaster as Sonner, type ToasterProps } from 'sonner';
+import { Toaster, type ToasterProps } from 'sonner';
 
-/**
- * App toaster, branded to match the marketing/dashboard design system:
- * slate glass card with a faint blue-tinted border + blue glow, and a
- * blue-gradient action button mirroring the site CTAs. Colours are overridden
- * on top of sonner's default layout via `classNames` (Tailwind v4 trailing-`!`
- * important) so its tested positioning/stacking stays intact.
- */
-function Toaster({ ...props }: ToasterProps) {
+function ToastProvider({ ...props }: ToasterProps) {
   return (
-    <Sonner
+    <Toaster
       theme="dark"
       className="toaster group"
       position="bottom-right"
@@ -27,6 +20,9 @@ function Toaster({ ...props }: ToasterProps) {
             'rounded-lg! border! border-slate-700! bg-slate-800! text-slate-300! hover:bg-slate-700! hover:text-white!',
           closeButton:
             'border-[rgba(120,150,255,.15)]! bg-slate-800! text-slate-300! hover:text-white!',
+          success: 'border-l-4! border-l-green-500! [&_[data-icon]]:text-green-400!',
+          error: 'border-l-4! border-l-red-500! [&_[data-icon]]:text-red-400!',
+          warning: 'border-l-4! border-l-amber-500! [&_[data-icon]]:text-amber-400!',
         },
       }}
       {...props}
@@ -34,4 +30,4 @@ function Toaster({ ...props }: ToasterProps) {
   );
 }
 
-export { Toaster };
+export { ToastProvider };

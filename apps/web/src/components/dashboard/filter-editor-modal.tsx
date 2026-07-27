@@ -3,6 +3,7 @@
 import { Check, ChevronDown, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import {
   FILTER_MODE_OPTIONS,
   FILTER_TYPE_OPTIONS,
@@ -112,6 +113,7 @@ export function FilterEditorModal({
 
       if (result.ok) {
         onClose();
+        toast.success(isEdit ? 'Filter updated' : 'Filter added');
         router.refresh();
         return;
       }

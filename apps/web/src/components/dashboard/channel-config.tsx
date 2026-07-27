@@ -3,6 +3,7 @@
 import { Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import { ChannelEnableGuideModal } from '@/components/dashboard/channel-enable-guide';
 import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
 import {
@@ -118,6 +119,22 @@ export function ChannelConfig({
           ? await disableChannel(guildId, channelId)
           : await enableChannel(guildId, channelId);
         if (result.ok) {
+          if (enabled) {
+            toast.success('Channel disabled');
+          } else {
+            const channel = channels.find(c => c.channelId === channelId);
+            // Enabled, but the bot still can't publish here — nudge to the Fix
+            // button (now on the channel's card) instead of a false "all good".
+            if (channel?.canPublish === false) {
+              toast.warning('Channel enabled — but not publishing', {
+                description: `#${channel.name} is missing permissions. Click "Fix" to grant them.`,
+              });
+            } else {
+              toast.success('Channel enabled', {
+                description: channel ? `#${channel.name} will now auto-publish.` : undefined,
+              });
+            }
+          }
           router.refresh();
           window.scrollTo({ top: 0, behavior: 'smooth' });
           return;
@@ -127,6 +144,7 @@ export function ChannelConfig({
         // Disable never hits the channel cap, so a non-auth failure there is a
         // transient error — a refresh re-syncs the toggle to server truth.
         if (enabled) {
+          toast.error("Couldn't update the channel", { description: 'Please try again.' });
           router.refresh();
           return;
         }

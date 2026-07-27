@@ -3,6 +3,7 @@
 import { Hash, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
 import { publishDelayCopy } from '@/components/dashboard/publish-delay-note';
 import { Button } from '@/components/ui/button';
@@ -89,6 +90,7 @@ export function LegacyMigrateModal({
       const result = await migrateGuild(guildId, [...selected]);
       if (result.ok) {
         onClose();
+        toast.success("You're all set", { description: 'Channel setup saved.' });
         router.refresh();
         return;
       }
