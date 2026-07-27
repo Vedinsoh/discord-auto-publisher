@@ -119,7 +119,7 @@ bot-premium ─► proxy-premium ──┘
 
 - **Internal API for both bots + web dashboard API** — owns channel registration, filters, Paddle subscriptions, per-edition bot presence, the premium entitlement gate, and handover orchestration.
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
-- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers, derived from `guild.migratedAt`), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys), `LegacyGuildPerms` (legacy-guild `canPublish` maps, 5 min TTL), `PremiumPending` (handover markers).
+- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers, derived from `guild.migratedAt`), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys), `PublishState` (per-guild publish-state hash, bots push), `PremiumPending` (handover markers).
 - Cache sync on startup (reconciles Redis/Postgres).
 - **Two `@discordjs/rest` clients** (`Discord.restFor(edition)`, tokens `DISCORD_TOKEN_FREE`/`_PREMIUM`), each routed through its edition's proxy (`PROXY_URL_FREE`/`_PREMIUM`); callers pick by managing edition (`Editions.getManagingEdition`).
 - Join orchestration in `Guilds.registerNewGuild(guildId, edition, channels)`: premium not entitled → leave via premium proxy; premium joining while free active → `PremiumPending` marker + immediate handover evaluation; free joining while premium manages → leave via free proxy.
@@ -229,12 +229,13 @@ Single Redis instance, multiple logical DBs (managed via `DatabaseIDs` enum in `
 | 4 | `DiscordAuth` | backend | web auth token cache |
 | 5 | `MigratedGuilds` | backend | v6→v7 migration markers (`migrated_guild:{id}`, no TTL), derived from `guild.migratedAt` |
 | 6 | `PaddleWebhookDedupe` | backend | Paddle webhook idempotency (`paddle_event:{eventId}`, 24h TTL) |
-| 7 | `LegacyGuildPerms` | backend | legacy-guild `canPublish` maps (`legacy_perms:{guildId}`, 5 min TTL); dropped at sunset |
+| 7 | _(retired)_ | — | was `LegacyGuildPerms`; legacy `canPublish` maps now recompute from the backend's in-memory Discord read cache (ADR 0007) |
 | 8 | `Alerts` | shared | alert-webhook per-key throttle markers (`alert:{key}`, 30 min TTL) via `@ap/alerts` |
 | 9 | `CrosspostQueuePremium` | premium proxy | BullMQ |
 | 10 | `SublimitCounterPremium` | premium proxy | per-channel 10/hr counter (1h TTL) |
 | 11 | `BlockedChannelsPremium` | premium proxy | denylist (1h TTL) |
 | 12 | `PremiumPending` | backend (premium bot reads) | handover markers (`premium_pending:{guildId}`, no TTL) |
+| 13 | `PublishState` | backend (bots push, dashboard + gate read) | per-guild publish-state hash (`publish_state:{guildId}`, 14d TTL) — ADR 0008 |
 
 Proxies resolve their DB triple via `ProxyDatabaseIDs[edition]` in `@ap/redis`. Uses SCAN instead of KEYS (production-safe). ioredis client (BullMQ requirement), wrapped by `@ap/redis` factory `createRedisClient(databaseId)`.
 
