@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
+import { legacySunsetLabel } from '@/lib/constants';
 import { guildIconUrl } from '@/lib/discord';
 import { FREE_PLAN_FEATURES, PREMIUM_PLAN_FEATURES } from '@/lib/plans';
 import {
@@ -279,29 +280,32 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-      {/* Left column: current plan + migration gate */}
+      {/* Left column: current plan + migration gate. Legacy guilds see only the
+          setup gate below; migrated free guilds see the Free Plan card. */}
       <div className="space-y-6">
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center shrink-0">
-              <AlertCircle className="w-6 h-6 text-slate-500" />
+        {migrated && (
+          <Card className="bg-slate-900/50 border-slate-800 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-slate-800 rounded-lg flex items-center justify-center shrink-0">
+                <AlertCircle className="w-6 h-6 text-slate-500" />
+              </div>
+              <div>
+                <h3 className="text-white text-lg mb-2">You&apos;re on the Free Plan</h3>
+                <p className="text-slate-400 mb-4">
+                  Upgrade to Premium to unlock advanced features and priority support
+                </p>
+                <ul className="space-y-2">
+                  {freePlanFeatures.map(feature => (
+                    <li key={feature} className="flex items-center gap-2 text-slate-400 text-sm">
+                      <Check className="w-4 h-4 text-slate-600" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <div>
-              <h3 className="text-white text-lg mb-2">You&apos;re on the Free Plan</h3>
-              <p className="text-slate-400 mb-4">
-                Upgrade to Premium to unlock advanced features and priority support
-              </p>
-              <ul className="space-y-2">
-                {freePlanFeatures.map(feature => (
-                  <li key={feature} className="flex items-center gap-2 text-slate-400 text-sm">
-                    <Check className="w-4 h-4 text-slate-600" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {error && (
           <Card className="bg-red-500/10 border-red-500/30 p-4">
@@ -316,10 +320,14 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
               <Lock className="w-6 h-6 text-amber-400 shrink-0 mt-1" />
               <div className="flex-1">
                 <h3 className="text-white text-lg mb-1">Finish channel setup to unlock Premium</h3>
-                <p className="text-slate-300 text-sm mb-4">
+                <p className="text-slate-300 text-sm mb-2">
                   Auto Publisher is currently running in legacy mode, and migration is required to
                   unlock Premium features. Premium adds per-channel filters and control &mdash;
                   which start from choosing which channels to manage.
+                </p>
+                <p className="text-amber-300 text-sm mb-4">
+                  Legacy mode ends on{' '}
+                  <span className="text-white font-semibold">{legacySunsetLabel()}</span>.
                 </p>
                 <Button
                   onClick={() => setMigrateOpen(true)}

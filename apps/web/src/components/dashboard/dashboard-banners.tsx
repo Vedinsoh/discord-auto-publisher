@@ -22,7 +22,7 @@ import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
-import { links } from '@/lib/constants';
+import { legacySunsetLabel, links } from '@/lib/constants';
 import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { useActivationPoll } from '@/lib/use-activation-poll';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
@@ -415,11 +415,14 @@ function LegacyMigrationBanner({
           <Megaphone className="w-6 h-6 text-amber-400 shrink-0 mt-1" />
           <div className="flex-1">
             <h3 className="text-white text-lg mb-1">This server runs in legacy mode</h3>
-            <p className="text-slate-300 text-sm mb-4">
+            <p className="text-slate-300 text-sm mb-2">
               Every announcement channel is published automatically. Legacy mode will be
-              discontinued in the near future, and the bot may stop publishing in this server once
-              it is retired. Migrate now to keep publishing without interruption, choose exactly
-              which channels publish, and unlock new features.
+              discontinued, and the bot may stop publishing in this server once it is retired.
+              Migrate now to keep publishing without interruption, choose exactly which channels
+              publish, and unlock new features.
+            </p>
+            <p className="text-amber-300 text-base font-semibold mb-4">
+              Legacy mode ends on {legacySunsetLabel()}.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Button

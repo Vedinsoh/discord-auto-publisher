@@ -9,7 +9,7 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { links } from '@/lib/constants';
+import { legacySunsetLabel, links } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Migration Guide | Auto Publisher',
@@ -83,6 +83,13 @@ export default function MigrationPage() {
           <p className="text-lg sm:text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
             Your migration guide — what is changing and how to keep your announcements flowing.
           </p>
+          <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
+            <span className="text-base sm:text-lg text-amber-200">
+              Legacy mode ends on{' '}
+              <span className="font-bold text-white">{legacySunsetLabel()}</span> — migrate before
+              then to keep publishing.
+            </span>
+          </div>
         </div>
       </section>
 

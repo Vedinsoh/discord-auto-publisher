@@ -44,6 +44,37 @@ function LegacyChannelView({
   channels: GuildChannel[];
   hasSubscription: boolean;
 }) {
+  // Legacy has no allowlist — "enabled" is derived from Discord permissions:
+  // channels the bot can publish in publish automatically, the rest can't.
+  const enabledChannels = channels.filter(c => c.canPublish);
+  const disabledChannels = channels.filter(c => !c.canPublish);
+
+  const renderCard = (channel: GuildChannel, publishing: boolean) => (
+    <Card
+      key={channel.channelId}
+      className={
+        publishing
+          ? 'bg-green-500/2 border-green-500/40 p-4'
+          : 'bg-slate-900/30 border-slate-800/50 p-4'
+      }
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Megaphone className={`w-5 h-5 ${publishing ? 'text-green-500' : 'text-slate-600'}`} />
+          <span className={`text-md ${publishing ? 'text-white' : 'text-slate-400'}`}>
+            {channel.name}
+          </span>
+          {publishing && (
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+              Auto (legacy)
+            </Badge>
+          )}
+        </div>
+        <Switch checked={publishing} disabled />
+      </div>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -55,28 +86,30 @@ function LegacyChannelView({
         </div>
       </div>
 
-      <div className="space-y-3">
-        {channels.map(channel => (
-          <Card key={channel.channelId} className="bg-slate-900/30 border-slate-800/50 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Megaphone className="w-5 h-5 text-slate-500" />
-                <span className="text-slate-300 text-lg">{channel.name}</span>
-                {channel.canPublish ? (
-                  <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
-                    Auto (legacy)
-                  </Badge>
-                ) : (
-                  <Badge className="bg-slate-800/50 text-slate-500 border-slate-700">
-                    Missing permissions
-                  </Badge>
-                )}
-              </div>
-              <Switch checked={!!channel.canPublish} disabled />
-            </div>
-          </Card>
-        ))}
-      </div>
+      {channels.length > 0 && (
+        <div className="grid md:grid-cols-2 md:divide-x divide-slate-800 gap-6 md:gap-0">
+          <div className="space-y-3 md:pr-6 order-2 md:order-1">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-slate-500">
+              Disabled<span className="ml-3 text-slate-600">{disabledChannels.length}</span>
+            </h3>
+            {disabledChannels.length > 0 ? (
+              <div className="space-y-3">{disabledChannels.map(c => renderCard(c, false))}</div>
+            ) : (
+              <p className="text-slate-600 text-sm py-4">No disabled channels</p>
+            )}
+          </div>
+          <div className="space-y-3 md:pl-6 order-1 md:order-2">
+            <h3 className="text-sm font-medium uppercase tracking-wide text-slate-500">
+              Enabled<span className="ml-3 text-slate-600">{enabledChannels.length}</span>
+            </h3>
+            {enabledChannels.length > 0 ? (
+              <div className="space-y-3">{enabledChannels.map(c => renderCard(c, true))}</div>
+            ) : (
+              <p className="text-slate-600 text-sm py-4">No enabled channels</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {channels.length === 0 && (
         <Card className="bg-slate-900/50 border-slate-800 p-12 text-center">

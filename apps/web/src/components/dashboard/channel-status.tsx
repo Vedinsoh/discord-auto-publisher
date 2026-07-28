@@ -20,6 +20,7 @@ import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
+import { legacySunsetLabel } from '@/lib/constants';
 
 /**
  * Read-only channel status on the Overview tab. Permission-derived from the
@@ -248,12 +249,17 @@ function LegacyStatus({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl text-white mb-2">Channel status</h2>
-        <p className="text-slate-400">
-          Legacy mode — every announcement channel is published automatically.
-        </p>
-      </div>
+      <StatusHeader
+        icon={TriangleAlert}
+        iconColor="text-amber-400"
+        title="Legacy mode"
+        subtitle={
+          <>
+            Every announcement channel is published automatically. Legacy mode ends on{' '}
+            <span className="text-white font-semibold">{legacySunsetLabel()}</span>.
+          </>
+        }
+      />
 
       <div className="space-y-1.5">
         <PublishLimitNote />

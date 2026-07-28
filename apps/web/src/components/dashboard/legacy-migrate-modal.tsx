@@ -1,11 +1,12 @@
 'use client';
 
-import { Hash, Loader2 } from 'lucide-react';
+import { Check, Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
-import { publishDelayCopy } from '@/components/dashboard/publish-delay-note';
+import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -17,6 +18,7 @@ import {
 import { migrateGuild } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { GuildChannel } from '@/lib/api/types';
+import { legacySunsetLabel } from '@/lib/constants';
 
 // MIGRATION: Remove this component after migration period (6 months)
 
@@ -44,8 +46,8 @@ function overSelectedMessage(
     return `Premium is activating — the free bot covers ${limit} channels until the Premium bot can publish everywhere. Grant it permission in the Channels tab to unlock unlimited channels, or deselect some.`;
   }
   // No "upgrade now" here: on a legacy/unsubscribed guild the upgrade is gated
-  // behind finishing this switch, so the CTA is "switch now, upgrade right after".
-  return `You can enable up to ${limit} channels now. Deselect some to switch — right after, you can upgrade to Premium to add unlimited channels.`;
+  // behind finishing migration, so the CTA is "migrate now, upgrade right after".
+  return `You can enable up to ${limit} channels now. Deselect some to migrate — right after, you can upgrade to Premium to add unlimited channels.`;
 }
 
 export function LegacyMigrateModal({
@@ -104,19 +106,40 @@ export function LegacyMigrateModal({
     <Dialog
       open
       onOpenChange={open => {
-        // Don't let a stray backdrop/ESC close mid-migration.
+        // Don't let a stray ESC close mid-migration.
         if (!open && !isPending) onClose();
       }}
     >
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0">
+      <DialogContent
+        className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0"
+        // Migration is a deliberate action — a backdrop click must not dismiss it.
+        onInteractOutside={event => event.preventDefault()}
+      >
         <DialogHeader className="p-6 pb-4 pr-10">
-          <DialogTitle>Switch to the new system</DialogTitle>
+          <DialogTitle>Migrate to the new system</DialogTitle>
           <DialogDescription>
             {overLimit
               ? `${publishableCount} channels currently auto-publish. Only ${limit} can keep publishing right now — choose which ones.`
               : 'Channels the bot currently publishes in are preselected. Unselected channels will stop publishing.'}
           </DialogDescription>
+          <p className="text-slate-400 text-sm mt-2">
+            Legacy mode ends on{' '}
+            <span className="text-white font-semibold">{legacySunsetLabel()}</span>.
+          </p>
         </DialogHeader>
+
+        {channels.length > 0 && (
+          <div className="px-6 pb-2 flex items-center justify-between">
+            <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Channels
+            </span>
+            <span
+              className={`text-sm font-medium ${overSelected ? 'text-amber-400' : 'text-slate-300'}`}
+            >
+              {limit !== null ? `${selected.size}/${limit} selected` : `${selected.size} selected`}
+            </span>
+          </div>
+        )}
 
         <div className="px-6 space-y-2 overflow-y-auto flex-1">
           {channels.map(channel => {
@@ -133,31 +156,31 @@ export function LegacyMigrateModal({
                 }`}
               >
                 <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                    checked ? 'bg-blue-500 border-blue-500' : 'border-slate-500'
+                  className={`size-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                    checked ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-500'
                   }`}
                 >
-                  {checked && <span className="w-2 h-2 bg-white rounded-sm" />}
+                  {checked && <Check className="size-3.5" />}
                 </span>
-                <Hash className="w-4 h-4 text-slate-500 shrink-0" />
+                <Megaphone className="w-4 h-4 text-slate-500 shrink-0" />
                 <span className="text-white truncate">{channel.name}</span>
                 {!channel.canPublish && (
-                  <span className="text-slate-500 text-xs ml-auto shrink-0">
-                    missing permissions
-                  </span>
+                  <Badge className="ml-auto shrink-0 bg-slate-800/50 text-slate-500 border-slate-700">
+                    Missing permissions
+                  </Badge>
                 )}
               </button>
             );
           })}
           {channels.length === 0 && (
             <p className="text-slate-500 text-sm py-4 text-center">
-              No announcement channels found. You can still switch now and enable channels later.
+              No announcement channels found. You can still migrate now and enable channels later.
             </p>
           )}
         </div>
 
         <div className="p-6 pt-4 space-y-3">
-          <p className="text-slate-500 text-sm">{publishDelayCopy(hasSubscription)}</p>
+          <PublishDelayNote hasSubscription={hasSubscription} />
           {overSelected && limit !== null && (
             <p className="text-amber-400 text-sm">
               {overSelectedMessage(limit, { hasSubscription, premiumBotPresent, premiumPending })}
@@ -179,7 +202,7 @@ export function LegacyMigrateModal({
               className="bg-blue-600 hover:bg-blue-500 text-white"
             >
               {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Switch ({selected.size} {selected.size === 1 ? 'channel' : 'channels'})
+              Migrate
             </Button>
           </div>
         </div>
