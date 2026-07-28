@@ -52,9 +52,10 @@ export function usePaddle({ onCompleted, onLoaded, settings }: UsePaddleOptions 
     initializePaddle({
       token: CLIENT_TOKEN,
       environment: ENVIRONMENT,
-      // Settings must live here: they are ignored by Checkout.open() when a
-      // transactionId is passed, and the default-payment-link auto-open (?_ptxn)
-      // reads them too. showAddTaxId keeps the "Add tax number" (business/VAT)
+      // Global defaults for every checkout on the route. Callers that open
+      // imperatively (Checkout.open) also pass settings there, which win — but
+      // keeping the inline defaults here means a Paddle-triggered flow still
+      // renders correctly. showAddTaxId keeps the "Add tax number" (business/VAT)
       // option available; note it only renders when the checkout actually shows a
       // collection step — a transaction pre-bound to a customer with a complete
       // address skips collection entirely (see the checkout route's customerId

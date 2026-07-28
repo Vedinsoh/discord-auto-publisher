@@ -5,19 +5,27 @@ import { Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { usePaddle } from '@/lib/paddle';
 
 // Paddle.js injects the inline checkout iframe into the element matching this class
-// (frameTarget). It must be in the DOM before the ?_ptxn auto-open fires.
+// (frameTarget). It must be in the DOM before we open the checkout.
 const CHECKOUT_CONTAINER_CLASS = 'checkout-container';
 
 /**
  * Paddle default payment link host. Every customer-facing Paddle link (abandoned
  * checkout recovery ?_paction=recovery, past-due payment-method updates, any
- * API-generated checkout.url) points here with ?_ptxn={transactionId}. Loading
- * Paddle.js with inline settings makes it auto-open that transaction inline — no
- * imperative Checkout.open(). We act on _ptxn only and ignore _paction.
+ * API-generated checkout.url) points here with ?_ptxn={transactionId}. We read
+ * _ptxn and open it inline via Checkout.open() once the Paddle instance is ready.
+ * We ignore _paction.
+ *
+ * We open imperatively rather than leaning on Paddle.js's load-time ?_ptxn
+ * auto-open: that auto-open only fires during the CDN script's initial bootstrap
+ * (once per hard page load) and does NOT re-fire on client-side navigation —
+ * initializePaddle() on an already-loaded instance just updates it. So a second
+ * SPA visit to /checkout (back → upgrade again, or a router-cache restore) would
+ * mount an empty container until a manual refresh. Opening on the instance covers
+ * every mount: hard load, SPA nav, and Paddle-sent recovery/dunning links alike.
  *
  * Fulfillment is webhook-driven regardless of this page; the UX just deposits the
  * customer back into the funnel.
@@ -62,7 +70,7 @@ function CheckoutInner() {
 
   // No page-level loader: Paddle's inline frame renders its own spinner while it
   // loads, so a second one here just doubles up.
-  usePaddle({
+  const paddle = usePaddle({
     onCompleted,
     settings: {
       displayMode: 'inline',
@@ -72,10 +80,30 @@ function CheckoutInner() {
     },
   });
 
-  // No transaction to resume — nothing for Paddle.js to open. Send home.
+  // Guards against a duplicate Checkout.open() from React re-renders / StrictMode
+  // double-invoke; keyed on the transaction so a new checkout re-opens.
+  const openedForRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!transactionId) router.replace('/');
-  }, [transactionId, router]);
+    // No transaction to resume — nothing to open. Send home.
+    if (!transactionId) {
+      router.replace('/');
+      return;
+    }
+    // Wait for the Paddle instance; the effect re-runs once it resolves.
+    if (!paddle) return;
+    if (openedForRef.current === transactionId) return;
+    openedForRef.current = transactionId;
+    paddle.Checkout.open({
+      transactionId,
+      settings: {
+        displayMode: 'inline',
+        frameTarget: CHECKOUT_CONTAINER_CLASS,
+        frameInitialHeight: 450,
+        frameStyle: 'width: 100%; min-width: 312px; background-color: transparent; border: none;',
+      },
+    });
+  }, [paddle, transactionId, router]);
 
   if (genericSuccess) {
     return (
