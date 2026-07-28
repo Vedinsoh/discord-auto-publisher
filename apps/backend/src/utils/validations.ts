@@ -1,4 +1,9 @@
-import { CreateFilterSchema, FilterMatchModeSchema, Validations } from '@ap/validations';
+import {
+  CreateFilterSchema,
+  FilterMatchModeSchema,
+  SetChannelFiltersSchema,
+  Validations,
+} from '@ap/validations';
 import { z } from 'zod';
 
 export const ChannelReqSchema = z.object({
@@ -134,40 +139,14 @@ export const SetFilterModeReqSchema = z.object({
   }),
 });
 
-// Guild-scoped filter schemas for the authenticated dashboard API. Unlike the
-// internal channel routes above, these carry guildId so the handler can verify
-// the channel belongs to the requester's guild before mutating filters.
-export const GuildAddFilterReqSchema = z.object({
+// Guild-scoped rule replacement for the authenticated dashboard API. Unlike the
+// internal channel routes above, this carries guildId so the handler can verify
+// the channel belongs to the requester's guild before mutating filters. The
+// dashboard inline builder saves the whole rule atomically.
+export const GuildSetChannelFiltersReqSchema = z.object({
   params: z.object({
     guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
   }),
-  body: CreateFilterSchema,
-});
-
-export const GuildUpdateFilterReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-    filterId: z.string(),
-  }),
-  body: CreateFilterSchema,
-});
-
-export const GuildRemoveFilterReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-    filterId: z.string(),
-  }),
-});
-
-export const GuildSetFilterModeReqSchema = z.object({
-  params: z.object({
-    guildId: Validations.snowflakeId,
-    channelId: Validations.snowflakeId,
-  }),
-  body: z.object({
-    mode: FilterMatchModeSchema,
-  }),
+  body: SetChannelFiltersSchema,
 });

@@ -13,7 +13,8 @@ import {
 export type ChannelFilter = {
   id: string;
   type: string;
-  mode: string;
+  // true = negated operator ("doesn't contain"/"is not")
+  negate: boolean;
   values: string[];
   createdAt: Date;
 };
@@ -68,7 +69,9 @@ export const channel = pgTable(
       .notNull()
       .references(() => guild.guildId, { onDelete: 'cascade' }),
     filters: jsonb('filters').$type<ChannelFilter[]>().default([]).notNull(),
-    filterMode: text('filter_mode').default('any').notNull(),
+    // How this channel's conditions combine (any = OR, all = AND). Default 'all':
+    // the common intent is "publish only messages that satisfy every condition".
+    filterMode: text('filter_mode').default('all').notNull(),
     // NULL = serving. Set by the system trim when a guild drops to free-managed
     // over its 3-channel limit: the row + config are retained but the channel is
     // absent from the Channels allowlist and excluded from the limit count.

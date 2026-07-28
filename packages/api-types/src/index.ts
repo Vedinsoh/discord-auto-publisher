@@ -1,6 +1,6 @@
-import type { FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
+import type { FilterMatchMode, FilterType } from '@ap/validations';
 
-export type { FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
+export type { FilterMatchMode, FilterType } from '@ap/validations';
 
 /** App edition identifier */
 export type Edition = 'free' | 'premium';
@@ -40,11 +40,12 @@ export interface GuildRole {
   color: number;
 }
 
-/** Channel filter rule (JSON-serialized) */
+/** Channel filter condition (JSON-serialized) */
 export interface ChannelFilterRule {
   id: string;
   type: FilterType;
-  mode: FilterMode;
+  /** true = negated operator ("doesn't contain"/"is not"); replaces the old allow/block mode */
+  negate: boolean;
   values: string[];
   createdAt: string;
 }

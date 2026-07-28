@@ -11,7 +11,7 @@ CREATE TABLE "channel" (
 	"channel_id" text PRIMARY KEY NOT NULL,
 	"guild_id" text NOT NULL,
 	"filters" jsonb DEFAULT '[]'::jsonb NOT NULL,
-	"filter_mode" text DEFAULT 'any' NOT NULL,
+	"filter_mode" text DEFAULT 'all' NOT NULL,
 	"paused_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL

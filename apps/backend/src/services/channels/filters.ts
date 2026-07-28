@@ -23,14 +23,15 @@ const add = async (channelId: Snowflake, filterData: CreateFilter): Promise<Filt
     if (channel.filters.length >= config.limits.filtersPerChannel) {
       throw createHttpError(
         `Maximum ${config.limits.filtersPerChannel} filters per channel`,
-        StatusCodes.BAD_REQUEST
+        StatusCodes.BAD_REQUEST,
+        'FILTER_LIMIT'
       );
     }
 
     const filter: Filter = {
       id: randomUUID(),
       type: filterData.type,
-      mode: filterData.mode,
+      negate: filterData.negate ?? false,
       values: filterData.values,
       createdAt: new Date(),
     };
@@ -110,12 +111,12 @@ const update = async (
 
     await ChannelOps.updateFilter(channelId, filterId, {
       type: filterData.type,
-      mode: filterData.mode,
+      negate: filterData.negate,
       values: filterData.values,
     });
 
     logger.debug(
-      `Updated filter ${filterId} in channel ${channelId}: ${filterData.type} - ${filterData.mode}`
+      `Updated filter ${filterId} in channel ${channelId}: ${filterData.type} - negate=${filterData.negate}`
     );
   } catch (error) {
     if (error instanceof HttpError) throw error;

@@ -157,11 +157,11 @@ export class APCommand extends Subcommand {
             .addSubcommand(subcommand =>
               subcommand //
                 .setName('mode')
-                .setDescription('Set filter mode for a channel')
+                .setDescription('Set how a channel’s conditions combine (any/all)')
                 .addChannelOption(option =>
                   option //
                     .setName('channel')
-                    .setDescription('The announcement channel to set filter mode for')
+                    .setDescription('The announcement channel to set the match mode for')
                     .setRequired(true)
                     .addChannelTypes([ChannelType.GuildAnnouncement])
                 )

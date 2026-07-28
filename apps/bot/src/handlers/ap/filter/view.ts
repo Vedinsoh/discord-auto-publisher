@@ -1,5 +1,5 @@
 import { capitalize } from '@ap/utils';
-import { type Filter, FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
+import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -16,6 +16,7 @@ import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
 import { logger } from 'utils/logger.js';
+import { operatorLabel } from './operator.js';
 
 export async function chatInputFilterView(
   this: Subcommand,
@@ -100,8 +101,8 @@ export async function chatInputFilterView(
           : filter.values[0];
 
       return {
-        emoji: filter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark,
-        label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
+        emoji: filter.negate ? emojis.crossmark : emojis.checkmark,
+        label: `${capitalize(filter.type)} — ${operatorLabel(filter.type, filter.negate)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
       };
@@ -114,16 +115,16 @@ export async function chatInputFilterView(
 
     const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
-    const filterMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.Any;
+    const filterMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.All;
     const modeDescription =
       filterMode === FilterMatchMode.Any
-        ? 'Messages pass if **at least one** allow filter matches'
-        : 'Messages pass only if **all** allow filters match';
+        ? 'A message publishes if it matches **any** condition'
+        : 'A message publishes only if it matches **all** conditions';
 
     const selectContainer = new ContainerBuilder()
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `**Filter mode:** ${filterMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}\n-# ${modeDescription}`
+          `**Match mode:** ${filterMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}\n-# ${modeDescription}`
         )
       )
       .addSeparatorComponents(separator => separator)
@@ -175,7 +176,7 @@ export async function chatInputFilterView(
       // Show filter details
       const detailsContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `### Filter Details for <#${channel.id}>\n\n**Type:** ${capitalize(selectedFilter.type)}${valueCount}\n**Mode:** ${selectedFilter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark} ${capitalize(selectedFilter.mode)}\n**Values:** ${displayValues}\n\n-# Use </ap filter edit:${interaction.commandId}> to edit or </ap filter remove:${interaction.commandId}> to remove this filter.`
+          `### Filter Details for <#${channel.id}>\n\n**Condition:** ${selectedFilter.negate ? emojis.crossmark : emojis.checkmark} ${capitalize(selectedFilter.type)} ${operatorLabel(selectedFilter.type, selectedFilter.negate).toLowerCase()}${valueCount}\n**Values:** ${displayValues}\n\n-# Use </ap filter edit:${interaction.commandId}> to edit or </ap filter remove:${interaction.commandId}> to remove this filter.`
         )
       );
 

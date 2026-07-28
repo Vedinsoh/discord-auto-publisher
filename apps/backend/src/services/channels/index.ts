@@ -1,12 +1,15 @@
+import { randomUUID } from 'node:crypto';
+import { config } from '@ap/config';
 import { channel as channelTable, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
-import { FilterMatchMode } from '@ap/validations';
+import { type CreateFilter, type Filter, FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
 import { Editions } from 'services/editions.js';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
+import * as ChannelOps from './operations.js';
 
 /**
  * Initialize channels cache from DB
@@ -47,7 +50,7 @@ const initialize = async () => {
         batch.map(c => ({
           channelId: c.channelId,
           filters: c.filters,
-          filterMode: c.filterMode || FilterMatchMode.Any,
+          filterMode: c.filterMode || FilterMatchMode.All,
         }))
       );
 
@@ -158,7 +161,7 @@ const get = async (channelId: Snowflake) => {
         enabled: true,
         channelId,
         filters: cached.filters || [],
-        filterMode: cached.filterMode || FilterMatchMode.Any,
+        filterMode: cached.filterMode || FilterMatchMode.All,
       };
     }
 
@@ -176,14 +179,14 @@ const get = async (channelId: Snowflake) => {
       await Data.Channels.Cache.set(
         channelId,
         dbChannel.filters || [],
-        (dbChannel.filterMode as FilterMatchMode) || FilterMatchMode.Any
+        (dbChannel.filterMode as FilterMatchMode) || FilterMatchMode.All
       );
 
       return {
         enabled: true,
         channelId,
         filters: dbChannel.filters || [],
-        filterMode: dbChannel.filterMode || FilterMatchMode.Any,
+        filterMode: dbChannel.filterMode || FilterMatchMode.All,
       };
     }
 
@@ -232,7 +235,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
     await Data.Channels.Cache.set(
       channelId,
       existing.filters ?? [],
-      (existing.filterMode as FilterMatchMode) || FilterMatchMode.Any
+      (existing.filterMode as FilterMatchMode) || FilterMatchMode.All
     );
     logger.debug(`Unpaused channel ${channelId} for guild ${guildId}`);
     return;
@@ -258,7 +261,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
 
     await db.insert(channelTable).values({ channelId, guildId, filters: [] });
     dbCreated = true;
-    await Data.Channels.Cache.set(channelId, [], FilterMatchMode.Any);
+    await Data.Channels.Cache.set(channelId, [], FilterMatchMode.All);
 
     // MIGRATION: Mark guild as migrated (first channel enable)
     // TODO: Remove this call after migration period (6 months)
@@ -315,9 +318,10 @@ const countByGuild = async (guildId: Snowflake) => {
 };
 
 /**
- * Set filter mode for channel
+ * Set filter mode for channel (how conditions combine: any/all).
+ * Still used by the `/ap filter mode` Discord command; the dashboard uses setFilters.
  * @param channelId ID of the channel
- * @param mode Filter mode (FilterMatchMode.Any or 'all')
+ * @param mode Filter match mode ('any' or 'all')
  */
 const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode): Promise<void> => {
   try {
@@ -359,6 +363,54 @@ const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode): Promi
 };
 
 /**
+ * Atomically replace a channel's whole rule (match mode + all conditions).
+ * Powers the dashboard inline builder. Enforces the per-channel cap with a
+ * structured `FILTER_LIMIT` code so the UI can toast it.
+ * @param channelId ID of the channel
+ * @param matchMode How the conditions combine (any/all)
+ * @param conditions Full replacement condition list
+ */
+const setFilters = async (
+  channelId: Snowflake,
+  matchMode: FilterMatchMode,
+  conditions: CreateFilter[]
+): Promise<void> => {
+  try {
+    const ch = await find(channelId);
+
+    if (!ch) {
+      throw createHttpError('Channel not found', StatusCodes.NOT_FOUND);
+    }
+
+    if (conditions.length > config.limits.filtersPerChannel) {
+      throw createHttpError(
+        `Maximum ${config.limits.filtersPerChannel} filters per channel`,
+        StatusCodes.BAD_REQUEST,
+        'FILTER_LIMIT'
+      );
+    }
+
+    const now = new Date();
+    const filters: Filter[] = conditions.map(condition => ({
+      id: randomUUID(),
+      type: condition.type,
+      negate: condition.negate ?? false,
+      values: condition.values,
+      createdAt: now,
+    }));
+
+    await ChannelOps.setFilters(channelId, filters, matchMode);
+    logger.debug(
+      `Replaced filters for channel ${channelId}: ${filters.length} conditions, mode=${matchMode}`
+    );
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    logger.error(error);
+    throw new Error('Failed to set filters');
+  }
+};
+
+/**
  * Get size of the channels cache
  * @returns Size of the cache
  */
@@ -374,6 +426,7 @@ export const Channels = {
   remove,
   countByGuild,
   setFilterMode,
+  setFilters,
   getSize,
   Filters,
 };

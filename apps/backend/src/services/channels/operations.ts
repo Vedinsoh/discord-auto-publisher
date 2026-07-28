@@ -43,7 +43,7 @@ export const addFilter = async (channelId: Snowflake, filter: Filter) => {
     await Data.Channels.Cache.updateFilters(
       channelId,
       updatedFilters,
-      (ch.filterMode as FilterMatchMode) || FilterMatchMode.Any
+      (ch.filterMode as FilterMatchMode) || FilterMatchMode.All
     );
   } catch (error) {
     // If DB update succeeded but cache update failed, rollback DB
@@ -83,7 +83,7 @@ export const removeFilter = async (channelId: Snowflake, filterId: string) => {
     await Data.Channels.Cache.updateFilters(
       channelId,
       updatedFilters,
-      (ch.filterMode as FilterMatchMode) || FilterMatchMode.Any
+      (ch.filterMode as FilterMatchMode) || FilterMatchMode.All
     );
   } catch (error) {
     // If DB update succeeded but cache update failed, rollback DB
@@ -127,7 +127,7 @@ export const updateFilter = async (
   updatedFilters[filterIndex] = {
     id: existingFilter.id,
     type: filterData.type ?? existingFilter.type,
-    mode: filterData.mode ?? existingFilter.mode,
+    negate: filterData.negate ?? existingFilter.negate,
     values: filterData.values ?? existingFilter.values,
     createdAt: existingFilter.createdAt,
   };
@@ -143,7 +143,7 @@ export const updateFilter = async (
     await Data.Channels.Cache.updateFilters(
       channelId,
       updatedFilters,
-      (ch.filterMode as FilterMatchMode) || FilterMatchMode.Any
+      (ch.filterMode as FilterMatchMode) || FilterMatchMode.All
     );
   } catch (error) {
     // If DB update succeeded but cache update failed, rollback DB
@@ -151,6 +151,48 @@ export const updateFilter = async (
       await db
         .update(channelTable)
         .set({ filters: ch.filters })
+        .where(eq(channelTable.channelId, channelId))
+        .catch(() => {});
+    }
+    logger.error(error);
+    throw error;
+  }
+};
+
+/**
+ * Atomically replace a channel's whole rule (conditions + match mode). Powers the
+ * dashboard inline builder — one DB write + one cache write, with DB rollback if the
+ * cache write fails.
+ * @param channelId ID of the channel
+ * @param filters Full replacement condition list
+ * @param filterMode How the conditions combine (any/all)
+ */
+export const setFilters = async (
+  channelId: Snowflake,
+  filters: Filter[],
+  filterMode: FilterMatchMode
+) => {
+  const ch = await find(channelId);
+
+  if (!ch) {
+    throw new Error('Channel not found');
+  }
+
+  let dbUpdated = false;
+
+  try {
+    await db
+      .update(channelTable)
+      .set({ filters, filterMode })
+      .where(eq(channelTable.channelId, channelId));
+    dbUpdated = true;
+    await Data.Channels.Cache.updateFilters(channelId, filters, filterMode);
+  } catch (error) {
+    // If DB update succeeded but cache update failed, rollback DB
+    if (dbUpdated) {
+      await db
+        .update(channelTable)
+        .set({ filters: ch.filters, filterMode: ch.filterMode })
         .where(eq(channelTable.channelId, channelId))
         .catch(() => {});
     }

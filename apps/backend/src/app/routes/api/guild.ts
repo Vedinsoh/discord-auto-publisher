@@ -8,7 +8,7 @@ import {
   sendErrorResponse,
   validateRequest,
 } from '@ap/express';
-import type { CreateFilter } from '@ap/validations';
+import type { SetChannelFilters } from '@ap/validations';
 import { DiscordAPIError, HTTPError } from '@discordjs/rest';
 import { type APIChannel, type APIRole, ChannelType, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
@@ -17,13 +17,10 @@ import { Services } from 'services/index.js';
 import { isEntitledStatus } from 'services/subscriptions.js';
 import { logger } from 'utils/logger.js';
 import {
-  GuildAddFilterReqSchema,
   GuildChannelReqSchema,
   GuildMigrateReqSchema,
-  GuildRemoveFilterReqSchema,
   GuildReqSchema,
-  GuildSetFilterModeReqSchema,
-  GuildUpdateFilterReqSchema,
+  GuildSetChannelFiltersReqSchema,
   SubscriptionCheckoutReqSchema,
 } from 'utils/validations.js';
 
@@ -194,7 +191,7 @@ export const GuildApi: Router = (() => {
           type: c.type,
           enabled: serving,
           filters: record?.filters ?? [],
-          filterMode: record?.filterMode ?? 'any',
+          filterMode: record?.filterMode ?? 'all',
           canPublish: publish?.canPublish ?? false,
           ...(premiumBlockedIds ? { premiumBotHasPermissions: !premiumBlockedIds.has(c.id) } : {}),
           ...(record?.pausedAt ? { hasSavedSetup: true } : {}),
@@ -358,114 +355,32 @@ export const GuildApi: Router = (() => {
   });
 
   /**
-   * POST /api/guild/:guildId/channel/:channelId/filter
-   * Add a filter to a channel. Premium-active + guild-ownership gated; the
-   * 5-filter cap and value validation are enforced by the service + schema.
-   */
-  router.post(
-    '/channel/:channelId/filter',
-    validateRequest(GuildAddFilterReqSchema),
-    async (req, res) => {
-      const { guildId, channelId } = req.params;
-      const filterData: CreateFilter = req.body;
-
-      try {
-        await assertPremiumActive(guildId);
-        await requireOwnedServingChannel(guildId, channelId);
-
-        const filter = await Services.Channels.Filters.add(channelId, filterData);
-
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: { success: true, filter },
-          message: 'Filter added successfully',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to add filter');
-      }
-    }
-  );
-
-  /**
-   * PUT /api/guild/:guildId/channel/:channelId/filter/:filterId
-   * Replace a filter's type/mode/values. Premium-active + guild-ownership gated.
+   * PUT /api/guild/:guildId/channel/:channelId/filters
+   * Atomically replace a channel's whole rule (match mode + all conditions) from
+   * the dashboard inline builder. Premium-active + guild-ownership gated. The
+   * per-channel cap is enforced by the service, which returns a `FILTER_LIMIT`
+   * code the dashboard maps to a toast.
    */
   router.put(
-    '/channel/:channelId/filter/:filterId',
-    validateRequest(GuildUpdateFilterReqSchema),
+    '/channel/:channelId/filters',
+    validateRequest(GuildSetChannelFiltersReqSchema),
     async (req, res) => {
-      const { guildId, channelId, filterId } = req.params;
-      const filterData: CreateFilter = req.body;
+      const { guildId, channelId } = req.params;
+      const { matchMode, conditions } = req.body as SetChannelFilters;
 
       try {
         await assertPremiumActive(guildId);
         await requireOwnedServingChannel(guildId, channelId);
 
-        await Services.Channels.Filters.update(channelId, filterId, filterData);
+        await Services.Channels.setFilters(channelId, matchMode, conditions);
 
         res.status(StatusCodes.OK).json({
           status: StatusCodes.OK,
           data: { success: true },
-          message: 'Filter updated successfully',
+          message: 'Filters updated successfully',
         } as APIResponse);
       } catch (error) {
-        sendErrorResponse(res, error, 'Failed to update filter');
-      }
-    }
-  );
-
-  /**
-   * DELETE /api/guild/:guildId/channel/:channelId/filter/:filterId
-   * Remove a filter. Premium-active + guild-ownership gated.
-   */
-  router.delete(
-    '/channel/:channelId/filter/:filterId',
-    validateRequest(GuildRemoveFilterReqSchema),
-    async (req, res) => {
-      const { guildId, channelId, filterId } = req.params;
-
-      try {
-        await assertPremiumActive(guildId);
-        await requireOwnedServingChannel(guildId, channelId);
-
-        await Services.Channels.Filters.remove(channelId, filterId);
-
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: { success: true },
-          message: 'Filter removed successfully',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to remove filter');
-      }
-    }
-  );
-
-  /**
-   * PUT /api/guild/:guildId/channel/:channelId/filter-mode
-   * Set how a channel's allow filters combine (any/all). Premium-active +
-   * guild-ownership gated.
-   */
-  router.put(
-    '/channel/:channelId/filter-mode',
-    validateRequest(GuildSetFilterModeReqSchema),
-    async (req, res) => {
-      const { guildId, channelId } = req.params;
-      const { mode } = req.body;
-
-      try {
-        await assertPremiumActive(guildId);
-        await requireOwnedServingChannel(guildId, channelId);
-
-        await Services.Channels.setFilterMode(channelId, mode);
-
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: { success: true, mode },
-          message: 'Filter mode updated successfully',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to update filter mode');
+        sendErrorResponse(res, error, 'Failed to update filters');
       }
     }
   );

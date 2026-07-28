@@ -1,5 +1,5 @@
 import { capitalize } from '@ap/utils';
-import { type Filter, FilterMode, FilterType } from '@ap/validations';
+import { type Filter, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -18,6 +18,7 @@ import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
 import { logger } from 'utils/logger.js';
+import { operatorLabel } from './operator.js';
 
 export async function chatInputFilterRemove(
   this: Subcommand,
@@ -103,8 +104,8 @@ export async function chatInputFilterRemove(
           : filter.values[0];
 
       return {
-        emoji: filter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark,
-        label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
+        emoji: filter.negate ? emojis.crossmark : emojis.checkmark,
+        label: `${capitalize(filter.type)} — ${operatorLabel(filter.type, filter.negate)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
       };
@@ -178,12 +179,11 @@ export async function chatInputFilterRemove(
         cancelButton
       );
 
-      const modeEmoji =
-        selectedFilter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark;
+      const conditionEmoji = selectedFilter.negate ? emojis.crossmark : emojis.checkmark;
 
       const confirmContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `Are you sure you want to remove this filter from <#${channel.id}>?\n\n**Type:** ${capitalize(selectedFilter.type)}${valueCount}\n**Mode:** ${modeEmoji} ${capitalize(selectedFilter.mode)}\n**Values:** ${displayValues}`
+          `Are you sure you want to remove this filter from <#${channel.id}>?\n\n**Condition:** ${conditionEmoji} ${capitalize(selectedFilter.type)} ${operatorLabel(selectedFilter.type, selectedFilter.negate).toLowerCase()}${valueCount}\n**Values:** ${displayValues}`
         )
       );
 

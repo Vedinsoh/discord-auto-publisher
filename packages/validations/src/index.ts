@@ -20,11 +20,7 @@ export const FilterType = {
   Webhook: 'webhook',
 } as const;
 
-export const FilterMode = {
-  Allow: 'allow',
-  Block: 'block',
-} as const;
-
+// How a channel's conditions combine: Any = OR, All = AND.
 export const FilterMatchMode = {
   Any: 'any',
   All: 'all',
@@ -32,18 +28,18 @@ export const FilterMatchMode = {
 
 // Type exports for type-checking
 export type FilterType = (typeof FilterType)[keyof typeof FilterType];
-export type FilterMode = (typeof FilterMode)[keyof typeof FilterMode];
 export type FilterMatchMode = (typeof FilterMatchMode)[keyof typeof FilterMatchMode];
 
 // Filter validation schemas
 export const FilterTypeSchema = z.enum(Object.values(FilterType));
-export const FilterModeSchema = z.enum(Object.values(FilterMode));
 export const FilterMatchModeSchema = z.enum(Object.values(FilterMatchMode));
 
 export const FilterSchema = z.object({
   id: z.string(),
   type: FilterTypeSchema,
-  mode: FilterModeSchema,
+  // Negative form of the operator: false = "contains"/"is", true = "doesn't contain"/"is not".
+  // Replaces the old allow/block mode — "block X" is now a negated condition.
+  negate: z.boolean(),
   values: z.array(z.string().min(1).max(200)),
   createdAt: z.date(),
 });
@@ -57,7 +53,7 @@ const isNoOpKeyword = (value: string): boolean => {
 export const CreateFilterSchema = z
   .object({
     type: FilterTypeSchema,
-    mode: FilterModeSchema,
+    negate: z.boolean().default(false),
     values: z.array(z.string().min(1).max(200)).min(1, 'At least one value is required'),
   })
   .refine(
@@ -80,5 +76,16 @@ export const CreateFilterSchema = z
     message: 'A keyword cannot be empty or only wildcards',
   });
 
+/**
+ * Atomic replace of a channel's whole rule (dashboard inline builder). The friendly
+ * per-channel cap is enforced in the service so it can return a structured code; the
+ * cap here is only an abuse safety net.
+ */
+export const SetChannelFiltersSchema = z.object({
+  matchMode: FilterMatchModeSchema,
+  conditions: z.array(CreateFilterSchema).max(200),
+});
+
 export type Filter = z.infer<typeof FilterSchema>;
 export type CreateFilter = z.infer<typeof CreateFilterSchema>;
+export type SetChannelFilters = z.infer<typeof SetChannelFiltersSchema>;

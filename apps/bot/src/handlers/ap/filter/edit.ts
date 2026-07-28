@@ -1,5 +1,5 @@
 import { capitalize, normalizeFilterValues } from '@ap/utils';
-import { type Filter, FilterMode, FilterType } from '@ap/validations';
+import { type Filter, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -14,7 +14,6 @@ import {
   type ModalSubmitInteraction,
   StringSelectMenuBuilder,
   type StringSelectMenuInteraction,
-  StringSelectMenuOptionBuilder,
   TextInputBuilder,
   TextInputStyle,
   UserSelectMenuBuilder,
@@ -23,6 +22,7 @@ import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
 import { logger } from 'utils/logger.js';
+import { buildOperatorLabel, extractNegate, operatorLabel } from './operator.js';
 
 export async function chatInputFilterEdit(
   this: Subcommand,
@@ -108,8 +108,8 @@ export async function chatInputFilterEdit(
           : filter.values[0];
 
       return {
-        emoji: filter.mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark,
-        label: `${capitalize(filter.type)} -  ${capitalize(filter.mode)}`,
+        emoji: filter.negate ? emojis.crossmark : emojis.checkmark,
+        label: `${capitalize(filter.type)} — ${operatorLabel(filter.type, filter.negate)}`,
         description: valuePreview.substring(0, 100),
         value: filter.id,
       };
@@ -182,7 +182,7 @@ export async function chatInputFilterEdit(
           return;
         }
 
-        const { values, mode } = extractResult;
+        const { values, negate } = extractResult;
 
         // Normalize values (keywords are converted to lowercase for case-insensitive matching)
         const normalizedValues = normalizeFilterValues(values, selectedFilter.type);
@@ -190,7 +190,7 @@ export async function chatInputFilterEdit(
         // Submit update to backend
         const response = await Data.API.Backend.updateFilter(channel.id, selectedFilterId, {
           type: selectedFilter.type,
-          mode,
+          negate,
           values: normalizedValues,
         });
 
@@ -255,17 +255,12 @@ export async function chatInputFilterEdit(
               ? normalizedValues.map(v => `\`${v}\``).join(', ')
               : normalizedValues.map(v => `\`${v}\``).join(', ');
 
-        const modeText =
-          mode === FilterMode.Allow
-            ? 'Only messages matching this filter will be published'
-            : 'Messages matching this filter will NOT be published';
-
         const valueCount = normalizedValues.length > 1 ? ` (${normalizedValues.length})` : '';
 
-        const modeEmoji = mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark;
+        const conditionEmoji = negate ? emojis.crossmark : emojis.checkmark;
         const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.checkmark} Filter updated in <#${channel.id}>!\n\n**Type:** ${capitalize(selectedFilter.type)}${valueCount}\n**Mode:** ${modeEmoji} ${capitalize(mode)}\n**Values:** ${displayValues}\n\n-# ${modeText}`
+            `${emojis.checkmark} Filter updated in <#${channel.id}>!\n\n**Condition:** ${conditionEmoji} ${capitalize(selectedFilter.type)} ${operatorLabel(selectedFilter.type, negate).toLowerCase()}${valueCount}\n**Values:** ${displayValues}`
           )
         );
 
@@ -323,29 +318,8 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
     .setCustomId(`filter_edit_${filter.id}`)
     .setTitle(`Edit ${capitalize(filter.type)} Filter`);
 
-  // Mode selection (common to all types)
-  const modeSelect = new StringSelectMenuBuilder()
-    .setCustomId('mode')
-    .setPlaceholder('Select filter mode')
-    .setRequired(true)
-    .addOptions(
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Allow')
-        .setValue(FilterMode.Allow)
-        .setDescription('Only publish messages matching this filter')
-        .setEmoji(emojis.checkmark)
-        .setDefault(filter.mode === FilterMode.Allow),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Block')
-        .setValue(FilterMode.Block)
-        .setDescription("Don't publish messages matching this filter")
-        .setEmoji(emojis.crossmark)
-        .setDefault(filter.mode === FilterMode.Block)
-    );
-
-  const modeLabel = new LabelBuilder()
-    .setLabel('Filter Mode')
-    .setStringSelectMenuComponent(modeSelect);
+  // Operator selection (common to all types), preselected to the current value.
+  const operatorField = buildOperatorLabel(filter.type, filter.negate);
 
   switch (filter.type) {
     case FilterType.Keyword: {
@@ -365,7 +339,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
         )
         .setTextInputComponent(keywordInput);
 
-      modal.addLabelComponents(keywordLabel, modeLabel);
+      modal.addLabelComponents(keywordLabel, operatorField);
       break;
     }
 
@@ -386,7 +360,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
         .setDescription(description)
         .setUserSelectMenuComponent(authorSelect);
 
-      modal.addLabelComponents(authorLabel, modeLabel);
+      modal.addLabelComponents(authorLabel, operatorField);
       break;
     }
 
@@ -409,7 +383,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
         .setDescription(description)
         .setMentionableSelectMenuComponent(mentionSelect);
 
-      modal.addLabelComponents(mentionLabel, modeLabel);
+      modal.addLabelComponents(mentionLabel, operatorField);
       break;
     }
 
@@ -430,7 +404,7 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
         )
         .setTextInputComponent(webhookInput);
 
-      modal.addLabelComponents(webhookLabel, modeLabel);
+      modal.addLabelComponents(webhookLabel, operatorField);
       break;
     }
   }
@@ -444,25 +418,13 @@ function buildEditFilterModal(filter: Filter): ModalBuilder {
 function extractModalValues(
   modalSubmit: ModalSubmitInteraction,
   type: string
-): { valid: true; values: string[]; mode: FilterMode } | { valid: false; error: string } {
+): { valid: true; values: string[]; negate: boolean } | { valid: false; error: string } {
   try {
-    // Get mode from StringSelectMenu
-    const modeLabel = modalSubmit.components.find(
-      label => 'component' in label && label.component.customId === 'mode'
-    );
+    // Operator (maps to `negate`) from the StringSelectMenu.
+    const negate = extractNegate(modalSubmit);
 
-    if (!modeLabel || !('component' in modeLabel)) {
-      return { valid: false, error: 'Mode selection is required' };
-    }
-
-    const modeComponent = modeLabel.component;
-    const mode =
-      'values' in modeComponent && Array.isArray(modeComponent.values)
-        ? modeComponent.values[0]
-        : undefined;
-
-    if (!mode || (mode !== FilterMode.Allow && mode !== FilterMode.Block)) {
-      return { valid: false, error: 'Please select a filter mode (Allow or Block)' };
+    if (negate === null) {
+      return { valid: false, error: 'Please choose how this condition matches' };
     }
 
     // Get values based on type
@@ -570,7 +532,7 @@ function extractModalValues(
         return { valid: false, error: 'Unknown filter type' };
     }
 
-    return { valid: true, values, mode };
+    return { valid: true, values, negate };
   } catch (error) {
     logger.error(error, 'Failed to extract modal values');
     return { valid: false, error: 'Failed to process modal submission' };

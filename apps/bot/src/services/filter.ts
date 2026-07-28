@@ -1,14 +1,19 @@
 import { config } from '@ap/config';
 import { anyKeywordMatches } from '@ap/utils';
-import { type Filter, FilterMatchMode, FilterMode, FilterType } from '@ap/validations';
+import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Message, NewsChannel } from 'discord.js';
 import { Services } from './index.js';
 
 /**
- * Evaluate if message passes filters
+ * Evaluate whether a message passes a channel's filter rule.
+ *
+ * Flat rule-builder model: a channel has one condition list combined by its
+ * match mode (all = AND, any = OR). Each condition can be negated (`negate`),
+ * which replaces the old allow/block split — "block X" is a negated condition.
+ * An empty list publishes everything.
  * @param message Discord message
- * @param channelId Channel ID
- * @returns true if message should be published, false otherwise
+ * @param channel Announcement channel
+ * @returns true if the message should be published, false otherwise
  */
 const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean> => {
   // Skip filter check if not premium
@@ -23,35 +28,17 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
       return true;
     }
 
-    const filters = channelStatus.filters as Filter[];
-    const filterMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.Any;
+    const conditions = channelStatus.filters as Filter[];
+    const matchMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.All;
     const content = message.content.toLowerCase();
     const authorId = message.author.id;
 
-    // Separate allow and block filters
-    const allowFilters = filters.filter(f => f.mode === FilterMode.Allow);
-    const blockFilters = filters.filter(f => f.mode === FilterMode.Block);
+    const passes = (condition: Filter): boolean => {
+      const matched = matchesFilter(condition, content, authorId, message);
+      return condition.negate ? !matched : matched;
+    };
 
-    // Check block filters first (always use OR logic - block if any matches)
-    for (const filter of blockFilters) {
-      if (matchesFilter(filter, content, authorId, message)) {
-        return false;
-      }
-    }
-
-    // If there are allow filters, apply mode logic
-    if (allowFilters.length > 0) {
-      if (filterMode === FilterMatchMode.All) {
-        // All allow filters must match
-        return allowFilters.every(filter => matchesFilter(filter, content, authorId, message));
-      } else {
-        // At least one allow filter must match (default)
-        return allowFilters.some(filter => matchesFilter(filter, content, authorId, message));
-      }
-    }
-
-    // No allow filters - default allow
-    return true;
+    return matchMode === FilterMatchMode.All ? conditions.every(passes) : conditions.some(passes);
   } catch {
     // On error, allow publishing (fail open)
     return true;

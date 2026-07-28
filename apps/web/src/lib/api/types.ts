@@ -5,7 +5,6 @@ export type {
   DiscordGuild,
   Edition,
   FilterMatchMode,
-  FilterMode,
   FilterType,
   GuildChannel,
   GuildDashboardData,
@@ -14,9 +13,10 @@ export type {
   SubscriptionDetail,
 } from '@ap/api-types';
 
-/** Payload for creating/updating a filter from the dashboard */
+/** One filter condition as edited in the dashboard rule builder */
 export interface FilterInput {
   type: import('@ap/api-types').FilterType;
-  mode: import('@ap/api-types').FilterMode;
+  /** true = negated operator ("doesn't contain"/"is not") */
+  negate: boolean;
   values: string[];
 }

@@ -1,6 +1,6 @@
 import { config } from '@ap/config';
 import { capitalize, normalizeFilterValues } from '@ap/utils';
-import { FilterMode, FilterType } from '@ap/validations';
+import { FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { Data } from 'data/index.js';
 import {
@@ -11,8 +11,6 @@ import {
   MessageFlags,
   ModalBuilder,
   type ModalSubmitInteraction,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
   TextInputBuilder,
   TextInputStyle,
   UserSelectMenuBuilder,
@@ -21,6 +19,7 @@ import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
 import { logger } from 'utils/logger.js';
+import { buildOperatorLabel, extractNegate, operatorLabel } from './operator.js';
 
 export async function chatInputFilterAdd(
   this: Subcommand,
@@ -94,7 +93,7 @@ export async function chatInputFilterAdd(
       return;
     }
 
-    const { values, mode } = extractResult;
+    const { values, negate } = extractResult;
 
     // Normalize values (keywords are converted to lowercase for case-insensitive matching)
     const normalizedValues = normalizeFilterValues(values, type);
@@ -102,7 +101,7 @@ export async function chatInputFilterAdd(
     // Submit to backend
     const response = await Data.API.Backend.addFilter(channel.id, {
       type,
-      mode,
+      negate,
       values: normalizedValues,
     });
 
@@ -173,17 +172,12 @@ export async function chatInputFilterAdd(
           ? normalizedValues.map(v => `\`${v}\``).join(', ')
           : normalizedValues.map(v => `\`${v}\``).join(', ');
 
-    const modeText =
-      mode === FilterMode.Allow
-        ? 'Only messages matching this filter will be published'
-        : 'Messages matching this filter will NOT be published';
-
     const valueCount = normalizedValues.length > 1 ? ` (${normalizedValues.length})` : '';
 
-    const modeEmoji = mode === FilterMode.Allow ? emojis.checkmark : emojis.crossmark;
+    const conditionEmoji = negate ? emojis.crossmark : emojis.checkmark;
     const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Type:** ${capitalize(type)}${valueCount}\n**Mode:** ${modeEmoji} ${capitalize(mode)}\n**Values:** ${displayValues}\n\n-# ${modeText}`
+        `${emojis.checkmark} Filter added to <#${channel.id}>!\n\n**Condition:** ${conditionEmoji} ${capitalize(type)} ${operatorLabel(type, negate).toLowerCase()}${valueCount}\n**Values:** ${displayValues}\n\n-# Conditions combine per this channel's match mode — set it with </ap filter mode:${interaction.commandId}>.`
       )
     );
 
@@ -236,27 +230,8 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
       `Add ${capitalize(type)} Filter (${currentCount + 1}/${config.limits.filtersPerChannel})`
     );
 
-  // Mode selection (common to all types)
-  const modeSelect = new StringSelectMenuBuilder()
-    .setCustomId('mode')
-    .setPlaceholder('Select filter mode')
-    .setRequired(true)
-    .addOptions(
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Allow')
-        .setValue(FilterMode.Allow)
-        .setDescription('Only publish messages matching this filter')
-        .setEmoji(emojis.checkmark),
-      new StringSelectMenuOptionBuilder()
-        .setLabel('Block')
-        .setValue(FilterMode.Block)
-        .setDescription("Don't publish messages matching this filter")
-        .setEmoji(emojis.crossmark)
-    );
-
-  const modeLabel = new LabelBuilder()
-    .setLabel('Filter Mode')
-    .setStringSelectMenuComponent(modeSelect);
+  // Operator selection (common to all types) — maps to `negate`.
+  const operatorField = buildOperatorLabel(type);
 
   switch (type) {
     case FilterType.Keyword: {
@@ -275,7 +250,7 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
         )
         .setTextInputComponent(keywordInput);
 
-      modal.addLabelComponents(keywordLabel, modeLabel);
+      modal.addLabelComponents(keywordLabel, operatorField);
       break;
     }
 
@@ -292,7 +267,7 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
         .setDescription('Select the users or bots whose messages will be filtered.')
         .setUserSelectMenuComponent(authorSelect);
 
-      modal.addLabelComponents(authorLabel, modeLabel);
+      modal.addLabelComponents(authorLabel, operatorField);
       break;
     }
 
@@ -309,7 +284,7 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
         .setDescription('Select the users or roles mentioned in messages to be filtered.')
         .setMentionableSelectMenuComponent(mentionSelect);
 
-      modal.addLabelComponents(mentionLabel, modeLabel);
+      modal.addLabelComponents(mentionLabel, operatorField);
       break;
     }
 
@@ -329,7 +304,7 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
         )
         .setTextInputComponent(webhookInput);
 
-      modal.addLabelComponents(webhookLabel, modeLabel);
+      modal.addLabelComponents(webhookLabel, operatorField);
       break;
     }
   }
@@ -343,31 +318,14 @@ function buildFilterModal(type: FilterType, currentCount: number): ModalBuilder 
 function extractModalValues(
   modalSubmit: ModalSubmitInteraction,
   type: FilterType
-): { valid: true; values: string[]; mode: FilterMode } | { valid: false; error: string } {
+): { valid: true; values: string[]; negate: boolean } | { valid: false; error: string } {
   try {
-    // Get mode from StringSelectMenu - need to access components directly since
-    // ModalSubmitFields only provides getTextInputValue() and getField() for text inputs
-    // Components V2 structure: LabelModalData with nested component property
-    const modeLabel = modalSubmit.components.find(
-      label => 'component' in label && label.component.customId === 'mode'
-    );
+    // Operator (maps to `negate`) from the StringSelectMenu.
+    const negate = extractNegate(modalSubmit);
 
-    if (!modeLabel || !('component' in modeLabel)) {
-      return { valid: false, error: 'Mode selection is required' };
+    if (negate === null) {
+      return { valid: false, error: 'Please choose how this condition matches' };
     }
-
-    const modeComponent = modeLabel.component;
-    // Type guard: check if component has values property (select menus)
-    const modeValue =
-      'values' in modeComponent && Array.isArray(modeComponent.values)
-        ? modeComponent.values[0]
-        : undefined;
-
-    if (!modeValue || (modeValue !== FilterMode.Allow && modeValue !== FilterMode.Block)) {
-      return { valid: false, error: 'Please select a filter mode (Allow or Block)' };
-    }
-
-    const mode = modeValue as FilterMode;
 
     // Get values based on type
     let values: string[];
@@ -483,7 +441,7 @@ function extractModalValues(
         return { valid: false, error: 'Unknown filter type' };
     }
 
-    return { valid: true, values, mode };
+    return { valid: true, values, negate };
   } catch (error) {
     logger.error(error, 'Failed to extract modal values');
     return { valid: false, error: 'Failed to process modal submission' };

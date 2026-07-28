@@ -89,7 +89,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'any'"
+          "default": "'all'"
         },
         "paused_at": {
           "name": "paused_at",

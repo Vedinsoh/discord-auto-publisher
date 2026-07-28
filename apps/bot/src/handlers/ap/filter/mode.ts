@@ -48,23 +48,23 @@ export async function chatInputFilterMode(
       return;
     }
 
-    const currentMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.Any;
+    const currentMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.All;
 
-    // Create mode selection menu
+    // Create match-mode selection menu (how conditions combine)
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('filter_mode_select')
-      .setPlaceholder('Select filter mode')
+      .setPlaceholder('Select match mode')
       .addOptions([
         {
           label: 'Any (OR)',
           value: FilterMatchMode.Any,
-          description: 'Message passes if at least one allow filter matches',
+          description: 'Publish if the message matches any condition',
           default: currentMode === FilterMatchMode.Any,
         },
         {
           label: 'All (AND)',
           value: FilterMatchMode.All,
-          description: 'Message passes only if all allow filters match',
+          description: 'Publish only if the message matches all conditions',
           default: currentMode === FilterMatchMode.All,
         },
       ]);
@@ -73,12 +73,12 @@ export async function chatInputFilterMode(
 
     const modeDescription =
       currentMode === FilterMatchMode.Any
-        ? '- Messages pass if **at least one** allow filter matches\n- Block filters always block if **any** matches'
-        : '- Messages pass only if **all** allow filters match\n- Block filters always block if **any** matches';
+        ? '- A message publishes if it matches **any** condition'
+        : '- A message publishes only if it matches **all** conditions';
 
     const selectContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `**Current filter mode:** ${currentMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}\n\n${modeDescription}\n\nSelect a new mode for <#${channel.id}>:`
+        `**Current match mode:** ${currentMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}\n\n${modeDescription}\n\nSelect a new mode for <#${channel.id}>:`
       )
     );
 
@@ -133,12 +133,12 @@ export async function chatInputFilterMode(
 
       const newModeDescription =
         selectedMode === FilterMatchMode.Any
-          ? '- Messages will pass if **at least one** allow filter matches\n- Block filters will block if **any** matches'
-          : '- Messages will pass only if **all** allow filters match\n- Block filters will block if **any** matches';
+          ? '- A message publishes if it matches **any** condition'
+          : '- A message publishes only if it matches **all** conditions';
 
       const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.checkmark} Filter mode updated to **${selectedMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}** for <#${channel.id}>!\n\n${newModeDescription}`
+          `${emojis.checkmark} Match mode updated to **${selectedMode === FilterMatchMode.Any ? 'Any (OR)' : 'All (AND)'}** for <#${channel.id}>!\n\n${newModeDescription}`
         )
       );
 
