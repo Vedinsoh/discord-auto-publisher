@@ -35,10 +35,13 @@ docker compose $BOT_COMPOSE_FILES_DEV down --rmi local --volumes
 echo "Stopping Supabase database..."
 supabase stop
 
-# Comprehensive cleanup: remove all unused Docker resources
-echo "🧽 Cleaning up all unused Docker resources..."
-docker image prune -f
-docker builder prune -f 2>/dev/null || true
+# Cleanup: remove only this project's dangling images (orphaned <none> images
+# left by repeated --build/watch rebuilds; down --rmi local only sees tagged ones).
+# Scoped by compose project label so other projects are untouched.
+# NOTE: no `docker builder prune` — it wipes the BuildKit build cache (the
+# `bun install` layer), forcing a full re-download of packages on next start.
+echo "🧽 Cleaning up this project's dangling images..."
+docker image prune -f --filter "label=com.docker.compose.project=auto-publisher-dev"
 docker network prune -f 2>/dev/null || true
 docker container prune -f 2>/dev/null || true
 
