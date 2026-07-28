@@ -2,6 +2,9 @@ import 'server-only';
 
 import { auth } from '@/lib/auth';
 
+/** Upper bound on a single backend round-trip before it aborts as transient. */
+const BACKEND_TIMEOUT_MS = 10_000;
+
 function getBackendUrl(): string {
   const url = process.env.BACKEND_URL;
   if (!url) {
@@ -66,6 +69,14 @@ export async function backendFetch<T>(path: string, options?: BackendFetchOption
 
   const url = `${getBackendUrl()}${path}`;
 
+  // Bound READS so a hung upstream (e.g. a stalled DB connection) fails fast
+  // into the transient/auto-retry path instead of an indefinite loading
+  // skeleton. A timeout abort throws (not a BackendError), so callers treat it
+  // as a transient error, exactly like a 5xx. Mutations are deliberately left
+  // untimed: aborting a non-idempotent write that may have already committed
+  // would surface a spurious failure and prompt a duplicate retry. The signal
+  // is applied AFTER the options spread so it always wins for reads.
+  const isRead = (options?.method ?? 'GET') === 'GET';
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -73,6 +84,7 @@ export async function backendFetch<T>(path: string, options?: BackendFetchOption
       Authorization: `Bearer ${token}`,
       ...options?.headers,
     },
+    ...(isRead ? { signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS) } : {}),
   });
 
   if (!response.ok) {

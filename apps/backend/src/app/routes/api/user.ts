@@ -1,25 +1,13 @@
 import { botPresence, db, guild, subscription } from '@ap/database';
-import {
-  type APIResponse,
-  discordGuildsCacheKey,
-  GUILDS_CACHE_TTL_SECONDS,
-  StatusCodes,
-  sendErrorResponse,
-} from '@ap/express';
+import { type APIResponse, fetchUserGuilds, StatusCodes, sendErrorResponse } from '@ap/express';
 import { Keys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import { and, inArray, isNull } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
 import { isEntitledStatus } from 'services/subscriptions.js';
+import { logger } from 'utils/logger.js';
 
 const MANAGE_GUILD = BigInt(0x20);
-
-type DiscordPartialGuild = {
-  id: string;
-  name: string;
-  icon: string | null;
-  permissions: string;
-};
 
 export const User: Router = (() => {
   const router = express.Router({ mergeParams: true });
@@ -41,61 +29,32 @@ export const User: Router = (() => {
     }
 
     try {
-      const cacheKey = discordGuildsCacheKey(token);
+      // Shared resilient read (fresh cache → retry → last-known-good) on the
+      // same per-token key requireGuildPermission reads, so a hit here warms
+      // that check and vice versa. A dead token surfaces HERE (not in
+      // createDiscordAuth) when the 5 min auth cache is still warm but this
+      // guild-list cache has expired: a genuine 401 stays a 401 so reactive
+      // re-login fires (ADR 0010) rather than ejecting the user to the server
+      // list; a transient 429/5xx with no stale fallback is a 502 the web
+      // retries in place. Presence/subscription below are composed live from
+      // Postgres, so only the raw Discord list is cached — derived flags never
+      // go stale.
+      const guildsResult = await fetchUserGuilds(Data.Drivers.Redis.DiscordAuth, token, logger);
 
-      // Read through the shared per-token guild-list cache (the same key
-      // requireGuildPermission reads). A hit skips the user-token
-      // /users/@me/guilds call entirely; a miss fetches and warms it. The
-      // membership check in the middleware needs guilds the user does NOT
-      // manage too, so the raw full list is cached. Presence/subscription
-      // below are still composed live from Postgres, so only the raw Discord
-      // list is cached — the derived flags never go stale.
-      let allGuilds: DiscordPartialGuild[] | null = null;
-      const cached = await Data.Drivers.Redis.DiscordAuth.get(cacheKey).catch(() => null);
-      if (cached) {
-        try {
-          allGuilds = JSON.parse(cached) as DiscordPartialGuild[];
-        } catch {
-          allGuilds = null;
-        }
+      if (!guildsResult.ok) {
+        const status =
+          guildsResult.kind === 'auth' ? StatusCodes.UNAUTHORIZED : StatusCodes.BAD_GATEWAY;
+        res.status(status).json({
+          status,
+          message:
+            guildsResult.kind === 'auth'
+              ? 'Invalid or expired Discord token'
+              : 'Failed to fetch guilds from Discord',
+        } as APIResponse);
+        return;
       }
 
-      if (!allGuilds) {
-        const response = await fetch('https://discord.com/api/v10/users/@me/guilds', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-          // A dead user token surfaces HERE, not in createDiscordAuth, when the
-          // 5 min auth cache is still warm but this 60s guild-list cache has
-          // expired. Map Discord's 401 to a 401 so the web's reactive re-login
-          // fires (ADR 0010) — a flattened 502 would be swallowed as a generic
-          // error and eject the user to the server list. Any other upstream
-          // failure (429/5xx) stays a transient 502 the web retries in place.
-          const status =
-            response.status === StatusCodes.UNAUTHORIZED
-              ? StatusCodes.UNAUTHORIZED
-              : StatusCodes.BAD_GATEWAY;
-          res.status(status).json({
-            status,
-            message:
-              status === StatusCodes.UNAUTHORIZED
-                ? 'Invalid or expired Discord token'
-                : 'Failed to fetch guilds from Discord',
-          } as APIResponse);
-          return;
-        }
-
-        allGuilds = (await response.json()) as DiscordPartialGuild[];
-
-        // Fire-and-forget warm: a cache-write failure must not fail the request.
-        Data.Drivers.Redis.DiscordAuth.set(
-          cacheKey,
-          JSON.stringify(allGuilds),
-          'EX',
-          GUILDS_CACHE_TTL_SECONDS
-        ).catch(() => {});
-      }
+      const allGuilds = guildsResult.data;
 
       // Filter to guilds with MANAGE_GUILD permission
       const managedGuilds = allGuilds.filter(

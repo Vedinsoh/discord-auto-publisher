@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { fetchDiscordUser } from '../discordUserApi.js';
 
 declare global {
   namespace Express {
@@ -21,9 +21,9 @@ type RedisLike = {
   set(key: string, value: string, ex: 'EX', seconds: number): Promise<unknown>;
 };
 
-const CACHE_TTL_SECONDS = 300;
+type Logger = { warn: (obj: unknown, msg?: string) => void };
 
-export function createDiscordAuth(redisClient: RedisLike) {
+export function createDiscordAuth(redisClient: RedisLike, logger: Logger) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
 
@@ -36,53 +36,28 @@ export function createDiscordAuth(redisClient: RedisLike) {
     }
 
     const token = authHeader.slice(7);
-    const tokenHash = createHash('sha256').update(token).digest('hex');
-    const cacheKey = `discord_auth:${tokenHash}`;
 
-    try {
-      // Check Redis cache
-      const cached = await redisClient.get(cacheKey);
+    // Shared resilient read (fresh cache → retry → last-known-good). Only a
+    // genuine Discord 401 is auth-expiry (→ 401, reactive re-login); a transient
+    // 429/5xx with no stale fallback is a 502 the web retries in place. This
+    // middleware runs on EVERY /api/* request, so the old "any non-ok → 401"
+    // mapping turned every blip into a needless full OAuth round-trip.
+    const result = await fetchDiscordUser(redisClient, token, logger);
 
-      if (cached) {
-        const user = JSON.parse(cached);
-        req.discordUser = user;
-        req.discordAccessToken = token;
-        next();
-        return;
-      }
-
-      // Cache miss: validate with Discord API
-      const response = await fetch('https://discord.com/api/v10/users/@me', {
-        headers: { Authorization: `Bearer ${token}` },
+    if (!result.ok) {
+      const status = result.kind === 'auth' ? StatusCodes.UNAUTHORIZED : StatusCodes.BAD_GATEWAY;
+      res.status(status).json({
+        status,
+        message:
+          result.kind === 'auth'
+            ? 'Invalid or expired Discord token'
+            : 'Failed to validate Discord token',
       });
-
-      if (!response.ok) {
-        res.status(StatusCodes.UNAUTHORIZED).json({
-          status: StatusCodes.UNAUTHORIZED,
-          message: 'Invalid or expired Discord token',
-        });
-        return;
-      }
-
-      const data = await response.json();
-      const user = {
-        id: data.id,
-        username: data.username,
-        avatar: data.avatar ?? null,
-        email: data.email,
-      };
-
-      // Cache the user data
-      await redisClient.set(cacheKey, JSON.stringify(user), 'EX', CACHE_TTL_SECONDS);
-
-      req.discordUser = user;
-      req.discordAccessToken = token;
-      next();
-    } catch {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        status: StatusCodes.INTERNAL_SERVER_ERROR,
-        message: 'Failed to validate Discord token',
-      });
+      return;
     }
+
+    req.discordUser = result.data;
+    req.discordAccessToken = token;
+    next();
   };
 }
