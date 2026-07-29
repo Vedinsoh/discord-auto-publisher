@@ -13,13 +13,12 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
-  isNoOpKeyword,
+  filterValueError,
   KEYWORD_WILDCARD_EXAMPLES,
   MAX_VALUES,
   OPERATOR_OPTIONS,
   operatorLabel,
   roleColorHex,
-  SNOWFLAKE_REGEX,
 } from '@/components/dashboard/filter-meta';
 import {
   AlertDialog,
@@ -189,13 +188,7 @@ export function ConditionRow({
                 maxItems={max}
                 placeholder="Type a keyword, press Enter"
                 transform={value => value.trim().toLowerCase()}
-                validate={value =>
-                  value.length > 200
-                    ? 'Keyword is too long (max 200 chars)'
-                    : isNoOpKeyword(value)
-                      ? 'Keyword cannot be empty or only wildcards'
-                      : null
-                }
+                validate={value => filterValueError('keyword', value)}
               />
               <p className="text-xs text-slate-500">
                 Matches whole words.{' '}
@@ -219,9 +212,7 @@ export function ConditionRow({
               disabled={disabled}
               maxItems={max}
               placeholder="Paste a webhook ID, press Enter"
-              validate={value =>
-                SNOWFLAKE_REGEX.test(value) ? null : 'Enter a valid ID (17-20 digits)'
-              }
+              validate={value => filterValueError('webhook', value)}
             />
           )}
 
@@ -233,9 +224,7 @@ export function ConditionRow({
                 disabled={disabled}
                 maxItems={max}
                 placeholder="Paste a user ID, press Enter"
-                validate={value =>
-                  SNOWFLAKE_REGEX.test(value) ? null : 'Enter a valid user ID (17-20 digits)'
-                }
+                validate={value => filterValueError('author', value)}
               />
               <p className="text-xs text-slate-500">
                 Enable Developer Mode in Discord, then right-click a user → Copy User ID.
@@ -326,9 +315,7 @@ export function ConditionRow({
                 disabled={disabled}
                 maxItems={Math.max(0, max - roleIds.length)}
                 placeholder="…or paste a user ID, press Enter"
-                validate={value =>
-                  SNOWFLAKE_REGEX.test(value) ? null : 'Enter a valid user ID (17-20 digits)'
-                }
+                validate={value => filterValueError('mention', value)}
               />
               <p className="text-xs text-slate-500">
                 {roleIds.length + userIds.length}/{max} mentions selected.
@@ -369,7 +356,7 @@ export function ConditionRow({
             <AlertDialogTitle>Delete this condition?</AlertDialogTitle>
             <AlertDialogDescription>
               This condition has {values.length} {values.length === 1 ? 'value' : 'values'}.
-              Removing it can't be undone once you save.
+              Removing it can&apos;t be undone once you save.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

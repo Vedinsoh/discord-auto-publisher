@@ -10,7 +10,7 @@ interface TagInputProps {
   placeholder?: string;
   disabled?: boolean;
   maxItems?: number;
-  /** Returns an error message for an invalid candidate, or null if it's valid. */
+  /** Returns why a value is invalid, or null if it's valid. */
   validate?: (value: string) => string | null;
   /** Transforms each entry before it is stored (e.g. trimming). */
   transform?: (value: string) => string;
@@ -20,8 +20,11 @@ interface TagInputProps {
 /**
  * Chip input: type + Enter/comma (or paste comma/newline-separated) to add,
  * click ✕ or Backspace-on-empty to remove. Click a chip to edit it in place
- * (Enter/blur commits, Escape cancels). Dedupes and enforces an optional max
- * and per-item validation.
+ * (Enter/blur commits, Escape cancels). Dedupes and enforces an optional max.
+ *
+ * Values that fail `validate` are still accepted and rendered as red chips — the
+ * caller drops them on save. Discarding a typo on entry loses what the user typed
+ * and leaves nothing to correct.
  */
 export function TagInput({
   values,
@@ -39,6 +42,8 @@ export function TagInput({
   const [editDraft, setEditDraft] = useState('');
 
   const atMax = maxItems !== undefined && values.length >= maxItems;
+  const valueErrors = values.map(value => validate?.(value) ?? null);
+  const firstInvalid = valueErrors.find(message => message !== null) ?? null;
 
   const commit = (raw: string) => {
     const parts = raw
@@ -60,11 +65,7 @@ export function TagInput({
         break;
       }
       if (next.includes(candidate)) continue;
-      const validationError = validate?.(candidate) ?? null;
-      if (validationError) {
-        localError = validationError;
-        continue;
-      }
+      // Invalid entries are kept (flagged) so the user can fix them in place.
       next.push(candidate);
     }
 
@@ -94,22 +95,14 @@ export function TagInput({
       return;
     }
     const candidate = transform ? transform(raw) : raw;
-    if (candidate === values[index]) {
-      cancelEditing();
-      return;
+    if (candidate !== values[index]) {
+      // Dedupe against every other chip (allow keeping the same value at this slot).
+      onChange(
+        values.some((value, i) => i !== index && value === candidate)
+          ? values.filter((_, i) => i !== index)
+          : values.map((value, i) => (i === index ? candidate : value))
+      );
     }
-    // Dedupe against every other chip (allow keeping the same value at this slot).
-    if (values.some((value, i) => i !== index && value === candidate)) {
-      onChange(values.filter((_, i) => i !== index));
-      cancelEditing();
-      return;
-    }
-    const validationError = validate?.(candidate) ?? null;
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-    onChange(values.map((value, i) => (i === index ? candidate : value)));
     setError(null);
     cancelEditing();
   };
@@ -161,7 +154,12 @@ export function TagInput({
           ) : (
             <span
               key={value}
-              className="inline-flex items-center gap-1 rounded-md bg-slate-700 px-2 py-0.5 font-mono text-sm text-slate-200"
+              className={cn(
+                'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-sm',
+                valueErrors[index]
+                  ? 'border-red-500/60 bg-red-500/10 text-red-300'
+                  : 'border-transparent bg-slate-700 text-slate-200'
+              )}
             >
               {disabled ? (
                 value
@@ -170,7 +168,7 @@ export function TagInput({
                   type="button"
                   onClick={() => startEditing(index)}
                   className="cursor-text rounded-sm hover:text-white"
-                  title="Click to edit"
+                  title={valueErrors[index] ?? 'Click to edit'}
                 >
                   {value}
                 </button>
@@ -180,7 +178,10 @@ export function TagInput({
                   type="button"
                   aria-label={`Remove ${value}`}
                   onClick={() => onChange(values.filter((_, i) => i !== index))}
-                  className="text-slate-400 hover:text-white"
+                  className={cn(
+                    'hover:text-white',
+                    valueErrors[index] ? 'text-red-400' : 'text-slate-400'
+                  )}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -202,7 +203,11 @@ export function TagInput({
           />
         )}
       </div>
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {(error ?? firstInvalid) && (
+        <p className="mt-1 text-xs text-red-400">
+          {error ?? `${firstInvalid}. Highlighted values aren't saved.`}
+        </p>
+      )}
       {maxItems !== undefined && (
         <p className="mt-1 text-right text-xs text-slate-500">
           {values.length}/{maxItems}

@@ -12,6 +12,7 @@ import {
 import { ConditionRow } from '@/components/dashboard/condition-row';
 import {
   DEFAULT_MATCH_MODE,
+  filterValueError,
   MATCH_MODE_OPTIONS,
   MAX_FILTERS_PER_CHANNEL,
 } from '@/components/dashboard/filter-meta';
@@ -92,11 +93,20 @@ function ChannelRuleEditor({
   const [conditions, setConditions] = useState<FilterInput[]>(baseline.conditions);
   const [saving, setSaving] = useState(false);
 
-  // Only complete rows persist; a half-built row (no values) stays in the UI but
-  // doesn't count toward dirty state.
-  const savable = conditions.filter(condition => condition.values.length >= 1);
+  // Half-built rows (no values) stay in the UI but never persist. Values that fail
+  // client-side validation stay too — flagged red in the chip input so they can be
+  // fixed — and they count as dirty so Save stays reachable; saving drops them.
+  const populated = conditions.filter(condition => condition.values.length >= 1);
+  const cleaned = conditions.map(condition => ({
+    ...condition,
+    values: condition.values.filter(value => !filterValueError(condition.type, value)),
+  }));
+  const savable = cleaned.filter(condition => condition.values.length >= 1);
+  const countValues = (rule: FilterInput[]) =>
+    rule.reduce((total, condition) => total + condition.values.length, 0);
+  const invalidCount = countValues(conditions) - countValues(cleaned);
   const dirty =
-    serializeRule(matchMode, savable) !== serializeRule(baseline.matchMode, baseline.conditions);
+    serializeRule(matchMode, populated) !== serializeRule(baseline.matchMode, baseline.conditions);
 
   const save = async () => {
     setSaving(true);
@@ -106,8 +116,15 @@ function ChannelRuleEditor({
     });
     setSaving(false);
     if (result.ok) {
+      // Only now are the flagged values discarded — the user chose to save past them.
+      setConditions(cleaned);
       setBaseline({ matchMode, conditions: savable });
-      toast.success('Filters saved');
+      toast.success('Filters saved', {
+        description:
+          invalidCount > 0
+            ? `${invalidCount} invalid ${invalidCount === 1 ? 'value was' : 'values were'} removed.`
+            : undefined,
+      });
       router.refresh();
       return;
     }
