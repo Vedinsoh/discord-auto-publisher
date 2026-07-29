@@ -28,8 +28,8 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
       return true;
     }
 
-    const conditions = channelStatus.filters as Filter[];
-    const matchMode = (channelStatus.filterMode as FilterMatchMode) || FilterMatchMode.All;
+    const conditions = channelStatus.filters;
+    const matchMode = channelStatus.filterMode || FilterMatchMode.All;
     const content = message.content.toLowerCase();
     const authorId = message.author.id;
 

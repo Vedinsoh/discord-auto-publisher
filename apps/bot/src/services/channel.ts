@@ -1,3 +1,4 @@
+import type { Filter, FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import {
   ChannelType,
@@ -92,8 +93,8 @@ const getStatus = async (channelId: Snowflake) => {
       data: {
         enabled: boolean;
         channelId?: string;
-        filters?: unknown[];
-        filterMode?: string;
+        filters?: Filter[];
+        filterMode?: FilterMatchMode;
       };
       message: string;
     };

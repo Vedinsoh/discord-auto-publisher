@@ -1,16 +1,11 @@
 import { config } from '@ap/config';
-import { FilterType } from '@ap/validations';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
 import {
   chatInputDisable,
   chatInputEnable,
-  chatInputFilterAdd,
-  chatInputFilterEdit,
-  chatInputFilterMode,
-  chatInputFilterRemove,
-  chatInputFilterView,
+  chatInputFilters,
   chatInputStatus,
 } from '../handlers/ap/index.js';
 
@@ -23,21 +18,7 @@ import {
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
     { name: 'status', chatInputRun: 'chatInputStatus' },
-    ...(config.isPremiumInstance
-      ? [
-          {
-            name: 'filter',
-            type: 'group' as const,
-            entries: [
-              { name: 'add', chatInputRun: 'chatInputFilterAdd' },
-              { name: 'edit', chatInputRun: 'chatInputFilterEdit' },
-              { name: 'mode', chatInputRun: 'chatInputFilterMode' },
-              { name: 'remove', chatInputRun: 'chatInputFilterRemove' },
-              { name: 'view', chatInputRun: 'chatInputFilterView' },
-            ],
-          },
-        ]
-      : []),
+    ...(config.isPremiumInstance ? [{ name: 'filters', chatInputRun: 'chatInputFilters' }] : []),
   ],
 })
 export class APCommand extends Subcommand {
@@ -90,81 +71,16 @@ export class APCommand extends Subcommand {
         );
 
       if (config.isPremiumInstance) {
-        command.addSubcommandGroup(group =>
-          group //
-            .setName('filter')
-            .setDescription('Manage message filters for auto-publishing')
-            .addSubcommand(subcommand =>
-              subcommand //
-                .setName('add')
-                .setDescription('Add a filter to a channel')
-                .addChannelOption(option =>
-                  option
-                    .setName('channel')
-                    .setDescription('The announcement channel to add filter to')
-                    .setRequired(true)
-                    .addChannelTypes([ChannelType.GuildAnnouncement])
-                )
-                .addStringOption(option =>
-                  option //
-                    .setName('type')
-                    .setDescription('Filter type')
-                    .setRequired(true)
-                    .addChoices(
-                      { name: 'Keyword', value: FilterType.Keyword },
-                      { name: 'Author', value: FilterType.Author },
-                      { name: 'Mention', value: FilterType.Mention },
-                      { name: 'Webhook', value: FilterType.Webhook }
-                    )
-                )
-            )
-            .addSubcommand(subcommand =>
-              subcommand //
-                .setName('edit')
-                .setDescription('Edit a filter in a channel')
-                .addChannelOption(option =>
-                  option //
-                    .setName('channel')
-                    .setDescription('The announcement channel to edit filter in')
-                    .setRequired(true)
-                    .addChannelTypes([ChannelType.GuildAnnouncement])
-                )
-            )
-            .addSubcommand(subcommand =>
-              subcommand //
-                .setName('remove')
-                .setDescription('Remove a filter from a channel')
-                .addChannelOption(option =>
-                  option //
-                    .setName('channel')
-                    .setDescription('The announcement channel to remove filter from')
-                    .setRequired(true)
-                    .addChannelTypes([ChannelType.GuildAnnouncement])
-                )
-            )
-            .addSubcommand(subcommand =>
-              subcommand //
-                .setName('view')
-                .setDescription('View filters for a channel')
-                .addChannelOption(option =>
-                  option //
-                    .setName('channel')
-                    .setDescription('The announcement channel to view filters for')
-                    .setRequired(true)
-                    .addChannelTypes([ChannelType.GuildAnnouncement])
-                )
-            )
-            .addSubcommand(subcommand =>
-              subcommand //
-                .setName('mode')
-                .setDescription('Set how a channel’s conditions combine (any/all)')
-                .addChannelOption(option =>
-                  option //
-                    .setName('channel')
-                    .setDescription('The announcement channel to set the match mode for')
-                    .setRequired(true)
-                    .addChannelTypes([ChannelType.GuildAnnouncement])
-                )
+        command.addSubcommand(subcommand =>
+          subcommand //
+            .setName('filters')
+            .setDescription('Choose exactly which messages auto-publish from each channel')
+            .addChannelOption(option =>
+              option //
+                .setName('channel')
+                .setDescription('The announcement channel to manage conditions for')
+                .setRequired(true)
+                .addChannelTypes([ChannelType.GuildAnnouncement])
             )
         );
       }
@@ -177,9 +93,5 @@ export class APCommand extends Subcommand {
   public chatInputEnable = chatInputEnable;
   public chatInputDisable = chatInputDisable;
   public chatInputStatus = chatInputStatus;
-  public chatInputFilterAdd = chatInputFilterAdd;
-  public chatInputFilterEdit = chatInputFilterEdit;
-  public chatInputFilterMode = chatInputFilterMode;
-  public chatInputFilterRemove = chatInputFilterRemove;
-  public chatInputFilterView = chatInputFilterView;
+  public chatInputFilters = chatInputFilters;
 }

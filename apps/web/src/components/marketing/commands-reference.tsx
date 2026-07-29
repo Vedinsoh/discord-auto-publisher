@@ -11,8 +11,8 @@ const commands: Command[] = [
   { name: '/ap disable', description: 'Turn off auto-publishing for a channel.' },
   { name: '/ap status', description: 'See which channels are currently enabled.' },
   {
-    name: '/ap filter',
-    description: 'Add, edit, or remove filters so only matching messages get published.',
+    name: '/ap filters',
+    description: 'Build the conditions that decide which messages get published.',
     premium: true,
   },
   { name: '/help', description: 'Overview of everything Auto Publisher can do.' },

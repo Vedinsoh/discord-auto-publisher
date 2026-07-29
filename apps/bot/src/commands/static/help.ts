@@ -55,27 +55,12 @@ export class HelpCommand extends Command {
         .addSeparatorComponents(separator => separator)
         .addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.filter}  Use </ap filter add:${apCommandId}> to add a filter to a channel.`
+            `${emojis.filter}  Use </ap filters:${apCommandId}> to choose which messages get published in a channel.`
           )
         )
         .addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.filter}  Use </ap filter remove:${apCommandId}> to remove a filter from a channel.`
-          )
-        )
-        .addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.filter}  Use </ap filter view:${apCommandId}> to view all filters in a channel.`
-          )
-        )
-        .addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.filter}  Use </ap filter edit:${apCommandId}> to edit an existing filter in a channel.`
-          )
-        )
-        .addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.filter}  Use </ap filter mode:${apCommandId}> to set the filter mode for a channel.`
+            '-# Add, edit and remove conditions — and set how they combine — from one panel.'
           )
         );
     }

@@ -319,7 +319,7 @@ const countByGuild = async (guildId: Snowflake) => {
 
 /**
  * Set filter mode for channel (how conditions combine: any/all).
- * Still used by the `/ap filter mode` Discord command; the dashboard uses setFilters.
+ * Used by the `/ap filters` panel's match-mode buttons; the dashboard uses setFilters.
  * @param channelId ID of the channel
  * @param mode Filter match mode ('any' or 'all')
  */
