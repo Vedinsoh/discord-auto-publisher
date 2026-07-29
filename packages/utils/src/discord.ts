@@ -11,6 +11,58 @@ export const getDiscordFormat = (timestamp: number | undefined): number => {
   return Math.floor((timestamp || 0) / 1000);
 };
 
+/** Ascending snowflake compare (ids vary in length, so compare numerically) */
+export const compareSnowflakes = (a: string, b: string): number => {
+  const bigA = BigInt(a);
+  const bigB = BigInt(b);
+  return bigA < bigB ? -1 : bigA > bigB ? 1 : 0;
+};
+
+/** The three fields {@link sortBySidebarOrder} needs off a channel. */
+export interface SidebarSortKey {
+  id: string;
+  /** Raw Discord `position` (`rawPosition` in discord.js) — scoped per category. */
+  position: number;
+  parentId: string | null;
+}
+
+/**
+ * Reorders a flat channel list into Discord's sidebar order: uncategorized
+ * channels first, then categories by their position, channels within a category
+ * by their own position, ties broken by snowflake id ascending (Discord's own
+ * tiebreak). `position` is scoped per category, so the category rank has to be
+ * compared first.
+ *
+ * Shared by the backend's dashboard channel list and the bot's `/ap status` so
+ * the two surfaces can never order the same guild differently. The `select`
+ * accessor keeps it agnostic of the caller's channel shape (raw `APIChannel`
+ * vs. discord.js), and items are returned untouched.
+ *
+ * @param channels channels to order
+ * @param select pulls the sort key off one channel
+ * @param categoryPositions raw `position` of every category in the guild, read
+ * before the list was filtered down to the channels being sorted
+ */
+export const sortBySidebarOrder = <T>(
+  channels: readonly T[],
+  select: (channel: T) => SidebarSortKey,
+  categoryPositions: ReadonlyMap<string, number>
+): T[] => {
+  // Uncategorized (and orphaned-parent) channels rank above every category.
+  const groupRank = (key: SidebarSortKey): number =>
+    (key.parentId != null ? categoryPositions.get(key.parentId) : undefined) ?? -1;
+
+  return channels
+    .map(channel => ({ channel, key: select(channel) }))
+    .sort(
+      (a, b) =>
+        groupRank(a.key) - groupRank(b.key) ||
+        a.key.position - b.key.position ||
+        compareSnowflakes(a.key.id, b.key.id)
+    )
+    .map(({ channel }) => channel);
+};
+
 /**
  * The one canonical set of permissions a bot needs to crosspost in an
  * announcement channel. Discord's crosspost endpoint requires `SEND_MESSAGES`

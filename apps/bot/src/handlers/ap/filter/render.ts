@@ -186,7 +186,7 @@ export const buildListView = (
         .setButtonAccessory(
           new ButtonBuilder()
             .setCustomId(`${PanelIds.Focus}:${filter.id}`)
-            .setEmoji('✏️')
+            .setLabel('View')
             .setStyle(ButtonStyle.Secondary)
         )
     );

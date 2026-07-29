@@ -8,6 +8,7 @@ import {
   sendErrorResponse,
   validateRequest,
 } from '@ap/express';
+import { sortBySidebarOrder } from '@ap/utils';
 import type { SetChannelFilters } from '@ap/validations';
 import { DiscordAPIError, HTTPError } from '@discordjs/rest';
 import { type APIChannel, type APIRole, ChannelType, Routes } from 'discord-api-types/v10';
@@ -60,20 +61,11 @@ const requireOwnedServingChannel = async (guildId: string, channelId: string): P
   }
 };
 
-/** Ascending snowflake compare (ids vary in length, so compare numerically) */
-const compareSnowflakes = (a: string, b: string): number => {
-  const bigA = BigInt(a);
-  const bigB = BigInt(b);
-  return bigA < bigB ? -1 : bigA > bigB ? 1 : 0;
-};
-
 /**
- * Announcement channels of a guild, in Discord sidebar order, fetched through
- * an edition's proxy. Discord's REST list is unordered and `position` is scoped
- * per category, so we reproduce the sidebar: uncategorized channels first, then
- * categories by their position, channels within a category by their position,
- * ties broken by snowflake id ascending (Discord's own tiebreak). Category
- * positions are read from the full list before it is filtered down.
+ * Announcement channels of a guild, in Discord sidebar order (shared
+ * {@link sortBySidebarOrder}), fetched through an edition's proxy. Discord's
+ * REST list is unordered. Category positions are read from the full list before
+ * it is filtered down.
  */
 const fetchAnnouncementChannels = async (
   edition: Edition,
@@ -86,21 +78,15 @@ const fetchAnnouncementChannels = async (
     if (c.type === ChannelType.GuildCategory) categoryPositions.set(c.id, c.position ?? 0);
   }
 
-  // Uncategorized (and orphaned-parent) channels rank above every category.
-  const groupRank = (c: APIChannel): number => {
-    const parentId = 'parent_id' in c ? c.parent_id : null;
-    const categoryPosition = parentId != null ? categoryPositions.get(parentId) : undefined;
-    return categoryPosition ?? -1;
-  };
-
-  return channels
-    .filter(c => c.type === ChannelType.GuildAnnouncement)
-    .sort(
-      (a, b) =>
-        groupRank(a) - groupRank(b) ||
-        (a.position ?? 0) - (b.position ?? 0) ||
-        compareSnowflakes(a.id, b.id)
-    );
+  return sortBySidebarOrder(
+    channels.filter(c => c.type === ChannelType.GuildAnnouncement),
+    c => ({
+      id: c.id,
+      position: 'position' in c ? (c.position ?? 0) : 0,
+      parentId: ('parent_id' in c ? c.parent_id : null) ?? null,
+    }),
+    categoryPositions
+  );
 };
 
 export const GuildApi: Router = (() => {

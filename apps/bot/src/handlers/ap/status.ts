@@ -1,12 +1,93 @@
 import { config } from '@ap/config';
-import { PUBLISH_PERMISSION_FLAGS } from '@ap/utils';
+import { PUBLISH_PERMISSION_FLAGS, sortBySidebarOrder } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
-import { ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
+import {
+  ChannelType,
+  ContainerBuilder,
+  type Guild,
+  type GuildMember,
+  MessageFlags,
+  type NewsChannel,
+  type Snowflake,
+} from 'discord.js';
 import { emojis, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
+
+/** One registered channel, resolved against the guild's channel cache. */
+interface StatusChannel {
+  channelId: Snowflake;
+  /** Bot has View + Send + Manage here. False also covers unresolvable channels. */
+  canPublish: boolean;
+}
+
+const resolveAnnouncementChannel = (
+  guild: Guild,
+  channelId: Snowflake
+): NewsChannel | undefined => {
+  const resolved = guild.channels.cache.get(channelId);
+  return resolved?.type === ChannelType.GuildAnnouncement ? resolved : undefined;
+};
+
+/**
+ * Registered channel ids in Discord sidebar order, via the same shared sort the
+ * dashboard's channel list is built with, so the two surfaces can't disagree.
+ * A `null` guild means there is no channel cache to read (uncached interaction)
+ * — the backend's order is then passed through untouched.
+ */
+const orderChannelIds = (channelIds: Snowflake[], guild: Guild | null): Snowflake[] => {
+  if (!guild) return channelIds;
+
+  const categoryPositions = new Map<Snowflake, number>();
+  for (const c of guild.channels.cache.values()) {
+    if (c.type === ChannelType.GuildCategory) categoryPositions.set(c.id, c.rawPosition);
+  }
+
+  return sortBySidebarOrder(
+    channelIds,
+    channelId => {
+      // Unresolvable channels have no position — sink them past their group,
+      // still tiebroken by id, so the order stays deterministic.
+      const resolved = resolveAnnouncementChannel(guild, channelId);
+      return {
+        id: channelId,
+        position: resolved?.rawPosition ?? Number.MAX_SAFE_INTEGER,
+        parentId: resolved?.parentId ?? null,
+      };
+    },
+    categoryPositions
+  );
+};
+
+/**
+ * Registered channels in the dashboard Overview's order: channels that can't
+ * publish first, then the rest, sidebar order preserved within each group (a
+ * stable sort over the pre-ordered ids — mirrors `statusRank` in
+ * `apps/web/src/components/dashboard/channel-status.tsx`).
+ *
+ * `canPublish` is a cache-only permission check, so it matches the dashboard's
+ * own okay/not-okay state. A channel counts as broken when the bot lacks any
+ * publish permission or the channel can't be resolved at all (deleted, or no
+ * ViewChannel so it never entered the cache). Without a resolvable bot member
+ * every channel is reported publishing rather than mislabelling all of them.
+ */
+const buildStatusChannels = (
+  channelIds: Snowflake[],
+  guild: Guild | null,
+  botMember: GuildMember | null
+): StatusChannel[] =>
+  orderChannelIds(channelIds, guild)
+    .map(channelId => {
+      const resolved = guild ? resolveAnnouncementChannel(guild, channelId) : undefined;
+      const canPublish =
+        !guild || !botMember
+          ? true
+          : !!resolved && checkChannelPermissions(botMember, resolved).hasAll;
+      return { channelId, canPublish };
+    })
+    .sort((a, b) => Number(a.canPublish) - Number(b.canPublish));
 
 export async function chatInputStatus(
   this: Subcommand,
@@ -45,56 +126,71 @@ export async function chatInputStatus(
         });
       }
 
-      // Per-channel publish-permission check (cache-only, mirrors the dashboard's
-      // canPublish so Discord and web report identical okay/not-okay states). A
-      // channel is flagged when the bot lacks View/Send/Manage or can't resolve
-      // it at all (deleted / no ViewChannel). Skipped only if the bot member
-      // can't be resolved, to avoid mislabelling every channel as broken.
-      const botMember = await interaction.guild?.members.me?.fetch();
-      const misconfiguredIds = botMember
-        ? channelIds.filter(id => {
-            const resolved = botMember.guild.channels.cache.get(id);
-            if (!resolved || resolved.type !== ChannelType.GuildAnnouncement) return true;
-            return !checkChannelPermissions(botMember, resolved).hasAll;
-          })
-        : [];
-      const misconfiguredSet = new Set(misconfiguredIds);
+      const botMember = (await interaction.guild?.members.me?.fetch()) ?? null;
+      const statusChannels = buildStatusChannels(channelIds, interaction.guild, botMember);
+      const blockedCount = statusChannels.filter(c => !c.canPublish).length;
+      const count = statusChannels.length;
 
-      const channelList = channelIds
-        .map(id => (misconfiguredSet.has(id) ? `- ${emojis.warning} <#${id}>` : `- <#${id}>`))
-        .join('\n');
-      const count = channelIds.length;
+      // Header mirrors the dashboard Overview's precedence and copy: the outage
+      // owns the headline when there is one, otherwise "All good" + the count.
+      const header =
+        blockedCount > 0
+          ? `### ${emojis.crossmark} **${blockedCount}** channel${blockedCount !== 1 ? "s aren't" : " isn't"} publishing\nGrant the missing permissions — see the list below.`
+          : `### ${emojis.checkmark} All good\nPublishing in **${count}** channel${count !== 1 ? 's' : ''}.`;
 
-      // Paused channels are retained but over the free limit of 3 (ADR 0009) —
-      // surfaced so the user understands why they went quiet, with the path back.
-      const pausedSection =
-        pausedChannelIds.length > 0
-          ? `\n\n${emojis.warning} **${pausedChannelIds.length}** channel${pausedChannelIds.length !== 1 ? 's are' : ' is'} paused — over the free limit of 3. Upgrade to Premium to restore ${pausedChannelIds.length !== 1 ? 'them' : 'it'}:\n\n${pausedChannelIds.map(id => `- <#${id}>`).join('\n')}`
-          : '';
-
-      const listContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(
-          `${emojis.checkmark} Auto-publishing is enabled in **${count}** channel${count !== 1 ? 's' : ''}:\n\n${channelList}${pausedSection}${formatNotes([config.isPremiumInstance ? notes.publishDelayPremium : notes.publishDelayFree])}`
+      // One row per channel with its own status label, same as the Overview's cards.
+      const channelList = statusChannels
+        .map(({ channelId, canPublish }) =>
+          canPublish
+            ? `${emojis.checkmark} <#${channelId}> — Publishing`
+            : `${emojis.crossmark} <#${channelId}> — Not publishing`
         )
-      );
+        .join('\n');
 
-      // At least one channel is misconfigured → separator + fix instructions that
-      // match the dashboard's "fix" flow (same required permissions, same "resumes
-      // on its own" promise). No auto-disable exists; the setup is retained.
-      if (misconfiguredSet.size > 0) {
-        const n = misconfiguredSet.size;
-        const fixTitle = `### ${emojis.warning} **${n}** channel${n !== 1 ? 's' : ''} can't publish`;
-        const fixContent = `Auto Publisher is missing permissions in the ${emojis.warning}-flagged channel${n !== 1 ? 's' : ''} above, so ${n !== 1 ? "they won't" : "it won't"} publish. Grant ${n !== 1 ? 'them' : 'it'} these permissions and publishing resumes on its own:`;
+      const listContainer = new ContainerBuilder()
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(header))
+        .addSeparatorComponents(separator => separator)
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(channelList));
+
+      // At least one channel can't publish → the fix instructions the Overview
+      // puts behind its per-row "Fix" button (same required permissions, same
+      // "resumes on its own" promise). No auto-disable exists; setup is retained.
+      if (blockedCount > 0) {
+        const fixContent = `Auto Publisher is missing permissions in the ${emojis.crossmark}-flagged channel${blockedCount !== 1 ? 's' : ''} above, so ${blockedCount !== 1 ? "they won't" : "it won't"} publish. Grant ${blockedCount !== 1 ? 'them' : 'it'} these permissions and publishing resumes on its own:`;
         const permissionsList = PUBLISH_PERMISSION_FLAGS.map(perm => `- \`${perm.name}\``).join(
           '\n'
         );
 
         listContainer
           .addSeparatorComponents(separator => separator)
-          .addTextDisplayComponents(textDisplay => textDisplay.setContent(fixTitle))
           .addTextDisplayComponents(textDisplay => textDisplay.setContent(fixContent))
           .addTextDisplayComponents(textDisplay => textDisplay.setContent(permissionsList));
       }
+
+      // Paused channels are retained but over the free limit of 3 (ADR 0009) —
+      // surfaced so the user understands why they went quiet, with the path back.
+      // Trails the serving channels, matching the Overview's paused rows.
+      if (pausedChannelIds.length > 0) {
+        const n = pausedChannelIds.length;
+        const pausedContent = `${emojis.warning} **${n}** channel${n !== 1 ? 's are' : ' is'} paused — over the free limit of 3. Upgrade to Premium to restore ${n !== 1 ? 'them' : 'it'}:`;
+        const pausedList = orderChannelIds(pausedChannelIds, interaction.guild)
+          .map(id => `<#${id}> — Paused`)
+          .join('\n');
+
+        listContainer
+          .addSeparatorComponents(separator => separator)
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(pausedContent))
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent(pausedList));
+      }
+
+      listContainer.addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          formatNotes([
+            notes.rateLimit,
+            config.isPremiumInstance ? notes.publishDelayPremium : notes.publishDelayFree,
+          ]).trimStart()
+        )
+      );
 
       return interaction.editReply({
         flags: [MessageFlags.IsComponentsV2],
