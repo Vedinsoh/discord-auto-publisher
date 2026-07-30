@@ -1,6 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ChannelType, type Client, Events, type NewsChannel } from 'discord.js';
+import { hydrateEmojis } from 'lib/emojis.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
@@ -37,7 +38,14 @@ const sweepPublishState = async (client: Client): Promise<void> => {
   event: Events.ClientReady,
 })
 export class ReadyListener extends Listener {
-  public run() {
+  public async run(client: Client<true>) {
+    // Awaited before ready: every command surface renders these, and a fallback
+    // shown once would persist in that reply. Never fatal — on failure every key
+    // keeps its unicode fallback.
+    await hydrateEmojis(client).catch(err =>
+      logger.warn({ event: 'emojis.hydrate_failed', err }, 'App emoji hydration failed')
+    );
+
     this.container.client.cluster.triggerReady();
 
     void sweepPublishState(this.container.client).catch(err =>

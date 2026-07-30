@@ -22,7 +22,7 @@ export class LinksCommand extends Command {
         .addTextDisplayComponents(textDisplay =>
           textDisplay.setContent('✨ **Add bot to your server** ✨')
         )
-        .setButtonAccessory(Buttons.botInvite)
+        .setButtonAccessory(Buttons.botInvite())
     );
 
     if (!config.isPremiumInstance) {

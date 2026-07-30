@@ -116,7 +116,7 @@ export async function chatInputStatus(
 
         const noChannelsContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
-            `${emojis.botFree} No channels are currently enabled for auto-publishing in this server.\n\n-# ${emojis.greenCircle} Get started by using </ap enable:${apCommandId}> to enable auto-publishing in a channel.`
+            `${emojis.botBrand} No channels are currently enabled for auto-publishing in this server.\n\n-# ${emojis.greenCircle} Get started by using </ap enable:${apCommandId}> to enable auto-publishing in a channel.`
           )
         );
 

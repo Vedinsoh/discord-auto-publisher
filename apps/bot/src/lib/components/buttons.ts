@@ -11,11 +11,15 @@ export const getPremium = new ButtonBuilder()
   .setURL(links.premiumPage)
   .setStyle(ButtonStyle.Link);
 
-export const botInvite = new ButtonBuilder()
-  .setEmoji(emojis.botFree)
-  .setLabel('Invite the bot!')
-  .setURL(links.botInvite)
-  .setStyle(ButtonStyle.Link);
+// Built per call, not at module scope: `emojis.botBrand` is only resolved to the
+// app emoji at startup, so a builder created at import time would capture the
+// unicode fallback forever.
+export const botInvite = () =>
+  new ButtonBuilder()
+    .setEmoji(emojis.botBrand)
+    .setLabel('Invite the bot!')
+    .setURL(links.botInvite)
+    .setStyle(ButtonStyle.Link);
 
 export const supportServer = new ButtonBuilder()
   .setLabel('Support server')

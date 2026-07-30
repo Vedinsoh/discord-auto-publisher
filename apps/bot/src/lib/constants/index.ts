@@ -10,16 +10,42 @@ export const links = {
   botInvite: `https://discord.com/oauth2/authorize?client_id=739823232651100180&permissions=10240&integration_type=0&scope=bot+applications.commands`,
 };
 
+/**
+ * Unicode fallbacks, replaced in place by `hydrateEmojis` at startup once the
+ * app-owned emoji ids are resolved. A key whose name is missing from this
+ * edition's app keeps its fallback, so a partial upload degrades cosmetically
+ * instead of leaking raw `<:name:id>` text into replies.
+ */
 export const emojis = {
-  botFree: '<:auto_publisher:1444800510489264298>',
-  checkmark: '<:ap_check_mark:1444784796470612089>',
-  crossmark: '<:ap_cross_mark:1444785716348321933>',
-  info: '<:ap_info:1444787324310519899>',
-  warning: '<:ap_warning:1444787044110041230>',
-  filter: '<:ap_filter:1445407254550679613>',
-  greenCircle: '<:ap_green_circle_dot:1444788894913532128>',
-  yellowCircle: '<:ap_yellow_circle_dot:1445046944140628073>',
-  redCircle: '<:ap_red_circle_dot:1444789399966715955>',
+  botBrand: '📢',
+  checkmark: '✅',
+  crossmark: '❌',
+  info: 'ℹ️',
+  warning: '⚠️',
+  filter: '🔍',
+  greenCircle: '🟢',
+  redCircle: '🔴',
+};
+
+/**
+ * App-emoji names, identical across all four applications (free/premium ×
+ * dev/prod) — only the snowflake differs, so ids are resolved at runtime rather
+ * than hardcoded per client.
+ *
+ * These must be app-owned emojis, not guild-hosted ones: a guild emoji only
+ * renders for a bot that shares that guild, and the handover rails keep exactly
+ * one edition in any given guild — including the support server that used to
+ * host them, which left the evicted edition rendering plain text.
+ */
+export const emojiNames: Record<keyof typeof emojis, string> = {
+  botBrand: 'auto_publisher',
+  checkmark: 'checkmark',
+  crossmark: 'crossmark',
+  info: 'info',
+  warning: 'warning',
+  filter: 'filter',
+  greenCircle: 'green_circle_dot',
+  redCircle: 'red_circle_dot',
 };
 
 export const notes = {
