@@ -55,18 +55,20 @@ const isTextFilterType = (type: FilterType): type is TextFilterType =>
   type === FilterType.Keyword || type === FilterType.Webhook;
 
 /**
- * Text-input ceilings. Keyword gets Discord's maximum because the backend allows 20
- * values of 200 characters — more than a 1000-character input could ever carry back.
+ * Text-input ceilings. Keyword gets Discord's maximum: the backend allows 25 values
+ * of 200 characters, which outgrows even a 4000-character input, so the tail of that
+ * range is web-only by necessity (see {@link fitsEditModal}). Webhook needs only to
+ * clear 25 snowflakes plus separators (~550 characters) with room to spare.
  */
 const TEXT_INPUT_LIMITS: Record<TextFilterType, number> = {
   [FilterType.Keyword]: 4000,
-  [FilterType.Webhook]: 500,
+  [FilterType.Webhook]: 1024,
 };
 
 /**
  * Whether an existing condition's values fit the form that would edit them. A rule
- * built on the dashboard can hold 20 × 200 characters of keywords, which just
- * outgrows Discord's largest text input — and a modal cannot carry a value its own
+ * built on the dashboard can hold 25 × 200 characters of keywords, which outgrows
+ * Discord's largest text input — and a modal cannot carry a value its own
  * `max_length` rejects, so such a condition has to be edited on the web.
  */
 export const fitsEditModal = (filter: Filter): boolean =>

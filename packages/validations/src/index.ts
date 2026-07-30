@@ -44,6 +44,19 @@ export const FilterSchema = z.object({
   createdAt: z.date(),
 });
 
+/**
+ * Per-type value caps. Uniform at 25 today: that is Discord's ceiling for a select
+ * menu's `max_values`, and the mention/author forms are built on selects, so no type
+ * could go higher. Kept per-type rather than collapsed to one number so a single
+ * type can be tuned later without reshaping every caller.
+ */
+export const MAX_VALUES: Record<FilterType, number> = {
+  [FilterType.Keyword]: 25,
+  [FilterType.Mention]: 25,
+  [FilterType.Author]: 25,
+  [FilterType.Webhook]: 25,
+};
+
 /** A keyword that is empty or only `*`s matches everything — reject it as a no-op. */
 const isNoOpKeyword = (value: string): boolean => {
   const collapsed = value.trim().replace(/\*+/g, '*');
@@ -58,14 +71,7 @@ export const CreateFilterSchema = z
   })
   .refine(
     filter => {
-      // Max values per type
-      const maxValues: Record<string, number> = {
-        keyword: 20,
-        mention: 10,
-        author: 10,
-        webhook: 10,
-      };
-      const max = maxValues[filter.type];
+      const max = MAX_VALUES[filter.type];
       return max !== undefined && filter.values.length <= max;
     },
     {

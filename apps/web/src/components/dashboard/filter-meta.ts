@@ -71,12 +71,24 @@ export function isNoOpKeyword(value: string): boolean {
  */
 export const MAX_FILTERS_PER_CHANNEL = 50;
 
-/** Per-type value caps (mirror CreateFilterSchema's refine on the backend). */
+/**
+ * Per-type value caps. Hand-mirrors `MAX_VALUES` in `@ap/validations`, which is the
+ * authority — keep the two in step.
+ *
+ * Not imported, even though `@ap/validations` is reachable through `@ap/api-types`:
+ * that route carries *types* only (`export type`), which erase at compile time. This
+ * is a runtime value, and the rule editor is a client component, so importing it
+ * would evaluate the validations module — whose top level builds zod schemas — and
+ * drag zod into the browser bundle for four integers.
+ *
+ * Uniform at 25 today (Discord's `max_values` ceiling for the selects the bot's
+ * mention/author pickers use); kept per-type so one can be tuned later.
+ */
 export const MAX_VALUES: Record<FilterType, number> = {
-  keyword: 20,
-  mention: 10,
-  author: 10,
-  webhook: 10,
+  keyword: 25,
+  mention: 25,
+  author: 25,
+  webhook: 25,
 };
 
 export const FILTER_TYPE_OPTIONS: SegmentedOption<FilterType>[] = [

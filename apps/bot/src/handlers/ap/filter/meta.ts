@@ -50,10 +50,8 @@ export const MODE_LABELS: Record<FilterMatchMode, string> = {
   [FilterMatchMode.Any]: 'Any',
 };
 
-/** Per-type value caps — mirrors `CreateFilterSchema`'s refine on the backend. */
-export const MAX_VALUES: Record<FilterType, number> = {
-  [FilterTypes.Keyword]: 20,
-  [FilterTypes.Mention]: 10,
-  [FilterTypes.Author]: 10,
-  [FilterTypes.Webhook]: 10,
-};
+/**
+ * Per-type value caps. Re-exported from the schema package rather than mirrored, so
+ * the panel can never drift from what the backend accepts — tune them there.
+ */
+export { MAX_VALUES } from '@ap/validations';

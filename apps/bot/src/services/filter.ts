@@ -2,6 +2,7 @@ import { config } from '@ap/config';
 import { anyKeywordMatches } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Message, NewsChannel } from 'discord.js';
+import { extractMessageText } from 'utils/messageText.js';
 import { Services } from './index.js';
 
 /**
@@ -30,7 +31,10 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
 
     const conditions = channelStatus.filters;
     const matchMode = channelStatus.filterMode || FilterMatchMode.All;
-    const content = message.content.toLowerCase();
+    // Embeds and Components V2 text included — see extractMessageText. Not lowercased:
+    // the keyword patterns are case-insensitive, so a copy of the whole message text
+    // would buy nothing.
+    const content = extractMessageText(message);
     const authorId = message.author.id;
 
     const passes = (condition: Filter): boolean => {
@@ -48,7 +52,7 @@ const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean
 /**
  * Check if message matches a filter
  * @param filter Filter to check
- * @param content Message content (lowercase)
+ * @param content Flattened message text (content + embeds + Components V2)
  * @param authorId Message author ID
  * @param message Full message object
  * @returns true if matches, false otherwise
