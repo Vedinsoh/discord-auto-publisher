@@ -81,7 +81,7 @@ export function Footer() {
               target="_blank"
               className="text-blue-400 hover:text-blue-500 transition-colors"
             >
-              Vedinsoh
+              acehox
             </Link>
           </div>
         </div>

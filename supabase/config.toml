@@ -1,4 +1,4 @@
-project_id = "discord-auto-publisher"
+project_id = "auto-publisher"
 
 [api]
 enabled = false

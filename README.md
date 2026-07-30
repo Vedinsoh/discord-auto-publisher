@@ -31,7 +31,7 @@ https://discord.gg/xcEeJkdQX8
 
 Did the bot help you or do you simply want to support my work? ❤️
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/vedinsoh)
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/acehox)
 
 ## Self-hosting
 

@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description:
     'Auto Publisher automatically publishes messages in your announcement channels, ensuring your community never misses important updates. Trusted by 17,000+ Discord servers.',
   keywords: ['Discord', 'bot', 'announcements', 'auto publish', 'Discord bot'],
-  authors: [{ name: 'Vedinsoh' }],
+  authors: [{ name: 'acehox' }],
 };
 
 export default function RootLayout({

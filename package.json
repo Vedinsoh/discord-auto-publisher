@@ -1,7 +1,7 @@
 {
-  "name": "discord-auto-publisher",
+  "name": "auto-publisher",
   "version": "7.0.0",
-  "author": "Vedinsoh",
+  "author": "acehox",
   "license": "GPL-3.0-or-later",
   "private": true,
   "scripts": {

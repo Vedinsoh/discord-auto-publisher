@@ -1,8 +1,8 @@
 export const links = {
   discordSupportServer: 'https://discord.gg/xcEeJkdQX8',
   supportEmail: 'support@auto-publisher.gg',
-  githubRepo: 'https://github.com/Vedinsoh/discord-auto-publisher',
-  githubAuthor: 'https://github.com/Vedinsoh',
+  githubRepo: 'https://github.com/acehox/auto-publisher',
+  githubAuthor: 'https://github.com/acehox',
 };
 
 export const values = {
