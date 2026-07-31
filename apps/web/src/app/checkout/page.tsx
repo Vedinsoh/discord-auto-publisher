@@ -98,7 +98,7 @@ function CheckoutInner() {
 
   // Guards the AUTO-open against a duplicate Checkout.open() from React
   // re-renders / StrictMode double-invoke; keyed on the transaction so a new
-  // checkout re-opens. The manual "Resume checkout" button bypasses it on
+  // checkout re-opens. The manual "Go to checkout" button bypasses it on
   // purpose — reopening a dismissed overlay is exactly what it's for.
   const openedForRef = useRef<string | null>(null);
 
@@ -173,7 +173,7 @@ function CheckoutInner() {
           disabled={!paddle}
           className="mt-8 w-full bg-linear-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
         >
-          Resume checkout
+          Go to checkout
         </Button>
         <p className="mt-3 text-xs text-slate-500">
           Closed the payment window? Reopen it to finish.

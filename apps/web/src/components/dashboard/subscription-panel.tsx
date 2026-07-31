@@ -25,17 +25,13 @@ import { PlanComparisonTable } from '@/components/plan-comparison-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { SegmentedControl, type SegmentedOption } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { legacySunsetLabel } from '@/lib/constants';
 import { guildIconUrl } from '@/lib/discord';
-import {
-  isPremiumFeatureKey,
-  PREMIUM_FEATURE_BLURBS,
-  PREMIUM_PLAN_FEATURES,
-  type PremiumFeatureKey,
-} from '@/lib/plans';
+import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
 import {
   formatUsd,
   PREMIUM_PRICE_MONTHLY_USD,
@@ -85,8 +81,6 @@ const intervalLabels: Record<string, string> = {
 };
 
 export function SubscriptionPanel({ guildId, guildName, subscription }: SubscriptionPanelProps) {
-  const searchParams = useSearchParams();
-
   // Narrowed rather than a boolean flag so the entitled branch keeps a non-null
   // subscription without an assertion.
   const entitledSubscription =
@@ -95,15 +89,6 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
       subscription.status === 'trialing' ||
       subscription.status === 'past_due')
       ? subscription
-      : null;
-
-  // Continuity for someone who arrived from a locked premium tab. Gated on
-  // "can't use it yet": an entitled server has no locked tab to come from, and
-  // someone who navigated here to manage billing shouldn't be sold a feature.
-  const fromParam = searchParams.get('from');
-  const arrivedFrom =
-    !entitledSubscription && isPremiumFeatureKey(fromParam)
-      ? PREMIUM_FEATURE_BLURBS[fromParam]
       : null;
 
   return (
@@ -121,12 +106,10 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
         </p>
       </div>
 
-      {arrivedFrom && <FeatureContinuity feature={arrivedFrom} />}
-
       {/* Left-aligned rather than centred: a centred max-w-md card under a
-          left-aligned heading (and, on arrival, a full-width continuity strip)
-          reads as a different page width per plan state. max-w-2xl keeps the one
-          card from stretching to the full content column. */}
+          left-aligned heading reads as a different page width per plan state.
+          max-w-2xl keeps the one card from stretching to the full content
+          column. */}
       {entitledSubscription ? (
         <div className="max-w-2xl">
           <ActiveSubscription guildId={guildId} subscription={entitledSubscription} />
@@ -135,45 +118,6 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
         <FreeSubscription guildId={guildId} guildName={guildName} />
       )}
     </div>
-  );
-}
-
-/**
- * Carries the promise the locked tab made into the page that keeps it: the
- * feature's name and the very same benefit lines, above the plan card.
- *
- * Deliberately NOT a second hero — neutral panel, no glow, small icon, benefits
- * as a wrapped inline row instead of the hero's vertical checklist. The upgrade
- * card and the locked tab's card are near-identical, so arriving here already
- * risks reading as a no-op; echoing that shape a third time would make it worse.
- * This has to look like a new element, because it is the evidence that pressing
- * the button did something.
- */
-function FeatureContinuity({
-  feature,
-}: {
-  feature: (typeof PREMIUM_FEATURE_BLURBS)[PremiumFeatureKey];
-}) {
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-4">
-      <div className="flex items-start gap-3">
-        <Lock className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-        <div>
-          <p className="text-white text-sm">
-            <span className="text-blue-300">{feature.label}</span> is a Premium feature
-          </p>
-          <p className="text-slate-400 text-sm mt-1">{feature.description}</p>
-          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            {feature.benefits.map(benefit => (
-              <li key={benefit} className="flex items-center gap-1.5 text-slate-400 text-xs">
-                <Check className="w-3.5 h-3.5 text-blue-400/70 shrink-0" />
-                {benefit}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </Card>
   );
 }
 
@@ -445,6 +389,22 @@ function ChannelUsage() {
 
 type BillingInterval = 'month' | 'year';
 
+const BILLING_INTERVAL_OPTIONS: SegmentedOption<BillingInterval>[] = [
+  { value: 'month', label: 'Monthly' },
+  {
+    value: 'year',
+    ariaLabel: `Yearly, save ${PREMIUM_YEARLY_SAVINGS_PERCENT} percent`,
+    label: (
+      <>
+        Yearly
+        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
+          Save {PREMIUM_YEARLY_SAVINGS_PERCENT}%
+        </span>
+      </>
+    ),
+  },
+];
+
 function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: string }) {
   const { guild, data } = useGuild();
   const searchParams = useSearchParams();
@@ -511,7 +471,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
             Here&apos;s what changes with Premium for {guildName}.
           </p>
           {migrated && <ChannelUsage />}
-          <PlanComparisonTable currentPlan="free" className="mt-5" />
+          <PlanComparisonTable className="mt-5" />
         </Card>
 
         {error && (
@@ -574,34 +534,15 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
             <h3 className="text-3xl text-white mb-2">Upgrade to Premium</h3>
             <p className="text-slate-400 mb-6">Unlock all features for {guildName}</p>
 
-            {/* Billing interval toggle */}
-            <div className="inline-flex items-center bg-slate-900/80 rounded-lg p-1 border border-slate-700 mb-6">
-              <button
-                type="button"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  billingInterval === 'month'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-                onClick={() => setBillingInterval('month')}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                  billingInterval === 'year'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-                onClick={() => setBillingInterval('year')}
-              >
-                Yearly
-                <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">
-                  Save {PREMIUM_YEARLY_SAVINGS_PERCENT}%
-                </span>
-              </button>
-            </div>
+            {/* Billing interval toggle — the shared control, so this reads and
+                behaves like the filter match-mode toggle and inherits its
+                aria-pressed (the hand-rolled pair announced nothing). */}
+            <SegmentedControl
+              options={BILLING_INTERVAL_OPTIONS}
+              value={billingInterval}
+              onChange={setBillingInterval}
+              className="mb-6"
+            />
 
             {/* Price display */}
             <div className="flex items-baseline justify-center gap-2">
@@ -628,25 +569,32 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
               shrinks this card away from being a pixel-twin of the locked tab's
               hero, which is what made arriving here read as a no-op. */}
 
-          {/* Locked until migrated: disabled buttons swallow hover, so the
-              native tooltip rides the wrapping span. MIGRATION: unwrap after
-              migration period (6 months) */}
-          <span className="block" title={migrated ? undefined : 'Finish channel setup first'}>
-            <Button
-              className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
-              onClick={handleUpgrade}
-              disabled={isPending || !migrated}
-            >
-              {!migrated ? (
-                <Lock className="w-5 h-5 mr-2" />
-              ) : isPending ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Crown className="w-5 h-5 mr-2" />
-              )}
-              {isPending ? 'Upgrading...' : 'Upgrade to Premium'}
-            </Button>
-          </span>
+          {/* Legacy guilds get a LIVE button into the thing that unlocks
+              checkout, not a dead one. A disabled control plus a native
+              title tooltip made the blocker discoverable only by hovering the
+              obstacle — and only on a mouse, since :hover tooltips don't exist
+              on touch. Pressing it opens the same migrate modal the amber gate
+              opens, so the dead end becomes the next step.
+              MIGRATION: collapse back to a single handleUpgrade button after the
+              migration period (6 months). */}
+          <Button
+            className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
+            onClick={migrated ? handleUpgrade : () => setMigrateOpen(true)}
+            disabled={isPending}
+          >
+            {!migrated ? (
+              <Lock className="w-5 h-5 mr-2" />
+            ) : isPending ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Crown className="w-5 h-5 mr-2" />
+            )}
+            {!migrated
+              ? 'Set up channels first'
+              : isPending
+                ? 'Upgrading...'
+                : 'Upgrade to Premium'}
+          </Button>
 
           {migrated ? (
             <p className="text-slate-500 text-sm text-center mt-4">
@@ -654,7 +602,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
             </p>
           ) : (
             <p className="text-amber-400/80 text-sm text-center mt-4">
-              Finish channel setup above to unlock checkout.
+              Takes a few seconds, then you can upgrade.
             </p>
           )}
         </Card>

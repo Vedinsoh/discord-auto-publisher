@@ -1,10 +1,17 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface SegmentedOption<T extends string> {
   value: T;
-  label: string;
+  /**
+   * ReactNode, not string, so an option can carry an adornment — the billing
+   * toggle hangs a "Save 17%" pill off "Yearly". Plain strings still work.
+   */
+  label: ReactNode;
+  /** Accessible name, required when `label` isn't readable text on its own. */
+  ariaLabel?: string;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -40,9 +47,10 @@ export function SegmentedControl<T extends string>({
             type="button"
             disabled={disabled}
             aria-pressed={active}
+            aria-label={option.ariaLabel}
             onClick={() => onChange(option.value)}
             className={cn(
-              'rounded-md font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+              'inline-flex items-center gap-2 rounded-md font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50',
               size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-sm',
               active
                 ? 'bg-blue-600 text-white'

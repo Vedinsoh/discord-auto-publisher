@@ -74,17 +74,13 @@ export const PLAN_COMPARISON: readonly PlanComparisonRow[] = [
 ];
 
 /**
- * Per-feature upsell copy for premium-gated tabs — the single source for both
- * ends of the upgrade journey, so the promise a locked tab makes is the promise
- * the Subscription page keeps. The locked tab renders these strings and links
- * with `?from={key}`; the Subscription page reads that key back and repeats the
- * same strings in its continuity strip, instead of swapping them for the generic
- * PREMIUM_PLAN_FEATURES (which would shrink "everything filters do" down to one
- * bullet at exactly the moment the user is deciding).
+ * Per-feature upsell copy for premium-gated tabs, rendered by `<LockedFeature>`
+ * in place of the tab's content on a free server. Feature-specific rather than
+ * the generic PREMIUM_PLAN_FEATURES, which would shrink "everything filters do"
+ * down to one bullet at exactly the moment the user is deciding.
  *
- * Keyed by the dashboard tab segment, which doubles as the `?from=` value and as
- * the post-checkout return route — so a key must always name a real tab, and an
- * unrecognized `?from=` is ignored rather than trusted as a path.
+ * Keyed by dashboard tab segment, so a key always names a real tab and the page
+ * can pass its own segment as the `feature` prop.
  */
 export const PREMIUM_FEATURE_BLURBS = {
   filters: {
@@ -100,8 +96,3 @@ export const PREMIUM_FEATURE_BLURBS = {
 } as const;
 
 export type PremiumFeatureKey = keyof typeof PREMIUM_FEATURE_BLURBS;
-
-/** Narrows an untrusted `?from=` value to a known gated feature. */
-export function isPremiumFeatureKey(value: string | null): value is PremiumFeatureKey {
-  return value !== null && value in PREMIUM_FEATURE_BLURBS;
-}

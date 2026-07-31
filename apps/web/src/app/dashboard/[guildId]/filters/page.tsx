@@ -35,9 +35,12 @@ export default function FiltersPage() {
           premiumPending={guild.premiumPending}
         />
       ) : (
-        <div className="mx-auto max-w-md">
-          {/* Copy lives in PREMIUM_FEATURE_BLURBS.filters so this card and the
-              Subscription page's continuity strip tell the same story. */}
+        // Left-aligned max-w-2xl to match the Subscription page's entitled card:
+        // the upsell now carries a rule-editor preview, which a max-w-md column
+        // squeezed into wrapping nonsense.
+        <div className="max-w-2xl">
+          {/* Copy lives in PREMIUM_FEATURE_BLURBS.filters, keyed by this tab's
+              own segment. */}
           <LockedFeature guildId={guild.id} feature="filters" />
         </div>
       )}

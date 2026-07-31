@@ -1,9 +1,9 @@
 'use client';
 
-import { Crown, Filter, Hash, Home } from 'lucide-react';
+import { CreditCard, Crown, Filter, Hash, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Fragment, Suspense, useEffect } from 'react';
 import type { GuildLoadFailure } from '@/lib/api/auth-expired';
 import type { GuildDashboardData } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
@@ -16,11 +16,25 @@ import { GuildSwitcher } from './server-switcher';
 import { GuildDashboardShellSkeleton } from './skeletons';
 import { useGuildAttention } from './use-guild-attention';
 
+// `dividerBefore` separates configuration (what the bot does in this server)
+// from account administration. A crown on Subscription read as "this tab is a
+// premium feature" — the same thing the crown means on Filters — so it now takes
+// CreditCard: the tab is about billing, and it's the one tab that is emphatically
+// not gated. No section label: four items don't warrant headers, and labelling a
+// group of one is noise.
+// Spelled out on every tab (like premiumOnly) because the array is `as const`:
+// an optional key present on one member only isn't readable off the union.
 const tabs = [
-  { id: 'overview', label: 'Overview', icon: Home, premiumOnly: false },
-  { id: 'channels', label: 'Channels', icon: Hash, premiumOnly: false },
-  { id: 'filters', label: 'Filters', icon: Filter, premiumOnly: true },
-  { id: 'subscription', label: 'Subscription', icon: Crown, premiumOnly: false },
+  { id: 'overview', label: 'Overview', icon: Home, premiumOnly: false, dividerBefore: false },
+  { id: 'channels', label: 'Channels', icon: Hash, premiumOnly: false, dividerBefore: false },
+  { id: 'filters', label: 'Filters', icon: Filter, premiumOnly: true, dividerBefore: false },
+  {
+    id: 'subscription',
+    label: 'Subscription',
+    icon: CreditCard,
+    premiumOnly: false,
+    dividerBefore: true,
+  },
 ] as const;
 
 interface GuildDashboardShellProps {
@@ -102,29 +116,31 @@ function SidebarTabs({ guildId }: { guildId: string }) {
         const isActive = pathname.startsWith(href);
 
         return (
-          <Link
-            key={tab.id}
-            href={href}
-            className={cn(
-              'group w-full flex items-center gap-2.5 p-3 rounded-lg text-sm transition-all',
-              isActive
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
-                : 'bg-slate-900/50 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-300'
-            )}
-          >
-            <tab.icon className="w-4 h-4" />
-            <span>{tab.label}</span>
-            {tab.id === 'overview' && (
-              <ErrorBoundary key={guildId} fallback={null}>
-                <Suspense fallback={null}>
-                  <OverviewBadge />
-                </Suspense>
-              </ErrorBoundary>
-            )}
-            {tab.premiumOnly && (
-              <Crown className="w-3.5 h-3.5 ml-auto group-hover:text-yellow-500" />
-            )}
-          </Link>
+          <Fragment key={tab.id}>
+            {tab.dividerBefore && <div className="h-px bg-slate-800 my-3" />}
+            <Link
+              href={href}
+              className={cn(
+                'group w-full flex items-center gap-2.5 p-3 rounded-lg text-sm transition-all',
+                isActive
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50'
+                  : 'bg-slate-900/50 text-slate-400 border border-slate-800 hover:border-slate-700 hover:text-slate-300'
+              )}
+            >
+              <tab.icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+              {tab.id === 'overview' && (
+                <ErrorBoundary key={guildId} fallback={null}>
+                  <Suspense fallback={null}>
+                    <OverviewBadge />
+                  </Suspense>
+                </ErrorBoundary>
+              )}
+              {tab.premiumOnly && (
+                <Crown className="w-3.5 h-3.5 ml-auto group-hover:text-yellow-500" />
+              )}
+            </Link>
+          </Fragment>
         );
       })}
     </>

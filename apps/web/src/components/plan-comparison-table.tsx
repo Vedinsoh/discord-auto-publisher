@@ -2,11 +2,6 @@ import { Check, Crown, Minus } from 'lucide-react';
 import { PLAN_COMPARISON, type PlanValue } from '@/lib/plans';
 
 interface PlanComparisonTableProps {
-  /**
-   * Marks one column as the viewer's plan (dashboard only). The public pages
-   * have no viewer, so they pass nothing and no column is annotated.
-   */
-  currentPlan?: 'free' | 'premium';
   className?: string;
 }
 
@@ -20,8 +15,14 @@ interface PlanComparisonTableProps {
  * A real <table> rather than a grid of divs: the value cells are ticks and
  * dashes, which only mean something in relation to their row and column, and
  * scope="row"/"col" is what makes a screen reader announce that relation.
+ *
+ * No "current plan" marker on a column: the dashboard card that hosts this is
+ * already titled "You're on the Free plan", and a stacked CURRENT caption under
+ * the Free header read as a third column header while knocking the three headers
+ * out of vertical alignment. The surrounding surface says which plan is yours;
+ * the table only has to say what the plans are.
  */
-export function PlanComparisonTable({ currentPlan, className }: PlanComparisonTableProps) {
+export function PlanComparisonTable({ className }: PlanComparisonTableProps) {
   return (
     <table className={`w-full border-collapse text-left ${className ?? ''}`}>
       <thead>
@@ -34,22 +35,12 @@ export function PlanComparisonTable({ currentPlan, className }: PlanComparisonTa
           </th>
           <th scope="col" className="w-18 pb-2 text-center text-xs font-normal text-slate-400">
             Free
-            {currentPlan === 'free' && (
-              <span className="block text-[10px] uppercase tracking-wide text-slate-600">
-                Current
-              </span>
-            )}
           </th>
           <th scope="col" className="w-24 pb-2 text-center text-xs font-normal text-blue-300">
             <span className="inline-flex items-center gap-1">
               <Crown className="h-3 w-3" aria-hidden="true" />
               Premium
             </span>
-            {currentPlan === 'premium' && (
-              <span className="block text-[10px] uppercase tracking-wide text-slate-600">
-                Current
-              </span>
-            )}
           </th>
         </tr>
       </thead>
