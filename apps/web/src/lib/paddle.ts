@@ -18,20 +18,19 @@ interface UsePaddleOptions {
   // event so callers can read server-set custom_data (e.g. discord_guild_id on a
   // recovery/default-payment-link checkout).
   onCompleted?: (event: PaddleEventData) => void;
-  // Fires when the checkout frame has rendered (used to clear a loading state,
-  // relevant for inline where there is no overlay to signal readiness).
-  onLoaded?: () => void;
   // Merged into the default checkout settings. displayMode is a GLOBAL
-  // Paddle.Initialize setting (not a per-open arg), so a route that needs a
-  // different mode passes its own override: the dashboard panel keeps the overlay
-  // default, the /checkout default-payment-link page passes inline settings.
+  // Paddle.Initialize setting (not a per-open arg), so a route needing a
+  // different mode has to override it here. Nothing does, deliberately: every
+  // checkout runs in the overlay, which renders its own item description,
+  // totals, tax, renewal terms and merchant-of-record footer. Inline mode moves
+  // all of those disclosures onto the integrating page — see app/checkout/page.tsx.
   settings?: Partial<CheckoutSettings>;
 }
 
 /**
  * Loads Paddle.js once and exposes the instance for checkouts.
  */
-export function usePaddle({ onCompleted, onLoaded, settings }: UsePaddleOptions = {}) {
+export function usePaddle({ onCompleted, settings }: UsePaddleOptions = {}) {
   const [paddle, setPaddle] = useState<Paddle | null>(null);
   // Holds the instance so the eventCallback (registered before .then resolves)
   // can close the overlay on completion
@@ -40,11 +39,10 @@ export function usePaddle({ onCompleted, onLoaded, settings }: UsePaddleOptions 
   const settingsRef = useRef(settings);
   const handleCheckoutCompleted = useEffectEvent((event: PaddleEventData) => {
     // The overlay does not auto-close on completion; close it so the redirected
-    // success view isn't hidden behind it (harmless no-op for inline)
+    // success view isn't hidden behind it.
     paddleRef.current?.Checkout.close();
     onCompleted?.(event);
   });
-  const handleCheckoutLoaded = useEffectEvent(() => onLoaded?.());
 
   useEffect(() => {
     if (!CLIENT_TOKEN) return;
@@ -52,14 +50,12 @@ export function usePaddle({ onCompleted, onLoaded, settings }: UsePaddleOptions 
     initializePaddle({
       token: CLIENT_TOKEN,
       environment: ENVIRONMENT,
-      // Global defaults for every checkout on the route. Callers that open
-      // imperatively (Checkout.open) also pass settings there, which win — but
-      // keeping the inline defaults here means a Paddle-triggered flow still
-      // renders correctly. showAddTaxId keeps the "Add tax number" (business/VAT)
-      // option available; note it only renders when the checkout actually shows a
-      // collection step — a transaction pre-bound to a customer with a complete
-      // address skips collection entirely (see the checkout route's customerId
-      // handling).
+      // Global defaults for every checkout in the app. Callers that open
+      // imperatively (Checkout.open) may also pass settings there, which win.
+      // showAddTaxId keeps the "Add tax number" (business/VAT) option available;
+      // note it only renders when the checkout actually shows a collection step —
+      // a transaction pre-bound to a customer with a complete address skips
+      // collection entirely (see the checkout route's customerId handling).
       checkout: {
         settings: {
           displayMode: 'overlay',
@@ -69,9 +65,7 @@ export function usePaddle({ onCompleted, onLoaded, settings }: UsePaddleOptions 
         },
       },
       eventCallback: (event: PaddleEventData) => {
-        if (event.name === CheckoutEventNames.CHECKOUT_LOADED) {
-          handleCheckoutLoaded();
-        } else if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
+        if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
           handleCheckoutCompleted(event);
         }
       },

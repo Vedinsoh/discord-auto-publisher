@@ -24,6 +24,7 @@ import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
 import { legacySunsetLabel, links } from '@/lib/constants';
 import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
+import { FREE_CHANNEL_LIMIT } from '@/lib/plans';
 import { useActivationPoll } from '@/lib/use-activation-poll';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
@@ -282,12 +283,14 @@ function PausedChannelsBanner({
             {pausedCount} channel{pausedCount !== 1 ? 's are' : ' is'} paused
           </h3>
           <p className="text-slate-300 text-sm mb-4">
-            This server is over the free limit of 3 channels. Their setup is saved and returns if
-            you upgrade to Premium.
+            This server is over the free limit of {FREE_CHANNEL_LIMIT} channels. Their setup is
+            saved and returns if you upgrade to Premium.
           </p>
           <div className="flex items-center gap-4">
+            {/* Names the destination, not the outcome: the Subscription page
+                still asks for a deliberate upgrade press. */}
             <Button className="bg-yellow-500 hover:bg-yellow-400 text-slate-950" asChild>
-              <Link href={`/dashboard/${guildId}/subscription`}>Upgrade to Premium</Link>
+              <Link href={`/dashboard/${guildId}/subscription`}>See Premium plans</Link>
             </Button>
             <Link
               href={`/dashboard/${guildId}/channels`}

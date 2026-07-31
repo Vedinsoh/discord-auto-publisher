@@ -123,27 +123,37 @@ export function FilterConfigSkeleton() {
   );
 }
 
-/** Skeleton for subscription panel content */
+/**
+ * Skeleton for subscription panel content. Mirrors the FREE two-column layout
+ * (plan comparison left, upgrade card right) — the entitled state renders one
+ * narrower card, but plan state is unknowable here (this is the route's
+ * loading.tsx, so it paints before the guild aggregate resolves) and the free
+ * state is both the common case and the wider one, so an entitled guild sees the
+ * layout settle inward rather than a single card jump sideways and grow.
+ */
 export function SubscriptionPanelSkeleton() {
   return (
     <div className="space-y-6">
       <div>
-        <Skeleton className="h-8 w-72 bg-slate-800 mb-2" />
+        <Skeleton className="h-8 w-32 bg-slate-800 mb-2" />
         <Skeleton className="h-5 w-80 bg-slate-800" />
       </div>
-      <div className="max-w-md mx-auto space-y-6">
-        <Card className="bg-slate-900/50 border-slate-800 p-6">
-          <div className="flex items-start gap-4">
-            <Skeleton className="w-12 h-12 rounded-lg bg-slate-800 shrink-0" />
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-6 w-52 bg-slate-800" />
-              <Skeleton className="h-5 w-80 bg-slate-800" />
-              <div className="space-y-2 pt-2">
-                <Skeleton className="h-4 w-40 bg-slate-800" />
-                <Skeleton className="h-4 w-36 bg-slate-800" />
-                <Skeleton className="h-4 w-32 bg-slate-800" />
-              </div>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <Card className="bg-slate-900/50 border-slate-800 p-6 space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-6 w-48 bg-slate-800" />
+            <Skeleton className="h-4 w-64 bg-slate-800" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32 bg-slate-800" />
+            <Skeleton className="h-1.5 w-full rounded-full bg-slate-800" />
+          </div>
+          {/* Four comparison rows */}
+          <div className="space-y-3 pt-2">
+            <Skeleton className="h-4 w-full bg-slate-800" />
+            <Skeleton className="h-4 w-full bg-slate-800" />
+            <Skeleton className="h-4 w-full bg-slate-800" />
+            <Skeleton className="h-4 w-full bg-slate-800" />
           </div>
         </Card>
         <Card className="bg-slate-900/50 border-slate-800 p-8">
@@ -151,7 +161,9 @@ export function SubscriptionPanelSkeleton() {
             <Skeleton className="w-16 h-16 rounded-xl bg-slate-800 mx-auto" />
             <Skeleton className="h-8 w-56 bg-slate-800 mx-auto" />
             <Skeleton className="h-5 w-64 bg-slate-800 mx-auto" />
+            <Skeleton className="h-10 w-56 bg-slate-800 mx-auto" />
             <Skeleton className="h-12 w-40 bg-slate-800 mx-auto" />
+            <Skeleton className="h-12 w-full bg-slate-800" />
           </div>
         </Card>
       </div>

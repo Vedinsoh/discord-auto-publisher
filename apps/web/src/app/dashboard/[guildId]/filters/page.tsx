@@ -36,16 +36,9 @@ export default function FiltersPage() {
         />
       ) : (
         <div className="mx-auto max-w-md">
-          <LockedFeature
-            guildId={guild.id}
-            description="Control exactly which messages get published from each channel"
-            benefits={[
-              'Filter by keyword, mention, author, or webhook',
-              'Allow or block mode per rule',
-              'Combine rules with any/all matching',
-              'Manage everything from the dashboard',
-            ]}
-          />
+          {/* Copy lives in PREMIUM_FEATURE_BLURBS.filters so this card and the
+              Subscription page's continuity strip tell the same story. */}
+          <LockedFeature guildId={guild.id} feature="filters" />
         </div>
       )}
     </div>

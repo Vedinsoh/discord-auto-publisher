@@ -4,11 +4,14 @@
  * told one way everywhere. Keep this in sync with what the product actually
  * delivers; do not add aspirational features.
  */
-export const FREE_PLAN_FEATURES = [
-  'Auto-publishing in announcement channels',
-  'Up to 3 channels',
-  'Standard support',
-];
+
+/**
+ * Free-plan channel cap, for STATIC COPY ONLY (marketing pages, banner text).
+ * A mirror of the backend's `Editions.resolveChannelLimit` free branch — the
+ * authoritative per-guild number arrives as `data.channelLimit`, so anything
+ * rendering a live count must read that instead of this.
+ */
+export const FREE_CHANNEL_LIMIT = 3;
 
 export const PREMIUM_PLAN_FEATURES = [
   'Unlimited channels',
@@ -16,3 +19,89 @@ export const PREMIUM_PLAN_FEATURES = [
   'Advanced message filters',
   'Priority support',
 ];
+
+/** `true` = included (renders a tick), `false` = absent (renders a dash). */
+export type PlanValue = string | boolean;
+
+export interface PlanComparisonRow {
+  label: string;
+  /** Clarifier under the label, where the axis name alone doesn't carry the value. */
+  detail?: string;
+  free: PlanValue;
+  premium: PlanValue;
+}
+
+/**
+ * Row-aligned free-vs-premium comparison, shared by the public /how-it-works
+ * section and the dashboard's free subscription state.
+ *
+ * Row-aligned rather than two independent bullet lists: side-by-side lists with
+ * different lengths and no shared axis leave the reader diffing strings to work
+ * out what they'd actually gain, and silently omit what free LOSES (the old
+ * lists never said filters are unavailable on free — the absence was implied by
+ * a missing bullet). Every row states both sides, so a dash is an explicit "not
+ * included" rather than an oversight.
+ *
+ * The Basic/Near-instant publishing row is a claim about CONTENTION, not
+ * configuration: both editions run the same pipeline with the same queue
+ * settings, and the free bot's proxy shares one global limiter and egress IP
+ * across every free guild. Nothing in the code distinguishes them, so don't
+ * "correct" this row by reading apps/proxy.
+ */
+export const PLAN_COMPARISON: readonly PlanComparisonRow[] = [
+  {
+    label: 'Announcement channels',
+    free: `Up to ${FREE_CHANNEL_LIMIT}`,
+    premium: 'Unlimited',
+  },
+  {
+    label: 'Auto-publishing',
+    detail: 'Every message in an enabled channel, published to followers',
+    free: 'Basic',
+    premium: 'Near-instant',
+  },
+  {
+    label: 'Message filters',
+    detail: 'Publish only what matches your rules — keyword, mention, author, or webhook',
+    free: false,
+    premium: true,
+  },
+  {
+    label: 'Support',
+    free: 'Standard',
+    premium: 'Priority',
+  },
+];
+
+/**
+ * Per-feature upsell copy for premium-gated tabs — the single source for both
+ * ends of the upgrade journey, so the promise a locked tab makes is the promise
+ * the Subscription page keeps. The locked tab renders these strings and links
+ * with `?from={key}`; the Subscription page reads that key back and repeats the
+ * same strings in its continuity strip, instead of swapping them for the generic
+ * PREMIUM_PLAN_FEATURES (which would shrink "everything filters do" down to one
+ * bullet at exactly the moment the user is deciding).
+ *
+ * Keyed by the dashboard tab segment, which doubles as the `?from=` value and as
+ * the post-checkout return route — so a key must always name a real tab, and an
+ * unrecognized `?from=` is ignored rather than trusted as a path.
+ */
+export const PREMIUM_FEATURE_BLURBS = {
+  filters: {
+    label: 'Channel filters',
+    description: 'Control exactly which messages get published from each channel',
+    benefits: [
+      'Filter by keyword, mention, author, or webhook',
+      'Allow or block mode per rule',
+      'Combine rules with any/all matching',
+      'Manage everything from the dashboard',
+    ],
+  },
+} as const;
+
+export type PremiumFeatureKey = keyof typeof PREMIUM_FEATURE_BLURBS;
+
+/** Narrows an untrusted `?from=` value to a known gated feature. */
+export function isPremiumFeatureKey(value: string | null): value is PremiumFeatureKey {
+  return value !== null && value in PREMIUM_FEATURE_BLURBS;
+}

@@ -6,25 +6,33 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { usePaddle } from '@/lib/paddle';
-
-// Paddle.js injects the inline checkout iframe into the element matching this class
-// (frameTarget). It must be in the DOM before we open the checkout.
-const CHECKOUT_CONTAINER_CLASS = 'checkout-container';
+import { formatUsd, PREMIUM_PRICE_MONTHLY_USD, PREMIUM_PRICE_YEARLY_USD } from '@/lib/pricing';
 
 /**
  * Paddle default payment link host. Every customer-facing Paddle link (abandoned
  * checkout recovery ?_paction=recovery, past-due payment-method updates, any
  * API-generated checkout.url) points here with ?_ptxn={transactionId}. We read
- * _ptxn and open it inline via Checkout.open() once the Paddle instance is ready.
- * We ignore _paction.
+ * _ptxn and open it in the overlay via Checkout.open() once the Paddle instance
+ * is ready. We ignore _paction.
+ *
+ * OVERLAY, not inline — deliberately. Paddle requires the *integrating page* to
+ * reproduce a description of what's being purchased, subtotal/total tax/grand
+ * total with currency, the recurrence cadence and renewal total, the full frame
+ * including Paddle's footer, and a refund-policy link whenever it uses inline
+ * mode. The overlay renders all of that itself ("unlike inline checkout, your
+ * page does not need to render any of this separately"), so delegating keeps
+ * those disclosures correct and current with Paddle's compliance changes rather
+ * than mirroring them here by hand. Do not switch this route to
+ * `displayMode: 'inline'` without building that entire disclosure block.
  *
  * We open imperatively rather than leaning on Paddle.js's load-time ?_ptxn
  * auto-open: that auto-open only fires during the CDN script's initial bootstrap
  * (once per hard page load) and does NOT re-fire on client-side navigation —
  * initializePaddle() on an already-loaded instance just updates it. So a second
  * SPA visit to /checkout (back → upgrade again, or a router-cache restore) would
- * mount an empty container until a manual refresh. Opening on the instance covers
+ * leave nothing open until a manual refresh. Opening on the instance covers
  * every mount: hard load, SPA nav, and Paddle-sent recovery/dunning links alike.
  *
  * Fulfillment is webhook-driven regardless of this page; the UX just deposits the
@@ -50,7 +58,18 @@ function CheckoutInner() {
   // transaction's server-set custom_data.
   const guildName = searchParams.get('g');
   const guildIcon = searchParams.get('icon');
+  // Same deal: orientation for the page behind the overlay, set only by the
+  // in-app upgrade path. The authoritative line items, tax and grand total live
+  // in the overlay itself — this is never the disclosure of record.
+  const plan = searchParams.get('plan');
   const [genericSuccess, setGenericSuccess] = useState(false);
+
+  const planLine =
+    plan === 'month'
+      ? `Premium · ${formatUsd(PREMIUM_PRICE_MONTHLY_USD)} per month`
+      : plan === 'year'
+        ? `Premium · ${formatUsd(PREMIUM_PRICE_YEARLY_USD)} per year`
+        : null;
 
   const onCompleted = useCallback(
     (event: PaddleEventData) => {
@@ -68,20 +87,19 @@ function CheckoutInner() {
     [router]
   );
 
-  // No page-level loader: Paddle's inline frame renders its own spinner while it
-  // loads, so a second one here just doubles up.
-  const paddle = usePaddle({
-    onCompleted,
-    settings: {
-      displayMode: 'inline',
-      frameTarget: CHECKOUT_CONTAINER_CLASS,
-      frameInitialHeight: 450,
-      frameStyle: 'width: 100%; min-width: 312px; background-color: transparent; border: none;',
-    },
-  });
+  // No settings override: the overlay defaults (displayMode/theme/showAddTaxId)
+  // live in usePaddle and apply to every checkout in the app.
+  const paddle = usePaddle({ onCompleted });
 
-  // Guards against a duplicate Checkout.open() from React re-renders / StrictMode
-  // double-invoke; keyed on the transaction so a new checkout re-opens.
+  const openCheckout = useCallback(() => {
+    if (!paddle || !transactionId) return;
+    paddle.Checkout.open({ transactionId });
+  }, [paddle, transactionId]);
+
+  // Guards the AUTO-open against a duplicate Checkout.open() from React
+  // re-renders / StrictMode double-invoke; keyed on the transaction so a new
+  // checkout re-opens. The manual "Resume checkout" button bypasses it on
+  // purpose — reopening a dismissed overlay is exactly what it's for.
   const openedForRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -94,16 +112,8 @@ function CheckoutInner() {
     if (!paddle) return;
     if (openedForRef.current === transactionId) return;
     openedForRef.current = transactionId;
-    paddle.Checkout.open({
-      transactionId,
-      settings: {
-        displayMode: 'inline',
-        frameTarget: CHECKOUT_CONTAINER_CLASS,
-        frameInitialHeight: 450,
-        frameStyle: 'width: 100%; min-width: 312px; background-color: transparent; border: none;',
-      },
-    });
-  }, [paddle, transactionId, router]);
+    openCheckout();
+  }, [paddle, transactionId, router, openCheckout]);
 
   if (genericSuccess) {
     return (
@@ -123,9 +133,12 @@ function CheckoutInner() {
     );
   }
 
+  // Sits BEHIND the overlay. Invisible while the overlay is up; becomes the
+  // whole page the moment the customer dismisses it, which is why it carries a
+  // way back in rather than leaving them on an empty screen.
   return (
-    <div className="mx-auto max-w-2xl px-4 pt-28 pb-16">
-      <div className="mb-8 flex flex-col items-center text-center">
+    <div className="mx-auto max-w-md px-4 pt-28 pb-16">
+      <div className="flex flex-col items-center text-center">
         <h1 className="mb-4 text-2xl text-white">Complete your purchase</h1>
         {/* Server indicator only when we actually know the server (in-app upgrade
             flow passes it); Paddle-sent links have no guild name, so no card. */}
@@ -154,8 +167,18 @@ function CheckoutInner() {
             </div>
           </div>
         )}
+        {planLine && <p className="mt-4 text-sm text-slate-400">{planLine}</p>}
+        <Button
+          onClick={openCheckout}
+          disabled={!paddle}
+          className="mt-8 w-full bg-linear-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700"
+        >
+          Resume checkout
+        </Button>
+        <p className="mt-3 text-xs text-slate-500">
+          Closed the payment window? Reopen it to finish.
+        </p>
       </div>
-      <div className={CHECKOUT_CONTAINER_CLASS} />
     </div>
   );
 }

@@ -1,23 +1,31 @@
-import { Check, Crown } from 'lucide-react';
+import { ArrowRight, Check, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { PREMIUM_FEATURE_BLURBS, type PremiumFeatureKey } from '@/lib/plans';
 
 interface LockedFeatureProps {
   guildId: string;
-  description: string;
-  benefits: string[];
+  feature: PremiumFeatureKey;
 }
 
 /**
  * Presentational upsell shown in place of a premium-only tab's content for a
  * free server. Not a gating wrapper — the page decides when to render it (and
- * owns the section title). Matches the subscription page's upgrade card so the
- * two read the same. The CTA routes to the Subscription tab, the sole checkout
- * entry point (never a second Paddle overlay). See CONTEXT.md "Locked premium
- * tab".
+ * owns the section title). Copy comes from PREMIUM_FEATURE_BLURBS so this card
+ * and the Subscription page's continuity strip cannot drift apart.
+ *
+ * The CTA names its destination ("See Premium plans") instead of promising the
+ * upgrade itself, and carries `?from={feature}` so the Subscription page opens
+ * with this feature's copy rather than generic plan blurb. Both ends used to say
+ * "Upgrade to Premium" and look identical, which made the navigation read as a
+ * no-op — you pressed a button and landed on the same button. The one genuine
+ * upgrade press lives on the Subscription page, still the sole checkout entry
+ * point (never a second Paddle overlay). See CONTEXT.md "Locked premium tab".
  */
-export function LockedFeature({ guildId, description, benefits }: LockedFeatureProps) {
+export function LockedFeature({ guildId, feature }: LockedFeatureProps) {
+  const { description, benefits } = PREMIUM_FEATURE_BLURBS[feature];
+
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 to-purple-500/20 blur-3xl" />
@@ -43,9 +51,9 @@ export function LockedFeature({ guildId, description, benefits }: LockedFeatureP
           className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
           asChild
         >
-          <Link href={`/dashboard/${guildId}/subscription`}>
-            <Crown className="w-5 h-5 mr-2" />
-            Upgrade to Premium
+          <Link href={`/dashboard/${guildId}/subscription?from=${feature}`}>
+            See Premium plans
+            <ArrowRight className="w-5 h-5 ml-2" />
           </Link>
         </Button>
       </Card>
