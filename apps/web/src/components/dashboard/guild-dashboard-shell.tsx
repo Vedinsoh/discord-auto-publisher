@@ -63,7 +63,7 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
   if (!guild) {
     // List load failed → retry in place; otherwise we're mid-redirect.
     return error ? (
-      <div className="min-h-screen px-4 pt-24 pb-16">
+      <div className="flex-1 px-4 pt-24 pb-16">
         <div className="max-w-6xl mx-auto">
           <GuildErrorCard />
         </div>
@@ -75,7 +75,7 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
 
   return (
     <GuildProvider guildId={guildId} dataPromise={dataPromise}>
-      <div className="min-h-screen px-4 pt-24 pb-16">
+      <div className="flex-1 px-4 pt-24 pb-16">
         <div className="max-w-6xl mx-auto">
           {/* Dashboard Grid with Sidebar */}
           <div className="grid lg:grid-cols-[250px_1fr] gap-6">

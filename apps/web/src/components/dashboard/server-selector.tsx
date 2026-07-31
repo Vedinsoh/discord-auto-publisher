@@ -78,7 +78,7 @@ export function ServerSelector() {
   }, [guilds, router, guildHref]);
 
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
+    <div className="flex-1 px-4 pt-24 pb-16">
       <div className="max-w-md mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">

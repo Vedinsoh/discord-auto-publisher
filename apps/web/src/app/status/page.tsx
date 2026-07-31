@@ -61,7 +61,7 @@ export default function StatusPage() {
   const rateLimitStatus = getRateLimitStatus(rateLimitPercentage);
 
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
+    <div className="flex-1 px-4 pt-24 pb-16">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">

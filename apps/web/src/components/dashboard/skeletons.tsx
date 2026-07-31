@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 /** Skeleton for the /dashboard server selector grid */
 export function ServerSelectorSkeleton() {
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
+    <div className="flex-1 px-4 pt-24 pb-16">
       <div className="max-w-md mx-auto">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -174,7 +174,7 @@ export function SubscriptionPanelSkeleton() {
 /** Skeleton for the guild dashboard shell (header + sidebar + content) */
 export function GuildDashboardShellSkeleton() {
   return (
-    <div className="min-h-screen px-4 pt-24 pb-16">
+    <div className="flex-1 px-4 pt-24 pb-16">
       <div className="max-w-6xl mx-auto">
         {/* Grid skeleton */}
         <div className="grid lg:grid-cols-[250px_1fr] gap-6">

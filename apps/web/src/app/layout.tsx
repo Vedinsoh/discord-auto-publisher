@@ -54,9 +54,12 @@ export default function RootLayout({
               WebkitMaskImage: 'radial-gradient(900px 520px at 60% 0%, #000, transparent 75%)',
             }}
           />
-          <div className="relative z-10">
+          {/* Flex column so short pages still push the footer to the bottom of the
+              viewport. Pages that need to fill the leftover space (centered
+              states) take `flex-1` on their root; the rest sit at natural height. */}
+          <div className="relative z-10 flex min-h-screen flex-col">
             <Navbar />
-            <main>{children}</main>
+            <main className="flex flex-1 flex-col">{children}</main>
             <Footer />
           </div>
           <ToastProvider />

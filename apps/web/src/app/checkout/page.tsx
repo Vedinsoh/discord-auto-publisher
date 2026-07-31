@@ -117,7 +117,7 @@ function CheckoutInner() {
 
   if (genericSuccess) {
     return (
-      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4 pt-16 text-center">
+      <div className="mx-auto flex max-w-md flex-1 flex-col items-center justify-center px-4 pt-16 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
           <Check className="h-6 w-6 text-emerald-400" />
         </div>
