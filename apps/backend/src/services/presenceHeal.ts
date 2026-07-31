@@ -9,6 +9,13 @@ import { applyJoinRails } from './joinRails.js';
 
 const CONFIRMED_ABSENT_TTL_MS = 30_000;
 
+export interface HealResult {
+  /** Editions whose presence row was restored. */
+  healed: Set<Edition>;
+  /** A membership check could not be resolved (Discord/proxy unreachable). */
+  inconclusive: boolean;
+}
+
 // Negative cache: guild+edition pairs recently confirmed absent at Discord.
 // In-memory is safe — the backend is single-instance (ADR 0006) — and the TTL
 // is short so an invite-return refresh is never stuck behind a stale entry.
@@ -29,15 +36,23 @@ const confirmedAbsent = createTtlCache<true>(CONFIRMED_ABSENT_TTL_MS);
  * for 30s so refresh-hammering a dashboard full of botless guilds does not
  * multiply member-fetch calls.
  *
+ * A membership check that Discord could not answer (5xx after the REST client's
+ * own retries, network failure) is reported as `inconclusive` rather than
+ * absence: the caller must not conclude "botless guild" from an outage, and the
+ * negative cache is deliberately NOT written so a blip cannot pin the guild as
+ * absent for the next 30s of dashboard loads.
+ *
  * @param guildId ID of the guild
  * @param absentEditions editions with no active presence row
- * @returns editions whose presence was restored
+ * @returns editions whose presence was restored, and whether any check was
+ *   left unresolved
  */
 const healAbsentEditions = async (
   guildId: Snowflake,
   absentEditions: Edition[]
-): Promise<Set<Edition>> => {
+): Promise<HealResult> => {
   const healed = new Set<Edition>();
+  let inconclusive = false;
 
   for (const edition of absentEditions) {
     if (!Discord.hasToken(edition)) continue;
@@ -46,7 +61,14 @@ const healAbsentEditions = async (
     if (confirmedAbsent.get(cacheKey)) continue;
 
     try {
-      if (!(await Discord.isBotInGuild(edition, guildId))) {
+      const membership = await Discord.getBotMembership(edition, guildId);
+
+      if (membership === 'unknown') {
+        inconclusive = true;
+        continue;
+      }
+
+      if (membership === 'absent') {
         confirmedAbsent.set(cacheKey, true);
         continue;
       }
@@ -60,6 +82,9 @@ const healAbsentEditions = async (
       healed.add(edition);
       logger.info(`Presence heal: restored ${edition} presence for guild ${guildId}`);
     } catch (error) {
+      // The bot was present but recording it failed (DB/rails). Unresolved, not
+      // absent — reporting absence here would hide a working bot.
+      inconclusive = true;
       logger.warn(error, `Presence heal failed for guild ${guildId} (${edition})`);
     }
   }
@@ -68,7 +93,7 @@ const healAbsentEditions = async (
     await applyJoinRails(new Set([guildId]));
   }
 
-  return healed;
+  return { healed, inconclusive };
 };
 
 export const PresenceHeal = { healAbsentEditions };

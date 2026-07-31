@@ -115,10 +115,10 @@ export const GuildApi: Router = (() => {
       const absentEditions = (['free', 'premium'] as Edition[]).filter(
         e => !activeEditions.has(e) && (e !== 'premium' || entitled)
       );
-      const healed =
+      const { healed, inconclusive } =
         absentEditions.length > 0
           ? await Services.PresenceHeal.healAbsentEditions(guildId, absentEditions)
-          : new Set<Edition>();
+          : { healed: new Set<Edition>(), inconclusive: false };
 
       // Botless guild (no bot present, even after the self-heal). Fail with a
       // distinct 409 rather than the generic 500 a downstream Discord 404 would
@@ -126,6 +126,17 @@ export const GuildApi: Router = (() => {
       // (which owns the invite CTA)" from a transient 5xx it should retry in
       // place. Effective presence = pre-heal active editions plus any restored.
       if (activeEditions.size === 0 && healed.size === 0) {
+        // ...but only when Discord actually SAID the bot is absent. An
+        // unresolved check (outage, proxy failure) must not render as the
+        // permanent "bot isn't in your server" redirect — 503 lands in the
+        // web's transient bucket and retries in place (ADR 0010).
+        if (inconclusive) {
+          throw createHttpError(
+            'Could not confirm bot presence',
+            StatusCodes.SERVICE_UNAVAILABLE,
+            'PRESENCE_UNKNOWN'
+          );
+        }
         throw createHttpError('Bot is not in this guild', StatusCodes.CONFLICT, 'BOT_NOT_PRESENT');
       }
 

@@ -59,8 +59,9 @@ const discordReadCache = createTtlCache<unknown>(DISCORD_READ_CACHE_TTL_MS);
  * NOT cleared by `evictGuildChannels`/`evictGuildRoles`: eviction forces a fresh
  * fetch for correctness on a membership change; the stale value only surfaces if
  * that fresh fetch itself fails. Genuine bot-absence is owned upstream by the
- * presence layer (`healAbsentEditions` throws 409 before any `cachedGet` runs), so
- * serving stale on ANY error here is safe.
+ * presence layer (`healAbsentEditions` resolves presence and throws before any
+ * `cachedGet` runs — 409 confirmed-absent, 503 unresolved), so serving stale on
+ * ANY error here is safe.
  */
 const lastKnownGood = createTtlCache<unknown>(LKG_TTL_MS);
 
@@ -109,20 +110,55 @@ const evictGuildRoles = (guildId: Snowflake): void => {
   discordReadCache.delete(Routes.guildRoles(guildId));
 };
 
+/** Outcome of a live membership check; `unknown` = Discord could not answer. */
+export type BotMembership = 'present' | 'absent' | 'unknown';
+
+/**
+ * Live membership check that distinguishes "Discord said no" from "Discord
+ * could not answer". `@discordjs/rest` splits these cleanly: a 4xx throws
+ * `DiscordAPIError` (a real verdict — 404/`10004`/`10007` for a non-member,
+ * 403 for missing access), while a 5xx throws `HTTPError` only after
+ * exhausting the client's own `retries` (default 3), and a network/abort error
+ * propagates raw after the same retries. So only a `DiscordAPIError` is
+ * evidence of absence — everything else is `unknown` after ≥4 attempts and
+ * must never be reported as absence, or a Discord/proxy outage reads as "the
+ * bot was removed" (see `PresenceHeal`).
+ *
+ * A 429 cannot surface here: `rejectOnRateLimit` is unset on these clients, so
+ * the limit is waited out internally instead of thrown.
+ */
+const getBotMembership = async (edition: Edition, guildId: Snowflake): Promise<BotMembership> => {
+  // Resolved outside the classified call: a failure here (rotated token, a
+  // `/users/@me` blip) says nothing about THIS guild, so it must not read as
+  // absence — otherwise one bad token reports every guild as botless.
+  let botUserId: Snowflake;
+  try {
+    botUserId = await getBotUserId(edition);
+  } catch (error) {
+    logger.warn(error, `Could not resolve ${edition} bot user id; membership unknown`);
+    return 'unknown';
+  }
+
+  try {
+    await restFor(edition).get(Routes.guildMember(guildId, botUserId));
+    return 'present';
+  } catch (error) {
+    if (error instanceof DiscordAPIError) return 'absent';
+    logger.warn(error, `Membership check for guild ${guildId} (${edition}) was inconclusive`);
+    return 'unknown';
+  }
+};
+
 /**
  * Live membership check: whether an edition's bot is currently in the guild.
  * Errors (including network failures) report false — callers use this to
  * avoid evicting the OTHER bot, so the safe answer is "not present".
+ *
+ * Callers that must NOT treat an unreachable Discord as absence (the dashboard
+ * presence self-heal) use `getBotMembership` directly instead.
  */
-const isBotInGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean> => {
-  try {
-    const botUserId = await getBotUserId(edition);
-    await restFor(edition).get(Routes.guildMember(guildId, botUserId));
-    return true;
-  } catch {
-    return false;
-  }
-};
+const isBotInGuild = async (edition: Edition, guildId: Snowflake): Promise<boolean> =>
+  (await getBotMembership(edition, guildId)) === 'present';
 
 /**
  * Makes an edition's bot leave a guild. Idempotent: the bot may already be
@@ -176,6 +212,7 @@ export const Discord = {
   evictGuildRoles,
   hasToken,
   getBotUserId,
+  getBotMembership,
   isBotInGuild,
   leaveGuild,
   getUsername,
