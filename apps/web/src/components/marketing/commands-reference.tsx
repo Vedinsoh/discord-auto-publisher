@@ -9,7 +9,10 @@ interface Command {
 const commands: Command[] = [
   { name: '/ap enable', description: 'Turn on auto-publishing for an announcement channel.' },
   { name: '/ap disable', description: 'Turn off auto-publishing for a channel.' },
-  { name: '/ap status', description: 'See which channels are currently enabled.' },
+  {
+    name: '/ap overview',
+    description: 'See publishing status for every channel in the server.',
+  },
   {
     name: '/ap filters',
     description: 'Build the conditions that decide which messages get published.',

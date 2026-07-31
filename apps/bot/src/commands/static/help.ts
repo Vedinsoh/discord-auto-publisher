@@ -43,10 +43,9 @@ export class HelpCommand extends Command {
           `${emojis.redCircle}  Use </ap disable:${apCommandId}> to stop auto-publishing in a channel.`
         )
       )
-      .addSeparatorComponents(separator => separator)
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.info}  Use </ap status:${apCommandId}> to get status of a channel or list all enabled channels.`
+          `${emojis.info}  Use </ap overview:${apCommandId}> to see publishing status for every channel in this server.`
         )
       );
 

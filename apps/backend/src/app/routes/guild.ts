@@ -7,22 +7,26 @@ export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });
 
   /**
-   * Get all channels enabled for auto-publishing in a guild
-   * Returns array of channel IDs
+   * Get a guild's auto-publishing state for `/ap overview`: serving channel
+   * IDs, paused ones, and whether the guild is migrated.
    */
   router.get('/channels', validateRequest(GuildReqSchema), async (req, res) => {
     const { guildId } = req.params;
 
     try {
       // channelIds = serving; pausedChannelIds = retained-but-paused (ADR 0009),
-      // surfaced separately by /ap status.
-      const [channelIds, pausedChannelIds] = await Promise.all([
+      // surfaced separately by /ap overview.
+      const [channelIds, pausedChannelIds, guildRow] = await Promise.all([
         Services.Guilds.getChannels(guildId),
         Services.Guilds.getPausedChannels(guildId),
+        Services.Guilds.find(guildId),
       ]);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
-        data: { channelIds, pausedChannelIds },
+        // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt
+        // NULL. A legacy guild has no channel rows, so without this the bot
+        // can't tell "publishes everything" from "publishes nothing".
+        data: { channelIds, pausedChannelIds, migrated: !!guildRow?.migratedAt },
         message: 'Channels retrieved successfully',
       } as APIResponse);
     } catch (error) {

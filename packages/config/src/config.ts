@@ -2,6 +2,9 @@ import { env } from './env.js';
 
 const IS_PREMIUM = env.APP_EDITION === 'premium';
 
+/** Mirrors the backend's `FREE_CHANNEL_LIMIT` (`services/editions.ts`), the enforcing authority. */
+const FREE_CHANNELS_PER_GUILD = 3;
+
 /**
  * Application configuration.
  * Edition-derived values apply to the per-edition apps (bot, proxy) only —
@@ -29,9 +32,17 @@ export const config = {
    */
   limits: {
     /**
-     * Maximum channels per guild
+     * The free plan's channel cap. Edition-independent on purpose: copy that
+     * names the free limit ("over the free limit of 3", "capped at 3 channels")
+     * is rendered by the premium bot too — while a handover is pending it can
+     * see paused channels and free-limit rejections for a guild the free bot
+     * still manages. Reading `channelsPerGuild` there would print 0.
      */
-    channelsPerGuild: IS_PREMIUM ? 0 : 3, // 0 means unlimited
+    freeChannelsPerGuild: FREE_CHANNELS_PER_GUILD,
+    /**
+     * Maximum channels this edition serves per guild; 0 means unlimited
+     */
+    channelsPerGuild: IS_PREMIUM ? 0 : FREE_CHANNELS_PER_GUILD,
     /**
      * Maximum filter conditions per channel (not surfaced in UI; over-limit shows a toast)
      */

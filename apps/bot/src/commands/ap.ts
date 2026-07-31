@@ -6,7 +6,7 @@ import {
   chatInputDisable,
   chatInputEnable,
   chatInputFilters,
-  chatInputStatus,
+  chatInputOverview,
 } from '../handlers/ap/index.js';
 
 @ApplyOptions<Subcommand.Options>({
@@ -17,7 +17,7 @@ import {
   subcommands: [
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
-    { name: 'status', chatInputRun: 'chatInputStatus' },
+    { name: 'overview', chatInputRun: 'chatInputOverview' },
     ...(config.isPremiumInstance ? [{ name: 'filters', chatInputRun: 'chatInputFilters' }] : []),
   ],
 })
@@ -55,19 +55,8 @@ export class APCommand extends Subcommand {
         )
         .addSubcommand(subcommand =>
           subcommand //
-            .setName('status')
-            .setDescription(
-              'Check auto-publishing status for a channel or list all enabled channels'
-            )
-            .addChannelOption(option =>
-              option //
-                .setName('channel')
-                .setDescription(
-                  'The announcement channel to check (leave empty to list all enabled channels)'
-                )
-                .setRequired(false)
-                .addChannelTypes([ChannelType.GuildAnnouncement])
-            )
+            .setName('overview')
+            .setDescription('See publishing status for every channel in this server')
         );
 
       if (config.isPremiumInstance) {
@@ -92,6 +81,6 @@ export class APCommand extends Subcommand {
   // Subcommand handlers
   public chatInputEnable = chatInputEnable;
   public chatInputDisable = chatInputDisable;
-  public chatInputStatus = chatInputStatus;
+  public chatInputOverview = chatInputOverview;
   public chatInputFilters = chatInputFilters;
 }

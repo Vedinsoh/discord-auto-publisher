@@ -89,10 +89,13 @@ export async function chatInputEnable(
         const entitledButNotServing =
           code === 'LIMIT_PREMIUM_INVITE' || code === 'LIMIT_PREMIUM_PENDING';
 
+        // Always the FREE cap: this rejection only ever comes from a
+        // free-managed guild, but the premium bot renders it too (it is present
+        // but idle while a handover is pending) and its own cap is 0/unlimited.
         const limitContent = entitledButNotServing
-          ? `${emojis.crossmark} Your **Premium** bot isn't publishing in this server yet, so you're still capped at ${config.limits.channelsPerGuild} channels.\n\n` +
+          ? `${emojis.crossmark} Your **Premium** bot isn't publishing in this server yet, so you're still capped at ${config.limits.freeChannelsPerGuild} channels.\n\n` +
             `Finish setting up Premium in the dashboard at [${links.hostname}](<${links.dashboard}>) to unlock unlimited channels.`
-          : `${emojis.crossmark} You have reached the maximum number of channels (${config.limits.channelsPerGuild}) for auto-publishing.\n\n` +
+          : `${emojis.crossmark} You have reached the maximum number of channels (${config.limits.freeChannelsPerGuild}) for auto-publishing.\n\n` +
             `✨ Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`;
 
         const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>

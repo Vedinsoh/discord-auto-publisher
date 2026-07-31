@@ -33,7 +33,7 @@ export interface SidebarSortKey {
  * tiebreak). `position` is scoped per category, so the category rank has to be
  * compared first.
  *
- * Shared by the backend's dashboard channel list and the bot's `/ap status` so
+ * Shared by the backend's dashboard channel list and the bot's `/ap overview` so
  * the two surfaces can never order the same guild differently. The `select`
  * accessor keeps it agnostic of the caller's channel shape (raw `APIChannel`
  * vs. discord.js), and items are returned untouched.

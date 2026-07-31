@@ -106,10 +106,11 @@ const getStatus = async (channelId: Snowflake) => {
 };
 
 /**
- * Get a guild's auto-publishing channels: serving channel IDs plus paused ones
- * (retained but over the free limit, ADR 0009).
+ * Get a guild's auto-publishing state: serving channel IDs, paused ones
+ * (retained but over the free limit, ADR 0009), and whether the guild is
+ * migrated.
  * @param guildId The guild ID
- * @returns { channelIds, pausedChannelIds }, or null if request fails
+ * @returns { channelIds, pausedChannelIds, migrated }, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
   try {
@@ -124,12 +125,17 @@ const getGuildChannels = async (guildId: Snowflake) => {
 
     const result = (await response.json()) as {
       status: number;
-      data: { channelIds: string[]; pausedChannelIds?: string[] };
+      data: { channelIds: string[]; pausedChannelIds?: string[]; migrated?: boolean };
       message: string;
     };
     return {
       channelIds: result.data.channelIds,
       pausedChannelIds: result.data.pausedChannelIds ?? [],
+      // MIGRATION: default true so a backend that predates the field degrades
+      // to the allowlist view rather than claiming a migrated guild is legacy
+      // ("every announcement channel is published automatically" is the most
+      // damaging thing this command can say wrongly).
+      migrated: result.data.migrated ?? true,
     };
   } catch (error) {
     logger.error(error, `Error getting guild channels ${guildId}`);

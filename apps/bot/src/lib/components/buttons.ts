@@ -1,4 +1,4 @@
-import { ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ButtonBuilder, ButtonStyle, type Snowflake } from 'discord.js';
 import { emojis, links } from 'lib/constants/index.js';
 
 export const website = new ButtonBuilder()
@@ -26,9 +26,18 @@ export const supportServer = new ButtonBuilder()
   .setURL(links.supportGuildInvite)
   .setStyle(ButtonStyle.Link);
 
+// Guild-scoped, so necessarily a factory. `/dashboard/:guildId` redirects to
+// the Overview tab — the short URL is the stable one to link.
+export const dashboard = (guildId: Snowflake) =>
+  new ButtonBuilder()
+    .setLabel('Open dashboard')
+    .setURL(`${links.dashboard}/${guildId}`)
+    .setStyle(ButtonStyle.Link);
+
 export const Buttons = {
   website,
   getPremium,
   botInvite,
   supportServer,
+  dashboard,
 };
