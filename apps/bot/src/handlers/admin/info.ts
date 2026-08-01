@@ -15,9 +15,17 @@ export async function chatInputInfo(
     .then((results: number[]) => results.reduce((p: number, n: number) => p + n));
 
   const botContent = [
-    '### Bot info:',
+    '### Overview:',
     `> Guilds: ${guildsCount}`,
     `> Enabled channels: ${backend?.channelsCacheSize ?? 'N/A'}`,
+    `> Tracked channels: ${proxy?.sublimitCount ?? 'N/A'}`,
+    `> Blocked channels: ${proxy?.blockedCount ?? 'N/A'}`,
+  ].join('\n');
+
+  const queueContent = [
+    '### Crosspost queue:',
+    `> Waiting: ${proxy?.queue.waiting ?? 'N/A'}`,
+    `> Active: ${proxy?.queue.active ?? 'N/A'}`,
   ].join('\n');
 
   const restContent = [
@@ -25,27 +33,19 @@ export async function chatInputInfo(
     `> Global remaining: ${proxy?.rest.globalRemaining ?? 'N/A'}`,
     `> Handlers: ${proxy?.rest.activeHandlers ?? 'N/A'} active / ${proxy?.rest.handlers ?? 'N/A'} total`,
     `> Hashes: ${proxy?.rest.hashes ?? 'N/A'}`,
-    `> Invalid requests: ${proxy?.rest.invalidRequests.count ?? 'N/A'} (expires in ${
-      proxy ? Math.round(proxy.rest.invalidRequests.expiresInMs / 1_000) : 'N/A'
-    }s)`,
-  ].join('\n');
-
-  const queueContent = [
-    '### Crosspost queue:',
-    `> Waiting: ${proxy?.queue.waiting ?? 'N/A'}`,
-    `> Active: ${proxy?.queue.active ?? 'N/A'}`,
-    `> Delayed: ${proxy?.queue.delayed ?? 'N/A'}`,
-    `> Failed: ${proxy?.queue.failed ?? 'N/A'}`,
-    `> Sublimit-tracked channels: ${proxy?.sublimitCount ?? 'N/A'}`,
-    `> Blocked channels: ${proxy?.blockedCount ?? 'N/A'}`,
+    `> Invalid requests: ${proxy?.rest.invalidRequests.count ?? 'N/A'} (resets <t:${
+      proxy
+        ? Math.floor(Date.now() / 1_000 + proxy.rest.invalidRequests.expiresInMs / 1_000)
+        : 'N/A'
+    }:R>)`,
   ].join('\n');
 
   const replyContainer = new ContainerBuilder()
     .addTextDisplayComponents(textDisplay => textDisplay.setContent(botContent))
     .addSeparatorComponents(separator => separator)
-    .addTextDisplayComponents(textDisplay => textDisplay.setContent(restContent))
+    .addTextDisplayComponents(textDisplay => textDisplay.setContent(queueContent))
     .addSeparatorComponents(separator => separator)
-    .addTextDisplayComponents(textDisplay => textDisplay.setContent(queueContent));
+    .addTextDisplayComponents(textDisplay => textDisplay.setContent(restContent));
 
   return interaction.editReply({
     flags: [MessageFlags.IsComponentsV2],

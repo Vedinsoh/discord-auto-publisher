@@ -12,8 +12,6 @@ export type ProxyInfo = {
   queue: {
     waiting: number;
     active: number;
-    delayed: number;
-    failed: number;
   };
   sublimitCount: number;
   blockedCount: number;

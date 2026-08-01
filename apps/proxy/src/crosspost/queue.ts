@@ -22,8 +22,6 @@ export type CrosspostJobData = {
 export type CrosspostQueueStats = {
   waiting: number;
   active: number;
-  delayed: number;
-  failed: number;
 };
 
 export type CrosspostQueueModule = {
@@ -213,18 +211,10 @@ export const createCrosspostQueue = (deps: {
       await connection.quit();
     },
     stats: async () => {
-      const counts = await queue.getJobCounts(
-        'waiting',
-        'active',
-        'delayed',
-        'failed',
-        'completed'
-      );
+      const counts = await queue.getJobCounts('waiting', 'active');
       return {
         waiting: counts.waiting ?? 0,
         active: counts.active ?? 0,
-        delayed: counts.delayed ?? 0,
-        failed: counts.failed ?? 0,
       };
     },
   };
