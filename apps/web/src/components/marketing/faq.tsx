@@ -51,16 +51,7 @@ const faqs: { question: string; answer: ReactNode }[] = [
     ),
   },
   {
-    question: 'Can I temporarily turn it off for specific channels?',
-    answer: (
-      <>
-        Yes. Run <code className="text-slate-200">/ap disable</code> or toggle the channel off in
-        the dashboard at any time. Auto Publisher only manages the channels you enable.
-      </>
-    ),
-  },
-  {
-    question: 'Why is there sometimes a delay before a message publishes?',
+    question: 'Why are my messages being delayed from publishing?',
     answer: (
       <>
         During busy periods Auto Publisher paces out publishing to stay within Discord&apos;s rate
