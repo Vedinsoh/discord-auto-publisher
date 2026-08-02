@@ -56,10 +56,13 @@ export default function RootLayout({
           />
           {/* Flex column so short pages still push the footer to the bottom of the
               viewport. Pages that need to fill the leftover space (centered
-              states) take `flex-1` on their root; the rest sit at natural height. */}
+              states) take `flex-1` on their root; the rest sit at natural height.
+              `*:w-full` because a flex item with `mx-auto` (every page section)
+              has auto cross-axis margins, which cancel the default stretch and
+              size it to its content — collapsing sections to their widest line. */}
           <div className="relative z-10 flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex flex-1 flex-col">{children}</main>
+            <main className="flex flex-1 flex-col *:w-full">{children}</main>
             <Footer />
           </div>
           <ToastProvider />
