@@ -1,5 +1,6 @@
 {
   "name": "backend",
+  "private": true,
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
