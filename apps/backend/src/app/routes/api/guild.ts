@@ -456,10 +456,12 @@ export const GuildApi: Router = (() => {
       }
 
       // Non-subscriber admins see "Billing is managed by @X" — the subscriber's
-      // own view is just the button, so skip the lookup for them
-      const subscriberUsername = isSubscriber
-        ? null
-        : await Discord.getUsername(sub.subscriberDiscordUserId);
+      // own view is just the button, so skip the lookup for them. A null id means
+      // retention already erased it, so there is no one left to name.
+      const subscriberUsername =
+        isSubscriber || !sub.subscriberDiscordUserId
+          ? null
+          : await Discord.getUsername(sub.subscriberDiscordUserId);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,

@@ -1,6 +1,8 @@
+import createMDX from '@next/mdx';
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  pageExtensions: ['ts', 'tsx', 'mdx'],
   images: {
     remotePatterns: [
       {
@@ -31,4 +33,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Plugins are named as strings, not imported: Turbopack runs the MDX pipeline in
+// Rust and cannot receive JS functions. Options must stay serializable.
+// remark-gfm for tables (the imprint block is one); rehype-slug for heading ids,
+// which the cross-references between documents depend on.
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: ['remark-gfm'],
+    rehypePlugins: ['rehype-slug'],
+  },
+});
+
+export default withMDX(nextConfig);

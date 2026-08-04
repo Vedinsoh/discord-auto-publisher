@@ -137,7 +137,7 @@ bot-premium ─► proxy-premium ──┘
 
 **Shared packages** (packages/\*):
 
-- **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guild`, `botPresence`, `channel`, `subscription`, `paddleCustomer`). Migrations in `packages/database/migrations/`.
+- **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guild`, `botPresence`, `channel`, `subscription` — exactly four; there is **no** `paddleCustomer` table, only a `paddleCustomerId` column on `subscription`. An older schema did have one, carrying emails; no `DROP TABLE` migration exists, so a long-lived database may still hold it — see `docs/legal-pre-publish-checklist.md` §2). Migrations in `packages/database/migrations/`.
 - **@ap/logger**: Pino logging utilities (REST & Bot loggers)
 - **@ap/alerts**: `createAlerter` — fire-and-forget Discord webhook alerts (`ALERT_WEBHOOK_URL`, disabled when unset), per-key throttle via `Alerts` Redis DB (30 min TTL), minimal embed format. Wired events: duplicate entitled subscription (backend), guild reconcile rails tripped (backend), invalid-request shed (proxy). Bar for new events: actionable, not merely unusual.
 - **@ap/utils**: Common utilities (time, regex, discord helpers)
@@ -287,7 +287,7 @@ NEXT_PUBLIC_PADDLE_CLIENT_TOKEN: Paddle client-side token for Paddle.js (web)
 - Services: `proxy-free`, `proxy-premium`, `bot-free`, `bot-premium`, `backend`, `redis` (one stack; `APP_EDITION` set per service)
 - Service dependencies: bot-{edition} → proxy-{edition} + backend + redis; backend → redis; proxy-{edition} → redis
 - Health checks on proxies, backend & redis
-- Development: File sync with restart, exposed ports (3101:8080 backend, 8081:8080 proxy-free, 8082:8080 proxy-premium, 6379:6379 redis); any subset can be started (`docker compose ... up backend` alone is enough for web/checkout work; `bot-free` pulls in its proxy + backend + redis)
+- Development: File sync with restart, exposed ports (3101:8080 backend, 8081:8080 proxy-free, 8082:8080 proxy-premium, `127.0.0.1:6379:6379` redis — loopback-bound on purpose, since a bare `6379:6379` publishes on every interface and Redis has no `requirepass`); any subset can be started (`docker compose ... up backend` alone is enough for web/checkout work; `bot-free` pulls in its proxy + backend + redis)
 - Production: No port exposure, health checks enabled
 
 ## Import conventions

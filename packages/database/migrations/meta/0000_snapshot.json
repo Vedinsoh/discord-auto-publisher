@@ -218,7 +218,7 @@
           "name": "subscriber_discord_user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "status": {
           "name": "status",

@@ -9,7 +9,6 @@ declare global {
         id: string;
         username: string;
         avatar: string | null;
-        email?: string;
       };
       discordAccessToken?: string;
     }

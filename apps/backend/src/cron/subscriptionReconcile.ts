@@ -4,10 +4,16 @@ import { logger } from 'utils/logger.js';
 import { guardMassAction } from 'utils/massActionGuard.js';
 
 /**
- * Daily cron: reconciles local subscription state against the Paddle API.
- * Backstop for missed webhooks — Paddle owns period-end cancellation, so no
- * local expiry scanning is needed. Entitlement transitions detected here are
- * enforced the same way as webhook-driven ones (premium bot leaves the guild).
+ * Daily cron: reconciles local subscription state against the Paddle API, then
+ * enforces data retention on the same table.
+ *
+ * Backstop for missed webhooks — Paddle owns period-end cancellation, so no local
+ * expiry scanning is needed. Entitlement transitions detected here are enforced the
+ * same way as webhook-driven ones (premium bot leaves the guild).
+ *
+ * Reconcile keeps rows accurate; retention makes them go away. Flipping a row to
+ * `canceled` leaves the subscriber's Discord user id sitting there indefinitely, which
+ * is what services/retention.ts exists to fix.
  */
 let inFlight = false;
 
@@ -68,6 +74,10 @@ const reconcileSubscriptions = async () => {
       revoked++;
     }
   }
+
+  // Last and unconditional: the statuses and dates retention keys off are now as fresh
+  // as Paddle can make them, and a tripped revocation cap above must not block erasure.
+  await Services.Retention.applyRetention();
 
   logger.info(
     `Subscription reconcile finished: ${processed} checked, ${changed} corrected, ${revoked} revoked`

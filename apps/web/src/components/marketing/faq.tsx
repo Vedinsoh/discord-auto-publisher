@@ -73,9 +73,12 @@ const faqs: { question: string; answer: ReactNode }[] = [
     question: 'Can I self-host the bot?',
     answer: (
       <>
-        Yes. The project is open source on <InlineLink href={links.githubRepo}>GitHub</InlineLink>,
-        but Auto Publisher is built to run at scale across many servers and we do not provide
-        support for self-hosted instances. Use at your own risk.
+        Yes, for servers you run yourself. The full source is published on{' '}
+        <InlineLink href={links.githubRepo}>GitHub</InlineLink> under a source-available licence, so
+        you are welcome to read it, learn from it, and run your own copy. Hosting an instance for
+        other people is not covered by that licence — and there is no need to, since adding the
+        public bot is free. Auto Publisher is built to run at scale across many servers, and we do
+        not provide support for self-hosted instances, so treat those as a project for tinkering.
       </>
     ),
   },

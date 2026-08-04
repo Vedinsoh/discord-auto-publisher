@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { links } from '@/lib/constants';
+import { legalDocuments } from '@/lib/legal/documents';
 import { Logo } from './logo';
 
 const quickLinks = [
@@ -15,8 +16,6 @@ const quickLinks = [
 
 const supportLinks = [
   { href: links.discordSupportServer, label: 'Support Server' },
-  { href: '#', label: 'Terms of Service' },
-  { href: '#', label: 'Privacy Policy' },
   { href: '/migration', label: 'Migration Guide' },
 ];
 
@@ -24,7 +23,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-800 bg-slate-950/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
           <div className="sm:col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-4">
               <Logo className="w-8 h-8" />
@@ -67,11 +66,28 @@ export function Footer() {
               ))}
             </ul>
           </div>
+
+          <div>
+            <h4 className="text-white font-medium mb-4">Legal</h4>
+            <ul className="space-y-2">
+              {legalDocuments.map(document => (
+                <li key={document.href}>
+                  <Link
+                    href={document.href}
+                    className="text-slate-400 hover:text-blue-400 transition-colors"
+                  >
+                    {document.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-sm">
           <p>
-            Copyright &copy; 2020&ndash;{new Date().getFullYear()} PWN Ltd. All rights reserved.
+            Copyright &copy; 2020&ndash;{new Date().getFullYear()} Auto Publisher. All rights
+            reserved.
           </p>
 
           <div className="flex items-center gap-1">

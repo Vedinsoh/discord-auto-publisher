@@ -53,12 +53,10 @@ export type DiscordPartialGuild = {
   permissions: string;
 };
 
-/** Narrowed user shape actually cached + consumed (NOT the full raw `/users/@me`). */
 export type DiscordUser = {
   id: string;
   username: string;
   avatar: string | null;
-  email?: string;
 };
 
 /**
@@ -203,12 +201,11 @@ export function fetchDiscordUser(
     token,
     logger,
     raw => {
-      const user = raw as { id: string; username: string; avatar: string | null; email?: string };
+      const user = raw as { id: string; username: string; avatar: string | null };
       return {
         id: user.id,
         username: user.username,
         avatar: user.avatar ?? null,
-        email: user.email,
       };
     }
   );

@@ -79,7 +79,10 @@ services:
     image: redis:8-alpine
     restart: unless-stopped
     ports:
-      - 6379:6379  # Only expose to localhost
+      # Loopback-bound deliberately: a bare `6379:6379` publishes on every interface,
+      # exposing an unauthenticated Redis to the dev machine's network. Compose services
+      # reach Redis by service name, so this mapping is only for host tooling.
+      - 127.0.0.1:6379:6379
     volumes:
       - redis_data:/data
     command: >

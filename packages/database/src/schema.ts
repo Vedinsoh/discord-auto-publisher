@@ -101,7 +101,11 @@ export const subscription = pgTable('subscription', {
   guildId: text('guild_id').unique().notNull(),
   paddleSubscriptionId: text('paddle_subscription_id').unique().notNull(),
   paddleCustomerId: text('paddle_customer_id').notNull(),
-  subscriberDiscordUserId: text('subscriber_discord_user_id').notNull(),
+  // Nullable on purpose: retention erases this id 24 months after the subscription
+  // ends while the Paddle ids and dates stay for the accounting window, so NULL means
+  // "retained row, subscriber identity already erased" — not missing data. Enforced by
+  // the backend's services/retention.ts.
+  subscriberDiscordUserId: text('subscriber_discord_user_id'),
   status: text('status').notNull(),
   paddlePriceId: text('paddle_price_id'),
   billingInterval: text('billing_interval'),

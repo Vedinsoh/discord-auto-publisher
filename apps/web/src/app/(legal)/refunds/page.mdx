@@ -1,0 +1,129 @@
+import { DocumentStatus } from '@/components/legal/document-status';
+import { SupportEmail } from '@/components/legal/links';
+import { entity, entityNameWithTranslation } from '@/lib/legal/entity';
+
+export const metadata = {
+  title: 'Refunds & Withdrawal | Auto Publisher',
+  description:
+    'Your 14-day right of withdrawal, how to cancel a subscription, and how refunds are processed for Auto Publisher Premium.',
+};
+
+# Refunds & Withdrawal
+
+<DocumentStatus document="/refunds" />
+
+This page explains your right to withdraw from a subscription, how to cancel, and how refunds are
+made. It forms part of our [Terms of Service](/terms).
+
+Payments and refunds are processed by **Paddle**, which is the merchant of record and seller of
+record for every order. Paddle issues your invoice and pays out any refund. We cannot take payment or
+issue a refund directly. The service itself is provided by {entityNameWithTranslation} — see our
+[Legal Notice](/legal).
+
+## 1. If you are a consumer: your 14-day right of withdrawal
+
+If you are an individual acting outside your trade, business, craft or profession, you have a
+statutory right to withdraw from your subscription **within 14 days**, without giving any reason.
+
+The period runs for 14 days from the day the contract was concluded — that is, the day your
+subscription started.
+
+### How to withdraw
+
+Tell us clearly that you are withdrawing, before the 14 days are up. Any clear statement is enough.
+The easiest ways are:
+
+- Email <SupportEmail /> — one line is sufficient; or
+- Use the model form in section 5 below.
+
+You do not have to use the form, and you do not have to explain why. Sending your message before the
+deadline is enough — it does not matter when we receive it.
+
+### What you get back
+
+We will reimburse you without undue delay, and in any event **within 14 days** of being told you are
+withdrawing. The refund is made by Paddle using the same payment method you used, at no cost to you.
+
+**If you asked us to start providing the service immediately** — which is what happens when a
+subscription begins right after checkout — **you may be required to pay a proportionate amount for
+what was actually supplied** up to the moment you withdrew. So if you withdraw part-way through a
+paid month, we may deduct the share corresponding to the days already served, and refund the rest.
+
+That deduction is calculated against the total price of the subscription period. If the total price is
+excessive, it is calculated on the market value of what was supplied instead.
+
+### What we do not claim
+
+Some digital products lose the withdrawal right once the customer starts using them. **We do not
+claim that.** Auto Publisher is supplied as an ongoing service rather than as a one-off download, so
+starting to use it does **not** cost you your withdrawal right, and we do not ask you to waive it.
+
+If you want to withdraw within 14 days, you can — whether or not the bot has already published
+anything for you.
+
+## 2. Cancelling a subscription
+
+Cancelling is not the same as withdrawing.
+
+- **Withdrawal** is the statutory right described above: it applies in the first 14 days and gets you
+  a refund, less any proportionate amount for service already supplied.
+- **Cancellation** can be done at any time. It stops the subscription renewing. The paid edition
+  stays available until the end of the period you have already paid for, and that period is **not**
+  refunded.
+
+You can cancel from the subscription page in your dashboard, which takes you to Paddle's customer
+portal, or by emailing <SupportEmail /> and we will arrange it.
+
+When a paid subscription ends, the server returns to the free edition. Your channel configuration and
+publishing rules are kept, but the free edition's limits apply again, so any channels above that
+limit stop publishing.
+
+## 3. Refunds outside the withdrawal period
+
+Beyond the 14-day withdrawal period, and for business customers, refunds are not automatic — but we
+are not going to hide behind that. If the service did not work as described, tell us. Where a fault
+is on our side and we cannot fix it within a reasonable time, you are entitled to a price reduction
+or to end the contract, and we will arrange the appropriate refund through Paddle.
+
+Consumers additionally have the conformity rights described in the [Terms of Service](/terms),
+section 4. Those rights are free of charge and are not limited by this page.
+
+## 4. If you are a business
+
+The right of withdrawal is a consumer right and does not apply to business customers. You can cancel
+at any time as described in section 2. Refunds outside that are at our discretion, except where the
+service failed to conform to what we agreed.
+
+## 5. Model withdrawal form
+
+You may, but do not have to, use this form.
+
+> **To:** {entity.name.short}, {entity.seat} — <SupportEmail />
+>
+> I hereby give notice that I withdraw from my contract for the supply of the following service:
+> Auto Publisher Premium subscription.
+>
+> Ordered on: \_\_\_\_\_\_\_\_\_\_\_\_
+>
+> Name of consumer: \_\_\_\_\_\_\_\_\_\_\_\_
+>
+> Address of consumer: \_\_\_\_\_\_\_\_\_\_\_\_
+>
+> Discord username or server: \_\_\_\_\_\_\_\_\_\_\_\_
+>
+> Signature of consumer (only if this form is notified on paper): \_\_\_\_\_\_\_\_\_\_\_\_
+>
+> Date: \_\_\_\_\_\_\_\_\_\_\_\_
+
+## 6. Billing questions and complaints
+
+- **Invoices, payment methods, card charges and the mechanics of a refund** are handled by Paddle, as
+  merchant of record. Paddle's support can be reached at
+  [paddle.net](https://www.paddle.net) — the same portal shown on your receipt.
+- **Anything about the service itself**, including whether a refund is due, comes to us at
+  <SupportEmail />.
+
+If you are a consumer and you complain in writing, **we will reply within 15 days**, and we keep a
+record of complaints and replies for one year, as Croatian consumer protection law requires. If our
+reply does not resolve matters, the out-of-court options are listed in the
+[Terms of Service](/terms), section 4.

@@ -1,0 +1,297 @@
+import { DocumentStatus } from '@/components/legal/document-status';
+import { SupportEmail } from '@/components/legal/links';
+import { entityNameWithTranslation } from '@/lib/legal/entity';
+import { retention } from '@/lib/legal/retention';
+
+export const metadata = {
+  title: 'Privacy Policy | Auto Publisher',
+  description:
+    'What data Auto Publisher collects, why, how long it is kept, who it is shared with, and how to exercise your data protection rights.',
+};
+
+# Privacy Policy
+
+<DocumentStatus document="/privacy" />
+
+This policy explains what personal data Auto Publisher handles, why, how long it is kept, and what
+you can do about it.
+
+**The controller** is {entityNameWithTranslation}, whose full registered particulars are in the
+[Legal Notice](/legal). For anything in this policy, write to <SupportEmail />. We do not have a Data
+Protection Officer, and are not required to appoint one; that address is our privacy contact.
+
+## 1. The short version
+
+- **We do not store the content of your messages.** The bot reads a message to decide whether to
+  publish it, in memory, and discards it. Nothing about the message text is written to a database, to
+  a log, or sent anywhere else.
+- **We do not have your email address.** We do not ask Discord for it.
+- **We never see your card details.** Payment happens entirely inside Paddle's checkout.
+- **We do not use your data to train AI or machine-learning models.** Discord's developer policy
+  prohibits it and we do not do it.
+- **We do not profile you, advertise to you, or sell your data.** There is no analytics, tracking or
+  advertising code on this website at all.
+- **There is no cookie banner** because we do not set any cookie that requires consent. Section 11
+  lists every cookie anyway.
+
+## 2. Who this policy is for
+
+Two different groups of people appear in our systems, and the law treats them differently:
+
+- **Server administrators** — you sign in to the dashboard, add the bot, and configure it. We get
+  your data from you.
+- **Server members** — you post in a channel the bot watches, or an administrator names you in a
+  publishing rule. We did not get your data from you, so section 6 is addressed to you specifically
+  and tells you where it came from.
+
+## 3. Signing in to the dashboard
+
+When you sign in with Discord we ask Discord for two permissions only: `identify` (who you are) and
+`guilds` (which servers you are in). **We do not request the `email` permission**, so Discord does
+not give us your email address.
+
+| What | Why | Legal basis | Kept for |
+| --- | --- | --- | --- |
+| Discord user ID, username, display name, avatar image URL | To sign you in and show who you are in the dashboard | Contract (Art 6(1)(b)) — you cannot use the dashboard without an account | In your session cookie: {retention.session} |
+| Discord access token | To ask Discord, on your behalf, who you are and which servers you administer | Contract (Art 6(1)(b)) | Held in your session cookie for {retention.session}. **We never store the token itself on our servers** — only an irreversible hash of it, used as a cache label |
+| The list of servers you are in, including their names, icons and your permissions in them | To show you only the servers where you can configure the bot | Contract (Art 6(1)(b)) | Cached on our servers {retention.shortLivedCache} |
+| Your profile as returned by Discord (ID, username, avatar) | To avoid re-asking Discord on every request | Legitimate interests (Art 6(1)(f)) — see section 4 | Cached on our servers {retention.shortLivedCache} |
+| A request counter keyed to your Discord user ID | To stop one account overloading the service | Legitimate interests (Art 6(1)(f)) — see section 4 | {retention.shortLivedCache} |
+| Your Discord display name, in memory | To show who holds a subscription, without re-asking Discord each time | Legitimate interests (Art 6(1)(f)) | {retention.shortLivedCache} |
+
+**You have to provide this data** to use the dashboard: it is how signing in works. If you do not want
+to, you can still use the bot through its in-Discord commands, and simply not sign in.
+
+## 4. Where we rely on legitimate interests
+
+Where the table above says "legitimate interests", the specific interests are: keeping the service
+available and responsive by caching instead of re-querying Discord on every request; protecting the
+service from abuse and overload; and keeping the service working during a Discord outage. We have
+considered your interests and concluded these uses are limited, short-lived and unsurprising.
+
+**You have the right to object to this processing at any time.** Section 8 explains how, and this
+right is set out separately there because the law requires it to be brought to your attention
+explicitly.
+
+## 5. Configuring the bot
+
+| What | Why | Legal basis | Kept for |
+| --- | --- | --- | --- |
+| Server ID, channel IDs, whether the server has completed channel setup | To know where the bot should publish | Contract (Art 6(1)(b)) | Until you remove the channel or the bot. If the bot is removed from a server, we delete the server's configuration **{retention.guildAfterBotRemoved}** after the last of our bots leaves |
+| Which of our bots is present in a server, and when it joined or left | To run the free and paid editions correctly and hand over between them | Contract (Art 6(1)(b)) | As above |
+| **Publishing rules you create** | To decide which messages get published | Contract (Art 6(1)(b)) | Until you delete the rule or the channel |
+| The bot's own permissions per channel | To warn you when a channel cannot publish | Contract (Art 6(1)(b)) | {retention.publishState} |
+
+### Publishing rules can contain other people's identifiers
+
+This is the part worth reading twice. A publishing rule has four kinds of condition, and two of them
+store identifiers of people:
+
+- **Content** — words or phrases you type. Free text, so whatever you put there is stored. Please do
+  not put personal details in it.
+- **Author** — **Discord user IDs**. Stored as given.
+- **Mentions** — **Discord role IDs and Discord user IDs**, in one list.
+- **Webhook** — Discord webhook IDs only. Not webhook names, and never webhook URLs or tokens.
+
+If you add someone's user ID to a rule, you are asking us to store it, and we store it until you
+remove it. These rules are also copied into a fast in-memory store the bot reads on every message;
+that copy has no expiry and is deleted when you delete the rule or the channel.
+
+## 6. If you are a server member
+
+You may never have used our dashboard, and still appear in our systems. Here is the whole of it.
+
+**Your messages.** When you post in an announcement channel where an administrator has enabled the
+bot, the bot reads the message to decide whether to publish it. It reads the message text, the text
+of any embeds, and the text of any interactive components, and it looks at your user ID, any roles you
+mention, and whether the message came from a webhook. **All of this happens in memory and is
+discarded immediately.** No message content is stored, logged, or sent to anyone. What leaves our bot
+is only two numbers — the channel ID and the message ID — sent to our own publishing service so it
+can ask Discord to publish that message. This is the same information Discord already has.
+
+Those two numbers do outlive the message read, and we would rather say so than imply otherwise: the
+publishing job is written to a queue so it can be retried if Discord is briefly unavailable, and that
+job record is kept **{retention.queueJobs}**. It holds nothing but the channel ID, the message ID and
+whether the attempt succeeded.
+
+- **Source of the data:** Discord, through its real-time gateway, under the Message Content
+  permission our bot holds.
+- **Categories of data:** message text, your user ID, role mentions, webhook origin.
+- **Legal basis:** legitimate interests (Art 6(1)(f)) — the server administrator has asked us to
+  publish announcements from that channel, and reading the message is the only way to apply their
+  rules. We keep none of it.
+
+**Your identifiers inside a rule.** An administrator of a server you are in may have put your Discord
+user ID or one of your roles into a publishing rule, as described in section 5.
+
+- **Source of the data:** the server administrator who created the rule, not you.
+- **Legal basis:** legitimate interests (Art 6(1)(f)) — operating the service the administrator has
+  configured.
+- **Kept for:** as long as the rule exists. You can ask us to remove it — see section 8 — and you can
+  also ask the server's administrators directly, since they control the rule.
+
+We do not build a profile of you, we do not track you across servers, and we do not use anything we
+read for any purpose other than deciding whether to publish that one message.
+
+## 7. Paid subscriptions
+
+Payment is handled by **Paddle**, which is the merchant of record and the seller of record. Paddle
+runs the checkout, takes the payment and issues the invoice. **Your name, email, billing address, tax
+number and card details are entered inside Paddle's checkout and are never sent to us.**
+
+What we send to Paddle when you start a checkout: the **Discord server ID** and the **Discord user ID**
+of the person buying, so the subscription can be attached to the right server when Paddle tells us
+it succeeded.
+
+What we keep when Paddle tells us about a subscription:
+
+| What | Legal basis | Kept for |
+| --- | --- | --- |
+| Paddle customer ID and Paddle subscription ID | Contract (Art 6(1)(b)) | {retention.billingRecords} |
+| The subscriber's Discord user ID | Contract (Art 6(1)(b)) | {retention.subscriberIdentifier} |
+| Subscription status, plan, billing interval, period end, cancellation and change dates | Contract (Art 6(1)(b)), and legal obligation (Art 6(1)(c)) for accounting and tax records | {retention.billingRecords} |
+| A short-lived record of which Paddle notifications we have already processed | Legitimate interests (Art 6(1)(f)) — not charging or provisioning twice | {retention.webhookDedupe} |
+
+Paddle's messages to us also contain buyer details — name, email, address, tax identifier, payment
+method. **We do not read or store any of them.** Our code takes only the fields in the table above and
+discards the rest.
+
+**Visible to your fellow administrators:** the subscription page shows the subscriber's Discord
+username and user ID to anyone in that server holding the Manage Server permission, so a team can see
+who is paying. The link into Paddle's billing portal is restricted to the subscriber alone.
+
+## 8. Your rights
+
+You can ask us to:
+
+- **give you a copy** of your data (access);
+- **correct** it, if it is wrong;
+- **delete** it (erasure);
+- **restrict** how we use it;
+- **give it to you in a portable format** — including your channel configuration and publishing
+  rules, which we will send you in a machine-readable file on request; and
+- **stop relying on legitimate interests** — see the separate note below.
+
+> ### Your right to object
+>
+> Where we rely on legitimate interests — the caching, rate-limiting and message-reading described in
+> sections 3, 4 and 6 — **you have the right to object to that processing at any time**, and we must
+> stop unless we can show compelling grounds that override your interests. Write to <SupportEmail />
+> with "objection" in the subject line. This is a distinct right and we are setting it out separately
+> so it does not get lost among the others.
+
+Write to <SupportEmail /> to exercise any of these. We will respond within one month. There is no
+charge.
+
+Some limits, stated plainly:
+
+- **Data held by Discord is not ours to delete.** Your account, your messages and your servers live
+  with Discord. Ask Discord.
+- **Data held by Paddle is not ours to delete either.** Paddle has no deletion API and is a separate
+  controller for the buyer information it holds. Send erasure requests about billing data to
+  `help@paddle.com`, and we will help if you ask.
+- Where a rule created by a server administrator contains your identifier, we can remove it, and so
+  can they.
+
+**Complaints.** You can complain to the Croatian Personal Data Protection Agency (AZOP) — full
+address in the [Legal Notice](/legal) — or to the supervisory authority where you live or work. We
+would rather you told us first.
+
+## 9. Who else sees the data
+
+| Recipient | Role | What they get |
+| --- | --- | --- |
+| **Discord** | Independent controller | Everything about your account and servers is already theirs. We call their API to read your identity, read servers and publish messages. Our operational alerts are delivered through a Discord webhook, and one alert type includes a subscriber's Discord user ID |
+| **Paddle** | Independent controller | Checkout and billing. We send a server ID and a Discord user ID; the buyer gives Paddle everything else directly |
+| **Our database provider** | Processor | Stores everything listed in section 7 |
+| **Our hosting provider** | Processor | Runs the servers the bot, dashboard and background services run on |
+
+Discord and Paddle are named because you deal with them directly — Discord is the platform the Service
+runs on, and Paddle, not us, is who you buy from. The other two are described by role rather than by
+name so that this notice does not become inaccurate the day we change supplier. **If you want to know
+who they currently are, ask <SupportEmail /> and we will tell you.**
+
+We do not sell personal data and we do not share it for advertising. There is no analytics or
+tracking provider, because there is no analytics or tracking.
+
+## 10. International transfers
+
+Some of these recipients are outside the European Economic Area.
+
+- **Discord.** The controller for European users is Discord Netherlands BV. Discord relies on
+  adequacy decisions where they apply, on the EU–US Data Privacy Framework, and on the European
+  Commission's Standard Contractual Clauses.
+- **Paddle.** The entity we contract with is a United Kingdom company, and the United Kingdom has an
+  **adequacy decision** from the European Commission, so no additional safeguard is needed for it. For
+  buyers in the United States, a Paddle company in the United States is the seller instead. Our
+  data-sharing agreement with Paddle puts the European Commission's Standard Contractual Clauses in
+  place on top of any adequacy decision, so transfers to Paddle are covered either way.
+- **Our database provider.** The database itself is located in the European Union, **but that alone
+  does not keep the data in Europe**: the provider's contracting entity, which acts as the data
+  importer, is established outside the European Economic Area in a country with no adequacy decision.
+  That transfer is covered by the European Commission's Standard Contractual Clauses, adopted by
+  Implementing Decision (EU) 2021/914.
+
+You can ask us for a copy of the safeguards relied on for any of these, and for the current identity of
+any provider named here only by role — write to <SupportEmail />.
+
+## 11. Cookies and local storage
+
+**We do not use a cookie banner, because we do not set anything that needs your consent.** Nothing
+here is used for analytics, advertising or tracking. Every item is listed anyway.
+
+| Name | Party | Purpose | Lifetime | Why no consent is needed |
+| --- | --- | --- | --- | --- |
+| `authjs.session-token` (`__Secure-` prefixed over HTTPS) | First party | Keeps you signed in to the dashboard | {retention.session} | Strictly necessary — it *is* the sign-in |
+| Short-lived sign-in cookies set during the Discord authorisation exchange (cross-site request protection, the one-time code verifier, and the page to return you to) | First party | To complete sign-in securely | Deleted when sign-in finishes | Strictly necessary |
+
+That is the complete list for this website. We set no other cookies, and we do not write to
+`localStorage`, `sessionStorage` or `indexedDB`.
+
+**On the checkout page only**, Paddle's checkout script loads to display the payment overlay. The
+payment form itself runs on Paddle's own domain, under Paddle's privacy notice and its own cookies,
+which we neither set nor control. The script is loaded only when you open the checkout page — never
+on any other page of this site.
+
+## 12. Automated decision-making
+
+**There is none.** Publishing rules match text and identifiers mechanically, and the only outcome is
+whether one Discord message gets published. Nothing produces legal effects for you, and nothing
+profiles you. We do not use any of this data to train machine-learning or AI models.
+
+## 13. Security
+
+What we actually do:
+
+- All connections to Discord, Paddle and our own services use encrypted transport (HTTPS/TLS).
+- **We do not store your Discord access token.** Only an irreversible hash of it is kept, as a cache
+  label, so the token cannot be recovered from our systems.
+- Message content is never written to storage or to logs.
+- Caches are deliberately short-lived, with the lifetimes stated above.
+- Access to the database and to internal services is restricted to the application itself.
+
+If a data breach occurs that is likely to result in a risk to your rights, we will report it to AZOP
+within 72 hours and tell affected people where the law requires.
+
+No system is perfectly secure, and we will not pretend otherwise. If you find a security problem,
+please tell us at <SupportEmail /> before disclosing it publicly.
+
+## 14. Children
+
+Discord requires all users to be at least 13, and older where local law says so. The Service is not
+directed at children. In Croatia, consent-based processing of a child's data for online services is
+only valid from age 16 — we do not rely on consent for anything described in this policy, but we
+mention it because it is the applicable local rule.
+
+If you believe a child's data has reached us, write to <SupportEmail /> and we will remove it.
+
+## 15. Changes to this policy
+
+If we change how we handle personal data, we will update this page and change its effective date. For
+changes that materially affect you, we will give notice in the dashboard before they take effect. We
+will not apply a materially different use of already-collected data without a fresh legal basis.
+
+## 16. Contact
+
+- Privacy contact: <SupportEmail />
+- Company details, and the supervisory authority for complaints: [Legal Notice](/legal)

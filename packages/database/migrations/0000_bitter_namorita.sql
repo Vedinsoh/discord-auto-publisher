@@ -29,7 +29,7 @@ CREATE TABLE "subscription" (
 	"guild_id" text NOT NULL,
 	"paddle_subscription_id" text NOT NULL,
 	"paddle_customer_id" text NOT NULL,
-	"subscriber_discord_user_id" text NOT NULL,
+	"subscriber_discord_user_id" text,
 	"status" text NOT NULL,
 	"paddle_price_id" text,
 	"billing_interval" text,

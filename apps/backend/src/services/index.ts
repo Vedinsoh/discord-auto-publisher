@@ -8,6 +8,7 @@ import { Info } from './info.js';
 import { PaddleService } from './paddle.js';
 import { PresenceHeal } from './presenceHeal.js';
 import { PublishState } from './publishState.js';
+import { Retention } from './retention.js';
 import { Subscriptions } from './subscriptions.js';
 
 export const Services = {
@@ -21,5 +22,6 @@ export const Services = {
   Paddle: PaddleService,
   PresenceHeal,
   PublishState,
+  Retention,
   Subscriptions,
 };

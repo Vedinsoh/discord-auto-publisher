@@ -1,5 +1,6 @@
 export const links = {
   discordSupportServer: 'https://discord.gg/xcEeJkdQX8',
+  infoEmail: 'info@auto-publisher.gg',
   supportEmail: 'support@auto-publisher.gg',
   githubRepo: 'https://github.com/acehox/auto-publisher',
   githubAuthor: 'https://github.com/acehox',
@@ -7,7 +8,6 @@ export const links = {
 
 export const values = {
   activeServers: 17000,
-  messagesPublished: 100_000_000,
 };
 
 // MIGRATION: date legacy mode stops working. Shown across all legacy surfaces.
