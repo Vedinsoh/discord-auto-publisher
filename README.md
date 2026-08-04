@@ -35,8 +35,8 @@ Did the bot help you or do you simply want to support my work? ❤️
 
 ## Self-hosting
 
-The bot's code provided here is primarily for transparency reasons and to help other developers implement the same functionality to their bots.
+The code is published here for transparency, and to help other developers implement the same functionality in their own bots.
 
-Given the bot's simple nature, using the publicly-hosted version will be enough for most people, so it is highly recommended to use that version, unless you have a specific reason not to do so (such as experimenting with the code).
+Adding the publicly-hosted bot is free and will be enough for almost everyone, so that is the recommended route unless you have a specific reason not to take it — reading the code, experimenting with it, or running your own copy in servers you look after.
 
-You're free to host this bot on your own machine, but please keep in mind I will not be providing any support in that regard (do it on your own risk). If you're directly hosting this bot, you should not monetize it in any way; the bot's goal is to help everyone and be free of any charge.
+You're welcome to host it on your own machine, but please keep in mind that no support is provided for self-hosted instances (do it at your own risk). Hosting an instance for other people — publishing an invite link, or adding your copy to servers you don't run — is not permitted by the licence, whether or not you charge for it. There's no need to anyway: the public bot is free to add.
