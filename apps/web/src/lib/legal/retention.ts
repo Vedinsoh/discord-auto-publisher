@@ -59,7 +59,7 @@ export const retention = {
    *
    * Enforced by `ACCOUNTING_RETENTION_YEARS` in apps/backend/src/services/retention.ts,
    * which is the source of truth for this number and carries the statutory citations.
-   * Provisional until the accountant confirms — docs/legal-pre-publish-checklist.md §1.2.
+   * Provisional until an accountant confirms it.
    */
   billingRecords: '11 years from the end of the business year it falls in',
 

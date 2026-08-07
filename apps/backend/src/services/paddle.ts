@@ -78,7 +78,7 @@ const createCheckoutTransaction = async (params: {
  * ⚠️ This is a CANCELLATION link, not a withdrawal one. It schedules the subscription
  * to end at the close of the current billing period and refunds nothing. It does not
  * satisfy the ZZP čl. 81.a / CRD Art 11a withdrawal function, and any UI built on it
- * must not imply a refund. See docs/withdrawal-function-spec.md.
+ * must not imply a refund. See docs/plans/withdrawal-function.md.
  */
 const createPortalSession = async (
   paddleCustomerId: string,

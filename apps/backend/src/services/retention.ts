@@ -12,9 +12,10 @@ import { guardMassAction } from 'utils/massActionGuard.js';
  * Two periods rather than one: Paddle is merchant of record, so our books identify
  * Paddle as the buyer, not the subscriber. The subscriber's Discord user id is
  * therefore not an accounting record and goes early, while the Paddle ids and the
- * status/date history are the accounting trail and keep the statutory period. Statute,
- * and the residual tax risk that split carries, in
- * docs/legal-pre-publish-checklist.md §1.2.
+ * status/date history are the accounting trail and keep the statutory period.
+ *
+ * Both periods are provisional until an accountant confirms them; the split itself
+ * carries a residual tax risk that has not been reviewed.
  */
 
 /** Months after a subscription ends before the subscriber's Discord id is erased. */
