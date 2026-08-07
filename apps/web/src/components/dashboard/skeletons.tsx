@@ -15,9 +15,6 @@ export function ServerSelectorSkeleton() {
           <ServerCardSkeleton />
           <ServerCardSkeleton />
           <ServerCardSkeleton />
-          <ServerCardSkeleton />
-          <ServerCardSkeleton />
-          <ServerCardSkeleton />
         </div>
       </div>
     </div>
