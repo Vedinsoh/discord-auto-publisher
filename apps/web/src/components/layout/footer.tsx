@@ -23,7 +23,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-800 bg-slate-950/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div className="sm:col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-4">
               <Logo className="w-8 h-8" />
@@ -66,39 +66,44 @@ export function Footer() {
               ))}
             </ul>
           </div>
+        </div>
 
-          <div>
-            <h4 className="text-white font-medium mb-4">Legal</h4>
-            <ul className="space-y-2">
-              {legalDocuments.map(document => (
-                <li key={document.href}>
-                  <Link
-                    href={document.href}
-                    className="text-slate-400 hover:text-blue-400 transition-colors"
-                  >
+        <div className="pt-8 border-t border-slate-800 space-y-4 text-slate-500 text-xs">
+          <nav aria-label="Legal">
+            <ul className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 sm:gap-x-2">
+              {legalDocuments.map((document, index) => (
+                <li key={document.href} className="flex items-center gap-x-2">
+                  {/* Separators only from sm up: below that the row wraps, and a wrapped
+                      line would start with a stray divider. */}
+                  {index > 0 && (
+                    <span aria-hidden="true" className="hidden sm:inline text-slate-700">
+                      |
+                    </span>
+                  )}
+                  <Link href={document.href} className="hover:text-slate-300 transition-colors">
                     {document.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
+          </nav>
 
-        <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-500 text-sm">
-          <p>
-            Copyright &copy; 2020&ndash;{new Date().getFullYear()} Auto Publisher. All rights
-            reserved.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">
+            <p>
+              Copyright &copy; 2020&ndash;{new Date().getFullYear()} Auto Publisher. All rights
+              reserved.
+            </p>
 
-          <div className="flex items-center gap-1">
-            Crafted with <Heart className="h-4 w-4" /> by{' '}
-            <Link
-              href={links.githubAuthor}
-              target="_blank"
-              className="text-blue-400 hover:text-blue-500 transition-colors"
-            >
-              acehox
-            </Link>
+            <div className="flex items-center gap-1">
+              Crafted with <Heart className="h-4 w-4" /> by{' '}
+              <Link
+                href={links.githubAuthor}
+                target="_blank"
+                className="text-blue-400 hover:text-blue-500 transition-colors"
+              >
+                acehox
+              </Link>
+            </div>
           </div>
         </div>
       </div>
