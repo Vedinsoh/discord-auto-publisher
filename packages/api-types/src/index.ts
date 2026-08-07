@@ -106,10 +106,11 @@ export interface SubscriptionSubscriber {
 
 /**
  * Full subscription detail from GET /api/guild/:guildId/subscription.
- * portalUrl is set only when the requester is the subscriber.
+ * Both portal URLs are set only when the requester is the subscriber.
  */
 export interface SubscriptionDetail extends SubscriptionData {
   portalUrl: string | null;
+  cancelUrl: string | null;
   subscriber: SubscriptionSubscriber;
 }
 

@@ -27,6 +27,15 @@ export function SupportEmail() {
   return <a href={`mailto:${links.supportEmail}`}>{links.supportEmail}</a>;
 }
 
+/**
+ * The buyer-support telephone number. One number serves both the support role and the
+ * imprint's contact tail, so it is stored once and the `tel:` target is derived here —
+ * a second literal with the spaces removed is a second thing to get wrong.
+ */
+export function SupportPhone() {
+  return <a href={`tel:${entity.phone.replace(/\s/g, '')}`}>{entity.phone}</a>;
+}
+
 export function InfoEmail() {
   return <a href={`mailto:${links.infoEmail}`}>{links.infoEmail}</a>;
 }

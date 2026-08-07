@@ -442,16 +442,19 @@ export const GuildApi: Router = (() => {
 
       const isSubscriber = userId === sub.subscriberDiscordUserId;
       let portalUrl: string | undefined;
+      let cancelUrl: string | null = null;
 
-      // Only provide portal URL if the requester is the subscriber
+      // Only provide portal URLs if the requester is the subscriber
       if (isSubscriber) {
         try {
-          portalUrl = await Services.Paddle.createPortalSession(
+          const portal = await Services.Paddle.createPortalSession(
             sub.paddleCustomerId,
             sub.paddleSubscriptionId
           );
+          portalUrl = portal.manageUrl;
+          cancelUrl = portal.cancelUrl;
         } catch {
-          // Non-fatal: portal URL is optional
+          // Non-fatal: portal URLs are optional
         }
       }
 
@@ -475,6 +478,7 @@ export const GuildApi: Router = (() => {
               : null,
           canceledAt: sub.canceledAt,
           portalUrl: portalUrl ?? null,
+          cancelUrl,
           isSubscriber,
           subscriber: {
             id: sub.subscriberDiscordUserId,
@@ -497,7 +501,7 @@ export const GuildApi: Router = (() => {
     validateRequest(SubscriptionCheckoutReqSchema),
     async (req, res) => {
       const { guildId } = req.params;
-      const { interval } = req.body;
+      const { interval, termsVersion } = req.body;
       const userId = req.discordUser?.id;
 
       if (!userId) {
@@ -552,6 +556,7 @@ export const GuildApi: Router = (() => {
           discordGuildId: guildId,
           discordUserId: userId,
           priceId,
+          termsVersion,
         });
 
         res.status(StatusCodes.OK).json({

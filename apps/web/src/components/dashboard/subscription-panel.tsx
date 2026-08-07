@@ -25,6 +25,7 @@ import { PlanComparisonTable } from '@/components/plan-comparison-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
@@ -146,6 +147,7 @@ function ActiveSubscription({
         premiumPending: data.premiumPending,
       });
   const pastDue = subscription.status === 'past_due';
+  const cancelScheduled = subscription.scheduledChange?.action === 'cancel';
 
   // The branch (manage button vs "managed by @X") is known at first paint from
   // the aggregate's isSubscriber flag. The detail endpoint is fetched only for
@@ -238,7 +240,6 @@ function ActiveSubscription({
         )}
 
         {(() => {
-          const cancelScheduled = subscription.scheduledChange?.action === 'cancel';
           const dateValue = cancelScheduled
             ? subscription.scheduledChange?.effectiveAt
             : subscription.currentPeriodEndsAt;
@@ -288,20 +289,56 @@ function ActiveSubscription({
               <p className="text-slate-500 text-sm">Couldn&apos;t load billing controls.</p>
             </div>
           ) : detail?.portalUrl ? (
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 border-blue-500/30 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200"
-                asChild
-              >
-                <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
-                  {/* portalUrl is the subscription-scoped
-                      updateSubscriptionPaymentMethod deep link, so this label is
-                      literal, not a euphemism, when the card has failed. */}
-                  {pastDue ? 'Update payment method' : 'Manage subscription'}
-                  <ExternalLink className="w-3 h-3 ml-2" />
-                </a>
-              </Button>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 border-blue-500/30 text-blue-300 hover:bg-blue-500/10 hover:text-blue-200"
+                  asChild
+                >
+                  <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
+                    {/* portalUrl is the subscription-scoped
+                        updateSubscriptionPaymentMethod deep link, so this label is
+                        literal, not a euphemism, when the card has failed. */}
+                    {pastDue ? 'Update payment method' : 'Manage subscription'}
+                    <ExternalLink className="w-3 h-3 ml-2" />
+                  </a>
+                </Button>
+                {/* Cancellation gets its own button rather than staying buried one
+                    hop inside the portal. Hidden once a cancellation is already
+                    scheduled — Paddle's deep link degrades to an account overview in
+                    that state, so the button would stop doing what it says.
+                    Deliberately not styled as the primary action, and deliberately
+                    NOT labelled as a withdrawal: it schedules the subscription to end
+                    at period close and refunds nothing. */}
+                {detail.cancelUrl && !cancelScheduled && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-slate-200"
+                    asChild
+                  >
+                    <a href={detail.cancelUrl} target="_blank" rel="noopener noreferrer">
+                      Cancel subscription
+                      <ExternalLink className="w-3 h-3 ml-2" />
+                    </a>
+                  </Button>
+                )}
+              </div>
+              {/* States what the button does and where refunds live. No statute requires
+                  a "this is not a refund" disclaimer, and stating the effect positively
+                  beats denying a refund — a disclaimer has to raise the idea in order to
+                  rule it out. It matters here because until the withdrawal control exists
+                  this is the only control a subscriber inside the 14 days can see, and it
+                  stops the renewal without refunding anything. */}
+              {detail.cancelUrl && !cancelScheduled && (
+                <p className="text-slate-500 text-sm">
+                  Cancelling stops renewals at the end of the billing period. See{' '}
+                  <Link href="/refunds" target="_blank" className="text-slate-400 hover:underline">
+                    Refunds &amp; Withdrawal
+                  </Link>{' '}
+                  for refund information.
+                </p>
+              )}
             </div>
           ) : (
             <div className="flex h-9 w-full items-center justify-center">
@@ -417,6 +454,10 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
     searchParams.get('upgrade') === 'month' ? 'month' : 'year'
   );
   const [migrateOpen, setMigrateOpen] = useState(false);
+  // Unticked by default and never pre-ticked: Paddle requires the buyer to accept the
+  // terms and refund policy before purchase, and a pre-ticked box is not acceptance.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptanceError, setAcceptanceError] = useState(false);
 
   // A guild must be migrated (allowlist model) before it can buy Premium —
   // Premium configures per-channel filters, which need registered channels.
@@ -427,6 +468,14 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
 
   const handleUpgrade = useCallback(() => {
     if (!migrated) return;
+    // The button stays live and explains the blocker on press, rather than sitting
+    // disabled — same reasoning as the legacy branch below. A disabled control makes
+    // the obstacle discoverable only by hovering it, which never happens on touch.
+    if (!acceptedTerms) {
+      setAcceptanceError(true);
+      return;
+    }
+    setAcceptanceError(false);
     setError(false);
     startTransition(async () => {
       try {
@@ -448,7 +497,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
         setError(true);
       }
     });
-  }, [guild.id, guild.icon, guildName, billingInterval, migrated, router]);
+  }, [guild.id, guild.icon, guildName, billingInterval, migrated, acceptedTerms, router]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -577,6 +626,48 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
               opens, so the dead end becomes the next step.
               MIGRATION: collapse back to a single handleUpgrade button after the
               migration period (6 months). */}
+          {/* Terms acceptance. Paddle's seller policy requires the buyer to accept
+              the terms and refund policy BEFORE purchase, and the overlay has no
+              field of its own for it — so the gate has to live here, on the last
+              screen we own before Paddle takes over. The server requires it too;
+              this checkbox is the disclosure, not the enforcement.
+              Rendered only for migrated guilds: a legacy guild's button opens the
+              migrate modal rather than a checkout, so there is nothing to accept
+              yet. Links open in a new tab so reading them doesn't discard the
+              chosen interval or the tick. */}
+          {migrated && (
+            <div className="mb-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="accept-terms"
+                  checked={acceptedTerms}
+                  onCheckedChange={checked => {
+                    setAcceptedTerms(checked === true);
+                    if (checked === true) setAcceptanceError(false);
+                  }}
+                  className="mt-0.5"
+                  aria-describedby={acceptanceError ? 'accept-terms-error' : undefined}
+                />
+                <label htmlFor="accept-terms" className="text-slate-300 text-sm cursor-pointer">
+                  I have read and agree to the{' '}
+                  <Link href="/terms" target="_blank" className="text-blue-400 hover:underline">
+                    Terms of Service
+                  </Link>{' '}
+                  and the{' '}
+                  <Link href="/refunds" target="_blank" className="text-blue-400 hover:underline">
+                    Refunds &amp; Withdrawal policy
+                  </Link>
+                  .
+                </label>
+              </div>
+              {acceptanceError && (
+                <p id="accept-terms-error" className="text-amber-400 text-sm mt-2">
+                  Please accept the Terms and the Refunds &amp; Withdrawal policy to continue.
+                </p>
+              )}
+            </div>
+          )}
+
           <Button
             className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-lg py-6"
             onClick={migrated ? handleUpgrade : () => setMigrateOpen(true)}

@@ -1,5 +1,5 @@
 import { entity } from '@/lib/legal/entity';
-import { CompanyEmail } from './links';
+import { CompanyEmail, SupportPhone } from './links';
 
 /**
  * The statutory company-identification block, as one dense paragraph in small muted
@@ -19,6 +19,12 @@ import { CompanyEmail } from './links';
  * This is the only surface that publishes `entity.email`: ZEIT cl. 6(1) wants an address
  * for the service *provider*. Documents that promise a reply use `SupportEmail`
  * instead — the split is explained in ./links.tsx and must not be collapsed.
+ *
+ * The telephone number in the contact tail is the one item here that is NOT statutory —
+ * it rides along because ZEIT cl. 6 wants details permitting rapid contact, and it costs
+ * nothing to include. Its actual driver is Paddle's seller policy, which is why the
+ * prominent copy lives in the Contact section of /legal: a muted grey paragraph is not
+ * "clearly on your website". Removing it from here would not breach ZTD cl. 21.
  */
 export function ImprintBlock() {
   const bank = entity.banks[0];
@@ -30,7 +36,7 @@ export function ImprintBlock() {
       {entity.registryCourt} under registration number (MBS) {entity.registrationNumber}. VAT
       identification number {entity.vatNumber}. Share capital {entity.shareCapital},{' '}
       {entity.shareCapitalPaidUp}. Management board: {entity.boardMembers.join(', ')}. Account held
-      with {bank.name}, {bank.seat}, IBAN {bank.iban}. Contact: <CompanyEmail />
+      with {bank.name}, {bank.seat}, IBAN {bank.iban}. Contact: <CompanyEmail />, <SupportPhone />
     </p>
   );
 }

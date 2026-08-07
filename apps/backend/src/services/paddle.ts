@@ -22,11 +22,18 @@ const ensurePaddle = () => {
 /**
  * Creates a Paddle transaction for the overlay checkout.
  * custom_data is server-set so webhooks can trust discord_guild_id/discord_user_id.
+ *
+ * The terms acceptance rides along in custom_data because that is the only store
+ * attached to the purchase itself: it survives independently of our own database and
+ * comes back on every webhook, so the evidence of what the buyer accepted cannot
+ * drift away from the transaction it belongs to. `terms_accepted_at` is stamped here
+ * rather than taken from the client — a self-reported timestamp proves nothing.
  */
 const createCheckoutTransaction = async (params: {
   discordGuildId: string;
   discordUserId: string;
   priceId: string;
+  termsVersion: string;
 }): Promise<{ transactionId: string }> => {
   try {
     // No customerId: the transaction stays open so the checkout collects address
@@ -37,6 +44,8 @@ const createCheckoutTransaction = async (params: {
       customData: {
         discord_guild_id: params.discordGuildId,
         discord_user_id: params.discordUserId,
+        terms_version: params.termsVersion,
+        terms_accepted_at: new Date().toISOString(),
       },
     });
 
@@ -49,29 +58,42 @@ const createCheckoutTransaction = async (params: {
 };
 
 /**
- * Creates a Customer Portal session and returns a deep link into the portal.
+ * Creates a Customer Portal session and returns deep links into the portal.
  *
- * When a subscription ID is passed we return its `updateSubscriptionPaymentMethod`
- * deep link, NOT `general.overview`: it lands the customer on *that* subscription's
- * page in the portal (cancel, plan, invoices all reachable from there), whereas
- * `general.overview` is account-wide and lists every subscription the customer has.
- * The button is opened from a specific guild's settings, so it must target that
- * guild's subscription. Do not "simplify" this back to `general.overview`.
- * Falls back to the overview if Paddle returns no per-subscription link.
+ * `manageUrl`: when a subscription ID is passed we return its
+ * `updateSubscriptionPaymentMethod` deep link, NOT `general.overview`: it lands the
+ * customer on *that* subscription's page in the portal (cancel, plan, invoices all
+ * reachable from there), whereas `general.overview` is account-wide and lists every
+ * subscription the customer has. The button is opened from a specific guild's
+ * settings, so it must target that guild's subscription. Do not "simplify" this back
+ * to `general.overview`. Falls back to the overview if Paddle returns no
+ * per-subscription link.
+ *
+ * `cancelUrl`: the sibling link, surfaced separately so the dashboard can offer
+ * cancellation as its own labelled action instead of hiding it one hop inside the
+ * portal. Null when Paddle returns no per-subscription entry — the overview fallback
+ * is deliberately NOT reused for it, because a button labelled "cancel" that opens an
+ * account overview misdescribes what it does.
+ *
+ * ⚠️ This is a CANCELLATION link, not a withdrawal one. It schedules the subscription
+ * to end at the close of the current billing period and refunds nothing. It does not
+ * satisfy the ZZP čl. 81.a / CRD Art 11a withdrawal function, and any UI built on it
+ * must not imply a refund. See docs/withdrawal-function-spec.md.
  */
 const createPortalSession = async (
   paddleCustomerId: string,
   paddleSubscriptionId?: string
-): Promise<string> => {
+): Promise<{ manageUrl: string; cancelUrl: string | null }> => {
   try {
     const session = await ensurePaddle().customerPortalSessions.create(
       paddleCustomerId,
       paddleSubscriptionId ? [paddleSubscriptionId] : []
     );
-    return (
-      session.urls.subscriptions[0]?.updateSubscriptionPaymentMethod ??
-      session.urls.general.overview
-    );
+    const subscriptionUrls = session.urls.subscriptions[0];
+    return {
+      manageUrl: subscriptionUrls?.updateSubscriptionPaymentMethod ?? session.urls.general.overview,
+      cancelUrl: subscriptionUrls?.cancelSubscription ?? null,
+    };
   } catch (error) {
     logger.error(error, 'Failed to create Paddle portal session');
     throw new Error('Failed to create portal session');

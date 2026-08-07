@@ -137,7 +137,7 @@ bot-premium ─► proxy-premium ──┘
 
 **Shared packages** (packages/\*):
 
-- **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guild`, `botPresence`, `channel`, `subscription` — exactly four; there is **no** `paddleCustomer` table, only a `paddleCustomerId` column on `subscription`. An older schema did have one, carrying emails; no `DROP TABLE` migration exists, so a long-lived database may still hold it — see `docs/legal-pre-publish-checklist.md` §2). Migrations in `packages/database/migrations/`.
+- **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guild`, `botPresence`, `channel`, `subscription` — exactly four; there is **no** `paddleCustomer` table, only a `paddleCustomerId` column on `subscription`. An older schema did have one, carrying emails, and no `DROP TABLE` migration exists — but no production database has ever existed, so there is nowhere for the legacy table to survive. Verified 2026-08-04; treat this as closed rather than as a latent data-protection issue). Migrations in `packages/database/migrations/`.
 - **@ap/logger**: Pino logging utilities (REST & Bot loggers)
 - **@ap/alerts**: `createAlerter` — fire-and-forget Discord webhook alerts (`ALERT_WEBHOOK_URL`, disabled when unset), per-key throttle via `Alerts` Redis DB (30 min TTL), minimal embed format. Wired events: duplicate entitled subscription (backend), guild reconcile rails tripped (backend), invalid-request shed (proxy). Bar for new events: actionable, not merely unusual.
 - **@ap/utils**: Common utilities (time, regex, discord helpers)

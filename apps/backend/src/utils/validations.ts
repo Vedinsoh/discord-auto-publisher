@@ -99,6 +99,12 @@ export const SubscriptionCheckoutReqSchema = z.object({
   }),
   body: z.object({
     interval: z.enum(['month', 'year']),
+    // Paddle requires sellers to have the buyer accept the terms and refund policy
+    // before purchase. `literal(true)` makes the checkbox a real gate: a checkout
+    // that never carried an acceptance is rejected here, not merely discouraged in
+    // the UI. The version is recorded, not validated — see LEGAL_DOCUMENTS_VERSION.
+    acceptedTerms: z.literal(true),
+    termsVersion: z.string().min(1).max(32),
   }),
 });
 

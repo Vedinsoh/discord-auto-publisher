@@ -12,6 +12,7 @@ import type {
   GuildRole,
   SubscriptionDetail,
 } from '@/lib/api/types';
+import { LEGAL_DOCUMENTS_VERSION } from '@/lib/legal/documents';
 
 /**
  * Result of a mutation that the UI branches on. Thrown errors are sanitized
@@ -83,13 +84,21 @@ export async function getSubscription(guildId: string): Promise<SubscriptionDeta
   return backendFetch<SubscriptionDetail | null>(`/api/guild/${guildId}/subscription`);
 }
 
+/**
+ * `acceptedTerms` is sent rather than assumed: the backend requires it, so a caller
+ * that skips the acceptance checkbox fails at the server and not merely in the UI.
+ */
 export async function createCheckout(
   guildId: string,
   interval: 'month' | 'year'
 ): Promise<CheckoutResponse> {
   return backendFetch<CheckoutResponse>(`/api/guild/${guildId}/subscription/checkout`, {
     method: 'POST',
-    body: JSON.stringify({ interval }),
+    body: JSON.stringify({
+      interval,
+      acceptedTerms: true,
+      termsVersion: LEGAL_DOCUMENTS_VERSION,
+    }),
   });
 }
 

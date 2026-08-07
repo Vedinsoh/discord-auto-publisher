@@ -51,6 +51,21 @@ export const entity = {
 
   /** ZEIT cl. 6: an electronic address permitting direct contact. A form does not satisfy it. */
   email: 'info@pwn.ltd',
+
+  /**
+   * Buyer-support telephone number. Published because Paddle's Seller Handbook requires
+   * sellers to list "buyer support details (email and phone number) clearly on your
+   * website"; the MSA reaches it through cl. 9.2 plus cl. 9.6(iii), which lets Paddle
+   * suspend sales for unremedied non-compliance.
+   *
+   * NOT part of the ZTD cl. 21 registered-particulars set — nothing statutory requires it
+   * in the imprint, so do not treat its presence there as mandatory. Whether EU consumer
+   * law independently requires a telephone number is UNVERIFIED; the Paddle requirement is
+   * not evidence of a statutory one.
+   *
+   * Stored in display format with spaces. The `tel:` href is derived, not stored twice.
+   */
+  phone: '+385 91 997 2984',
 } as const;
 
 /** Satisfies the ZTD cl. 21(2) joint-use rule. Never render `englishShort` alone. */
