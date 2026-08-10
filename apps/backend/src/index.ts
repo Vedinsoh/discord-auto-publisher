@@ -15,6 +15,7 @@ import {
   runSubscriptionReconcile,
   startSubscriptionReconcile,
 } from 'cron/subscriptionReconcile.js';
+import { startWithdrawalAcknowledgeRetry } from 'cron/withdrawalAcknowledge.js';
 import { Data } from 'data/index.js';
 import express from 'express';
 import { Services } from 'services/index.js';
@@ -75,6 +76,9 @@ startGuildReconcile();
 
 // Start subscription reconcile cron
 startSubscriptionReconcile();
+
+// Retry sweep for unsent withdrawal acknowledgements (ZZP čl. 81.a st. 6)
+startWithdrawalAcknowledgeRetry();
 
 // Startup reconcile: repairs presence state lost while down — Discord never
 // re-emits a missed join, so without this a DB reset or downtime during an

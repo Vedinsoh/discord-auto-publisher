@@ -4,9 +4,11 @@ import { createContext, use, useContext } from 'react';
 import { useCurrentGuild } from '@/components/dashboard/guild-list-context';
 import {
   AuthExpiredSignal,
+  BotAbsentSignal,
   type GuildLoadFailure,
   GuildUnavailableSignal,
   isAuthExpired,
+  isBotAbsent,
   isGuildUnavailable,
   isTransientError,
   TransientErrorSignal,
@@ -57,6 +59,9 @@ export function useGuild(): { guild: DiscordGuild; data: GuildDashboardData } {
   // in-place retry card (ADR 0010).
   if (isAuthExpired(data)) {
     throw new AuthExpiredSignal();
+  }
+  if (isBotAbsent(data)) {
+    throw new BotAbsentSignal();
   }
   if (isGuildUnavailable(data)) {
     throw new GuildUnavailableSignal();

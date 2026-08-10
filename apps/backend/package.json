@@ -23,6 +23,10 @@
     "@paddle/paddle-node-sdk": "^3.8.0",
     "@sapphire/snowflake": "^3.5.5",
     "cron": "^4.4.0",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "nodemailer": "^9.0.5"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.1"
   }
 }

@@ -3,6 +3,7 @@ import { GuildDashboardShell } from '@/components/dashboard/guild-dashboard-shel
 import { getGuildDashboard } from '@/lib/api/actions';
 import {
   AUTH_EXPIRED,
+  BOT_ABSENT,
   GUILD_UNAVAILABLE,
   type GuildLoadFailure,
   TRANSIENT_ERROR,
@@ -36,9 +37,9 @@ export default async function GuildLayout({
   // errors are sanitized across the RSC boundary, so the client can't tell
   // auth-expiry from a botless guild from a transient blip by error identity.
   // useGuild() turns each sentinel back into a typed client-side throw the
-  // boundary routes to the matching recovery — re-login (401), redirect to the
-  // server list (403/404/409, incl. BOT_NOT_PRESENT), or stay + retry (5xx /
-  // network). See ADR 0010.
+  // boundary routes to the matching recovery — re-login (401), offer the bot
+  // invite in place (409 BOT_NOT_PRESENT), redirect to the server list
+  // (403/404), or stay + retry (5xx / network). See ADR 0010.
   const dataPromise: Promise<GuildDashboardData | GuildLoadFailure> = getGuildDashboard(guildId)
     .then(raw => ({
       ...raw,
@@ -49,6 +50,11 @@ export default async function GuildLayout({
     }))
     .catch((err: unknown): GuildLoadFailure => {
       if (err instanceof AuthExpiredError) return AUTH_EXPIRED;
+      // Before the generic branch, and keyed on the `code` rather than the 409
+      // status, so any other 409 keeps the safe redirect.
+      if (err instanceof BackendError && err.status === 409 && err.code === 'BOT_NOT_PRESENT') {
+        return BOT_ABSENT;
+      }
       if (err instanceof BackendError && [403, 404, 409].includes(err.status)) {
         return GUILD_UNAVAILABLE;
       }

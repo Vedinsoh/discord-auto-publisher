@@ -78,7 +78,7 @@ const createCheckoutTransaction = async (params: {
  * ⚠️ This is a CANCELLATION link, not a withdrawal one. It schedules the subscription
  * to end at the close of the current billing period and refunds nothing. It does not
  * satisfy the ZZP čl. 81.a / CRD Art 11a withdrawal function, and any UI built on it
- * must not imply a refund. See docs/plans/withdrawal-function.md.
+ * must not imply a refund. That function is `services/withdrawal.ts`.
  */
 const createPortalSession = async (
   paddleCustomerId: string,
@@ -101,6 +101,67 @@ const createPortalSession = async (
 };
 
 /**
+ * Most recent `completed` (actually paid) transaction on the subscription — the
+ * one a withdrawal refund is raised against. Null = nothing to refund (e.g. a
+ * trial that never billed); that is a real state, not an error.
+ */
+const findRefundableTransaction = async (paddleSubscriptionId: string): Promise<string | null> => {
+  try {
+    const collection = ensurePaddle().transactions.list({
+      subscriptionId: [paddleSubscriptionId],
+      status: ['completed'],
+      orderBy: 'billed_at[DESC]',
+      perPage: 1,
+    });
+
+    for await (const transaction of collection) return transaction.id;
+    return null;
+  } catch (error) {
+    logger.error(error, `Failed to list transactions for subscription ${paddleSubscriptionId}`);
+    throw new Error('Failed to find refundable transaction');
+  }
+};
+
+/**
+ * Raises a FULL refund (ZZP čl. 84 st. 8/9 — a pro-rata deduction requires an express
+ * čl. 77 request, which our combined Terms acceptance is not). Never switch to a partial
+ * adjustment without adding a separate unticked express-request control at checkout.
+ * Status is Paddle's verbatim: `pending_approval` means no money has moved yet.
+ */
+const refundTransaction = async (params: {
+  transactionId: string;
+  reason: string;
+}): Promise<{ adjustmentId: string; status: string }> => {
+  const adjustment = await ensurePaddle().adjustments.create({
+    action: 'refund',
+    type: 'full',
+    transactionId: params.transactionId,
+    reason: params.reason,
+  });
+
+  logger.info(
+    `Created Paddle refund adjustment ${adjustment.id} (${adjustment.status}) for transaction ${params.transactionId}`
+  );
+  return { adjustmentId: adjustment.id, status: adjustment.status };
+};
+
+/**
+ * Ends the subscription immediately — withdrawal path only. The dashboard's cancel
+ * button is Paddle's portal link and ends at period close instead. Returns the updated
+ * subscription so the caller applies it through the same `applyPaddleSubscription` →
+ * `enforceTransition` path; the `subscription.canceled` webhook still arrives, no-op.
+ */
+const cancelSubscriptionImmediately = async (
+  paddleSubscriptionId: string
+): Promise<PaddleSubscription> => {
+  const updated = await ensurePaddle().subscriptions.cancel(paddleSubscriptionId, {
+    effectiveFrom: 'immediately',
+  });
+  logger.info(`Cancelled Paddle subscription ${paddleSubscriptionId} immediately (withdrawal)`);
+  return updated;
+};
+
+/**
  * Iterates all subscriptions in Paddle (all statuses) — reconciliation cron input.
  */
 async function* listAllSubscriptions(): AsyncGenerator<PaddleSubscription> {
@@ -120,6 +181,9 @@ const unmarshalWebhook = (rawBody: string, signature: string): Promise<EventEnti
 export const PaddleService = {
   createCheckoutTransaction,
   createPortalSession,
+  findRefundableTransaction,
+  refundTransaction,
+  cancelSubscriptionImmediately,
   listAllSubscriptions,
 };
 

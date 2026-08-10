@@ -11,6 +11,8 @@ export type {
   GuildRole,
   SubscriptionData,
   SubscriptionDetail,
+  WithdrawalResult,
+  WithdrawalState,
 } from '@ap/api-types';
 
 /** One filter condition as edited in the dashboard rule builder */

@@ -11,6 +11,7 @@ import type {
   GuildDashboardData,
   GuildRole,
   SubscriptionDetail,
+  WithdrawalResult,
 } from '@/lib/api/types';
 import { LEGAL_DOCUMENTS_VERSION } from '@/lib/legal/documents';
 
@@ -100,6 +101,29 @@ export async function createCheckout(
       termsVersion: LEGAL_DOCUMENTS_VERSION,
     }),
   });
+}
+
+/**
+ * Statutory withdrawal (ZZP čl. 81.a / CRD Art 11a). One call, never two — the
+ * statute has a single sending event. Only the address is sent; name and contract
+ * details are server-composed. The result carries the real outcome, not just ok.
+ */
+export async function withdrawFromContract(
+  guildId: string,
+  notificationAddress: string
+): Promise<{ ok: true; result: WithdrawalResult } | { ok: false; status: number; code?: string }> {
+  try {
+    const result = await backendFetch<WithdrawalResult>(
+      `/api/guild/${guildId}/subscription/withdrawal`,
+      { method: 'POST', body: JSON.stringify({ notificationAddress }) }
+    );
+    return { ok: true, result };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code };
+    }
+    throw error;
+  }
 }
 
 export async function getGuildRoles(guildId: string): Promise<GuildRole[]> {

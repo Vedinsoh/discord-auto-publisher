@@ -31,6 +31,15 @@ web (Paddle.js overlay)                    premium backend
    - Monthly: `4.99 USD`, billing period 1 month → copy the `pri_...` ID
    - Yearly: `49.99 USD`, billing period 1 year → copy the `pri_...` ID
 3. **Developer tools → Authentication**: create an API key → `PADDLE_API_KEY` (`pdl_sdbx_apikey_...`).
+   Grant it read + write on the entities the backend calls — **transactions** (`transactions.create`
+   for the overlay checkout, `transactions.list` to find the payment to refund), **subscriptions**
+   (`subscriptions.list` for the reconcile cron, `subscriptions.cancel`), **adjustments**
+   (`adjustments.create`), and **customer portal sessions** (`customerPortalSessions.create`).
+   ⚠️ **Adjustments is the one people miss, and it fails late.** It is only used by the statutory
+   withdrawal refund, so a key without it works fine until a consumer withdraws — at which point the
+   withdrawal is already recorded, the consumer is owed money, and `withdrawal.refundOutcome` reads
+   `failed: not authorized to create|read adjustment`. Recovery is a manual refund in Paddle. This
+   happened on the first sandbox run.
 4. **Developer tools → Client-side tokens**: create a token → `NEXT_PUBLIC_PADDLE_CLIENT_TOKEN` (`test_...`).
 5. **Developer tools → Notifications**: create a notification destination:
    - Type: webhook, URL: your tunnel URL + `/webhooks/paddle` (see below)
@@ -84,7 +93,8 @@ NEXT_PUBLIC_PADDLE_CLIENT_TOKEN = "test_..."
 
 1. Complete Paddle's **website verification** for `auto-publisher.gg` (required before live checkouts; do this first, it can take a few days).
 2. Recreate the catalog exactly as in sandbox (product + monthly/yearly prices) — sandbox and live catalogs are separate; new `pri_...` IDs.
-3. Create a live API key and a live client-side token (`live_...`).
+3. Create a live API key and a live client-side token (`live_...`). Same permissions as the sandbox key
+   in §1 step 3 — **adjustments included**, or withdrawal refunds fail in production.
 4. **Checkout settings**: set default payment link to `https://auto-publisher.gg`.
 5. Notification destination: `https://<api-host>/webhooks/paddle` with the same event list; copy the live secret.
 6. **Customer Portal**: review the portal settings (branding, cancellation surveys) — cancel + payment-method actions are used by the app.

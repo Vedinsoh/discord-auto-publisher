@@ -25,7 +25,9 @@ Protection Officer, and are not required to appoint one; that address is our pri
 - **We do not store the content of your messages.** The bot reads a message to decide whether to
   publish it, in memory, and discards it. Nothing about the message text is written to a database, to
   a log, or sent anywhere else.
-- **We do not have your email address.** We do not ask Discord for it.
+- **We do not ask Discord for your email address.** The only way we ever hold one is if you
+  type it in yourself, and there is exactly one place that happens: the withdrawal form in
+  section 7. It is used to send you one message and nothing else.
 - **We never see your card details.** Payment happens entirely inside Paddle's checkout.
 - **We do not use your data to train AI or machine-learning models.** Discord's developer policy
   prohibits it and we do not do it.
@@ -156,6 +158,21 @@ Paddle's messages to us also contain buyer details — name, email, address, tax
 method. **We do not read or store any of them.** Our code takes only the fields in the table above and
 discards the rest.
 
+### If you withdraw from a subscription
+
+Croatian law gives consumers 14 days to withdraw from a subscription, and requires us to provide a
+withdrawal function in the dashboard and to send you a confirmation of receipt. Using it is the one
+moment this service asks you for an email address.
+
+| What | Why | Legal basis | Kept for |
+| --- | --- | --- | --- |
+| **The email address you type into the withdrawal form** | To send you the confirmation of receipt the law requires. It is used for that one message, and it is not added to any list | Legal obligation (Art 6(1)(c)) — Consumer Protection Act art. 81.a(6) | {retention.withdrawalEmailAddress}, then erased from the record while the rest of it is kept. A copy also stays in our mail provider's sent folder |
+| Your withdrawal statement as we presented it to you — your Discord display name and the contract details — plus the date and time you submitted it, confirmed it, and the refund reference | To prove we handled your withdrawal correctly. Consumer Protection Act art. 64 puts that burden of proof on us, not on you | Legal obligation (Art 6(1)(c)) | {retention.withdrawalRecords} |
+
+We keep these for the same period as the billing records because they are the evidence that your
+withdrawal was handled properly. If you would rather your email address were not kept that long,
+write to <SupportEmail /> — see section 8.
+
 **Visible to your fellow administrators:** the subscription page shows the subscriber's Discord
 username and user ID to anyone in that server holding the Manage Server permission, so a team can see
 who is paying. The link into Paddle's billing portal is restricted to the subscriber alone.
@@ -205,9 +222,10 @@ would rather you told us first.
 | **Paddle** | Independent controller | Checkout and billing. We send a server ID and a Discord user ID; the buyer gives Paddle everything else directly |
 | **Our database provider** | Processor | Stores everything listed in section 7 |
 | **Our hosting provider** | Processor | Runs the servers the bot, dashboard and background services run on |
+| **Our email provider** | Processor | The one message we ever send: your confirmation of receipt if you withdraw from a subscription, and the address you gave us for it |
 
 Discord and Paddle are named because you deal with them directly — Discord is the platform the Service
-runs on, and Paddle, not us, is who you buy from. The other two are described by role rather than by
+runs on, and Paddle, not us, is who you buy from. The other three are described by role rather than by
 name so that this notice does not become inaccurate the day we change supplier. **If you want to know
 who they currently are, ask <SupportEmail /> and we will tell you.**
 

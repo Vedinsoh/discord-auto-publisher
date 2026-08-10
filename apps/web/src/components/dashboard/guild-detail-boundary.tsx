@@ -11,6 +11,7 @@ import {
   useTransition,
 } from 'react';
 import { AuthRedirect } from '@/components/auth/auth-redirect';
+import { BotAbsentCard } from './bot-absent-card';
 import { ErrorBoundary, RedirectTo } from './error-redirect-boundary';
 import { GuildErrorCard } from './guild-error-card';
 import { ChannelConfigSkeleton } from './skeletons';
@@ -35,9 +36,9 @@ interface GuildDetailBoundaryProps {
  * TransientErrorSignal at the child, caught here. Key this by guildId (in the
  * shell) so the whole orchestrator — retry budget + timers — resets on a guild
  * switch. On a transient failure it silently auto-retries (skeleton shown) up to
- * MAX_AUTO_RETRIES, then falls back to the manual GuildErrorCard. Auth-expiry
- * and unavailable-guild failures are NOT retried — they route straight to
- * re-login / the server list, exactly as before.
+ * MAX_AUTO_RETRIES, then falls back to the manual GuildErrorCard. Auth-expiry,
+ * botless-guild and unavailable-guild failures are NOT retried — they route
+ * straight to re-login / the invite card / the server list.
  */
 export function GuildDetailBoundary({ guildId, children }: GuildDetailBoundaryProps) {
   const router = useRouter();
@@ -96,6 +97,7 @@ export function GuildDetailBoundary({ guildId, children }: GuildDetailBoundaryPr
         </RedirectTo>
       }
       authFallback={<AuthRedirect callbackUrl={`/dashboard/${guildId}`} />}
+      botAbsentFallback={<BotAbsentCard guildId={guildId} />}
       transientFallback={
         <TransientFallback
           canAutoRetry={attempt < MAX_AUTO_RETRIES}

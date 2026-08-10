@@ -105,6 +105,34 @@ export interface SubscriptionSubscriber {
 }
 
 /**
+ * Statutory withdrawal state (ZZP čl. 81.a / CRD Art 11a); subscriber-only.
+ * Statement fields are server-composed: shown = stored = emailed.
+ */
+export interface WithdrawalState {
+  /** Keyed to the 14-day window ONLY — never status or a scheduled cancellation. */
+  eligible: boolean;
+  /** End of the withdrawal window; null when the contract start is unknown. */
+  windowEndsAt: string | null;
+  consumerName: string;
+  contractReference: string;
+  /**
+   * Contract identification for DISPLAY (Art 11a(2)(b)) — the consumer confirms it,
+   * so it must be on screen. `contractReference` is for the record and email.
+   */
+  contractDisplay: {
+    /** Guild name, or `Server <id>` when the Discord name read failed. */
+    server: string;
+    /** Product plus billing interval, e.g. `Auto Publisher Premium (yearly)`. */
+    plan: string;
+  };
+  /**
+   * Set once a withdrawal is recorded; the panel then renders nothing — never a
+   * live control on an already-withdrawn contract. No "pending" state exists.
+   */
+  confirmedAt: string | null;
+}
+
+/**
  * Full subscription detail from GET /api/guild/:guildId/subscription.
  * Both portal URLs are set only when the requester is the subscriber.
  */
@@ -112,6 +140,21 @@ export interface SubscriptionDetail extends SubscriptionData {
   portalUrl: string | null;
   cancelUrl: string | null;
   subscriber: SubscriptionSubscriber;
+  /** Null for a non-subscriber, and for a guild with no subscription at all. */
+  withdrawal: WithdrawalState | null;
+}
+
+/** Outcome of a completed withdrawal. */
+export interface WithdrawalResult {
+  /** st. 7 — decides timeliness. Equal to `confirmedAt` by construction. */
+  submittedAt: string;
+  confirmedAt: string;
+  /** Where the statutory acknowledgement was sent (st. 6). */
+  notificationAddress: string;
+  /** False = ack email did not leave (retry sweep owns it); UI must not claim it was sent. */
+  acknowledged: boolean;
+  /** Paddle adjustment status; null = no refund raised, `pending_approval` = not yet paid. */
+  refundStatus: string | null;
 }
 
 /** Guild dashboard aggregate response */

@@ -1,10 +1,10 @@
-import { db, subscription } from '@ap/database';
+import { db, subscription, withdrawal } from '@ap/database';
 import { and, count, eq, isNotNull, type SQL, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { guardMassAction } from 'utils/massActionGuard.js';
 
 /**
- * Data-retention enforcement for the `subscription` table.
+ * Data-retention enforcement for the `subscription` and `withdrawal` tables.
  *
  * Source of truth for the two periods published in apps/web/src/lib/legal/retention.ts.
  * Change a number here and that notice is false — change both.
@@ -68,6 +68,8 @@ const applyRetention = async (now: Date = new Date()): Promise<void> => {
 
   await eraseExpiredSubscriberIds(now, population);
   await deleteExpiredAccountingRows(now, population);
+  await eraseExpiredNotificationAddresses(now);
+  await deleteExpiredWithdrawals(now);
 };
 
 const countWhere = async (where?: SQL): Promise<number> => {
@@ -138,6 +140,92 @@ const deleteExpiredAccountingRows = async (now: Date, population: number): Promi
     );
   } catch (error) {
     logger.error(error, 'Retention: accounting row deletion failed');
+  }
+};
+
+/**
+ * Erases the consumer's email address at 24 months (the subscriber-id clock): the
+ * Art 6(1)(c) obligation is DISCHARGED by sending, so the 11-year accounting floor does
+ * not carry it. Never extend this to `acknowledgedAt` — it proves the st. 6 duty. The
+ * mailbox's own Sent copy is out of reach here and needs a separate purge.
+ */
+const eraseExpiredNotificationAddresses = async (now: Date): Promise<void> => {
+  const cutoff = subscriberIdCutoff(now);
+  const due = and(
+    isNotNull(withdrawal.confirmedAt),
+    // ⚠️ NULL `acknowledgedAt` on a confirmed row = st. 6 duty still outstanding, owned
+    // by the retry cron; erasing the address would make it undischargeable forever.
+    isNotNull(withdrawal.acknowledgedAt),
+    isNotNull(withdrawal.notificationAddress),
+    sql`${withdrawal.confirmedAt} <= ${cutoff.toISOString()}::timestamptz`
+  );
+
+  try {
+    const [countRow] = await db.select({ value: count() }).from(withdrawal);
+    const population = countRow?.value ?? 0;
+
+    const [pendingRow] = await db.select({ value: count() }).from(withdrawal).where(due);
+    const pending = pendingRow?.value ?? 0;
+    if (pending === 0) return;
+
+    const allowed = guardMassAction({
+      key: 'retention-withdrawal-address-erasure-cap',
+      action: 'erase withdrawal notification addresses',
+      count: pending,
+      population,
+      context:
+        'Erasure is irreversible — check the system clock and the withdrawal table before re-running.',
+    });
+    if (!allowed) return;
+
+    const erased = await db
+      .update(withdrawal)
+      .set({ notificationAddress: null })
+      .where(due)
+      .returning({ id: withdrawal.id });
+
+    logger.info(
+      `Retention: erased notification address on ${erased.length} withdrawal record(s) confirmed before ${cutoff.toISOString()} (${SUBSCRIBER_ID_RETENTION_MONTHS} months)`
+    );
+  } catch (error) {
+    logger.error(error, 'Retention: withdrawal address erasure failed');
+  }
+};
+
+/**
+ * Withdrawal records (ZZP čl. 81.a) on the accounting clock — they are the čl. 64
+ * evidence. Anchored on `submittedAt`, the only date on the row that is always set.
+ * The address goes much earlier: {@link eraseExpiredNotificationAddresses}.
+ */
+const deleteExpiredWithdrawals = async (now: Date): Promise<void> => {
+  const cutoff = accountingCutoff(now);
+  const due = sql`${withdrawal.submittedAt} <= ${cutoff.toISOString()}::timestamptz`;
+
+  try {
+    const [countRow] = await db.select({ value: count() }).from(withdrawal);
+    const population = countRow?.value ?? 0;
+
+    const [pendingRow] = await db.select({ value: count() }).from(withdrawal).where(due);
+    const pending = pendingRow?.value ?? 0;
+    if (pending === 0) return;
+
+    const allowed = guardMassAction({
+      key: 'retention-withdrawal-row-deletion-cap',
+      action: 'delete time-barred withdrawal records',
+      count: pending,
+      population,
+      context:
+        'Deletion is irreversible and these rows are the statutory withdrawal evidence — verify before re-running.',
+    });
+    if (!allowed) return;
+
+    const deleted = await db.delete(withdrawal).where(due).returning({ id: withdrawal.id });
+
+    logger.info(
+      `Retention: deleted ${deleted.length} withdrawal record(s) submitted on or before ${cutoff.toISOString()} (${ACCOUNTING_RETENTION_YEARS}-year window, year-end anchored)`
+    );
+  } catch (error) {
+    logger.error(error, 'Retention: withdrawal record deletion failed');
   }
 };
 

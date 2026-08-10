@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Component, type ReactNode, useEffect } from 'react';
-import { AuthExpiredSignal, TransientErrorSignal } from '@/lib/api/auth-expired';
+import { AuthExpiredSignal, BotAbsentSignal, TransientErrorSignal } from '@/lib/api/auth-expired';
 
 interface ErrorBoundaryProps {
   fallback: ReactNode;
@@ -20,6 +20,11 @@ interface ErrorBoundaryProps {
    * failure like any other error (redirect via `fallback`).
    */
   transientFallback?: ReactNode;
+  /**
+   * Rendered instead of `fallback` on a BotAbsentSignal, to offer the bot invite
+   * in place. Omit to keep the redirect.
+   */
+  botAbsentFallback?: ReactNode;
   /**
    * Clears a caught error when any element changes between renders (shallow
    * compare), re-mounting `children` so a streamed promise is re-consumed. A
@@ -69,6 +74,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
     if (this.props.transientFallback && this.state.error instanceof TransientErrorSignal) {
       return this.props.transientFallback;
+    }
+    if (this.props.botAbsentFallback && this.state.error instanceof BotAbsentSignal) {
+      return this.props.botAbsentFallback;
     }
     return this.props.fallback;
   }

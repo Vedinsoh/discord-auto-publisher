@@ -108,6 +108,20 @@ export const SubscriptionCheckoutReqSchema = z.object({
   }),
 });
 
+/**
+ * The statutory withdrawal statement (ZZP čl. 81.a st. 3). ONE field: t. 1 (name) and
+ * t. 2 (contract) are composed server-side and never accepted from the client; t. 3, the
+ * address for the confirmation, is all the consumer supplies. 254 = RFC 5321 max length.
+ */
+export const WithdrawalSubmitReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    notificationAddress: z.email({ message: 'Enter a valid email address' }).trim().max(254),
+  }),
+});
+
 export const FilterReqSchema = z.object({
   params: z.object({
     channelId: Validations.snowflakeId,

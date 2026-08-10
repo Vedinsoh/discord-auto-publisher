@@ -21,6 +21,7 @@ import {
 } from '@/components/dashboard/channel-limit-upsell';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
+import { shouldOfferWithdrawal, WithdrawalPanel } from '@/components/dashboard/withdrawal-panel';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -81,6 +82,32 @@ const intervalLabels: Record<string, string> = {
   year: 'Yearly',
 };
 
+/**
+ * Portal URLs, co-admin username, withdrawal state. Fetched above the entitled/free
+ * branch because the withdrawal control renders for non-entitled statuses too.
+ */
+function useSubscriptionDetail(guildId: string, enabled: boolean) {
+  const [detail, setDetail] = useState<SubscriptionDetail | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    getSubscription(guildId)
+      .then(result => {
+        if (!cancelled) setDetail(result);
+      })
+      .catch(() => {
+        if (!cancelled) setFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [guildId, enabled]);
+
+  return { detail, failed };
+}
+
 export function SubscriptionPanel({ guildId, guildName, subscription }: SubscriptionPanelProps) {
   // Narrowed rather than a boolean flag so the entitled branch keeps a non-null
   // subscription without an assertion.
@@ -91,6 +118,9 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
       subscription.status === 'past_due')
       ? subscription
       : null;
+
+  const { detail, failed } = useSubscriptionDetail(guildId, !!subscription);
+  const withdrawal = detail?.withdrawal ?? null;
 
   return (
     <div className="space-y-6">
@@ -113,10 +143,24 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
           column. */}
       {entitledSubscription ? (
         <div className="max-w-2xl">
-          <ActiveSubscription guildId={guildId} subscription={entitledSubscription} />
+          <ActiveSubscription
+            guildId={guildId}
+            subscription={entitledSubscription}
+            detail={detail}
+            failed={failed}
+          />
         </div>
       ) : (
         <FreeSubscription guildId={guildId} guildName={guildName} />
+      )}
+
+      {/* Statutory withdrawal (ZZP čl. 81.a / CRD Art 11a), outside the entitled/free
+          branch on purpose: availability is the 14-day window and nothing else, so a
+          day-3 cancellation still finds it. `shouldOfferWithdrawal` owns the predicate. */}
+      {shouldOfferWithdrawal(withdrawal) && withdrawal && (
+        <div className="max-w-2xl">
+          <WithdrawalPanel guildId={guildId} withdrawal={withdrawal} />
+        </div>
       )}
     </div>
   );
@@ -125,9 +169,13 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
 function ActiveSubscription({
   guildId,
   subscription,
+  detail,
+  failed,
 }: {
   guildId: string;
   subscription: SubscriptionData;
+  detail: SubscriptionDetail | null;
+  failed: boolean;
 }) {
   const { guild, data } = useGuild();
   // Paid and working are different facts. Entitlement comes from Paddle, but
@@ -150,26 +198,8 @@ function ActiveSubscription({
   const cancelScheduled = subscription.scheduledChange?.action === 'cancel';
 
   // The branch (manage button vs "managed by @X") is known at first paint from
-  // the aggregate's isSubscriber flag. The detail endpoint is fetched only for
-  // the portal URL (a Paddle round-trip) and the co-admin's username — both
-  // resolve into skeletons that hold their footprint until the fetch lands.
-  const [detail, setDetail] = useState<SubscriptionDetail | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    getSubscription(guildId)
-      .then(result => {
-        if (!cancelled) setDetail(result);
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [guildId]);
-
+  // the aggregate's isSubscriber flag; `detail` arrives as a prop and resolves
+  // into skeletons that hold their footprint until the fetch lands.
   const statusInfo = statusLabels[subscription.status] ?? statusLabels.active;
   const intervalLabel = subscription.billingInterval
     ? intervalLabels[subscription.billingInterval]

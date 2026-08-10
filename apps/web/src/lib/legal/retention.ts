@@ -71,4 +71,18 @@ export const retention = {
    * Enforced by `SUBSCRIBER_ID_RETENTION_MONTHS` in the same backend file.
    */
   subscriberIdentifier: '24 months after the subscription ends',
+
+  /**
+   * A submitted statutory withdrawal (ZZP čl. 81.a) — the čl. 64 evidence, so it
+   * keeps the accounting clock. Enforced by `deleteExpiredWithdrawals`; never merge
+   * with {@link withdrawalEmailAddress}, whose lifetime is shorter.
+   */
+  withdrawalRecords: '11 years from the end of the business year it falls in',
+
+  /**
+   * The address given to receive a statutory withdrawal confirmation. Shorter than the
+   * record it sits on — holding it is only needed until that confirmation is sent
+   * (Zakon o računovodstvu čl. 8 st. 3 t. 2). Erased by `eraseExpiredNotificationAddresses`.
+   */
+  withdrawalEmailAddress: '24 months after the withdrawal is confirmed',
 } as const;

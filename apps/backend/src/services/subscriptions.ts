@@ -19,7 +19,8 @@ export type PaddleSubscriptionState = {
   customerId: string;
   updatedAt: string;
   canceledAt: string | null;
-  currentBillingPeriod: { endsAt: string } | null;
+  startedAt: string | null;
+  currentBillingPeriod: { startsAt: string; endsAt: string } | null;
   billingCycle: { interval: string } | null;
   scheduledChange: { action: string; effectiveAt: string } | null;
   items: ReadonlyArray<{ price?: { id: string } | null }>;
@@ -35,6 +36,9 @@ type PaddleSubscriptionValues = {
   status: string;
   paddlePriceId: string | null;
   billingInterval: string | null;
+  startedAt: Date | null;
+  withdrawalPeriodStartsAt: Date | null;
+  currentPeriodStartsAt: Date | null;
   currentPeriodEndsAt: Date | null;
   scheduledChangeAction: string | null;
   scheduledChangeAt: Date | null;
@@ -65,6 +69,14 @@ const mapPaddleSubscription = (sub: PaddleSubscriptionState): PaddleSubscription
     status: sub.status,
     paddlePriceId: sub.items[0]?.price?.id ?? null,
     billingInterval: sub.billingCycle?.interval ?? null,
+    // Contract conclusion — Paddle keeps started_at fixed while the billing period advances.
+    startedAt: sub.startedAt ? new Date(sub.startedAt) : null,
+    // INSERT value only; on update {@link withResolvedAnchors} owns it. Falls back to now
+    // so a row can never exist with no withdrawal window at all.
+    withdrawalPeriodStartsAt: sub.startedAt ? new Date(sub.startedAt) : new Date(),
+    currentPeriodStartsAt: sub.currentBillingPeriod?.startsAt
+      ? new Date(sub.currentBillingPeriod.startsAt)
+      : null,
     currentPeriodEndsAt: sub.currentBillingPeriod?.endsAt
       ? new Date(sub.currentBillingPeriod.endsAt)
       : null,
@@ -76,6 +88,36 @@ const mapPaddleSubscription = (sub: PaddleSubscriptionState): PaddleSubscription
     lastEventAt: new Date(sub.updatedAt),
   };
 };
+
+/**
+ * Price/interval change — the only case that re-opens the withdrawal window.
+ * Both sides must be non-null: a stored NULL means "not recorded yet", and treating a
+ * NULL -> value backfill as a change re-stamps months-old contracts.
+ */
+const isPlanChange = (values: PaddleSubscriptionValues, existing: Subscription): boolean =>
+  (!!values.paddlePriceId &&
+    !!existing.paddlePriceId &&
+    values.paddlePriceId !== existing.paddlePriceId) ||
+  (!!values.billingInterval &&
+    !!existing.billingInterval &&
+    values.billingInterval !== existing.billingInterval);
+
+/**
+ * Resolves the two withdrawal-window anchors on an update; every other column stays
+ * last-writer-wins. `startedAt` is never blanked — a null over a stored date would deny
+ * an in-window consumer a statutory control. `withdrawalPeriodStartsAt` is sticky across
+ * renewals (CJEU C-565/22) and re-stamped only on a plan change.
+ */
+const withResolvedAnchors = (
+  values: PaddleSubscriptionValues,
+  existing: Subscription
+): PaddleSubscriptionValues => ({
+  ...values,
+  startedAt: values.startedAt ?? existing.startedAt,
+  withdrawalPeriodStartsAt: isPlanChange(values, existing)
+    ? new Date()
+    : (existing.withdrawalPeriodStartsAt ?? values.withdrawalPeriodStartsAt),
+});
 
 const getByGuildId = async (guildId: string): Promise<Subscription | undefined> => {
   try {
@@ -136,7 +178,7 @@ const applyPaddleSubscription = async (
 
       const [row] = await db
         .update(subscription)
-        .set(values)
+        .set(withResolvedAnchors(values, existingById))
         .where(eq(subscription.paddleSubscriptionId, values.paddleSubscriptionId))
         .returning();
       return { previous: existingById, current: row, skipped: false };
@@ -170,6 +212,10 @@ const applyPaddleSubscription = async (
         return { previous: existingByGuild, current: existingByGuild, skipped: true };
       }
 
+      // A DIFFERENT paddleSubscriptionId for this guild = a re-subscribe, i.e. a newly
+      // concluded contract, so anchors come from the new subscription alone. Never
+      // withResolvedAnchors here — it would inherit the dead row's long-expired
+      // withdrawalPeriodStartsAt and leave the consumer with no window at all.
       const [row] = await db
         .update(subscription)
         .set(values)

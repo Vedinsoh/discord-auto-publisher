@@ -1,5 +1,6 @@
-import type { Edition } from '@ap/api-types';
+import type { Edition, WithdrawalState } from '@ap/api-types';
 import { env } from '@ap/config';
+import type { Subscription } from '@ap/database';
 import {
   type APIResponse,
   createHttpError,
@@ -11,7 +12,13 @@ import {
 import { sortBySidebarOrder } from '@ap/utils';
 import type { SetChannelFilters } from '@ap/validations';
 import { DiscordAPIError, HTTPError } from '@discordjs/rest';
-import { type APIChannel, type APIRole, ChannelType, Routes } from 'discord-api-types/v10';
+import {
+  type APIChannel,
+  type APIGuild,
+  type APIRole,
+  ChannelType,
+  Routes,
+} from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
@@ -23,6 +30,7 @@ import {
   GuildReqSchema,
   GuildSetChannelFiltersReqSchema,
   SubscriptionCheckoutReqSchema,
+  WithdrawalSubmitReqSchema,
 } from 'utils/validations.js';
 
 /**
@@ -87,6 +95,79 @@ const fetchAnnouncementChannels = async (
     }),
     categoryPositions
   );
+};
+
+/**
+ * Guild display name for a withdrawal statement's contract reference. Best-effort:
+ * never let a cosmetic lookup fail a statutory control — null falls back to the guild id.
+ */
+const fetchGuildName = async (guildId: string): Promise<string | null> => {
+  try {
+    const managingEdition = await Services.Editions.getManagingEdition(guildId);
+    const guild = await Discord.cachedGet<APIGuild>(managingEdition, Routes.guild(guildId));
+    return guild.name ?? null;
+  } catch (error) {
+    logger.debug(error, `Could not resolve guild name for ${guildId}`);
+    return null;
+  }
+};
+
+/**
+ * Subscriber-only gate, re-applied server-side on every withdrawal route: the right
+ * belongs to the consumer who concluded the contract, not to any Manage Server co-admin.
+ */
+const requireWithdrawableSubscription = async (
+  guildId: string,
+  userId: string | undefined
+): Promise<Subscription> => {
+  const sub = await Services.Subscriptions.getByGuildId(guildId);
+
+  if (!sub) {
+    throw createHttpError(
+      'This server has no subscription to withdraw from',
+      StatusCodes.NOT_FOUND,
+      'NO_SUBSCRIPTION'
+    );
+  }
+
+  if (!userId || userId !== sub.subscriberDiscordUserId) {
+    throw createHttpError(
+      'Only the subscriber can withdraw from this contract',
+      StatusCodes.FORBIDDEN,
+      'NOT_SUBSCRIBER'
+    );
+  }
+
+  return sub;
+};
+
+/**
+ * Withdrawal state for the subscription endpoint. `consumerName` and
+ * `contractReference` are composed server-side so what is displayed is exactly what
+ * gets stored (čl. 64 evidence) — never accept them from the client.
+ */
+const buildWithdrawalState = async (
+  sub: Subscription,
+  discordUser: { id: string; username: string } | undefined
+): Promise<WithdrawalState> => {
+  const [latest, guildName] = await Promise.all([
+    Services.Withdrawals.findLatest(sub.paddleSubscriptionId),
+    fetchGuildName(sub.guildId),
+  ]);
+
+  const statement = Services.Withdrawals.composeStatement(
+    sub,
+    discordUser?.username ?? sub.subscriberDiscordUserId ?? 'Unknown',
+    guildName
+  );
+
+  return {
+    eligible: Services.Withdrawals.isWithinWindow(sub),
+    windowEndsAt: Services.Withdrawals.windowEndsAt(sub).toISOString(),
+    ...statement,
+    contractDisplay: Services.Withdrawals.composeContractDisplay(sub, guildName),
+    confirmedAt: latest?.confirmedAt?.toISOString() ?? null,
+  };
 };
 
 export const GuildApi: Router = (() => {
@@ -466,6 +547,10 @@ export const GuildApi: Router = (() => {
           ? null
           : await Discord.getUsername(sub.subscriberDiscordUserId);
 
+      // Withdrawal state (ZZP čl. 81.a) rides this endpoint, not one of its own, so the
+      // control paints with the other billing controls (CRD recital 37).
+      const withdrawal = isSubscriber ? await buildWithdrawalState(sub, req.discordUser) : null;
+
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: {
@@ -484,6 +569,7 @@ export const GuildApi: Router = (() => {
             id: sub.subscriberDiscordUserId,
             username: subscriberUsername,
           },
+          withdrawal,
         },
         message: 'Subscription retrieved successfully',
       } as APIResponse);
@@ -566,6 +652,75 @@ export const GuildApi: Router = (() => {
         } as APIResponse);
       } catch (error) {
         sendErrorResponse(res, error, 'Failed to create checkout');
+      }
+    }
+  );
+
+  /**
+   * POST /api/guild/:guildId/subscription/withdrawal — the whole statutory withdrawal
+   * function (ZZP čl. 81.a / CRD Art 11a) in one call; the statute has one sending event,
+   * so never split it into a draft step plus a confirm step. Window is re-checked here on
+   * every call, and the row is written before any effect runs (`applyEffects` never throws).
+   */
+  router.post(
+    '/subscription/withdrawal',
+    validateRequest(WithdrawalSubmitReqSchema),
+    async (req, res) => {
+      const { guildId } = req.params;
+      const { notificationAddress } = req.body;
+
+      try {
+        const sub = await requireWithdrawableSubscription(guildId, req.discordUser?.id);
+
+        const existing = await Services.Withdrawals.findLatest(sub.paddleSubscriptionId);
+        if (existing?.confirmedAt) {
+          throw createHttpError(
+            'This contract has already been withdrawn from',
+            StatusCodes.CONFLICT,
+            'ALREADY_WITHDRAWN'
+          );
+        }
+
+        if (!Services.Withdrawals.isWithinWindow(sub)) {
+          throw createHttpError(
+            'The 14-day withdrawal period has ended',
+            StatusCodes.CONFLICT,
+            'WITHDRAWAL_WINDOW_CLOSED'
+          );
+        }
+
+        const record = await Services.Withdrawals.record({
+          sub,
+          consumerName: req.discordUser?.username ?? sub.subscriberDiscordUserId ?? 'Unknown',
+          guildName: await fetchGuildName(guildId),
+          notificationAddress,
+        });
+
+        // Lost a race with a concurrent confirm; the winner owns the effects, so this
+        // request must not raise a second refund.
+        if (!record?.confirmedAt) {
+          throw createHttpError(
+            'This contract has already been withdrawn from',
+            StatusCodes.CONFLICT,
+            'ALREADY_WITHDRAWN'
+          );
+        }
+
+        const { acknowledged, refundStatus } = await Services.Withdrawals.applyEffects(record, sub);
+
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: {
+            submittedAt: record.submittedAt.toISOString(),
+            confirmedAt: record.confirmedAt.toISOString(),
+            notificationAddress,
+            acknowledged,
+            refundStatus,
+          },
+          message: 'Withdrawal recorded',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to record withdrawal');
       }
     }
   );

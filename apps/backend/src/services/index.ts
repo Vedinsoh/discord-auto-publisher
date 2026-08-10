@@ -10,6 +10,7 @@ import { PresenceHeal } from './presenceHeal.js';
 import { PublishState } from './publishState.js';
 import { Retention } from './retention.js';
 import { Subscriptions } from './subscriptions.js';
+import { Withdrawals } from './withdrawal.js';
 
 export const Services = {
   BotPermissions,
@@ -24,4 +25,5 @@ export const Services = {
   PublishState,
   Retention,
   Subscriptions,
+  Withdrawals,
 };

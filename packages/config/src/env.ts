@@ -47,6 +47,15 @@ export const env = cleanEnv(process.env, {
   PADDLE_PRICE_MONTHLY: str({ default: '' }),
   PADDLE_PRICE_YEARLY: str({ default: '' }),
 
+  // Outbound email (backend) — the withdrawal acknowledgement is the only mail the
+  // stack sends. Unset credentials disable sending rather than failing at startup;
+  // the withdrawal flow reports it as an unsent acknowledgement.
+  SMTP_HOST: str({ default: 'smtp.zoho.eu' }),
+  SMTP_PORT: num({ default: 465 }),
+  SMTP_USER: str({ default: '' }),
+  SMTP_PASSWORD: str({ default: '' }),
+  SMTP_FROM: str({ default: 'Auto Publisher <support@auto-publisher.gg>' }),
+
   // Web
   WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),
 
