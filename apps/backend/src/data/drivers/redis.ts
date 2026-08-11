@@ -9,6 +9,7 @@ const paddleWebhookDedupeClient = await createRedisClient(DatabaseIDs.PaddleWebh
 const alertsClient = await createRedisClient(DatabaseIDs.Alerts, logger);
 const premiumPendingClient = await createRedisClient(DatabaseIDs.PremiumPending, logger);
 const publishStateClient = await createRedisClient(DatabaseIDs.PublishState, logger);
+const onboardingBoostClient = await createRedisClient(DatabaseIDs.OnboardingBoost, logger);
 
 export const Redis: {
   client: RedisClient;
@@ -18,6 +19,7 @@ export const Redis: {
   Alerts: RedisClient;
   PremiumPending: RedisClient;
   PublishState: RedisClient;
+  OnboardingBoost: RedisClient;
 } = {
   client: channelsClient,
   MigratedGuilds: migratedGuildsClient,
@@ -26,4 +28,5 @@ export const Redis: {
   Alerts: alertsClient,
   PremiumPending: premiumPendingClient,
   PublishState: publishStateClient,
+  OnboardingBoost: onboardingBoostClient,
 };

@@ -4,7 +4,7 @@ import { Routes, type Snowflake } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Redis } from 'ioredis';
 import { logger } from '../logger.js';
-import type { BlockedCache, SublimitCounter } from './caches.js';
+import type { BlockedCache, BoostBudget, SublimitCounter } from './caches.js';
 import { type CrosspostOutcome, classify } from './classifier.js';
 import type { Gate } from './gate.js';
 
@@ -12,9 +12,22 @@ const QUEUE_NAME = 'crosspost';
 const QUEUE_HIGH_WATER = 10_000;
 const RATE_LIMIT_RETRY_CAP_MS = 5 * 60 * 1_000;
 const INVALID_REQUESTS_DELAY_MS = 60_000;
-const CHANNEL_ID_PATTERN = /^\d{17,19}$/;
+const SNOWFLAKE_PATTERN = /^\d{17,19}$/;
+
+/**
+ * Queue tiers. Lower is higher priority; BullMQ's valid range is 1..2_097_152.
+ *
+ * INVARIANT: every `queue.add` MUST pass an explicit priority. BullMQ serves
+ * un-prioritized jobs BEFORE prioritized ones — `fetchNextJob.lua` RPOPLPUSHes
+ * from the `wait` list and only falls back to the prioritized sorted set when
+ * `wait` is empty. So leaving any job untagged (priority 0 = "no priority")
+ * would starve the boosted tier behind a backlog that at peak never drains,
+ * making the boost strictly worse than plain FIFO. See ADR 0012.
+ */
+const PRIORITY = { BOOSTED: 1, NORMAL: 10 } as const;
 
 export type CrosspostJobData = {
+  guildId: Snowflake;
   channelId: Snowflake;
   messageId: Snowflake;
 };
@@ -35,6 +48,7 @@ export const createCrosspostQueue = (deps: {
   rest: REST;
   gate: Gate;
   caches: { blocked: BlockedCache; sublimit: SublimitCounter };
+  boostBudget: BoostBudget;
   redisUri: string;
   /** This edition's BullMQ logical DB */
   queueDatabaseId: number;
@@ -132,6 +146,13 @@ export const createCrosspostQueue = (deps: {
     try {
       await deps.rest.post(Routes.channelMessageCrosspost(channelId, messageId));
       await deps.caches.sublimit.increment(channelId);
+      // Gated on the job's OWN priority, not on a fresh budget read: an
+      // unconditional DECR would mint a negative key for every guild in the
+      // system, which is real memory inside the allkeys-lru budget and would
+      // evict keys that matter.
+      if (job.opts.priority === PRIORITY.BOOSTED) {
+        await deps.boostBudget.consume(job.data.guildId);
+      }
       logger.debug({ event: 'crosspost.success', channelId, messageId });
     } catch (error) {
       const outcome = classify(error);
@@ -156,9 +177,13 @@ export const createCrosspostQueue = (deps: {
   worker.on('error', err => logger.error({ event: 'worker.error', err }));
 
   const router = express.Router();
-  router.post('/crosspost/:channelId/:messageId', async (req, res) => {
-    const { channelId, messageId } = req.params;
-    if (!CHANNEL_ID_PATTERN.test(channelId) || !CHANNEL_ID_PATTERN.test(messageId)) {
+  router.post('/crosspost/:guildId/:channelId/:messageId', async (req, res) => {
+    const { guildId, channelId, messageId } = req.params;
+    if (
+      !SNOWFLAKE_PATTERN.test(guildId) ||
+      !SNOWFLAKE_PATTERN.test(channelId) ||
+      !SNOWFLAKE_PATTERN.test(messageId)
+    ) {
       res.status(400).end();
       return;
     }
@@ -187,14 +212,32 @@ export const createCrosspostQueue = (deps: {
       return;
     }
 
-    await queue.add('crosspost', { channelId, messageId }, { jobId: `${channelId}-${messageId}` });
+    const priority = (await deps.boostBudget.isBoosted(guildId))
+      ? PRIORITY.BOOSTED
+      : PRIORITY.NORMAL;
+
+    await queue.add(
+      'crosspost',
+      { guildId, channelId, messageId },
+      { jobId: `${channelId}-${messageId}`, priority }
+    );
+
+    // Boosted enqueues log at `info` so the feature is measurable in prod
+    // (bounded: 10 per new guild). The normal tier stays at `debug` — an info
+    // line per message would be thousands an hour at peak.
+    if (priority === PRIORITY.BOOSTED) {
+      logger.info({ event: 'crosspost.enqueued.boosted', guildId, channelId, messageId, priority });
+    } else {
+      logger.debug({ event: 'crosspost.enqueued', guildId, channelId, messageId, priority });
+    }
+
     res.status(202).end();
   });
 
   const internalRouter = express.Router();
   internalRouter.delete('/internal/blocked/:channelId', async (req, res) => {
     const { channelId } = req.params;
-    if (!CHANNEL_ID_PATTERN.test(channelId)) {
+    if (!SNOWFLAKE_PATTERN.test(channelId)) {
       res.status(400).end();
       return;
     }

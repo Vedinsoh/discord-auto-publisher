@@ -17,6 +17,12 @@ export enum DatabaseIDs {
   PremiumPending = 12,
   // Per-guild publish-state hash (backend-owned; the bots push, dashboard + gate read)
   PublishState = 13,
+  // Onboarding boost budget: remaining priority publishes for a newly-joined
+  // guild. Shared, NOT per-edition — the budget must follow a guild through a
+  // premium handover, and a per-edition key would hand the premium bot a fresh
+  // 10 after takeover. Backend seeds it (registerNewGuild); both proxies read
+  // at enqueue and decrement on a boosted publish.
+  OnboardingBoost = 14,
 }
 
 /** Proxy-owned logical DBs, keyed by the proxy's edition */
@@ -43,4 +49,5 @@ export enum Keys {
   Alert = 'alert',
   PremiumPending = 'premium_pending',
   PublishState = 'publish_state',
+  Boost = 'boost',
 }

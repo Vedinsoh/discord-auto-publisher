@@ -1,6 +1,6 @@
 import { RegExPatterns, secToMs, sleep } from '@ap/utils';
 import { Data } from 'data/index.js';
-import { type Message, MessageFlags, type NewsChannel } from 'discord.js';
+import { type Message, MessageFlags, type NewsChannel, type Snowflake } from 'discord.js';
 import { logger } from 'utils/logger.js';
 import { Services } from './index.js';
 
@@ -41,7 +41,7 @@ const handle = async (message: Message, channel: NewsChannel) => {
   const passesFilters = await Services.Filter.evaluate(message, channel);
   if (!passesFilters) return;
 
-  if (!message.content) return push(message);
+  if (!message.content) return push(message, channel.guildId);
 
   const hasEmbeds = Boolean(message.embeds.length);
   const hasUrl = RegExPatterns.url.test(message.content);
@@ -50,16 +50,21 @@ const handle = async (message: Message, channel: NewsChannel) => {
     await sleep(secToMs(5));
   }
 
-  return push(message);
+  return push(message, channel.guildId);
 };
 
-const push = async (message: Message): Promise<Response | undefined> => {
+/**
+ * @param guildId taken from the channel, not `message.guildId` — the latter is
+ *   nullable, and the proxy needs the guild to resolve the onboarding boost tier.
+ */
+const push = async (message: Message, guildId: Snowflake): Promise<Response | undefined> => {
   try {
-    return await Data.API.Proxy.enqueueCrosspost(message.channel.id, message.id);
+    return await Data.API.Proxy.enqueueCrosspost(guildId, message.channel.id, message.id);
   } catch (error) {
     logger.warn(
       {
         event: 'crosspost.push_failed',
+        guildId,
         channelId: message.channel.id,
         messageId: message.id,
         err: error,

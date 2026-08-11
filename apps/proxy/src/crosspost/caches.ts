@@ -9,7 +9,7 @@ const BLOCKED_TTL_SEC = 60 * 60;
 const withTimeout = async <T>(
   promise: Promise<T>,
   fallback: T,
-  context: { op: string; channelId?: string }
+  context: { op: string; channelId?: string; guildId?: string }
 ): Promise<T> => {
   let timer: NodeJS.Timeout | undefined;
   try {
@@ -20,9 +20,11 @@ const withTimeout = async <T>(
       }),
     ]);
   } catch (error) {
+    // Each caller picks its own fallback direction: the gate caches fail open,
+    // the boost budget fails closed (a blip must never promote the whole base).
     logger.warn(
       { event: 'redis.timeout', ...context, err: error },
-      'Redis op timed out, failing open'
+      'Redis op timed out, using fallback'
     );
     return fallback;
   } finally {
@@ -121,6 +123,44 @@ export const createBlockedCache = (redis: RedisClient): BlockedCache => {
         return await redis.dbsize();
       } catch {
         return 0;
+      }
+    },
+  };
+};
+
+/**
+ * Remaining priority publishes for a newly-joined guild. The backend seeds the
+ * key (`registerNewGuild` only); the proxy reads it at enqueue to pick a queue
+ * priority and decrements it on a boosted publish. Key presence IS the boost
+ * state, so exhaustion deletes rather than leaving a zero behind.
+ */
+export type BoostBudget = {
+  isBoosted(guildId: string): Promise<boolean>;
+  consume(guildId: string): Promise<void>;
+};
+
+export const createBoostBudget = (redis: RedisClient): BoostBudget => {
+  const key = (guildId: string) => `${Keys.Boost}:${guildId}`;
+
+  return {
+    // Fails CLOSED, unlike the gate caches above: a Redis blip that fell open
+    // would promote every guild in the system to the boosted tier at once,
+    // which is the one failure mode that makes the tier meaningless.
+    isBoosted: async guildId => {
+      const value = await withTimeout(redis.get(key(guildId)), null, {
+        op: 'boost.get',
+        guildId,
+      });
+      return value !== null && Number(value) > 0;
+    },
+    consume: async guildId => {
+      try {
+        // DECR leaves the seed TTL untouched, so the 90-day safety window runs
+        // from the join and does not slide with usage.
+        const remaining = await redis.decr(key(guildId));
+        if (remaining <= 0) await redis.del(key(guildId));
+      } catch (error) {
+        logger.warn({ event: 'redis.write_failed', op: 'boost.consume', guildId, err: error });
       }
     },
   };

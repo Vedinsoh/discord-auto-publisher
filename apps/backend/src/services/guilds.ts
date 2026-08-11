@@ -2,6 +2,7 @@ import type { Edition } from '@ap/api-types';
 import { isPublicInstance } from '@ap/config';
 import { botPresence, channel, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
+import { Keys } from '@ap/redis';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
@@ -146,6 +147,7 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
     }
     // MIGRATION: After transition (6 months), remove the marker delete
     await Data.Drivers.Redis.MigratedGuilds.del(`migrated_guild:${guildId}`);
+    await Data.Drivers.Redis.OnboardingBoost.del(`${Keys.Boost}:${guildId}`);
 
     logger.debug(`Purged guild ${guildId} and ${channelIds.length} associated channels`);
     return true;
@@ -180,6 +182,39 @@ const pruneStaleChannels = async (
   if (stale.length > 0) {
     await Data.Channels.Cache.removeMany(stale.map(s => s.channelId));
     logger.info(`Pruned ${stale.length} stale channels for guild ${guildId}`);
+  }
+};
+
+/** Priority publishes granted to a newly-joined guild */
+const BOOST_PUBLISHES = 10;
+/** Safety TTL (90 days): the budget expires even if the guild never publishes */
+const BOOST_TTL_SEC = 90 * 24 * 60 * 60;
+
+/**
+ * Grant a newly-joined guild a bounded run of priority crossposts, so its first
+ * messages are not stuck behind the peak backlog while the admin is still
+ * deciding whether the bot works. Read by both proxies at enqueue.
+ *
+ * Deliberately seeded from `registerNewGuild` and nowhere else: the reconcile
+ * sweep and the dashboard presence self-heal both run through `joinRails` for
+ * guilds that never left, so seeding there would re-arm a large slice of the
+ * base and flatten the tier back into FIFO.
+ *
+ * Plain SET, so a re-invite (and a premium bot joining on upgrade) re-arms the
+ * budget. That is intended — both are real join events, bounded at 10 publishes
+ * each — and it keeps key presence the whole of the boost state.
+ */
+const seedOnboardingBoost = async (guildId: Snowflake): Promise<void> => {
+  try {
+    await Data.Drivers.Redis.OnboardingBoost.set(
+      `${Keys.Boost}:${guildId}`,
+      String(BOOST_PUBLISHES),
+      'EX',
+      BOOST_TTL_SEC
+    );
+  } catch (error) {
+    // Never fail a registration over this — losing a boost is cosmetic
+    logger.warn(error, `Failed to seed onboarding boost for guild ${guildId}`);
   }
 };
 
@@ -259,6 +294,8 @@ const registerNewGuild = async (
     }
 
     await activatePresence(guildId, edition);
+
+    await seedOnboardingBoost(guildId);
 
     // A bot receives no gateway events while kicked, so a channel created or
     // deleted during the absent window never fired the observe-based eviction.

@@ -86,7 +86,7 @@ bot-free ────► proxy-free ─────┐            ┌──> Pos
     │              │ /api/*    │
     │              ▼           │
 bot-premium ─► proxy-premium ──┘
-(bots POST /crosspost/:c/:m to their own edition's proxy)
+(bots POST /crosspost/:g/:c/:m to their own edition's proxy)
 ```
 
 **`DEPLOYMENT_MODE=self-host`** (the default) — one bot, every feature, no billing. Root `docker-compose.yml`, six always-on services (`bot`, `proxy`, `backend`, `web`, `db`, `redis`); Postgres and Redis are bundled, so the Supabase CLI is maintainer-only. ADR 0011.
@@ -107,10 +107,12 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 
 - Discord REST gateway + async crosspost queue for its edition's bot token. Replaces the old `@discordjs/proxy-container` + `crosspost-worker` pair.
 - Two responsibilities:
-  - `POST /crosspost/:channelId/:messageId` — sync gate check, then BullMQ enqueue. ACKs 202 in <100ms.
+  - `POST /crosspost/:guildId/:channelId/:messageId` — sync gate check, then BullMQ enqueue. ACKs 202 in <100ms. The `guildId` segment exists to resolve the onboarding-boost tier; all three segments are validated against `SNOWFLAKE_PATTERN`.
   - `*/api/*` passthrough — generic Discord REST proxy used by its bot + the backend's per-edition `@discordjs/rest`. Selective header forwarding, response streamed back.
 - Single `@discordjs/rest` instance shared by both paths. Interaction acks bypass crosspost queue naturally via `BurstHandler`.
-- Per-edition Redis DBs via `ProxyDatabaseIDs` in `@ap/redis` (free: 1/2/3, premium: 9/10/11 for queue/sublimit/blocked).
+- Per-edition Redis DBs via `ProxyDatabaseIDs` in `@ap/redis` (free: 1/2/3, premium: 9/10/11 for queue/sublimit/blocked), plus two shared DBs: `Alerts` (8) and `OnboardingBoost` (14).
+- **Queue priority tiers** (`PRIORITY` in `crosspost/queue.ts`): `BOOSTED = 1`, `NORMAL = 10` — lower is higher priority, valid range `1..2_097_152`. **Every `queue.add` must pass an explicit priority.** BullMQ serves un-prioritized jobs *before* prioritized ones (`fetchNextJob.lua` `RPOPLPUSH`es from `wait` first and only falls back to the prioritized zset when `wait` is empty; `priority: 0` means "no priority"), so one untagged enqueue starves every boosted guild behind a backlog that at peak never drains — strictly worse than plain FIFO. Regression check: `bull:crosspost:wait` stays empty under load while `bull:crosspost:prioritized` carries the depth. ADR 0012.
+- **Onboarding boost**: a newly-joined guild's first 10 successful publishes get `BOOSTED`. Budget is `boost:{guildId}` in DB 14 (integer remaining, 90d TTL); **key presence is the boost state**. `isBoosted` at enqueue **fails closed** (a fail-open blip would promote the whole base); `consume` (`DECR`, `DEL` at `<= 0`) runs in the worker's success branch gated on `job.opts.priority === BOOSTED`, never on a fresh read — an unconditional `DECR` would mint a negative key per guild. Seeded by the backend from `registerNewGuild` only; boosted enqueues log at `info` (bounded, measurable in prod), normal ones at `debug`.
 - Egress IP pinning: `config.egressLocalAddress` (from `EGRESS_LOCAL_ADDRESS_FREE`/`_PREMIUM`) sets an undici `Agent({ connect: { localAddress } })` so each edition keeps its own source IP (per-edition Cloudflare ban isolation). Unset = default route (dev).
 - Sync pre-check pipeline (gate): `invalid_requests` shed → `BlockedChannels` denylist → `SublimitCounter` (per-channel 10/hr).
 - BullMQ worker (concurrency 50) classifies Discord error outcomes:
@@ -149,7 +151,7 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 
 - **Internal API for both bots + web dashboard API** — owns channel registration, filters, Paddle subscriptions, per-edition bot presence, the premium entitlement gate, and handover orchestration.
 - Express REST API (https://expressjs.com/en/4x/api.html) on port 8080
-- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers, derived from `guild.migratedAt`), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys), `PublishState` (per-guild publish-state hash, bots push), `PremiumPending` (handover markers).
+- Manages PostgreSQL persistence (Drizzle ORM + Supabase) & Redis caches: `Channels` (allowlist + filters), `MigratedGuilds` (v6→v7 migration markers, derived from `guild.migratedAt`), `DiscordAuth` (web auth tokens), `PaddleWebhookDedupe` (webhook idempotency keys), `PublishState` (per-guild publish-state hash, bots push), `PremiumPending` (handover markers), `OnboardingBoost` (seeded in `registerNewGuild`, deleted in `purge`; the proxies consume it).
 - Cache sync on startup (reconciles Redis/Postgres).
 - **Two `@discordjs/rest` clients** (`Discord.restFor(edition)`), each routed through its edition's proxy; callers pick by managing edition (`Editions.getManagingEdition`). Token and proxy URL resolve through `tokenFor`/`proxyUrlFor`, which read the singular self-host variables or the per-edition pair depending on mode — so self-host's `free` slot has an empty token and `hasToken('free')` is false, which is exactly what the presence sweeps and join rails already key off.
 - Join orchestration in `Guilds.registerNewGuild(guildId, edition, channels)`: premium not entitled → leave via premium proxy; premium joining while free active → `PremiumPending` marker + immediate handover evaluation; free joining while premium manages → leave via free proxy.
@@ -182,7 +184,7 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 
 **Proxy service per edition**: each `apps/proxy` instance owns all Discord REST traffic for one token — the async crosspost queue and the generic `/api/*` passthrough — sharing a single `@discordjs/rest` instance. Replaces the previous `discord-proxy` (generic container) + `crosspost-worker` (custom in-memory queue) pair. Production pins each proxy's outbound source IP (`EGRESS_LOCAL_ADDRESS_*`) for Cloudflare ban isolation.
 
-**BullMQ-backed queue**: Jobs survive proxy restarts. `jobId: ${channelId}-${messageId}` prevents duplicate enqueues. Per-outcome handling: only intentional skips (`already_done` / `blocked` / `sublimit-lock`) drop messages; transient errors become delayed retries (≤5 min cap) or BullMQ exponential backoff (10 attempts).
+**BullMQ-backed queue**: Jobs survive proxy restarts. `jobId: ${channelId}-${messageId}` prevents duplicate enqueues. Per-outcome handling: only intentional skips (`already_done` / `blocked` / `sublimit-lock`) drop messages; transient errors become delayed retries (≤5 min cap) or BullMQ exponential backoff (10 attempts). Every job carries an explicit priority tier (see the proxy section + ADR 0012); a delayed job re-enters the *prioritized* set at its own tier, replacing the old implicit policy where un-prioritized bounced jobs re-entered at the front of `wait` and beat fresh ones.
 
 **Wait when Discord asks**: `Retry-After` from rate-limit responses is honoured exactly via `job.moveToDelayed`. Never drops messages on transient 429s.
 
@@ -289,6 +291,7 @@ Single Redis instance, multiple logical DBs (managed via `DatabaseIDs` enum in `
 | 11  | `BlockedChannelsPremium` | premium proxy                              | denylist (1h TTL)                                                                                                         |
 | 12  | `PremiumPending`         | backend (premium bot reads)                | handover markers (`premium_pending:{guildId}`, no TTL)                                                                    |
 | 13  | `PublishState`           | backend (bots push, dashboard + gate read) | per-guild publish-state hash (`publish_state:{guildId}`, 14d TTL) — ADR 0008                                              |
+| 14  | `OnboardingBoost`        | shared (backend seeds, proxies consume)    | onboarding boost budget (`boost:{guildId}` = remaining priority publishes, 90d TTL) — ADR 0012                            |
 
 Proxies resolve their DB triple via `ProxyDatabaseIDs[edition]` in `@ap/redis`. Uses SCAN instead of KEYS (production-safe). ioredis client (BullMQ requirement), wrapped by `@ap/redis` factory `createRedisClient(databaseId)`.
 
@@ -351,11 +354,11 @@ The singular `DISCORD_BOT_TOKEN` is read **only** in self-host mode. The old "no
 1. Discord message posted in announcement channel; bot's `messageCreate` listener fires.
 2. Bot synchronously gates: `isCrosspostable` bit-flags → `canCrosspostInChannel` (cache-only `permissionsFor`) → `Handover.isActive` (premium latch; Redis only while pending) → `Guild.isMigrated` Redis → `Channel.isEnabled` Redis → `Filter.evaluate` (premium-only, HTTP to backend for the rule; matching runs in-process over `extractMessageText` — content + embeds + Components V2 text).
 3. 5s delay if message has URL but no embeds.
-4. Bot `fetch` POSTs `{its proxy}/crosspost/:channelId/:messageId` (fire-and-forget, 5s timeout).
+4. Bot `fetch` POSTs `{its proxy}/crosspost/:guildId/:channelId/:messageId` (fire-and-forget, 5s timeout); `guildId` comes from the `NewsChannel`, not the nullable `message.guildId`.
 5. Proxy re-runs sync gate (invalid-requests → blocked → sublimit). Rejects with 503 / 204 or accepts with 202.
-6. Proxy enqueues a BullMQ job (its edition's queue DB) keyed by `${channelId}-${messageId}`.
+6. Proxy resolves the priority tier (`boostBudget.isBoosted(guildId)` → `BOOSTED` else `NORMAL`) and enqueues a BullMQ job (its edition's queue DB) keyed by `${channelId}-${messageId}`.
 7. Worker (concurrency 50) re-evaluates gate, calls `rest.post(Routes.channelMessageCrosspost(...))`, classifies result via `classifier.ts`.
-8. Success → increment `SublimitCounter`. Errors → cache update + skip (intentional) or `moveToDelayed` (transient) or BullMQ retry (5xx).
+8. Success → increment `SublimitCounter`, then consume one onboarding-boost unit if the job's own `opts.priority` is `BOOSTED`. Errors → cache update + skip (intentional) or `moveToDelayed` (transient) or BullMQ retry (5xx).
 
 ## Docker configuration
 

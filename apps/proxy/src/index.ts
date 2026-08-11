@@ -2,7 +2,11 @@ import process from 'node:process';
 import { createAlerter } from '@ap/alerts';
 import { assertRequiredEnv, config, env } from '@ap/config';
 import { createRedisClient, DatabaseIDs, disconnectAllRedis, ProxyDatabaseIDs } from '@ap/redis';
-import { createBlockedCache, createSublimitCounter } from './crosspost/caches.js';
+import {
+  createBlockedCache,
+  createBoostBudget,
+  createSublimitCounter,
+} from './crosspost/caches.js';
 import { createGate } from './crosspost/gate.js';
 import { createCrosspostQueue } from './crosspost/queue.js';
 import { buildGateway } from './gateway/index.js';
@@ -22,14 +26,22 @@ const main = async () => {
   // on the same triple its own bot's edition implies.
   const databases = ProxyDatabaseIDs[config.edition];
 
-  const [sublimitRedis, blockedRedis, alertsRedis] = await Promise.all([
+  const [sublimitRedis, blockedRedis, alertsRedis, boostRedis] = await Promise.all([
     createRedisClient(databases.sublimitCounter, logger),
     createRedisClient(databases.blockedChannels, logger),
     createRedisClient(DatabaseIDs.Alerts, logger),
+    // Shared across editions (like Alerts), not in ProxyDatabaseIDs: the boost
+    // budget must survive a premium handover rather than restart under the new
+    // edition's key.
+    createRedisClient(DatabaseIDs.OnboardingBoost, logger),
   ]);
 
   const sublimit = createSublimitCounter(sublimitRedis);
   const blocked = createBlockedCache(blockedRedis);
+  // Sibling dep rather than a member of `caches`: `caches` is also handed to
+  // createApp/info, which reports each entry's dbsize, and the boost budget is
+  // neither a gate input nor a per-proxy DB.
+  const boostBudget = createBoostBudget(boostRedis);
   const caches = { sublimit, blocked };
   const alerter = createAlerter({
     redis: alertsRedis,
@@ -47,6 +59,7 @@ const main = async () => {
     rest: gateway.rest,
     gate,
     caches,
+    boostBudget,
     redisUri: env.REDIS_URI,
     queueDatabaseId: databases.crosspostQueue,
     concurrency: WORKER_CONCURRENCY,

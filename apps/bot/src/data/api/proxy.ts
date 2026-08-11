@@ -5,8 +5,8 @@ import { RequestMethod, type Snowflake } from 'discord.js';
 const baseUrl = config.proxyUrl;
 const FETCH_TIMEOUT_MS = 5_000;
 
-const enqueueCrosspost = async (channelId: Snowflake, messageId: Snowflake) => {
-  return fetch(`${baseUrl}/crosspost/${channelId}/${messageId}`, {
+const enqueueCrosspost = async (guildId: Snowflake, channelId: Snowflake, messageId: Snowflake) => {
+  return fetch(`${baseUrl}/crosspost/${guildId}/${channelId}/${messageId}`, {
     method: RequestMethod.Post,
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
