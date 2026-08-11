@@ -1,25 +1,8 @@
 import type { Edition } from '@/lib/api/types';
+import type { SiteConfig } from '@/lib/site-config';
 
 export const BOT_INVITE_PERMISSIONS = '10240';
 export const BOT_INVITE_SCOPE = 'bot+applications.commands';
-
-/**
- * Client-visible deployment config, resolved on the server and handed to the
- * client through {@link SiteConfigProvider}.
- *
- * Deliberately not `NEXT_PUBLIC_*`: those are inlined at build time, which
- * would force every self-hoster to rebuild the web image with their own client
- * id baked in. Passing them through a server-rendered context keeps the image
- * configurable purely at runtime.
- */
-export type SiteConfig = {
-  /** False for a self-hosted copy: no billing, no upgrade paths, one bot. */
-  isPublicInstance: boolean;
-  /** Self-host: the single application's id, which is also the OAuth client. */
-  freeBotId: string;
-  /** Public instance only — empty when self-hosted (there is no second bot). */
-  premiumBotId: string;
-};
 
 /**
  * Bot invite URL. Falls back to the free bot when the premium client ID is not

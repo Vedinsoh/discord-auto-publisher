@@ -23,6 +23,7 @@ import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { shouldOfferWithdrawal, WithdrawalPanel } from '@/components/dashboard/withdrawal-panel';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
+import { useLegacySunsetLabel } from '@/components/site-config-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -31,7 +32,6 @@ import { SegmentedControl, type SegmentedOption } from '@/components/ui/segmente
 import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout, getSubscription } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
-import { legacySunsetLabel } from '@/lib/constants';
 import { guildIconUrl } from '@/lib/discord';
 import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
 import {
@@ -484,6 +484,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
     searchParams.get('upgrade') === 'month' ? 'month' : 'year'
   );
   const [migrateOpen, setMigrateOpen] = useState(false);
+  const sunsetLabel = useLegacySunsetLabel();
   // Unticked by default and never pre-ticked: Paddle requires the buyer to accept the
   // terms and refund policy before purchase, and a pre-ticked box is not acceptance.
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -573,7 +574,7 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
                 </p>
                 <p className="text-amber-300 text-sm mb-4">
                   Legacy mode ends on{' '}
-                  <span className="text-white font-semibold">{legacySunsetLabel()}</span>.
+                  <span className="text-white font-semibold">{sunsetLabel}</span>.
                 </p>
                 <Button
                   onClick={() => setMigrateOpen(true)}

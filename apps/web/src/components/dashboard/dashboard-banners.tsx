@@ -22,12 +22,13 @@ import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import {
   useBotInviteUrl,
   useIsPublicInstance,
+  useLegacySunsetLabel,
   useSiteConfig,
 } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
-import { legacySunsetLabel, links } from '@/lib/constants';
+import { links } from '@/lib/constants';
 import { FREE_CHANNEL_LIMIT } from '@/lib/plans';
 import { useActivationPoll } from '@/lib/use-activation-poll';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
@@ -418,6 +419,7 @@ function LegacyMigrationBanner({
   premiumPending: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const sunsetLabel = useLegacySunsetLabel();
 
   return (
     <>
@@ -433,7 +435,7 @@ function LegacyMigrationBanner({
               publish, and unlock new features.
             </p>
             <p className="text-amber-300 text-base font-semibold mb-4">
-              Legacy mode ends on {legacySunsetLabel()}.
+              Legacy mode ends on {sunsetLabel}.
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Button

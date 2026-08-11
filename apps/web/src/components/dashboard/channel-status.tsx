@@ -18,9 +18,9 @@ import { useGuild } from '@/components/dashboard/guild-context';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
+import { useLegacySunsetLabel } from '@/components/site-config-context';
 import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
-import { legacySunsetLabel } from '@/lib/constants';
 
 /**
  * Read-only channel status on the Overview tab. Permission-derived from the
@@ -246,6 +246,7 @@ function LegacyStatus({
 }) {
   const publishing = channels.filter(c => c.canPublish !== false).length;
   const total = channels.length;
+  const sunsetLabel = useLegacySunsetLabel();
 
   return (
     <div className="space-y-6">
@@ -256,7 +257,7 @@ function LegacyStatus({
         subtitle={
           <>
             Every announcement channel is published automatically. Legacy mode ends on{' '}
-            <span className="text-white font-semibold">{legacySunsetLabel()}</span>.
+            <span className="text-white font-semibold">{sunsetLabel}</span>.
           </>
         }
       />

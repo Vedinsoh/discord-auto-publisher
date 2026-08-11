@@ -230,6 +230,20 @@ export const config = {
       : env.EGRESS_LOCAL_ADDRESS_FREE
     : '',
   /**
+   * MIGRATION: the date legacy mode stops working, as `YYYY-MM-DD` (UTC).
+   *
+   * Shown on every legacy surface — the bot's `/ap overview`, the dashboard's
+   * migrate banner and status section, and the marketing migration page. It
+   * lives here, not per app, because two surfaces quoting different sunset
+   * dates to the same admin is the one failure mode that matters. This module
+   * is server-only (it reads the environment at import), so the dashboard's
+   * client components receive it through `getSiteConfig()`.
+   *
+   * TODO(migration): replace with the real sunset date before v7 launch.
+   * Placeholder only. Removed with the rest of the legacy UX at sunset.
+   */
+  legacySunsetDate: '2026-12-31',
+  /**
    * Application limits
    */
   limits: {

@@ -1,7 +1,9 @@
 'use client';
 
 import { createContext, useContext, useMemo } from 'react';
-import { getBotInviteUrl, type SiteConfig } from '@/lib/invite';
+import { legacySunsetLabel } from '@/lib/constants';
+import { getBotInviteUrl } from '@/lib/invite';
+import type { SiteConfig } from '@/lib/site-config';
 
 /**
  * Deployment config, server-rendered into the tree at the root layout.
@@ -14,6 +16,7 @@ const SiteConfigContext = createContext<SiteConfig>({
   isPublicInstance: false,
   freeBotId: '',
   premiumBotId: '',
+  legacySunsetDate: '',
 });
 
 export function SiteConfigProvider({
@@ -33,6 +36,15 @@ export function useSiteConfig(): SiteConfig {
 /** True only on the hosted service — gates every billing and upgrade surface. */
 export function useIsPublicInstance(): boolean {
   return useContext(SiteConfigContext).isPublicInstance;
+}
+
+/**
+ * MIGRATION: formatted legacy sunset date for the legacy surfaces. Removed with
+ * the rest of the legacy UX at sunset.
+ */
+export function useLegacySunsetLabel(): string {
+  const { legacySunsetDate } = useSiteConfig();
+  return useMemo(() => legacySunsetLabel(legacySunsetDate), [legacySunsetDate]);
 }
 
 /** Bot invite URL for this deployment, or null when no client id is configured. */

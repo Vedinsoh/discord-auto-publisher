@@ -10,6 +10,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { legacySunsetLabel, links } from '@/lib/constants';
+import { getSiteConfig } from '@/lib/site-config';
 
 export const metadata: Metadata = {
   title: 'Migration Guide | Auto Publisher',
@@ -86,8 +87,10 @@ export default function MigrationPage() {
           <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
             <span className="text-base sm:text-lg text-amber-200">
               Legacy mode ends on{' '}
-              <span className="font-bold text-white">{legacySunsetLabel()}</span> — migrate before
-              then to keep publishing.
+              <span className="font-bold text-white">
+                {legacySunsetLabel(getSiteConfig().legacySunsetDate)}
+              </span>{' '}
+              — migrate before then to keep publishing.
             </span>
           </div>
         </div>

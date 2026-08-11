@@ -1,4 +1,5 @@
-import { env, isPublicInstance } from '@ap/config';
+import { config, env, isPublicInstance } from '@ap/config';
+import { getDiscordFormat } from '@ap/utils';
 
 const HOSTNAME = 'auto-publisher.gg';
 const WEBSITE = `https://${HOSTNAME}`;
@@ -30,6 +31,12 @@ export const links = {
   hostname: BASE.replace(/^https?:\/\//, ''),
   website: BASE,
   dashboard: `${BASE}/dashboard`,
+  /**
+   * MIGRATION: the "what is changing" guide the dashboard's legacy banner links
+   * to. Deployment-relative like `dashboard`, not pinned to the hosted site: the
+   * page is part of the web app, so a self-hosted copy serves its own.
+   */
+  migration: `${BASE}/migration`,
   premiumPage: `${WEBSITE}/premium`,
   projectHostname: HOSTNAME,
   supportGuildInvite: 'https://discord.gg/xcEeJkdQX8',
@@ -40,6 +47,18 @@ export const links = {
    */
   botInvite: buildBotInvite('739823232651100180'),
 };
+
+/**
+ * MIGRATION: legacy sunset as Unix seconds, for a `<t:…:D>` Discord timestamp.
+ *
+ * The date is `config.legacySunsetDate` — the same value the dashboard renders,
+ * so the two surfaces can't quote different deadlines. Rendered as a timestamp
+ * rather than the dashboard's formatted string on purpose: Discord localizes it
+ * to each viewer, where a baked en-US string would not. Removed at sunset.
+ */
+export const legacySunsetTimestamp = getDiscordFormat(
+  Date.parse(`${config.legacySunsetDate}T00:00:00Z`)
+);
 
 /**
  * Point the invite button at THIS application. Called once at ready, where the

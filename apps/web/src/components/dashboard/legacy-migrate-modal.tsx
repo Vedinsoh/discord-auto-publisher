@@ -6,7 +6,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
-import { useIsPublicInstance } from '@/components/site-config-context';
+import { useIsPublicInstance, useLegacySunsetLabel } from '@/components/site-config-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,6 @@ import {
 import { migrateGuild } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { GuildChannel } from '@/lib/api/types';
-import { legacySunsetLabel } from '@/lib/constants';
 
 // MIGRATION: Remove this component after migration period (6 months)
 
@@ -65,6 +64,7 @@ export function LegacyMigrateModal({
   // null) and every branch of overSelectedMessage would name a plan or a second
   // bot that doesn't exist there.
   const isPublicInstance = useIsPublicInstance();
+  const sunsetLabel = useLegacySunsetLabel();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
 
@@ -128,8 +128,7 @@ export function LegacyMigrateModal({
               : 'Channels the bot currently publishes in are preselected. Unselected channels will stop publishing.'}
           </DialogDescription>
           <p className="text-slate-400 text-sm mt-2">
-            Legacy mode ends on{' '}
-            <span className="text-white font-semibold">{legacySunsetLabel()}</span>.
+            Legacy mode ends on <span className="text-white font-semibold">{sunsetLabel}</span>.
           </p>
         </DialogHeader>
 

@@ -52,14 +52,10 @@ export class HelpCommand extends Command {
     if (config.isPremiumInstance) {
       replyContainer
         .addSeparatorComponents(separator => separator)
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent('### Premium features:'))
         .addTextDisplayComponents(textDisplay =>
           textDisplay.setContent(
             `${emojis.filter}  Use </ap filters:${apCommandId}> to choose which messages get published in a channel.`
-          )
-        )
-        .addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            '-# Add, edit and remove conditions — and set how they combine — from one panel.'
           )
         );
     }

@@ -2,6 +2,8 @@ import { config } from '@ap/config';
 import { PUBLISH_PERMISSION_FLAGS, sortBySidebarOrder } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import {
+  ActionRowBuilder,
+  type ButtonBuilder,
   ChannelType,
   ContainerBuilder,
   type Guild,
@@ -11,7 +13,7 @@ import {
   type Snowflake,
 } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
-import { emojis, notes } from 'lib/constants/index.js';
+import { emojis, legacySunsetTimestamp, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
@@ -297,9 +299,16 @@ const buildEmptyContainer = (state: OverviewState): ContainerBuilder => {
 /**
  * MIGRATION: delete at sunset along with the rest of the legacy UX.
  *
- * Mirrors `LegacyStatus` in `channel-status.tsx`: deliberately not itemized —
- * the dashboard withholds per-channel detail from legacy guilds to steer them
- * to migrate first. The sunset date is not repeated here; the dashboard owns it.
+ * Mirrors the dashboard's two legacy surfaces — the migrate banner in
+ * `dashboard-banners.tsx` and `LegacyStatus` in `channel-status.tsx` — collapsed
+ * into one card, since the bot has a single ephemeral reply where the dashboard
+ * has a page. The banner's wording wins because it is the one that states the
+ * consequence (publishing stops); the section's shorter sentence would repeat
+ * its first clause verbatim. Still deliberately not itemized: the dashboard
+ * withholds per-channel detail from legacy guilds to steer them to migrate.
+ *
+ * The sunset date is a `<t:…:D>` timestamp rather than a formatted string so
+ * Discord renders it in each viewer's own locale and timezone.
  */
 const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
   const total = state.announcementChannelCount;
@@ -312,11 +321,18 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
         ? "This server doesn't have any announcement channels."
         : `Publishing in **${state.legacyPublishingCount}** of **${total}** announcement channel${total !== 1 ? 's' : ''}.`;
 
-  const container = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(
-      `### ${emojis.warning} Legacy mode\nEvery announcement channel in this server is published automatically. Legacy mode is being retired — migrate to choose exactly which channels publish.`
+  const container = new ContainerBuilder()
+    .addTextDisplayComponents(textDisplay =>
+      textDisplay.setContent(
+        `### ${emojis.warning} This server runs in legacy mode\nEvery announcement channel is published automatically. Legacy mode will be discontinued, and the bot may stop publishing in this server once it is retired. Migrate now to keep publishing without interruption, choose exactly which channels publish, and unlock new features.\n### Legacy mode ends on <t:${legacySunsetTimestamp}:D>`
+      )
     )
-  );
+    .addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        Buttons.migrateNow(state.guildId),
+        Buttons.learnWhatIsChanging
+      )
+    );
 
   if (summary) {
     container
