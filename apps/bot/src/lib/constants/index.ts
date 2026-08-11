@@ -31,6 +31,7 @@ export const links = {
   website: BASE,
   dashboard: `${BASE}/dashboard`,
   premiumPage: `${WEBSITE}/premium`,
+  projectHostname: HOSTNAME,
   supportGuildInvite: 'https://discord.gg/xcEeJkdQX8',
   /**
    * Replaced at startup with this application's own id ({@link setBotInvite}).

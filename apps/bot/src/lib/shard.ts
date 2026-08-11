@@ -9,7 +9,7 @@ export const client = new BotClient({
   presence: {
     activities: [
       {
-        name: `${links.hostname} | /help`,
+        name: `${links.projectHostname} | /help`,
         type: ActivityType.Custom,
       },
     ],
