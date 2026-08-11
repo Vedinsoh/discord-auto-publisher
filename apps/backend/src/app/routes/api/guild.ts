@@ -1,5 +1,5 @@
 import type { Edition, WithdrawalState } from '@ap/api-types';
-import { env } from '@ap/config';
+import { env, isPublicInstance } from '@ap/config';
 import type { Subscription } from '@ap/database';
 import {
   type APIResponse,
@@ -193,8 +193,12 @@ export const GuildApi: Router = (() => {
         Services.Subscriptions.getByGuildId(guildId),
       ]);
       const entitled = !!sub && isEntitledStatus(sub.status);
-      const absentEditions = (['free', 'premium'] as Edition[]).filter(
-        e => !activeEditions.has(e) && (e !== 'premium' || entitled)
+      // Only editions this deployment runs. The premium entitlement skip is a
+      // public-instance rule (a non-entitled guild's only "present" outcome is
+      // the revocation leave); self-hosted, premium IS the single bot, so
+      // skipping it would leave every missed join unhealed and 409 the page.
+      const absentEditions = Services.Editions.CONFIGURED.filter(
+        e => !activeEditions.has(e) && (!isPublicInstance || e !== 'premium' || entitled)
       );
       const { healed, inconclusive } =
         absentEditions.length > 0
@@ -501,229 +505,239 @@ export const GuildApi: Router = (() => {
     }
   });
 
-  /**
-   * GET /api/guild/:guildId/subscription
-   * Returns subscription details + portal URL if subscriber matches current user
-   */
-  router.get('/subscription', validateRequest(GuildReqSchema), async (req, res) => {
-    const { guildId } = req.params;
-    const userId = req.discordUser?.id;
-
-    try {
-      const sub = await Services.Subscriptions.getByGuildId(guildId);
-
-      if (!sub) {
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: undefined,
-          message: 'No subscription found',
-        } as APIResponse);
-        return;
-      }
-
-      const isSubscriber = userId === sub.subscriberDiscordUserId;
-      let portalUrl: string | undefined;
-      let cancelUrl: string | null = null;
-
-      // Only provide portal URLs if the requester is the subscriber
-      if (isSubscriber) {
-        try {
-          const portal = await Services.Paddle.createPortalSession(
-            sub.paddleCustomerId,
-            sub.paddleSubscriptionId
-          );
-          portalUrl = portal.manageUrl;
-          cancelUrl = portal.cancelUrl;
-        } catch {
-          // Non-fatal: portal URLs are optional
-        }
-      }
-
-      // Non-subscriber admins see "Billing is managed by @X" — the subscriber's
-      // own view is just the button, so skip the lookup for them. A null id means
-      // retention already erased it, so there is no one left to name.
-      const subscriberUsername =
-        isSubscriber || !sub.subscriberDiscordUserId
-          ? null
-          : await Discord.getUsername(sub.subscriberDiscordUserId);
-
-      // Withdrawal state (ZZP čl. 81.a) rides this endpoint, not one of its own, so the
-      // control paints with the other billing controls (CRD recital 37).
-      const withdrawal = isSubscriber ? await buildWithdrawalState(sub, req.discordUser) : null;
-
-      res.status(StatusCodes.OK).json({
-        status: StatusCodes.OK,
-        data: {
-          status: sub.status,
-          billingInterval: sub.billingInterval,
-          currentPeriodEndsAt: sub.currentPeriodEndsAt,
-          scheduledChange:
-            sub.scheduledChangeAction && sub.scheduledChangeAt
-              ? { action: sub.scheduledChangeAction, effectiveAt: sub.scheduledChangeAt }
-              : null,
-          canceledAt: sub.canceledAt,
-          portalUrl: portalUrl ?? null,
-          cancelUrl,
-          isSubscriber,
-          subscriber: {
-            id: sub.subscriberDiscordUserId,
-            username: subscriberUsername,
-          },
-          withdrawal,
-        },
-        message: 'Subscription retrieved successfully',
-      } as APIResponse);
-    } catch (error) {
-      sendErrorResponse(res, error, 'Failed to retrieve subscription');
-    }
-  });
-
-  /**
-   * POST /api/guild/:guildId/subscription/checkout
-   * Creates a Paddle transaction for the overlay checkout (price resolved server-side)
-   */
-  router.post(
-    '/subscription/checkout',
-    validateRequest(SubscriptionCheckoutReqSchema),
-    async (req, res) => {
+  // Billing surface: subscription detail, Paddle checkout, and the statutory
+  // withdrawal function. Public instance only — a self-hosted copy has no
+  // Paddle client, no subscription rows, and nothing to withdraw from. The
+  // dashboard hides these controls for the same reason (see `isPublicInstance`
+  // in the web app), but the routes must not exist either.
+  if (isPublicInstance) {
+    /**
+     * GET /api/guild/:guildId/subscription
+     * Returns subscription details + portal URL if subscriber matches current user
+     */
+    router.get('/subscription', validateRequest(GuildReqSchema), async (req, res) => {
       const { guildId } = req.params;
-      const { interval, termsVersion } = req.body;
       const userId = req.discordUser?.id;
 
-      if (!userId) {
-        res.status(StatusCodes.UNAUTHORIZED).json({
-          status: StatusCodes.UNAUTHORIZED,
-          message: 'Authentication required',
-        } as APIResponse);
-        return;
-      }
-
-      const priceId = interval === 'year' ? env.PADDLE_PRICE_YEARLY : env.PADDLE_PRICE_MONTHLY;
-
-      if (!priceId) {
-        res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
-          status: StatusCodes.SERVICE_UNAVAILABLE,
-          message: 'Checkout is not configured',
-        } as APIResponse);
-        return;
-      }
-
       try {
-        // Gate: a guild must be migrated (allowlist model) before it can buy
-        // Premium — Premium's value (per-channel filters/control) lives on
-        // registered channel rows, which only exist post-migration. Enforced
-        // here as well as in the UI: the UI alone is not a real gate.
-        // MIGRATION: Remove this guard after migration period (6 months)
-        const guildRecord = await Services.Guilds.find(guildId);
-        if (!guildRecord?.migratedAt) {
-          throw createHttpError(
-            'Guild must be migrated before upgrading to Premium',
-            StatusCodes.CONFLICT,
-            'NOT_MIGRATED'
-          );
-        }
+        const sub = await Services.Subscriptions.getByGuildId(guildId);
 
-        // Guard: one subscription per guild
-        const existing = await Services.Subscriptions.getByGuildId(guildId);
-        if (existing && isEntitledStatus(existing.status)) {
-          res.status(StatusCodes.CONFLICT).json({
-            status: StatusCodes.CONFLICT,
-            message: 'Guild already has an active subscription',
+        if (!sub) {
+          res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            data: undefined,
+            message: 'No subscription found',
           } as APIResponse);
           return;
         }
 
-        // No customer pre-bind: the checkout always runs its collection step so
-        // customers can self-serve business/VAT details ("Add tax number").
-        // Binding an existing customerId hands Paddle a complete address, which
-        // skips collection entirely. Paddle re-links the customer by email, so
-        // repeat buyers keep one customer as long as they reuse their email.
-        const result = await Services.Paddle.createCheckoutTransaction({
-          discordGuildId: guildId,
-          discordUserId: userId,
-          priceId,
-          termsVersion,
-        });
+        const isSubscriber = userId === sub.subscriberDiscordUserId;
+        let portalUrl: string | undefined;
+        let cancelUrl: string | null = null;
 
-        res.status(StatusCodes.OK).json({
-          status: StatusCodes.OK,
-          data: result,
-          message: 'Checkout transaction created',
-        } as APIResponse);
-      } catch (error) {
-        sendErrorResponse(res, error, 'Failed to create checkout');
-      }
-    }
-  );
-
-  /**
-   * POST /api/guild/:guildId/subscription/withdrawal — the whole statutory withdrawal
-   * function (ZZP čl. 81.a / CRD Art 11a) in one call; the statute has one sending event,
-   * so never split it into a draft step plus a confirm step. Window is re-checked here on
-   * every call, and the row is written before any effect runs (`applyEffects` never throws).
-   */
-  router.post(
-    '/subscription/withdrawal',
-    validateRequest(WithdrawalSubmitReqSchema),
-    async (req, res) => {
-      const { guildId } = req.params;
-      const { notificationAddress } = req.body;
-
-      try {
-        const sub = await requireWithdrawableSubscription(guildId, req.discordUser?.id);
-
-        const existing = await Services.Withdrawals.findLatest(sub.paddleSubscriptionId);
-        if (existing?.confirmedAt) {
-          throw createHttpError(
-            'This contract has already been withdrawn from',
-            StatusCodes.CONFLICT,
-            'ALREADY_WITHDRAWN'
-          );
+        // Only provide portal URLs if the requester is the subscriber
+        if (isSubscriber) {
+          try {
+            const portal = await Services.Paddle.createPortalSession(
+              sub.paddleCustomerId,
+              sub.paddleSubscriptionId
+            );
+            portalUrl = portal.manageUrl;
+            cancelUrl = portal.cancelUrl;
+          } catch {
+            // Non-fatal: portal URLs are optional
+          }
         }
 
-        if (!Services.Withdrawals.isWithinWindow(sub)) {
-          throw createHttpError(
-            'The 14-day withdrawal period has ended',
-            StatusCodes.CONFLICT,
-            'WITHDRAWAL_WINDOW_CLOSED'
-          );
-        }
+        // Non-subscriber admins see "Billing is managed by @X" — the subscriber's
+        // own view is just the button, so skip the lookup for them. A null id means
+        // retention already erased it, so there is no one left to name.
+        const subscriberUsername =
+          isSubscriber || !sub.subscriberDiscordUserId
+            ? null
+            : await Discord.getUsername(sub.subscriberDiscordUserId);
 
-        const record = await Services.Withdrawals.record({
-          sub,
-          consumerName: req.discordUser?.username ?? sub.subscriberDiscordUserId ?? 'Unknown',
-          guildName: await fetchGuildName(guildId),
-          notificationAddress,
-        });
-
-        // Lost a race with a concurrent confirm; the winner owns the effects, so this
-        // request must not raise a second refund.
-        if (!record?.confirmedAt) {
-          throw createHttpError(
-            'This contract has already been withdrawn from',
-            StatusCodes.CONFLICT,
-            'ALREADY_WITHDRAWN'
-          );
-        }
-
-        const { acknowledged, refundStatus } = await Services.Withdrawals.applyEffects(record, sub);
+        // Withdrawal state (ZZP čl. 81.a) rides this endpoint, not one of its own, so the
+        // control paints with the other billing controls (CRD recital 37).
+        const withdrawal = isSubscriber ? await buildWithdrawalState(sub, req.discordUser) : null;
 
         res.status(StatusCodes.OK).json({
           status: StatusCodes.OK,
           data: {
-            submittedAt: record.submittedAt.toISOString(),
-            confirmedAt: record.confirmedAt.toISOString(),
-            notificationAddress,
-            acknowledged,
-            refundStatus,
+            status: sub.status,
+            billingInterval: sub.billingInterval,
+            currentPeriodEndsAt: sub.currentPeriodEndsAt,
+            scheduledChange:
+              sub.scheduledChangeAction && sub.scheduledChangeAt
+                ? { action: sub.scheduledChangeAction, effectiveAt: sub.scheduledChangeAt }
+                : null,
+            canceledAt: sub.canceledAt,
+            portalUrl: portalUrl ?? null,
+            cancelUrl,
+            isSubscriber,
+            subscriber: {
+              id: sub.subscriberDiscordUserId,
+              username: subscriberUsername,
+            },
+            withdrawal,
           },
-          message: 'Withdrawal recorded',
+          message: 'Subscription retrieved successfully',
         } as APIResponse);
       } catch (error) {
-        sendErrorResponse(res, error, 'Failed to record withdrawal');
+        sendErrorResponse(res, error, 'Failed to retrieve subscription');
       }
-    }
-  );
+    });
+
+    /**
+     * POST /api/guild/:guildId/subscription/checkout
+     * Creates a Paddle transaction for the overlay checkout (price resolved server-side)
+     */
+    router.post(
+      '/subscription/checkout',
+      validateRequest(SubscriptionCheckoutReqSchema),
+      async (req, res) => {
+        const { guildId } = req.params;
+        const { interval, termsVersion } = req.body;
+        const userId = req.discordUser?.id;
+
+        if (!userId) {
+          res.status(StatusCodes.UNAUTHORIZED).json({
+            status: StatusCodes.UNAUTHORIZED,
+            message: 'Authentication required',
+          } as APIResponse);
+          return;
+        }
+
+        const priceId = interval === 'year' ? env.PADDLE_PRICE_YEARLY : env.PADDLE_PRICE_MONTHLY;
+
+        if (!priceId) {
+          res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+            status: StatusCodes.SERVICE_UNAVAILABLE,
+            message: 'Checkout is not configured',
+          } as APIResponse);
+          return;
+        }
+
+        try {
+          // Gate: a guild must be migrated (allowlist model) before it can buy
+          // Premium — Premium's value (per-channel filters/control) lives on
+          // registered channel rows, which only exist post-migration. Enforced
+          // here as well as in the UI: the UI alone is not a real gate.
+          // MIGRATION: Remove this guard after migration period (6 months)
+          const guildRecord = await Services.Guilds.find(guildId);
+          if (!guildRecord?.migratedAt) {
+            throw createHttpError(
+              'Guild must be migrated before upgrading to Premium',
+              StatusCodes.CONFLICT,
+              'NOT_MIGRATED'
+            );
+          }
+
+          // Guard: one subscription per guild
+          const existing = await Services.Subscriptions.getByGuildId(guildId);
+          if (existing && isEntitledStatus(existing.status)) {
+            res.status(StatusCodes.CONFLICT).json({
+              status: StatusCodes.CONFLICT,
+              message: 'Guild already has an active subscription',
+            } as APIResponse);
+            return;
+          }
+
+          // No customer pre-bind: the checkout always runs its collection step so
+          // customers can self-serve business/VAT details ("Add tax number").
+          // Binding an existing customerId hands Paddle a complete address, which
+          // skips collection entirely. Paddle re-links the customer by email, so
+          // repeat buyers keep one customer as long as they reuse their email.
+          const result = await Services.Paddle.createCheckoutTransaction({
+            discordGuildId: guildId,
+            discordUserId: userId,
+            priceId,
+            termsVersion,
+          });
+
+          res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            data: result,
+            message: 'Checkout transaction created',
+          } as APIResponse);
+        } catch (error) {
+          sendErrorResponse(res, error, 'Failed to create checkout');
+        }
+      }
+    );
+
+    /**
+     * POST /api/guild/:guildId/subscription/withdrawal — the whole statutory withdrawal
+     * function (ZZP čl. 81.a / CRD Art 11a) in one call; the statute has one sending event,
+     * so never split it into a draft step plus a confirm step. Window is re-checked here on
+     * every call, and the row is written before any effect runs (`applyEffects` never throws).
+     */
+    router.post(
+      '/subscription/withdrawal',
+      validateRequest(WithdrawalSubmitReqSchema),
+      async (req, res) => {
+        const { guildId } = req.params;
+        const { notificationAddress } = req.body;
+
+        try {
+          const sub = await requireWithdrawableSubscription(guildId, req.discordUser?.id);
+
+          const existing = await Services.Withdrawals.findLatest(sub.paddleSubscriptionId);
+          if (existing?.confirmedAt) {
+            throw createHttpError(
+              'This contract has already been withdrawn from',
+              StatusCodes.CONFLICT,
+              'ALREADY_WITHDRAWN'
+            );
+          }
+
+          if (!Services.Withdrawals.isWithinWindow(sub)) {
+            throw createHttpError(
+              'The 14-day withdrawal period has ended',
+              StatusCodes.CONFLICT,
+              'WITHDRAWAL_WINDOW_CLOSED'
+            );
+          }
+
+          const record = await Services.Withdrawals.record({
+            sub,
+            consumerName: req.discordUser?.username ?? sub.subscriberDiscordUserId ?? 'Unknown',
+            guildName: await fetchGuildName(guildId),
+            notificationAddress,
+          });
+
+          // Lost a race with a concurrent confirm; the winner owns the effects, so this
+          // request must not raise a second refund.
+          if (!record?.confirmedAt) {
+            throw createHttpError(
+              'This contract has already been withdrawn from',
+              StatusCodes.CONFLICT,
+              'ALREADY_WITHDRAWN'
+            );
+          }
+
+          const { acknowledged, refundStatus } = await Services.Withdrawals.applyEffects(
+            record,
+            sub
+          );
+
+          res.status(StatusCodes.OK).json({
+            status: StatusCodes.OK,
+            data: {
+              submittedAt: record.submittedAt.toISOString(),
+              confirmedAt: record.confirmedAt.toISOString(),
+              notificationAddress,
+              acknowledged,
+              refundStatus,
+            },
+            message: 'Withdrawal recorded',
+          } as APIResponse);
+        } catch (error) {
+          sendErrorResponse(res, error, 'Failed to record withdrawal');
+        }
+      }
+    );
+  }
 
   return router;
 })();

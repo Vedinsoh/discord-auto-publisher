@@ -2,9 +2,9 @@
 
 import { BotOff, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { useBotInviteUrl } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { getBotInviteUrl } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 /**
@@ -13,7 +13,7 @@ import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
  * premium bot here: the join rails make it leave without a live entitlement.
  */
 export function BotAbsentCard({ guildId }: { guildId: string }) {
-  const inviteUrl = getBotInviteUrl('free', guildId, { lockGuildSelect: true });
+  const inviteUrl = useBotInviteUrl('free', guildId, { lockGuildSelect: true });
   const armRefreshOnReturn = useRefreshOnReturn();
 
   return (

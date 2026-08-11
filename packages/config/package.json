@@ -10,6 +10,7 @@
     "start": "bun run ."
   },
   "dependencies": {
+    "@ap/api-types": "workspace:*",
     "@ap/logger": "workspace:*",
     "dotenv": "^17.2.3",
     "envalid": "^8.1.1"

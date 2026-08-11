@@ -7,6 +7,7 @@ import type { Snowflake } from 'discord-api-types/globals';
 import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-types/v10';
 import { and, count, countDistinct, eq, gt, inArray, isNull, lt, max, sql } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
+import { Editions } from 'services/editions.js';
 import { Services } from 'services/index.js';
 import { applyJoinRails } from 'services/joinRails.js';
 import { alerter } from 'utils/alerts.js';
@@ -18,7 +19,14 @@ const BATCH_SIZE = 1000;
 const JOIN_RACE_GUARD_MS = 60 * 60 * 1000;
 const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
-const EDITIONS: Edition[] = ['free', 'premium'];
+// Only the editions this deployment actually runs. A hardcoded pair would
+// leave `allSweepsCompleted` false forever on a single-token deployment (the
+// missing edition has no token, so its sweep never completes), which silently
+// disables the join rails and the channel-limit backstop on every run.
+// Imported directly rather than through the `Services` barrel: this is read at
+// module scope, so going through the barrel would make it sensitive to import
+// ordering if a cycle is ever introduced.
+const EDITIONS: readonly Edition[] = Editions.CONFIGURED;
 
 let inFlight = false;
 

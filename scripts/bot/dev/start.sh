@@ -28,7 +28,7 @@ else
 fi
 
 is_docker_running
-check_env_exists "local"
+check_env_exists ".env.local"
 
 # Start Supabase (database)
 echo "Starting Supabase database..."

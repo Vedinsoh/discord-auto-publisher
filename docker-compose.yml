@@ -1,0 +1,127 @@
+# Auto Publisher - self-hosting stack
+
+name: auto-publisher
+
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: apps/bot/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    networks: [ap-network]
+    depends_on:
+      proxy:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  proxy:
+    build:
+      context: .
+      dockerfile: apps/proxy/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    networks: [ap-network]
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      # Service names on the compose network; override in .env only for an
+      # external database.
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/postgres}
+      - REDIS_URI=redis://redis:6379
+      - PROXY_URL=http://proxy:8080
+    networks: [ap-network]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      # Reached over the compose network, never from the browser: every
+      # dashboard call to the backend is server-side.
+      - BACKEND_URL=http://backend:8080
+    ports:
+      - "${WEB_PORT:-3100}:3100"
+    networks: [ap-network]
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Plain Postgres — the hosted service uses Supabase, but nothing in the
+  # schema depends on it. Migrations run automatically at backend startup.
+  #
+  # The volume is locked to this major version: bumping the tag later will not
+  # upgrade an existing data directory, it will refuse to start. Dump and
+  # restore if you ever need to move.
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [ap-network]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+    networks: [ap-network]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  ap-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

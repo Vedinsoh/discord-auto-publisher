@@ -1,12 +1,13 @@
 import 'server-only';
 
+import { env } from '@ap/config';
 import { auth } from '@/lib/auth';
 
 /** Upper bound on a single backend round-trip before it aborts as transient. */
 const BACKEND_TIMEOUT_MS = 10_000;
 
 function getBackendUrl(): string {
-  const url = process.env.BACKEND_URL;
+  const url = env.BACKEND_URL;
   if (!url) {
     throw new Error('BACKEND_URL environment variable is not set');
   }
@@ -117,7 +118,7 @@ async function getDiscordAccessToken(): Promise<string | undefined> {
 
   if (!sessionToken) return undefined;
 
-  const secret = process.env.AUTH_SECRET;
+  const secret = env.AUTH_SECRET;
   if (!secret) return undefined;
 
   const decoded = await decode({

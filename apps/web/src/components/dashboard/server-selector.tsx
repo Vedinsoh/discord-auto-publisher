@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
 import { useGuildList } from '@/components/dashboard/guild-list-context';
+import { useIsPublicInstance, useSiteConfig } from '@/components/site-config-context';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import type { DiscordGuild } from '@/lib/api/types';
@@ -33,6 +34,11 @@ function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
 
 export function ServerSelector() {
   const { guilds, error } = useGuildList();
+  const siteConfig = useSiteConfig();
+  // A self-hosted instance has no billing, so "premium" is not a distinction
+  // worth badging, and a hand-typed ?upgrade= must not route into the
+  // subscription tab — that route 404s there.
+  const isPublicInstance = useIsPublicInstance();
   const sortedGuilds = sortGuilds(guilds);
   const armRefreshOnReturn = useRefreshOnReturn();
   const router = useRouter();
@@ -44,7 +50,7 @@ export function ServerSelector() {
   // unconditional redirect would nag every free visit onto the pay page. The
   // VALUE is the interval they picked, forwarded so the panel preselects it.
   const upgradeParam = searchParams.get('upgrade');
-  const upgradeIntent = upgradeParam !== null;
+  const upgradeIntent = isPublicInstance && upgradeParam !== null;
   const upgradeInterval = upgradeParam === 'month' || upgradeParam === 'year' ? upgradeParam : null;
 
   // Free guild + upgrade intent → subscription tab (carrying the chosen
@@ -127,7 +133,7 @@ export function ServerSelector() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="text-white text-lg truncate">{guild.name}</h3>
-                            {guild.hasSubscription && (
+                            {guild.hasSubscription && isPublicInstance && (
                               <Crown className="w-5 h-5 text-yellow-500 shrink-0" />
                             )}
                             {/* MIGRATION: remove badge at sunset */}
@@ -150,6 +156,7 @@ export function ServerSelector() {
 
                 if (botAbsent) {
                   const inviteUrl = getBotInviteUrl(
+                    siteConfig,
                     guild.hasSubscription ? 'premium' : 'free',
                     guild.id
                   );

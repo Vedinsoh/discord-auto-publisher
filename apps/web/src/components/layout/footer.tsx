@@ -1,3 +1,4 @@
+import { isPublicInstance } from '@ap/config';
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { links } from '@/lib/constants';
@@ -20,6 +21,11 @@ const supportLinks = [
 ];
 
 export function Footer() {
+  // A self-hosted instance has no billing, so /premium 404s — don't link to it.
+  const visibleQuickLinks = isPublicInstance
+    ? quickLinks
+    : quickLinks.filter(link => link.href !== '/premium');
+
   return (
     <footer className="border-t border-slate-800 bg-slate-950/50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -38,7 +44,7 @@ export function Footer() {
           <div>
             <h4 className="text-white font-medium mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              {quickLinks.map(link => (
+              {visibleQuickLinks.map(link => (
                 <li key={link.label}>
                   <Link
                     href={link.href}

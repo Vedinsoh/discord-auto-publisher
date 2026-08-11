@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { useGuild } from '@/components/dashboard/guild-context';
+import { useIsPublicInstance } from '@/components/site-config-context';
 
 // Same-tab listeners for the localStorage dismissal marker: the native `storage`
 // event only fires in OTHER tabs, so dismiss() notifies these directly. Shared at
@@ -70,9 +71,14 @@ export interface GuildAttention {
  */
 export function useGuildAttention(): GuildAttention {
   const { guild, data } = useGuild();
+  // A self-hosted instance has no billing: no entitlement, no second bot to hand
+  // over to, and no cap to pause channels against — so all three billing-derived
+  // banners are unreachable there. Gated at the source so the banner stack and
+  // the sidebar badge can't disagree. Migration is not billing; it stays.
+  const isPublicInstance = useIsPublicInstance();
 
-  const showPremiumInvite = guild.hasSubscription && !guild.premiumBotPresent;
-  const showPremiumPending = data.premiumPending;
+  const showPremiumInvite = isPublicInstance && guild.hasSubscription && !guild.premiumBotPresent;
+  const showPremiumPending = isPublicInstance && data.premiumPending;
   const showMigration = !data.migrated;
 
   // Paused-channels state: free is the managing edition (channelLimit !== 0),
@@ -90,7 +96,7 @@ export function useGuildAttention(): GuildAttention {
     if (!overLimitPaused) window.localStorage.removeItem(dismissKey);
   }, [overLimitPaused, dismissKey]);
 
-  const showPaused = overLimitPaused && !pausedDismissed;
+  const showPaused = isPublicInstance && overLimitPaused && !pausedDismissed;
 
   // Legacy guilds contribute no per-channel permission item — migration comes
   // first (the itemized status list is a migrated-guild concept).

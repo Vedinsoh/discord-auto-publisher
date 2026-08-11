@@ -79,6 +79,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@ap/api-types": "workspace:*",
+        "@ap/config": "workspace:*",
         "@mdx-js/loader": "^3.1.1",
         "@mdx-js/react": "^3.1.1",
         "@next/mdx": "16.1.1",
@@ -137,6 +138,7 @@
     "packages/config": {
       "name": "@ap/config",
       "dependencies": {
+        "@ap/api-types": "workspace:*",
         "@ap/logger": "workspace:*",
         "dotenv": "^17.2.3",
         "envalid": "^8.1.1",

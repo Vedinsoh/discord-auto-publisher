@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SessionProvider, signIn, signOut, useSession } from 'next-auth/react';
 import { useState } from 'react';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -171,6 +172,11 @@ function NavUserMobile({ onNavigate }: { onNavigate: () => void }) {
 function NavbarInner() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const isPublicInstance = useIsPublicInstance();
+  // A self-hosted instance has no billing, so /premium 404s — don't link to it.
+  const visibleLinks = isPublicInstance
+    ? routeLinks
+    : routeLinks.filter(link => link.href !== '/premium');
 
   return (
     <motion.nav
@@ -189,7 +195,7 @@ function NavbarInner() {
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
-              {routeLinks.map(link => (
+              {visibleLinks.map(link => (
                 <Link
                   key={link.label}
                   href={link.href}
@@ -226,7 +232,7 @@ function NavbarInner() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-slate-900/95 backdrop-blur-lg border-b border-slate-800">
           <div className="px-4 py-4 space-y-3">
-            {routeLinks.map(link => (
+            {visibleLinks.map(link => (
               <Link
                 key={link.label}
                 href={link.href}

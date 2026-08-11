@@ -1,11 +1,16 @@
+# Shared service topology for the two-edition public stack. Self-hosting uses
+# the standalone docker-compose.yml at the repo root instead.
+#
+# NOTE: no `env_file` here on purpose. Compose APPENDS env_file lists across
+# `-f` layers, so declaring it in this base made every prod service load the
+# dev env file first and silently inherit any value prod did not re-declare.
+# Each overlay (dev/, prod/) declares its own.
 services:
   proxy-free: &proxy-base
     build:
       context: ../..
       dockerfile: apps/proxy/Dockerfile
     restart: unless-stopped
-    env_file:
-      - ../../.env.local
     environment:
       - APP_EDITION=free
     networks:
@@ -30,8 +35,6 @@ services:
       context: ../..
       dockerfile: apps/bot/Dockerfile
     restart: unless-stopped
-    env_file:
-      - ../../.env.local
     environment:
       - APP_EDITION=free
     networks:
@@ -61,8 +64,6 @@ services:
       context: ../..
       dockerfile: apps/backend/Dockerfile
     restart: unless-stopped
-    env_file:
-      - ../../.env.local
     networks:
       - ap-network
     depends_on:

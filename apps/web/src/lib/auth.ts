@@ -1,14 +1,25 @@
+// Imported first so the repo-root env file is loaded into `process.env` before
+// Auth.js reads AUTH_SECRET itself. The whole monorepo shares one env file and
+// one validated schema — the web app has no env file of its own.
+import { env } from '@ap/config';
 import NextAuth from 'next-auth';
 import Discord from 'next-auth/providers/discord';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Discord({
-      clientId: process.env.DISCORD_CLIENT_ID,
-      clientSecret: process.env.DISCORD_CLIENT_SECRET,
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
       authorization: { params: { scope: 'identify guilds' } },
     }),
   ],
+  // The dashboard always runs behind a reverse proxy in Docker with
+  // NODE_ENV=production, where Auth.js otherwise refuses to infer its own URL
+  // and throws `UntrustedHost`. Setting it here rather than via AUTH_TRUST_HOST
+  // keeps it off the self-hoster's env surface entirely — Auth.js documents the
+  // config flag as the equivalent, and names Docker as the case for it. Safe
+  // because Discord rejects any redirect_uri outside the registered allowlist.
+  trustHost: true,
   pages: {
     error: '/dashboard',
   },

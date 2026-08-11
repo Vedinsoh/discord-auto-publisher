@@ -128,7 +128,7 @@ NEXT_PUBLIC_PADDLE_CLIENT_TOKEN = "live_..."
 
 ## Operational notes
 
-- **Free edition** skips all of this: no Paddle client, no webhook route, no cron (`APP_EDITION=free`).
+- **Self-hosted instances** skip all of this: no Paddle client, no webhook route, no billing crons, no withdrawal flow (`DEPLOYMENT_MODE` unset or `self-host`). The backend is edition-agnostic and always configures Paddle on the public instance — both editions' bots share it (ADR 0006).
 - **Missed webhooks**: the daily reconcile cron corrects Postgres from the Paddle API and enforces revocations; nothing needs manual replay.
 - **Re-subscribing**: a new Paddle subscription for the same guild replaces the local row (stale events from the old subscription are ignored).
 - **Kick/guild delete does not cancel billing** by design — the subscription row has no FK to `guild`; re-inviting the premium bot restores service instantly. Customers cancel via the portal.

@@ -1,4 +1,7 @@
+'use client';
+
 import { Clock } from 'lucide-react';
+import { useIsPublicInstance } from '@/components/site-config-context';
 
 /**
  * Copy explaining that publishing may be delayed. Free callers get the
@@ -17,14 +20,25 @@ export function publishDelayCopy(hasSubscription: boolean): string {
 }
 
 /**
+ * Which copy this deployment shows. A self-hosted instance has no billing and
+ * no shared free-tier queue to be throttled behind, so it always reads as
+ * entitled — otherwise the note would upsell a plan that doesn't exist.
+ */
+export function usePublishDelayEntitled(hasSubscription: boolean): boolean {
+  const isPublicInstance = useIsPublicInstance();
+  return hasSubscription || !isPublicInstance;
+}
+
+/**
  * Ambient delay note. Mirrors PublishLimitNote's markup so the two read as a
  * pair on the Channels tab and Overview.
  */
 export function PublishDelayNote({ hasSubscription }: { hasSubscription: boolean }) {
+  const entitled = usePublishDelayEntitled(hasSubscription);
   return (
     <p className="flex items-center gap-2 text-slate-500 text-sm">
       <Clock className="w-4 h-4 shrink-0" />
-      {publishDelayCopy(hasSubscription)}
+      {publishDelayCopy(entitled)}
     </p>
   );
 }

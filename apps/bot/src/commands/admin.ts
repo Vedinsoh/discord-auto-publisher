@@ -26,6 +26,12 @@ const prefix = '[BOT ADMIN]';
 })
 export class AdminCommand extends Subcommand {
   public override registerApplicationCommands(registry: Subcommand.Registry) {
+    // Guild-scoped to the operator's own support server. Unset (the self-host
+    // default) means there is nowhere to register it — registering against an
+    // empty id would fail, and against the hosted service's guild id would be
+    // both useless and wrong.
+    if (!env.BOT_SUPPORT_GUILD_ID) return;
+
     registry.registerChatInputCommand(
       builder =>
         builder

@@ -4,6 +4,7 @@ import { Check, ChevronDown, Crown, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useGuildList } from '@/components/dashboard/guild-list-context';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,9 @@ function GuildAvatar({ guild, size }: { guild: DiscordGuild; size: number }) {
 export function GuildSwitcher({ current }: GuildSwitcherProps) {
   const { guilds } = useGuildList();
   const items = switchableGuilds(guilds);
+  // A self-hosted instance has no billing, so "premium" is not a distinction
+  // worth badging — every guild has the full feature set.
+  const isPublicInstance = useIsPublicInstance();
 
   return (
     <DropdownMenu modal={false}>
@@ -73,7 +77,9 @@ export function GuildSwitcher({ current }: GuildSwitcherProps) {
         <span className="flex-1 min-w-0 truncate text-left text-base font-medium">
           {current.name}
         </span>
-        {current.hasSubscription && <Crown className="w-4 h-4 text-yellow-500 shrink-0" />}
+        {current.hasSubscription && isPublicInstance && (
+          <Crown className="w-4 h-4 text-yellow-500 shrink-0" />
+        )}
         <ChevronDown className="w-4 h-4 text-slate-500 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
       </DropdownMenuTrigger>
 
@@ -88,7 +94,7 @@ export function GuildSwitcher({ current }: GuildSwitcherProps) {
               <Link href={`/dashboard/${guild.id}`}>
                 <GuildAvatar guild={guild} size={22} />
                 <span className="flex-1 min-w-0 truncate">{guild.name}</span>
-                {guild.hasSubscription && (
+                {guild.hasSubscription && isPublicInstance && (
                   <Crown className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
                 )}
                 {isCurrent && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}

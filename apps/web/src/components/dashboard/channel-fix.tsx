@@ -2,6 +2,7 @@
 
 import { TriangleAlert } from 'lucide-react';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import {
   Dialog,
   DialogContent,
@@ -62,8 +63,11 @@ const BUTTON_STYLES: Record<ChannelFixVariant, string> = {
  * lie or burn Discord REST. Dismissible (backdrop or corner X).
  */
 export function ChannelFixButton({ channel }: { channel: GuildChannel }) {
+  // A self-hosted instance has no handover, so the `premium` variant describes a
+  // switch-over that can never happen there.
+  const isPublicInstance = useIsPublicInstance();
   const variant = channelFixVariant(channel);
-  if (!variant) return null;
+  if (!variant || (variant === 'premium' && !isPublicInstance)) return null;
 
   return (
     <Dialog>

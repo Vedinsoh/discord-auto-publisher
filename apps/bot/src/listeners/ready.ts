@@ -1,6 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ChannelType, type Client, Events, type NewsChannel } from 'discord.js';
+import { setBotInvite } from 'lib/constants/index.js';
 import { hydrateEmojis } from 'lib/emojis.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
@@ -39,6 +40,10 @@ const sweepPublishState = async (client: Client): Promise<void> => {
 })
 export class ReadyListener extends Listener {
   public async run(client: Client<true>) {
+    // Self-hosted instances must invite their own application, not the hosted
+    // bot. No REST call needed — the id is on the ready client.
+    setBotInvite(client.application.id);
+
     // Awaited before ready: every command surface renders these, and a fallback
     // shown once would persist in that reply. Never fatal — on failure every key
     // keeps its unicode fallback.

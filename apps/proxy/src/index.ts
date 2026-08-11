@@ -1,6 +1,6 @@
 import process from 'node:process';
 import { createAlerter } from '@ap/alerts';
-import { config, env } from '@ap/config';
+import { assertRequiredEnv, config, env } from '@ap/config';
 import { createRedisClient, DatabaseIDs, disconnectAllRedis, ProxyDatabaseIDs } from '@ap/redis';
 import { createBlockedCache, createSublimitCounter } from './crosspost/caches.js';
 import { createGate } from './crosspost/gate.js';
@@ -14,8 +14,13 @@ const WORKER_CONCURRENCY = 50;
 const PROXY_PORT = 8080;
 
 const main = async () => {
-  // Per-edition logical DBs in the shared Redis instance
-  const databases = ProxyDatabaseIDs[env.APP_EDITION as keyof typeof ProxyDatabaseIDs];
+  assertRequiredEnv();
+
+  // Per-edition logical DBs in the shared Redis instance. Keyed on
+  // `config.edition`, not `APP_EDITION`: a self-hosted instance pins the
+  // edition to `premium` regardless of that variable, and the proxy must land
+  // on the same triple its own bot's edition implies.
+  const databases = ProxyDatabaseIDs[config.edition];
 
   const [sublimitRedis, blockedRedis, alertsRedis] = await Promise.all([
     createRedisClient(databases.sublimitCounter, logger),
@@ -29,7 +34,7 @@ const main = async () => {
   const alerter = createAlerter({
     redis: alertsRedis,
     service: 'proxy',
-    edition: env.APP_EDITION,
+    edition: config.edition,
     logger,
   });
 

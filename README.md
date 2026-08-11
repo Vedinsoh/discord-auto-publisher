@@ -8,14 +8,23 @@ A lightweight command-less bot that will automatically publish every new message
 
 ![](https://media.giphy.com/media/KxgsmVFc4nMF7U50UF/giphy.gif)
 
-**The bot features no commands because the setup is really easy!**
-
 ## How to set up?
 
 1. Invite the bot to your server: https://invite.auto-publisher.gg/
-2. Navigate to your announcement channel's settings and give the bot following permissions: `View Channel`, `Send Messages`, `Manage Messages`, `Read Message History`
+2. Navigate to your announcement channel's settings and give the bot following permissions: `View Channel`, `Send Messages`, `Manage Messages`.
 3. Repeat step 2. for every channel where you want auto-publishing
 4. Done!
+
+That's the whole setup — the bot starts publishing straight away. To choose specific channels
+instead of all of them, use the [dashboard](https://auto-publisher.gg/dashboard) or the
+slash commands:
+
+| Command                | What it does                                        |
+| ---------------------- | --------------------------------------------------- |
+| `/ap overview`         | What's publishing, and any missing permissions      |
+| `/ap enable #channel`  | Publish only from the channels you pick             |
+| `/ap disable #channel` | Stop publishing from a channel                      |
+| `/ap filters #channel` | Per-channel rules for what gets published (Premium) |
 
 ### Keep in mind...
 
@@ -39,4 +48,6 @@ The code is published here for transparency, and to help other developers implem
 
 Adding the publicly-hosted bot is free and will be enough for almost everyone, so that is the recommended route unless you have a specific reason not to take it — reading the code, experimenting with it, or running your own copy in servers you look after.
 
-You're welcome to host it on your own machine, but please keep in mind that no support is provided for self-hosted instances (do it at your own risk). Hosting an instance for other people — publishing an invite link, or adding your copy to servers you don't run — is not permitted by the licence, whether or not you charge for it. There's no need to anyway: the public bot is free to add.
+You're welcome to host it on your own machine, but please keep in mind that no support is provided for self-hosted instances (do it at your own risk). Hosting an instance for other people — publishing an invite link, or adding your copy to servers you don't run — is not permitted by the [licence](LICENSE), whether or not you charge for it.
+
+Instructions: **[Self-hosting guide](docs/self-hosting.md)**

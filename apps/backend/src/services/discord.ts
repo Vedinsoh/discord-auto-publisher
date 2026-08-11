@@ -1,24 +1,37 @@
 import type { Edition } from '@ap/api-types';
-import { env } from '@ap/config';
+import { env, isPublicInstance } from '@ap/config';
 import { createTtlCache } from '@ap/utils';
 import { DiscordAPIError, REST } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type APIUser, RESTJSONErrorCodes, Routes } from 'discord-api-types/v10';
 import { logger } from 'utils/logger.js';
 
+// A self-hosted instance runs a single bot, which registers as `premium`
+// (see @ap/config). Its credentials come from the singular variables, so
+// `free` resolves to an empty token and `hasToken('free')` is false — which is
+// exactly what the presence sweeps and join rails already key off.
+const tokenFor = (edition: Edition): string => {
+  if (!isPublicInstance) return edition === 'premium' ? env.DISCORD_BOT_TOKEN : '';
+  return edition === 'premium' ? env.DISCORD_BOT_TOKEN_PREMIUM : env.DISCORD_BOT_TOKEN_FREE;
+};
+
+const proxyUrlFor = (edition: Edition): string => {
+  if (!isPublicInstance) return env.PROXY_URL;
+  return edition === 'premium' ? env.PROXY_URL_PREMIUM : env.PROXY_URL_FREE;
+};
+
 // One REST client per edition, each routed through its edition's proxy so
 // Discord traffic keeps the per-edition egress IP (Cloudflare ban isolation).
-// An unset token (dev subset without this edition) fails client-side in
-// @discordjs/rest before any HTTP is sent.
+// An unset token (self-host's `free` slot, or a dev subset without this
+// edition) fails client-side in @discordjs/rest before any HTTP is sent.
 const restByEdition: Record<Edition, REST> = {
-  free: new REST({ api: `${env.PROXY_URL_FREE}/api` }).setToken(env.DISCORD_TOKEN_FREE),
-  premium: new REST({ api: `${env.PROXY_URL_PREMIUM}/api` }).setToken(env.DISCORD_TOKEN_PREMIUM),
+  free: new REST({ api: `${proxyUrlFor('free')}/api` }).setToken(tokenFor('free')),
+  premium: new REST({ api: `${proxyUrlFor('premium')}/api` }).setToken(tokenFor('premium')),
 };
 
 const restFor = (edition: Edition): REST => restByEdition[edition];
 
-const hasToken = (edition: Edition): boolean =>
-  Boolean(edition === 'free' ? env.DISCORD_TOKEN_FREE : env.DISCORD_TOKEN_PREMIUM);
+const hasToken = (edition: Edition): boolean => Boolean(tokenFor(edition));
 
 const botUserIds: Partial<Record<Edition, Snowflake>> = {};
 

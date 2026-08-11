@@ -1,4 +1,5 @@
 import type { ChannelLimitReason, Edition } from '@ap/api-types';
+import { isPublicInstance } from '@ap/config';
 import { botPresence, db } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, count, eq, inArray, isNull } from 'drizzle-orm';
@@ -7,6 +8,17 @@ import { Handover } from './handover.js';
 import { isEntitledStatus, Subscriptions } from './subscriptions.js';
 
 const FREE_CHANNEL_LIMIT = 3;
+
+/**
+ * Editions this deployment actually runs a bot for.
+ *
+ * A self-hosted instance runs one bot, registered as `premium`. Sweeps and
+ * heals must iterate this rather than a hardcoded pair: the guild reconcile
+ * treats "an edition has no token" as an incomplete sweep and then disables
+ * the join rails and the channel-limit backstop entirely, so a hardcoded pair
+ * would silently switch both off on every run of any single-token deployment.
+ */
+const CONFIGURED: readonly Edition[] = isPublicInstance ? ['free', 'premium'] : ['premium'];
 
 /** Editions whose bot is currently in the guild (`leftAt IS NULL`) */
 const getActiveEditions = async (guildId: Snowflake): Promise<Set<Edition>> => {
@@ -119,6 +131,7 @@ const reconcileChannelServing = async (guildId: Snowflake): Promise<void> => {
 };
 
 export const Editions = {
+  CONFIGURED,
   getActiveEditions,
   isBotPresent,
   countPresent,

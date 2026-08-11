@@ -1,8 +1,16 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import createMDX from '@next/mdx';
 import type { NextConfig } from 'next';
 
+const here = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig: NextConfig = {
   pageExtensions: ['ts', 'tsx', 'mdx'],
+  // Self-contained server bundle for the Docker image. Tracing must start at
+  // the monorepo root or the `@ap/*` workspace packages are left out.
+  output: 'standalone',
+  outputFileTracingRoot: path.join(here, '../..'),
   images: {
     remotePatterns: [
       {

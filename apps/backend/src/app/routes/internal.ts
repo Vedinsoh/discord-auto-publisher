@@ -1,3 +1,4 @@
+import { isPublicInstance } from '@ap/config';
 import { type APIResponse, StatusCodes, validateRequest } from '@ap/express';
 import { isGuildReconcileInFlight, runGuildReconcile } from 'cron/guildReconcile.js';
 import {
@@ -18,19 +19,24 @@ export const Internal: Router = (() => {
    * Permission-change ping from the premium bot while a handover is pending
    * (Docker-internal). Evaluation runs async — 202 immediately; a no-op when
    * the guild is not pending.
+   *
+   * Public instance only: a handover swaps a free bot for a premium one, and a
+   * self-hosted copy has exactly one bot.
    */
-  router.post('/handover/:guildId/evaluate', validateRequest(GuildReqSchema), (req, res) => {
-    const { guildId } = req.params;
+  if (isPublicInstance) {
+    router.post('/handover/:guildId/evaluate', validateRequest(GuildReqSchema), (req, res) => {
+      const { guildId } = req.params;
 
-    void Services.Handover.evaluate(guildId).catch(error =>
-      logger.error(error, `Handover evaluation failed for guild ${guildId}`)
-    );
+      void Services.Handover.evaluate(guildId).catch(error =>
+        logger.error(error, `Handover evaluation failed for guild ${guildId}`)
+      );
 
-    res.status(StatusCodes.ACCEPTED).json({
-      status: StatusCodes.ACCEPTED,
-      message: 'Handover evaluation started',
-    } as APIResponse);
-  });
+      res.status(StatusCodes.ACCEPTED).json({
+        status: StatusCodes.ACCEPTED,
+        message: 'Handover evaluation started',
+      } as APIResponse);
+    });
+  }
 
   /**
    * POST /internal/channel-permissions/:guildId
@@ -121,24 +127,27 @@ export const Internal: Router = (() => {
    * POST /internal/reconcile/subscriptions
    * Manually trigger the subscription reconcile against the Paddle API
    * (Docker-internal). 409 if a run is already in flight, otherwise 202 +
-   * async run.
+   * async run. Public instance only — there is no Paddle client to reconcile
+   * against on a self-hosted copy.
    */
-  router.post('/reconcile/subscriptions', (_req, res) => {
-    if (isSubscriptionReconcileInFlight()) {
-      res.status(StatusCodes.CONFLICT).json({
-        status: StatusCodes.CONFLICT,
-        message: 'Subscription reconcile already in flight',
+  if (isPublicInstance) {
+    router.post('/reconcile/subscriptions', (_req, res) => {
+      if (isSubscriptionReconcileInFlight()) {
+        res.status(StatusCodes.CONFLICT).json({
+          status: StatusCodes.CONFLICT,
+          message: 'Subscription reconcile already in flight',
+        } as APIResponse);
+        return;
+      }
+
+      void runSubscriptionReconcile();
+
+      res.status(StatusCodes.ACCEPTED).json({
+        status: StatusCodes.ACCEPTED,
+        message: 'Subscription reconcile started',
       } as APIResponse);
-      return;
-    }
-
-    void runSubscriptionReconcile();
-
-    res.status(StatusCodes.ACCEPTED).json({
-      status: StatusCodes.ACCEPTED,
-      message: 'Subscription reconcile started',
-    } as APIResponse);
-  });
+    });
+  }
 
   return router;
 })();

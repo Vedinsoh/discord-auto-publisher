@@ -4,10 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ComponentProps, ReactNode } from 'react';
 import { toast } from 'sonner';
-import { getBotInviteUrl } from '@/lib/invite';
+import { useBotInviteUrl } from '@/components/site-config-context';
 import { Button } from '../ui/button';
-
-const INVITE_URL = getBotInviteUrl('free');
 
 interface InviteBotButtonProps {
   children: ReactNode;
@@ -34,8 +32,9 @@ export function InviteBotButton({
   showDashboardNudge,
 }: InviteBotButtonProps) {
   const router = useRouter();
+  const inviteUrl = useBotInviteUrl('free');
 
-  if (!INVITE_URL) return null;
+  if (!inviteUrl) return null;
 
   const handleClick = () => {
     if (!showDashboardNudge) return;
@@ -56,7 +55,7 @@ export function InviteBotButton({
 
   return (
     <Button size={size} className={className} asChild>
-      <Link href={INVITE_URL} target="_blank" onClick={handleClick}>
+      <Link href={inviteUrl} target="_blank" onClick={handleClick}>
         {children}
       </Link>
     </Button>

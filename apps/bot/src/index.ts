@@ -1,6 +1,9 @@
-import { config, env } from '@ap/config';
+import { assertRequiredEnv, config, env } from '@ap/config';
 import { ClusterManager } from 'lib/structures/clusterManager.js';
 import { logger } from 'utils/logger.js';
+
+// Fail fast with a named variable rather than an opaque Discord auth error later
+assertRequiredEnv();
 
 const manager = new ClusterManager({
   totalShards: env.BOT_SHARDS,

@@ -3,15 +3,19 @@
 import { FilterManager } from '@/components/dashboard/filter-config';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LockedFeature } from '@/components/dashboard/locked-feature';
+import { useIsPublicInstance } from '@/components/site-config-context';
 
 export default function FiltersPage() {
   const { guild, data } = useGuild();
-  const isPremium = guild.premiumBotPresent || guild.hasSubscription;
+  // A self-hosted instance has no billing: filters are part of the base feature
+  // set, so the tab is always unlocked and always editable.
+  const isPublicInstance = useIsPublicInstance();
+  const isPremium = !isPublicInstance || guild.premiumBotPresent || guild.hasSubscription;
 
   // Filters only take effect while the Premium bot is actively managing the
   // guild (present AND handover complete); otherwise the manager renders
   // read-only with a nudge. Enforced server-side too (PREMIUM_INACTIVE).
-  const isActive = guild.premiumBotPresent && !guild.premiumPending;
+  const isActive = !isPublicInstance || (guild.premiumBotPresent && !guild.premiumPending);
 
   // Header is rendered at the page level so the "Channel Filters" title shows
   // in both the free (upsell) and premium (manager) states, mirroring the

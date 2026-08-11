@@ -98,7 +98,7 @@ function MigratedStatus({
       ? {
           icon: Sparkles,
           iconColor: 'text-blue-400',
-          title: 'Get started',
+          title: 'Ready to get started?',
           subtitle:
             channels.length > 0 ? (
               <>

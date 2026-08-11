@@ -1,9 +1,14 @@
+import { isPublicInstance } from '@ap/config';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
 import { FREE_CHANNEL_LIMIT } from '@/lib/plans';
 
 export function PlanComparison() {
+  // A self-hosted instance has no billing: there are no tiers to compare, and
+  // the "View plans" link would land on a 404'd /premium.
+  if (!isPublicInstance) return null;
+
   return (
     <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
       <div className="text-center mb-12">

@@ -29,10 +29,13 @@ export const createAlerter = (options: {
 }): Alerter => {
   const { redis, service, edition, logger } = options;
   const footerText = edition ? `${service} · ${edition}` : service;
-  const webhookUrl = env.ALERT_WEBHOOK_URL;
+  const webhookUrl = env.DISCORD_ALERT_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    logger?.info({ event: 'alerts.disabled' }, 'ALERT_WEBHOOK_URL not set, alerts are disabled');
+    logger?.warn(
+      { event: 'alerts.disabled' },
+      'DISCORD_ALERT_WEBHOOK_URL not set, alerts are disabled'
+    );
   }
 
   return {

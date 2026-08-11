@@ -35,20 +35,33 @@ export class LinksCommand extends Command {
       );
     }
 
-    replyContainer
-      .addSeparatorComponents(separator => separator)
-      .addSectionComponents(section =>
+    // The support server and marketing site belong to the hosted service. A
+    // self-hosted instance points at its operator's own dashboard instead —
+    // sending their admins to our support server for a deployment we don't run
+    // would be wrong on both ends.
+    replyContainer.addSeparatorComponents(separator => separator);
+
+    if (config.isPublicInstance) {
+      replyContainer
+        .addSectionComponents(section =>
+          section
+            .addTextDisplayComponents(textDisplay =>
+              textDisplay.setContent('Join the support server')
+            )
+            .setButtonAccessory(Buttons.supportServer)
+        )
+        .addSectionComponents(section =>
+          section
+            .addTextDisplayComponents(textDisplay => textDisplay.setContent('Official website'))
+            .setButtonAccessory(Buttons.website)
+        );
+    } else {
+      replyContainer.addSectionComponents(section =>
         section
-          .addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent('Join the support server')
-          )
-          .setButtonAccessory(Buttons.supportServer)
-      )
-      .addSectionComponents(section =>
-        section
-          .addTextDisplayComponents(textDisplay => textDisplay.setContent('Official website'))
+          .addTextDisplayComponents(textDisplay => textDisplay.setContent('Open the dashboard'))
           .setButtonAccessory(Buttons.website)
       );
+    }
 
     return interaction.reply({
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],

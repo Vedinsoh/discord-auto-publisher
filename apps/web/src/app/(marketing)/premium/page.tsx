@@ -1,4 +1,6 @@
+import { isPublicInstance } from '@ap/config';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { PricingPlans } from '@/components/marketing/pricing-plans';
 import { values } from '@/lib/constants';
 import { formatNumberFull } from '@/lib/utils';
@@ -10,6 +12,9 @@ export const metadata: Metadata = {
 };
 
 export default function PremiumPage() {
+  // A self-hosted instance has no billing, so there are no plans to sell.
+  if (!isPublicInstance) notFound();
+
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
       <div className="text-center mb-16">

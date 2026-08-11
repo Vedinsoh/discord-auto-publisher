@@ -174,8 +174,8 @@ const loadOverviewState = async (
  */
 const renderGetStartedHeader = (state: OverviewState): string =>
   state.announcementChannelCount === 0
-    ? `### ${emojis.botBrand} Get started\nThis server has no announcement channels yet. Create one in Discord, then enable it with </ap enable:${state.apCommandId}>.`
-    : `### ${emojis.botBrand} Get started\nEnable an announcement channel to start auto-publishing.`;
+    ? `### ${emojis.botBrand} Ready to get started?\nThis server has no announcement channels yet. Create one in Discord, then enable it with </ap enable:${state.apCommandId}>.`
+    : `### ${emojis.botBrand} Ready to get started?\nEnable an announcement channel to start auto-publishing.`;
 
 /** Only shown when there is actually a channel to enable. */
 const renderEnableHint = (state: OverviewState): string | null =>

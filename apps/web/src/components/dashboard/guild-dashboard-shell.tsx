@@ -4,6 +4,7 @@ import { CreditCard, Crown, Filter, Hash, Home } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Fragment, Suspense, useEffect } from 'react';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import type { GuildLoadFailure } from '@/lib/api/auth-expired';
 import type { GuildDashboardData } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
@@ -108,10 +109,14 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
 
 function SidebarTabs({ guildId }: { guildId: string }) {
   const pathname = usePathname();
+  const isPublicInstance = useIsPublicInstance();
+  // A self-hosted instance has no billing: nothing to subscribe to, and Filters
+  // is part of the base feature set rather than a gated one.
+  const visibleTabs = isPublicInstance ? tabs : tabs.filter(tab => tab.id !== 'subscription');
 
   return (
     <>
-      {tabs.map(tab => {
+      {visibleTabs.map(tab => {
         const href = `/dashboard/${guildId}/${tab.id}`;
         const isActive = pathname.startsWith(href);
 
@@ -136,7 +141,7 @@ function SidebarTabs({ guildId }: { guildId: string }) {
                   </Suspense>
                 </ErrorBoundary>
               )}
-              {tab.premiumOnly && (
+              {tab.premiumOnly && isPublicInstance && (
                 <Crown className="w-3.5 h-3.5 ml-auto group-hover:text-yellow-500" />
               )}
             </Link>

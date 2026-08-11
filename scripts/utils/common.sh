@@ -4,13 +4,13 @@
 BOT_COMPOSE_FILES_DEV="-f scripts/bot/docker-compose.base.yml -f scripts/bot/dev/docker-compose.yml"
 BOT_COMPOSE_FILES_PROD="-f scripts/bot/docker-compose.base.yml -f scripts/bot/prod/docker-compose.yml"
 
-# Check if .env.local exists
+# Check that an env file exists. Takes the filename: dev overrides live in
+# `.env.local`, every deployment reads `.env`.
 check_env_exists() {
-    local ENV_NAME="$1"
-    local ENV_FILE=".env.$ENV_NAME"
+    local ENV_FILE="$1"
 
     if [ ! -f "$ENV_FILE" ]; then
-        echo "⚠️  $ENV_FILE file not found. Please create one based on .env.example"
+        echo "⚠️  $ENV_FILE file not found. See docs/public-instance/.env.example"
         exit 1
     fi
 }

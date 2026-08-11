@@ -2,6 +2,7 @@
 
 import { Crown, ExternalLink, Hourglass } from 'lucide-react';
 import Link from 'next/link';
+import { useBotInviteUrl, useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { ChannelLimitReason } from '@/lib/api/types';
-import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 /**
@@ -54,13 +54,13 @@ export function ChannelLimitCta({
   guildId: string;
 }) {
   const armRefreshOnReturn = useRefreshOnReturn();
+  // Locked to the subscribed guild: the entitlement gate makes the premium
+  // bot self-leave anywhere else.
+  const premiumInviteUrl = useBotInviteUrl('premium', guildId, { lockGuildSelect: true });
+  const { premiumBotId: premiumBotClientId } = useSiteConfig();
 
   if (reason === 'LIMIT_PREMIUM_INVITE') {
-    // Locked to the subscribed guild: the entitlement gate makes the premium
-    // bot self-leave anywhere else.
-    const inviteUrl = PREMIUM_BOT_CLIENT_ID
-      ? getBotInviteUrl('premium', guildId, { lockGuildSelect: true })
-      : null;
+    const inviteUrl = premiumBotClientId ? premiumInviteUrl : null;
     if (!inviteUrl) return null;
     return (
       <Button className="bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>

@@ -6,6 +6,8 @@ yarn-error.log
 # Build outputs
 dist/
 build/
+.next/
+.turbo/
 *.tsbuildinfo
 
 # Environment files
@@ -39,7 +41,8 @@ temp/
 .git/
 .gitignore
 
-# Documentation
+# Documentation. Note `*.md` deliberately does NOT match the dashboard's `.mdx`
+# route files (legal pages) — those must reach the web build.
 *.md
 CHANGELOG.md
 LICENSE

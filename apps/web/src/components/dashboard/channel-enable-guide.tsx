@@ -2,7 +2,10 @@
 
 import { Clock, Megaphone, TriangleAlert, X } from 'lucide-react';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
-import { publishDelayCopy } from '@/components/dashboard/publish-delay-note';
+import {
+  publishDelayCopy,
+  usePublishDelayEntitled,
+} from '@/components/dashboard/publish-delay-note';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -33,6 +36,8 @@ export function ChannelEnableGuideModal({
   /** Abort: leave the channel disabled. Fired by the corner X and ESC. */
   onCancel: () => void;
 }) {
+  const entitled = usePublishDelayEntitled(hasSubscription);
+
   return (
     <AlertDialog
       open
@@ -80,7 +85,7 @@ export function ChannelEnableGuideModal({
           </div>
           <div className="flex items-start gap-2">
             <Clock className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-            <p className="text-sm text-amber-200/90">{publishDelayCopy(hasSubscription)}</p>
+            <p className="text-sm text-amber-200/90">{publishDelayCopy(entitled)}</p>
           </div>
         </div>
 

@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/../../utils/common.sh"
 echo "🚀 Starting production environment..."
 
 is_docker_running
-check_env_exists "production"
+check_env_exists ".env"
 
 echo "📦 Building and starting production services..."
 

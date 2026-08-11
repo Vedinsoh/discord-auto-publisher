@@ -39,7 +39,7 @@ services:
 
   proxy-free:
     env_file:
-      - ../../.env.production
+      - ../../.env
     environment:
       - APP_EDITION=free
       - NODE_ENV=production
@@ -49,7 +49,7 @@ services:
 
   proxy-premium:
     env_file:
-      - ../../.env.production
+      - ../../.env
     environment:
       - APP_EDITION=premium
       - NODE_ENV=production
@@ -59,7 +59,7 @@ services:
 
   backend:
     env_file:
-      - ../../.env.production
+      - ../../.env
     environment:
       - NODE_ENV=production
       - LOGGER_LEVEL=info
@@ -75,7 +75,7 @@ services:
 
   bot-free:
     env_file:
-      - ../../.env.production
+      - ../../.env
     environment:
       - APP_EDITION=free
       - NODE_ENV=production
@@ -85,7 +85,7 @@ services:
 
   bot-premium:
     env_file:
-      - ../../.env.production
+      - ../../.env
     environment:
       - APP_EDITION=premium
       - NODE_ENV=production

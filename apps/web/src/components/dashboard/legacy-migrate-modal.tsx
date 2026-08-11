@@ -6,6 +6,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,6 +61,10 @@ export function LegacyMigrateModal({
   onClose,
 }: LegacyMigrateModalProps) {
   const router = useRouter();
+  // A self-hosted instance has no billing, so it never caps a guild (`limit` is
+  // null) and every branch of overSelectedMessage would name a plan or a second
+  // bot that doesn't exist there.
+  const isPublicInstance = useIsPublicInstance();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
 
@@ -181,7 +186,7 @@ export function LegacyMigrateModal({
 
         <div className="p-6 pt-4 space-y-3">
           <PublishDelayNote hasSubscription={hasSubscription} />
-          {overSelected && limit !== null && (
+          {overSelected && limit !== null && isPublicInstance && (
             <p className="text-amber-400 text-sm">
               {overSelectedMessage(limit, { hasSubscription, premiumBotPresent, premiumPending })}
             </p>

@@ -19,11 +19,15 @@ import { useEffect, useState, useTransition } from 'react';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
+import {
+  useBotInviteUrl,
+  useIsPublicInstance,
+  useSiteConfig,
+} from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
 import { legacySunsetLabel, links } from '@/lib/constants';
-import { getBotInviteUrl, PREMIUM_BOT_CLIENT_ID } from '@/lib/invite';
 import { FREE_CHANNEL_LIMIT } from '@/lib/plans';
 import { useActivationPoll } from '@/lib/use-activation-poll';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
@@ -64,7 +68,11 @@ export function DashboardBanners() {
   // Checkout-activation card: query-param-armed, but its variant is driven by
   // real subscription state, not the param. `active` = the webhook has written
   // an entitled subscription row (guild.hasSubscription, live from Postgres).
-  const isCheckoutReturn = searchParams.get('success') === 'true';
+  // A self-hosted instance has no checkout, so a stray `?success=true` must not
+  // arm the card (nor its 3s poller) — the other three banners are already
+  // gated inside useGuildAttention.
+  const isPublicInstance = useIsPublicInstance();
+  const isCheckoutReturn = isPublicInstance && searchParams.get('success') === 'true';
   const active = guild.hasSubscription;
   const phase = useActivationPoll(isCheckoutReturn && !active, active);
 
@@ -310,9 +318,9 @@ function PremiumInviteBanner({ guildId }: { guildId: string }) {
   const armRefreshOnReturn = useRefreshOnReturn();
   // Locked to the subscribed guild: the premium entitlement gate makes the
   // bot self-leave any other guild
-  const inviteUrl = PREMIUM_BOT_CLIENT_ID
-    ? getBotInviteUrl('premium', guildId, { lockGuildSelect: true })
-    : null;
+  const premiumInviteUrl = useBotInviteUrl('premium', guildId, { lockGuildSelect: true });
+  const { premiumBotId: premiumBotClientId } = useSiteConfig();
+  const inviteUrl = premiumBotClientId ? premiumInviteUrl : null;
 
   return (
     <Card className="bg-purple-500/10 border-purple-500/30 p-6">

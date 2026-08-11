@@ -1,4 +1,5 @@
 import type { Edition } from '@ap/api-types';
+import { isPublicInstance } from '@ap/config';
 import { botPresence, channel, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { FilterMatchMode } from '@ap/validations';
@@ -222,10 +223,14 @@ const registerNewGuild = async (
   announcementChannelIds?: Snowflake[]
 ): Promise<void> => {
   try {
-    if (edition === 'premium') {
-      // Entitlement gate. getByGuildId throws on DB errors (unlike isEntitled,
-      // which would swallow them into "not entitled") — a DB hiccup must
-      // surface as a 500 to the bot, never as a leave.
+    // Entitlement gate. Public instance only: a self-hosted copy has no
+    // billing, and its single bot registers as `premium`, so running the gate
+    // there would find no subscription row and make the bot leave every guild
+    // it is ever invited to.
+    if (isPublicInstance && edition === 'premium') {
+      // getByGuildId throws on DB errors (unlike isEntitled, which would
+      // swallow them into "not entitled") — a DB hiccup must surface as a 500
+      // to the bot, never as a leave.
       const sub = await Subscriptions.getByGuildId(guildId);
       if (!(sub && isEntitledStatus(sub.status))) {
         // Nothing is written — the leave triggers the premium bot's

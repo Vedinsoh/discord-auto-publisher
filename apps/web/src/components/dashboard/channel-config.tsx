@@ -13,6 +13,7 @@ import {
 } from '@/components/dashboard/channel-limit-upsell';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -134,6 +135,9 @@ export function ChannelConfig({
   migrated,
 }: ChannelConfigProps) {
   const router = useRouter();
+  // A self-hosted instance has no billing, so there is no plan to name in the
+  // channel-count caption.
+  const isPublicInstance = useIsPublicInstance();
   const [isPending, startTransition] = useTransition();
   const [pendingChannelId, setPendingChannelId] = useState<string | null>(null);
   const [limitReason, setLimitReason] = useState<ChannelLimitReason | null>(null);
@@ -277,7 +281,10 @@ export function ChannelConfig({
         <h2 className="text-2xl text-white mb-2">Channel Configuration</h2>
         <p className="text-slate-400 mb-3">
           Manage Auto Publisher for your announcement channels
-          {!hasSubscription && channelLimit !== 0 && ` (Free plan: up to ${channelLimit} channels)`}
+          {isPublicInstance &&
+            !hasSubscription &&
+            channelLimit !== 0 &&
+            ` (Free plan: up to ${channelLimit} channels)`}
         </p>
         <div className="space-y-1.5">
           <PublishLimitNote />

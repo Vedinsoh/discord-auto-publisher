@@ -1,4 +1,4 @@
-import { env } from '@ap/config';
+import { assertRequiredEnv, env, isPublicInstance } from '@ap/config';
 import { runMigrations } from '@ap/database';
 import {
   createApiRateLimit,
@@ -21,14 +21,20 @@ import express from 'express';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
+// Fail fast with a named variable rather than an opaque Discord auth error later
+assertRequiredEnv();
+
 // Create the Express app
 const app = express();
 
 // Request logger (applies to all routes)
 app.use(...createRequestLogger(env.isDevelopment));
 
-// Paddle webhook route (needs raw body BEFORE express.json())
-app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
+// Paddle webhook route (needs raw body BEFORE express.json()).
+// Public instance only — a self-hosted copy has no billing to receive.
+if (isPublicInstance) {
+  app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
+}
 
 // JSON parser for all remaining routes
 app.use(express.json());
@@ -70,22 +76,27 @@ const server = app.listen('8080', async () => {
   logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
 });
 
-// Start guild presence reconcile cron (both editions, 03:30 — before
-// subscription reconcile so its bot-present backstop reads fresh presence)
+// Start guild presence reconcile cron (every configured edition, 03:30 —
+// before subscription reconcile so its bot-present backstop reads fresh
+// presence)
 startGuildReconcile();
 
-// Start subscription reconcile cron
-startSubscriptionReconcile();
+// Billing crons are public-instance only. A self-hosted copy has no
+// subscription or withdrawal rows, and the subscription reconcile would throw
+// on every run for a Paddle client it never configured.
+if (isPublicInstance) {
+  startSubscriptionReconcile();
 
-// Retry sweep for unsent withdrawal acknowledgements (ZZP čl. 81.a st. 6)
-startWithdrawalAcknowledgeRetry();
+  // Retry sweep for unsent withdrawal acknowledgements (ZZP čl. 81.a st. 6)
+  startWithdrawalAcknowledgeRetry();
+}
 
 // Startup reconcile: repairs presence state lost while down — Discord never
 // re-emits a missed join, so without this a DB reset or downtime during an
 // invite leaves the dashboard wrong until the 03:30 cron (errors are handled
 // and alerted inside). Subscription reconcile runs after so its bot-present
 // backstop reads fresh presence (same ordering as the 03:30/04:00 crons)
-void runGuildReconcile().then(runSubscriptionReconcile);
+void (isPublicInstance ? runGuildReconcile().then(runSubscriptionReconcile) : runGuildReconcile());
 
 // Gracefully handle server shutdown
 const onCloseSignal = async () => {

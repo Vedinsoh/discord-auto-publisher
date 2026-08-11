@@ -16,6 +16,7 @@ import {
   MATCH_MODE_OPTIONS,
   MAX_FILTERS_PER_CHANNEL,
 } from '@/components/dashboard/filter-meta';
+import { useIsPublicInstance } from '@/components/site-config-context';
 import {
   Accordion,
   AccordionContent,
@@ -244,6 +245,10 @@ export function FilterManager({
   premiumBotPresent,
   premiumPending,
 }: FilterManagerProps) {
+  // A self-hosted instance has no billing, so there is no Premium bot to invite
+  // and nothing to unlock — the lock card would name a plan that doesn't exist.
+  // Belt-and-braces: the page already forces isActive there.
+  const isPublicInstance = useIsPublicInstance();
   const [roles, setRoles] = useState<GuildRole[]>([]);
 
   const rolesById = useMemo(() => Object.fromEntries(roles.map(role => [role.id, role])), [roles]);
@@ -289,7 +294,7 @@ export function FilterManager({
 
   return (
     <div className="space-y-6">
-      {!isActive && (
+      {!isActive && isPublicInstance && (
         <Card className="flex flex-col gap-4 border-purple-500/30 bg-purple-500/10 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <Lock className="mt-0.5 h-5 w-5 shrink-0 text-purple-400" />
