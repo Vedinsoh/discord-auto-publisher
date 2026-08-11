@@ -33,7 +33,13 @@ export type CrosspostJobData = {
 };
 
 export type CrosspostQueueStats = {
+  /**
+   * Untagged depth. MUST stay 0 — a non-zero value means some `queue.add` lost
+   * its explicit priority and is starving the boosted tier (see PRIORITY).
+   */
   waiting: number;
+  /** Where all depth lives now that every job carries a priority */
+  prioritized: number;
   active: number;
 };
 
@@ -200,13 +206,21 @@ export const createCrosspostQueue = (deps: {
       return;
     }
 
-    const waiting = await queue.getWaitingCount();
-    if (waiting >= QUEUE_HIGH_WATER) {
+    // Both states, never `getWaitingCount()`: BullMQ's 'waiting' expands to
+    // `wait` + `paused` (`sanitizeJobTypes`) and never covers `prioritized`, so
+    // once every job carries a priority a waiting-only read is permanently 0 and
+    // this shed can never fire. One round trip either way.
+    const counts = await queue.getJobCounts('waiting', 'prioritized');
+    const waiting = counts.waiting ?? 0;
+    const prioritized = counts.prioritized ?? 0;
+    const depth = waiting + prioritized;
+    if (depth >= QUEUE_HIGH_WATER) {
       logger.warn({
         event: 'crosspost.rejected.queue_overloaded',
         channelId,
         messageId,
         waiting,
+        prioritized,
       });
       res.setHeader('Retry-After', '30').status(503).end();
       return;
@@ -254,9 +268,10 @@ export const createCrosspostQueue = (deps: {
       await connection.quit();
     },
     stats: async () => {
-      const counts = await queue.getJobCounts('waiting', 'active');
+      const counts = await queue.getJobCounts('waiting', 'prioritized', 'active');
       return {
         waiting: counts.waiting ?? 0,
+        prioritized: counts.prioritized ?? 0,
         active: counts.active ?? 0,
       };
     },

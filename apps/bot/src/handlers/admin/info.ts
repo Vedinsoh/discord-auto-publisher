@@ -22,10 +22,17 @@ export async function chatInputInfo(
     `> Blocked channels: ${proxy?.blockedCount ?? 'N/A'}`,
   ].join('\n');
 
+  // Depth is the sum of both BullMQ states: 'waiting' is wait+paused and never
+  // covers 'prioritized', where every job now lands. `?? 0` on each because this
+  // is an unvalidated JSON cast — an older proxy build would yield NaN.
+  const untagged = proxy?.queue.waiting ?? 0;
   const queueContent = [
     '### Crosspost queue:',
-    `> Waiting: ${proxy?.queue.waiting ?? 'N/A'}`,
+    `> Waiting: ${proxy ? untagged + (proxy.queue.prioritized ?? 0) : 'N/A'}`,
     `> Active: ${proxy?.queue.active ?? 'N/A'}`,
+    // Every enqueue passes an explicit priority, so an untagged job is a
+    // regression that starves the boosted tier behind the base (ADR 0012).
+    ...(untagged > 0 ? [`> Unprioritized: ${untagged} (should be 0)`] : []),
   ].join('\n');
 
   const restContent = [

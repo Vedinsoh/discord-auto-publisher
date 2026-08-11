@@ -203,6 +203,14 @@ const BOOST_TTL_SEC = 90 * 24 * 60 * 60;
  * Plain SET, so a re-invite (and a premium bot joining on upgrade) re-arms the
  * budget. That is intended — both are real join events, bounded at 10 publishes
  * each — and it keeps key presence the whole of the boost state.
+ *
+ * Called after the edition orchestration settles, and skipped when that
+ * orchestration ejects the bot that just joined: a free bot bounced because
+ * premium manages the guild is not a join event at all, and seeding it would
+ * hand the *premium* bot 10 boosted publishes in a guild that was never
+ * uncovered and has nobody evaluating it. Ordering is safe because a brand-new
+ * guild has no channel rows, so its hot path bails at `Channel.isEnabled` until
+ * an admin registers one — nothing can publish mid-registration.
  */
 const seedOnboardingBoost = async (guildId: Snowflake): Promise<void> => {
   try {
@@ -295,8 +303,6 @@ const registerNewGuild = async (
 
     await activatePresence(guildId, edition);
 
-    await seedOnboardingBoost(guildId);
-
     // A bot receives no gateway events while kicked, so a channel created or
     // deleted during the absent window never fired the observe-based eviction.
     // Re-invite closes that window with a bot confirmed present: flush the
@@ -320,6 +326,10 @@ const registerNewGuild = async (
       await syncMigratedGuildCache(guildId);
     }
 
+    // Whether this very join is being undone below — the onboarding boost must
+    // not be seeded for it (see seedOnboardingBoost)
+    let ejected = false;
+
     if (edition === 'premium' && freeActive) {
       // Gated handover: premium idles behind the marker (set above) until it
       // can publish everywhere the free bot does; permissions may already
@@ -333,11 +343,16 @@ const registerNewGuild = async (
       if (await Discord.isBotInGuild('premium', guildId)) {
         logger.info(`Free bot leaving guild ${guildId}: premium is managing`);
         await Discord.leaveGuild('free', guildId);
+        ejected = true;
       } else {
         logger.warn(
           `Free bot staying in guild ${guildId}: premium presence row is stale (reconcile will repair)`
         );
       }
+    }
+
+    if (!ejected) {
+      await seedOnboardingBoost(guildId);
     }
 
     // Enforce the "free never serves >3" invariant at the point the managing
