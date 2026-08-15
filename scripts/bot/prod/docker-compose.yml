@@ -1,4 +1,4 @@
-name: auto-publisher
+name: auto-publisher-prod
 
 x-prod-logging: &prod-logging
   driver: "json-file"

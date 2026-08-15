@@ -1,4 +1,4 @@
-project_id = "auto-publisher"
+project_id = "auto-publisher-dev"
 
 [api]
 enabled = false
