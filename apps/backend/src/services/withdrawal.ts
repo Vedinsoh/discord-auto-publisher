@@ -8,7 +8,7 @@ import { PaddleService } from './paddle.js';
 import { Subscriptions } from './subscriptions.js';
 
 /**
- * The statutory withdrawal function — ZZP čl. 81.a (in force 17.06.2026),
+ * The statutory withdrawal function — ZZP čl. 81.a (in force 19.06.2026),
  * transposing CRD Art 11a. One screen, one button, one request; nothing may sit
  * between the control and the confirmation (no survey, no retention offer). The
  * full reasoning and the rules a change here would break are in .claude/CLAUDE.md.
@@ -62,35 +62,10 @@ const formatInstant = (date: Date): string => {
 };
 
 /**
- * The statement's name and contract details, composed server-side and stored as
- * presented — never accepted from the client. This is the čl. 64 evidence of what
- * the consumer was shown, so displayed and stored must be the same value.
- */
-const composeStatement = (
-  sub: Subscription,
-  consumerName: string,
-  guildName: string | null
-): { consumerName: string; contractReference: string } => {
-  const interval = sub.billingInterval ? INTERVAL_LABELS[sub.billingInterval] : null;
-  const server = guildName ? `${guildName} (${sub.guildId})` : sub.guildId;
-
-  return {
-    consumerName,
-    contractReference: [
-      `Auto Publisher Premium${interval ? `, ${interval} subscription` : ''}`,
-      `Discord server: ${server}`,
-      `Subscription reference: ${sub.paddleSubscriptionId}`,
-      `Contract concluded: ${formatInstant(contractConcludedAt(sub))}`,
-    ].join('\n'),
-  };
-};
-
-/**
- * Contract identification for display only, never stored. Art 11a(2)(b) lets the
- * consumer "provide or confirm" it, and confirming something never shown is not
- * confirming — so the plan and the server name must be on screen. The guild id is
- * deliberately not: it identifies nothing to a human. The stored
- * `contractReference` stays long-form; it is evidence, not UI.
+ * Contract identification for the screen. Art 11a(2)(b) lets the consumer "provide
+ * or confirm" it, and confirming something never shown is not confirming — so the
+ * plan and the server name must be on screen. The guild id is deliberately not: it
+ * identifies nothing to a human, and it is already its own column on the row.
  */
 const composeContractDisplay = (
   sub: Subscription,
@@ -103,7 +78,41 @@ const composeContractDisplay = (
   };
 };
 
-/** The acknowledgement body (st. 6): the statement's content plus `submittedAt`. */
+/**
+ * Built FROM {@link composeContractDisplay}, never alongside it: the acknowledgement
+ * reproduces this text, so a field composed independently of the screen ends up in an
+ * email attributing to the consumer something they were never shown. The trailing two
+ * lines are further contract identification, and the only surviving record of the
+ * conclusion instant once a re-subscribe overwrites the subscription row.
+ */
+const composeStatement = (
+  sub: Subscription,
+  consumerName: string,
+  guildName: string | null
+): { consumerName: string; contractReference: string } => {
+  const display = composeContractDisplay(sub, guildName);
+
+  return {
+    consumerName,
+    contractReference: [
+      `Server: ${display.server}`,
+      `Plan: ${display.plan}`,
+      `Subscription reference: ${sub.paddleSubscriptionId}`,
+      `Contract concluded: ${formatInstant(contractConcludedAt(sub))}`,
+    ].join('\n'),
+  };
+};
+
+/**
+ * st. 6 (= Art 11a(4)) owes the statement's content plus the date and time of
+ * submission; that content is the closed three-item list in st. 3 — name, contract
+ * identification, electronic means. The heading must not claim more than it carries:
+ * it read "AS SUBMITTED" over lines the dialog never showed.
+ *
+ * `uključujući` is a floor, not a ceiling (st. 5 closes its list with `samo`; this one
+ * does not), which is what permits the operational section — keep it, a consumer whose
+ * premium bot just left needs to know to re-invite the free one.
+ */
 const composeAcknowledgement = (record: Withdrawal): { subject: string; text: string } => ({
   subject: 'Confirmation of receipt — withdrawal from contract (potvrda o primitku raskida)',
   text: [
@@ -113,7 +122,7 @@ const composeAcknowledgement = (record: Withdrawal): { subject: string; text: st
     '',
     `DATE AND TIME OF SUBMISSION: ${formatInstant(record.submittedAt)}`,
     '',
-    'YOUR STATEMENT, AS SUBMITTED',
+    'YOUR WITHDRAWAL STATEMENT',
     '',
     `Name: ${record.consumerName}`,
     '',
