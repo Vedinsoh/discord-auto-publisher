@@ -155,8 +155,14 @@ services:
     environment:
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_USER=dev
+      - SMTP_PASSWORD=dev
     depends_on:
       redis:
+        condition: service_started
+      mailpit:
         condition: service_started
     ports:
       - 3101:8080 # Expose API for local development
@@ -185,6 +191,26 @@ services:
           path: ../../package.json
         - action: rebuild
           path: ../../bun.lock
+
+  # Catches the one email the stack sends (the statutory withdrawal acknowledgement).
+  # Dev overlay only: prod uses a real provider, and self-host has no withdrawal routes.
+  mailpit:
+    image: axllent/mailpit:v1.30.7
+    restart: unless-stopped
+    environment:
+      # Both are load-bearing: the backend always authenticates (SMTP_USER/SMTP_PASSWORD
+      # are what enable sending at all), and nodemailer sends AUTH LOGIN in the clear on
+      # 1025 — Mailpit refuses that without these two.
+      - MP_SMTP_AUTH_ACCEPT_ANY=1
+      - MP_SMTP_AUTH_ALLOW_INSECURE=1
+    networks:
+      - ap-network
+    ports:
+      # Loopback-bound like redis: this is an open relay with an open inbox.
+      - 127.0.0.1:1025:1025 # SMTP, for host-side scripts
+      - 127.0.0.1:8025:8025 # Web UI + REST API
+    healthcheck:
+      disable: true # Remove healthcheck for faster development startup
 
   redis:
     extends:

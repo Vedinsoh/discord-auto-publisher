@@ -51,6 +51,7 @@ else
   # (layer cache keeps this fast — only the source-copy layer re-runs)
   docker compose $BOT_COMPOSE_FILES_DEV up -d --build $SERVICES
   echo "✅ Development environment started!"
+  echo "📬 Mail UI: http://localhost:8025"
 
   # Show continuous logs after starting
   docker compose $BOT_COMPOSE_FILES_DEV logs -f $SERVICES
@@ -58,6 +59,7 @@ fi
 
 
 info() {
+  echo "📬 Mail UI: http://localhost:8025"
   echo "📄 View logs: bun run dev:logs"
   echo "📋 Check status: bun run dev:ps"
   echo "🛑 Stop services: bun run dev:stop"

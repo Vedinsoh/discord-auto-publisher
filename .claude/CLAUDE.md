@@ -45,6 +45,9 @@ bun run dev:ps              # List dev containers
 bun run dev:cache           # Access Redis cache container
 ```
 
+Outbound mail is caught locally by the `mailpit` service — inbox and REST API at
+http://localhost:8025, SMTP on `127.0.0.1:1025`.
+
 ### Production
 
 ```bash
@@ -347,7 +350,9 @@ PADDLE_PRICE_ID_MONTHLY_TRIAL / PADDLE_PRICE_ID_YEARLY_TRIAL: the same two price
   disclosure is written before an interval is chosen. Clearing either is the trial's kill switch.
 SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM: outbound mail (backend). The ONLY mail
   the stack sends is the statutory withdrawal acknowledgement. Unset credentials disable sending,
-  which surfaces as a failed acknowledgement rather than a silent no-op.
+  which surfaces as a failed acknowledgement rather than a silent no-op. In dev the first four come
+  from the dev compose overlay (Mailpit), not from an env file — `environment` beats `env_file`, so a
+  dev-only SMTP host can never render into prod.
 AUTH_SECRET / DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET: dashboard login (web)
 DISCORD_FREE_BOT_ID / DISCORD_PREMIUM_BOT_ID: the two bot applications users are invited to.
   Server-side, NOT NEXT_PUBLIC_ — self-host collapses all three ids into DISCORD_CLIENT_ID.
@@ -391,7 +396,7 @@ The singular `DISCORD_BOT_TOKEN` is read **only** in self-host mode. The old "no
 - Dev config: `scripts/bot/dev/docker-compose.yml` (extends base)
 - Prod config: `scripts/bot/prod/docker-compose.yml`
 - **`env_file` is declared per overlay, never in the base.** Compose _appends_ `env_file` across `-f` layers, so a base-level entry made every prod service load the dev env file first and silently inherit anything prod did not re-declare (verified: prod rendered `SMTP_HOST: ap-mailpit` and `PADDLE_ENVIRONMENT: sandbox`). Dev uses `.env.local`, prod uses `.env`.
-- Services: `proxy-free`, `proxy-premium`, `bot-free`, `bot-premium`, `backend`, `redis` (one stack; `APP_EDITION` set per service)
+- Services: `proxy-free`, `proxy-premium`, `bot-free`, `bot-premium`, `backend`, `redis` (one stack; `APP_EDITION` set per service), plus `mailpit` in the dev overlay only — prod uses a real provider and self-host has no withdrawal routes, so neither has a mail path to catch. The backend `depends_on` it, which is what pulls it into the edition-scoped starts and a bare `up backend`. Both `MP_SMTP_AUTH_*` vars are load-bearing: the backend only sends when `SMTP_USER`/`SMTP_PASSWORD` are set, and nodemailer then does `AUTH LOGIN` in the clear on 1025.
 - Service dependencies: bot-{edition} → proxy-{edition} + backend + redis; backend → redis; proxy-{edition} → redis
 - Health checks on proxies, backend & redis
 - Development: File sync with restart, exposed ports (3101:8080 backend, 8081:8080 proxy-free, 8082:8080 proxy-premium, `127.0.0.1:6379:6379` redis — loopback-bound on purpose, since a bare `6379:6379` publishes on every interface and Redis has no `requirepass`); any subset can be started (`docker compose ... up backend` alone is enough for web/checkout work; `bot-free` pulls in its proxy + backend + redis)
