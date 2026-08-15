@@ -5,7 +5,7 @@ import { Data } from 'data/index.js';
 import express, { type Request, type Response, type Router } from 'express';
 import { Services } from 'services/index.js';
 import { unmarshalWebhook } from 'services/paddle.js';
-import type { PaddleSubscriptionState } from 'services/subscriptions.js';
+import type { PaddleAdjustmentState, PaddleSubscriptionState } from 'services/subscriptions.js';
 import { logger } from 'utils/logger.js';
 
 const IDEMPOTENCY_TTL = 86_400; // 24 hours
@@ -35,6 +35,20 @@ const SUBSCRIPTION_EVENTS = new Set<string>([
   EventName.SubscriptionPaused,
   EventName.SubscriptionResumed,
   EventName.SubscriptionCanceled,
+]);
+
+/**
+ * Refunds do not all come from our own withdrawal function — Paddle is merchant of record
+ * and grants buyers its own cancellation right, so a refund can be issued outside this
+ * system and writes no `withdrawal` row. These events are the only way we learn about
+ * those; they populate `subscription.lastRefundAt`.
+ *
+ * `Updated` is subscribed alongside `Created` because an adjustment is raised as
+ * `pending_approval` and only becomes `approved` later.
+ */
+const ADJUSTMENT_EVENTS = new Set<string>([
+  EventName.AdjustmentCreated,
+  EventName.AdjustmentUpdated,
 ]);
 
 export const Webhooks: Router = (() => {
@@ -90,6 +104,8 @@ export const Webhooks: Router = (() => {
     try {
       if (SUBSCRIPTION_EVENTS.has(event.eventType)) {
         await handleSubscriptionEvent(event.data as PaddleSubscriptionState);
+      } else if (ADJUSTMENT_EVENTS.has(event.eventType)) {
+        await handleAdjustmentEvent(event.data as PaddleAdjustmentState);
       } else {
         logger.debug(`Unhandled Paddle event: ${event.eventType}`);
       }
@@ -120,4 +136,20 @@ async function handleSubscriptionEvent(sub: PaddleSubscriptionState): Promise<vo
 
   // Entitled → not-entitled: premium bot leaves the guild immediately
   await Services.Entitlements.enforceTransition(previous, current);
+}
+
+/**
+ * Adjustments also arrive for credits, chargeback warnings and reversals; only the ones
+ * meaning "this guild got its money back" are recorded. The rest are routine, so they are
+ * dropped at debug rather than warned about.
+ */
+async function handleAdjustmentEvent(adjustment: PaddleAdjustmentState): Promise<void> {
+  if (!Services.Subscriptions.isRecordableRefund(adjustment)) {
+    logger.debug(
+      `Paddle adjustment ${adjustment.id} ignored (${adjustment.action}/${adjustment.type}, ${adjustment.status})`
+    );
+    return;
+  }
+
+  await Services.Subscriptions.recordRefund(adjustment);
 }

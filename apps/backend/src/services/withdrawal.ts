@@ -8,7 +8,7 @@ import { PaddleService } from './paddle.js';
 import { Subscriptions } from './subscriptions.js';
 
 /**
- * The statutory withdrawal function — ZZP čl. 81.a (in force 19 June 2026),
+ * The statutory withdrawal function — ZZP čl. 81.a (in force 17.06.2026),
  * transposing CRD Art 11a. One screen, one button, one request; nothing may sit
  * between the control and the confirmation (no survey, no retention offer). The
  * full reasoning and the rules a change here would break are in .claude/CLAUDE.md.
@@ -134,9 +134,14 @@ const composeAcknowledgement = (record: Withdrawal): { subject: string; text: st
     'a bot add itself to a server, so we cannot do this for you. The invite link is on your',
     'dashboard.',
     '',
-    'Your refund is issued by Paddle, the merchant of record, to the payment method you used.',
-    'We have raised it with Paddle; the time it takes to appear on your statement is set by',
-    'your bank or card issuer.',
+    // Conditional on purpose: composed BEFORE the refund runs (st. 6 owes the
+    // acknowledgement without delay, so it cannot wait on Paddle), and the retry sweep has
+    // no subscription to consult either. Asserting a refund outright was false for every
+    // withdrawal made inside the free trial, where nothing was charged.
+    'If a payment has been taken for this subscription, it is refunded in full by Paddle, the',
+    'merchant of record, to the payment method you used; the time it takes to appear on your',
+    'statement is set by your bank or card issuer. If you withdrew during the free trial',
+    'period, no payment was taken and there is nothing to refund.',
     '',
     'If anything here is wrong, reply to this message.',
     '',
@@ -255,7 +260,13 @@ const acknowledge = async (record: Withdrawal): Promise<boolean> => {
   }
 };
 
-/** Raises the refund and records the outcome. Never throws — the withdrawal already happened. */
+/**
+ * Raises the refund and records the outcome. Never throws — the withdrawal already happened.
+ *
+ * Three-valued: a Paddle adjustment status when money is moving, `'none'` when there was no
+ * payment to return (a withdrawal inside the free trial — the common case, since the window
+ * sits entirely within it), and `null` only when raising the refund failed.
+ */
 const refund = async (record: Withdrawal, sub: Subscription): Promise<string | null> => {
   // Hoisted out of the try so a failure still records WHICH transaction needs
   // refunding by hand — the observed failure mode (missing API-key scope) throws
@@ -266,10 +277,11 @@ const refund = async (record: Withdrawal, sub: Subscription): Promise<string | n
     transactionId = await PaddleService.findRefundableTransaction(sub.paddleSubscriptionId);
 
     if (!transactionId) {
-      // A real state, not a failure: a trial that never billed. Recorded anyway so
-      // the row says why no money moved.
+      // A real state, not a failure: a trial that never billed. Recorded so the row says why
+      // no money moved, and returned as 'none' so the UI can tell "nothing to refund" from
+      // the failure path's null.
       await recordRefundOutcome(record.id, 'no_completed_transaction');
-      return null;
+      return 'none';
     }
 
     const { adjustmentId, status } = await PaddleService.refundTransaction({

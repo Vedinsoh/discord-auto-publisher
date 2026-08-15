@@ -15,6 +15,7 @@ import {
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 import {
   ChannelLimitCta,
   channelLimitReasonFromGuild,
@@ -38,6 +39,7 @@ import {
   formatUsd,
   PREMIUM_PRICE_MONTHLY_USD,
   PREMIUM_PRICE_YEARLY_USD,
+  PREMIUM_TRIAL_DAYS,
   PREMIUM_YEARLY_PER_MONTH_USD,
   PREMIUM_YEARLY_SAVINGS_PERCENT,
   PREMIUM_YEARLY_SAVINGS_USD,
@@ -274,6 +276,13 @@ function ActiveSubscription({
             ? subscription.scheduledChange?.effectiveAt
             : subscription.currentPeriodEndsAt;
           if (!dateValue) return null;
+          // A trialing subscription has not been billed yet, so the same date is the FIRST
+          // charge, not the next one. Labelled as such: this card is where a trial user
+          // decides whether to cancel before paying, and "Next Billing Date" implies a
+          // payment already went through. Paddle populates current_billing_period during a
+          // trial (it is null only for paused/canceled), and for a trial that period ends
+          // on the first bill date.
+          const trialing = !cancelScheduled && subscription.status === 'trialing';
           return (
             <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 mb-6">
               <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
@@ -281,7 +290,9 @@ function ActiveSubscription({
                 <span>
                   {cancelScheduled || subscription.status === 'canceled'
                     ? 'Access Until'
-                    : 'Next Billing Date'}
+                    : trialing
+                      ? 'First Billing Date'
+                      : 'Next Billing Date'}
                 </span>
               </div>
               <p className="text-2xl text-white">
@@ -291,6 +302,9 @@ function ActiveSubscription({
                   year: 'numeric',
                 })}
               </p>
+              {trialing && (
+                <p className="text-slate-400 text-sm mt-2">Your free trial runs until then.</p>
+              )}
               {cancelScheduled && (
                 <p className="text-slate-400 text-sm mt-2">
                   Your subscription is set to cancel at the end of the billing period.
@@ -488,12 +502,18 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
   // Unticked by default and never pre-ticked: Paddle requires the buyer to accept the
   // terms and refund policy before purchase, and a pre-ticked box is not acceptance.
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [acceptanceError, setAcceptanceError] = useState(false);
 
   // A guild must be migrated (allowlist model) before it can buy Premium —
   // Premium configures per-channel filters, which need registered channels.
   // MIGRATION: Remove this gate after migration period (6 months)
   const migrated = data.migrated;
+
+  // Server-decided (one trial per guild ever, and trial prices configured), from the same
+  // predicate the checkout route picks the price with. Never re-derive it here from
+  // `subscription === null` — this component also renders for a cancelled subscription,
+  // which is trial-ineligible, and a trial claim the checkout contradicts hands the buyer a
+  // second 14-day full-refund right over a real charge.
+  const trialAvailable = data.trialAvailable;
 
   const router = useRouter();
 
@@ -502,24 +522,27 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
     // The button stays live and explains the blocker on press, rather than sitting
     // disabled — same reasoning as the legacy branch below. A disabled control makes
     // the obstacle discoverable only by hovering it, which never happens on touch.
+    // A toast rather than inline text, which grew the card and pushed the CTA down under
+    // the cursor mid-click. Fixed `id` so repeated presses replace one toast.
     if (!acceptedTerms) {
-      setAcceptanceError(true);
+      toast.warning('Accept the terms to continue', {
+        id: 'accept-terms',
+        description: 'Check the box to agree to the Terms and the Refunds & Withdrawal policy.',
+      });
       return;
     }
-    setAcceptanceError(false);
     setError(false);
     startTransition(async () => {
       try {
         const { transactionId } = await createCheckout(guild.id, billingInterval);
-        // Unified checkout: the /checkout page loads Paddle.js and auto-opens the
-        // overlay from _ptxn. Guild name, icon and plan ride the query string to
-        // orient the page sitting behind the overlay (all cosmetic — the guild is
-        // bound in the transaction's server-set custom_data, and the overlay owns
-        // the authoritative totals and renewal terms).
+        // Unified checkout: the /checkout page loads Paddle.js and auto-opens the overlay
+        // from _ptxn. Only the guild name and icon ride along, to orient the page sitting
+        // behind the overlay — nothing about price or plan, since the customer can edit the
+        // query string and the overlay is the authority on both. The guild itself is bound
+        // in the transaction's server-set custom_data, not here.
         const params = new URLSearchParams({
           _ptxn: transactionId,
           g: guildName,
-          plan: billingInterval,
         });
         const iconUrl = guildIconUrl(guild.id, guild.icon);
         if (iconUrl) params.set('icon', iconUrl);
@@ -529,6 +552,18 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
       }
     });
   }, [guild.id, guild.icon, guildName, billingInterval, migrated, acceptedTerms, router]);
+
+  // Hoisted out of the JSX: three independent conditions (migration gate, in-flight,
+  // trial) crossed into one label read worse inline than the icon triple below does.
+  const ctaLabel = !migrated
+    ? 'Set up channels first'
+    : isPending
+      ? trialAvailable
+        ? 'Starting trial...'
+        : 'Upgrading...'
+      : trialAvailable
+        ? `Start ${PREMIUM_TRIAL_DAYS}-day free trial`
+        : 'Upgrade to Premium';
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -641,6 +676,30 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
                 </span>
               </p>
             )}
+
+            {/* The pre-contractual trial disclosure, and the reason the trial could not ship
+                without it: the 14-day withdrawal right stays a one-time right only if the
+                buyer is told at the point of purchase that payment follows the free period.
+                Absent that, a second right attaches to the first real charge — a full refund
+                for every buyer. This is the last screen we own before Paddle takes over, so
+                it belongs here, beside the price and above the CTA, not on /terms. Reasoning
+                in .claude/CLAUDE.md.
+
+                It states four facts and no more: payment follows, when, how much, and that it
+                recurs. No first-charge DATE — this component server-renders first, so a
+                `Date.now() + 14d` label would hydrate to a different string, and Paddle's
+                overlay shows the exact date on the next screen. "Free today" is left to
+                `ctaLabel`, now the only prominent carrier of it on this screen: a label that
+                loses the word "free" takes that fact with it. */}
+            {trialAvailable && (
+              <p className="text-slate-400 text-sm mt-4 text-left">
+                After the {PREMIUM_TRIAL_DAYS}-day trial,{' '}
+                {billingInterval === 'year'
+                  ? `${formatUsd(PREMIUM_PRICE_YEARLY_USD)} per year`
+                  : `${formatUsd(PREMIUM_PRICE_MONTHLY_USD)} per month`}{' '}
+                is charged automatically and renews until you cancel.
+              </p>
+            )}
           </div>
 
           {/* No feature list here on purpose: it used to repeat
@@ -672,12 +731,8 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
                 <Checkbox
                   id="accept-terms"
                   checked={acceptedTerms}
-                  onCheckedChange={checked => {
-                    setAcceptedTerms(checked === true);
-                    if (checked === true) setAcceptanceError(false);
-                  }}
+                  onCheckedChange={checked => setAcceptedTerms(checked === true)}
                   className="mt-0.5"
-                  aria-describedby={acceptanceError ? 'accept-terms-error' : undefined}
                 />
                 <label htmlFor="accept-terms" className="text-slate-300 text-sm cursor-pointer">
                   I have read and agree to the{' '}
@@ -691,11 +746,6 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
                   .
                 </label>
               </div>
-              {acceptanceError && (
-                <p id="accept-terms-error" className="text-amber-400 text-sm mt-2">
-                  Please accept the Terms and the Refunds &amp; Withdrawal policy to continue.
-                </p>
-              )}
             </div>
           )}
 
@@ -706,16 +756,10 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
           >
             {!migrated ? (
               <Lock className="w-5 h-5 mr-2" />
-            ) : isPending ? (
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             ) : (
-              <Crown className="w-5 h-5 mr-2" />
+              isPending && <Loader2 className="w-5 h-5 mr-2 animate-spin" />
             )}
-            {!migrated
-              ? 'Set up channels first'
-              : isPending
-                ? 'Upgrading...'
-                : 'Upgrade to Premium'}
+            {ctaLabel}
           </Button>
 
           {migrated ? (

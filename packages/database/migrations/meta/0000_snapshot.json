@@ -1,5 +1,5 @@
 {
-  "id": "767b5135-21a7-4ce8-bc38-0dbb290bcbba",
+  "id": "9d2a2058-2fdd-4112-9ae5-a9f2b41d5797",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -285,6 +285,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
+        },
+        "last_refund_at": {
+          "name": "last_refund_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",

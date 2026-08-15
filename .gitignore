@@ -61,3 +61,6 @@ next-env.d.ts
 
 # Firecrawl
 .firecrawl
+
+# Docs
+docs/plans/internal/

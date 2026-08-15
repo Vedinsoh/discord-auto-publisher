@@ -129,6 +129,19 @@ export const subscription = pgTable('subscription', {
   canceledAt: timestamp('canceled_at', { withTimezone: true }),
   // Paddle's updated_at for the applied state — rejects out-of-order webhook deliveries
   lastEventAt: timestamp('last_event_at', { withTimezone: true }).notNull(),
+  // Newest approved refund or chargeback against any subscription this guild has held, from
+  // any path: our own withdrawal function, or a refund Paddle issues under its own buyer
+  // terms (which never touches the `withdrawal` table).
+  //
+  // Nothing reads it yet, on purpose — it collects evidence so a policy on repeat
+  // refund-and-rebuy can be built on real data if the pattern appears. Not dead code.
+  //
+  // The only column here that is not mirrored Paddle state, so the only one that must
+  // SURVIVE a re-subscribe — the opposite of withdrawalPeriodStartsAt above, which must not
+  // be inherited. It survives only because every Paddle-derived write is a partial update
+  // over PaddleSubscriptionValues (services/subscriptions.ts), which omits this column; an
+  // upsert or a row spread erases it at the moment it becomes interesting.
+  lastRefundAt: timestamp('last_refund_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()

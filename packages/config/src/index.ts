@@ -125,8 +125,24 @@ export const env = cleanEnv(process.env, {
   PADDLE_ENVIRONMENT: str({ default: 'sandbox', choices: ['sandbox', 'production'] }),
   PADDLE_API_KEY: str({ default: '' }),
   PADDLE_WEBHOOK_SECRET: str({ default: '' }),
-  PADDLE_PRICE_MONTHLY: str({ default: '' }),
-  PADDLE_PRICE_YEARLY: str({ default: '' }),
+  PADDLE_PRICE_ID_MONTHLY: str({ default: '' }),
+  PADDLE_PRICE_ID_YEARLY: str({ default: '' }),
+  // The same two prices plus `trial_period: {interval: 'day', frequency: 14}`. The trial
+  // belongs to the PRICE, so a trial subscriber keeps this price id for the subscription's
+  // life and conversion to paid is not a price change — which is what stops `isPlanChange`
+  // re-opening the withdrawal window over the first real charge.
+  PADDLE_PRICE_ID_MONTHLY_TRIAL: str({ default: '' }),
+  PADDLE_PRICE_ID_YEARLY_TRIAL: str({ default: '' }),
+  /**
+   * Client-side token for Paddle.js. Public by design; the API key is the secret.
+   *
+   * Deliberately NOT `NEXT_PUBLIC_`: Next.js reads `.env*` only from its own app directory,
+   * never the monorepo root, so a build-time inlined value resolved to `undefined` in the
+   * browser and left the checkout button permanently disabled with nothing logged. It
+   * reaches the browser at runtime via `getSiteConfig()` → `SiteConfigProvider`, which also
+   * keeps the web image free of build args.
+   */
+  PADDLE_CLIENT_TOKEN: str({ default: '' }),
 
   // Outbound email — the withdrawal acknowledgement is the only mail the stack
   // sends. Unset credentials disable sending rather than failing at startup;
@@ -140,6 +156,20 @@ export const env = cleanEnv(process.env, {
 
 /** True for the two-edition commercial deployment, false for a self-hosted copy. */
 export const isPublicInstance = env.DEPLOYMENT_MODE === 'public';
+
+/**
+ * Whether checkout offers the free trial at all — the one gate every trial surface reads,
+ * backend and dashboard alike.
+ *
+ * Both price ids or neither: the disclosure a buyer sees is written before an interval is
+ * chosen, so a half-configured trial would advertise on one interval and charge immediately
+ * on the other. A misconfiguration must read as "no trial", never "trial on one interval".
+ *
+ * Unsetting either variable is therefore also the kill switch — selling continues at the
+ * plain prices and every trial claim disappears from the UI in the same move.
+ */
+export const premiumTrialEnabled =
+  isPublicInstance && !!env.PADDLE_PRICE_ID_MONTHLY_TRIAL && !!env.PADDLE_PRICE_ID_YEARLY_TRIAL;
 
 /**
  * Assert the variables this deployment mode actually needs.

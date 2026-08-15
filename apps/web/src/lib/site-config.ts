@@ -14,6 +14,17 @@ export type SiteConfig = {
    * it is a client component. Removed with the legacy UX at sunset.
    */
   legacySunsetDate: string;
+  /**
+   * Client-side Paddle.js token, empty when billing is not configured (always so when
+   * self-hosted). Served at runtime rather than inlined as a `NEXT_PUBLIC_` build-time
+   * value — see `PADDLE_CLIENT_TOKEN` in `@ap/config`.
+   */
+  paddleClientToken: string;
+  /**
+   * Which Paddle instance the browser talks to. Derived from the same `PADDLE_ENVIRONMENT`
+   * the backend uses, so the overlay cannot talk to sandbox while the webhooks talk to live.
+   */
+  paddleEnvironment: 'sandbox' | 'production';
 };
 
 /**
@@ -29,5 +40,7 @@ export function getSiteConfig(): SiteConfig {
     freeBotId: isPublicInstance ? env.DISCORD_FREE_BOT_ID : env.DISCORD_CLIENT_ID,
     premiumBotId: isPublicInstance ? env.DISCORD_PREMIUM_BOT_ID : '',
     legacySunsetDate: config.legacySunsetDate,
+    paddleClientToken: isPublicInstance ? env.PADDLE_CLIENT_TOKEN : '',
+    paddleEnvironment: env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
   };
 }

@@ -1,5 +1,6 @@
+import { env, premiumTrialEnabled } from '@ap/config';
 import { botPresence, db, type Subscription, subscription } from '@ap/database';
-import { and, eq, isNull, notInArray } from 'drizzle-orm';
+import { and, eq, isNull, lt, notInArray, or } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -8,6 +9,43 @@ export const ENTITLED_STATUSES = ['active', 'trialing', 'past_due'] as const;
 
 export const isEntitledStatus = (status: string): boolean =>
   (ENTITLED_STATUSES as readonly string[]).includes(status);
+
+/**
+ * Whether a checkout started now would carry the free trial: one trial per guild, ever.
+ *
+ * Keyed on the guild, not the buyer — a Discord account costs nothing to create. Without
+ * this the trial can be retaken indefinitely and leaves no trace, since nothing is ever
+ * charged: no refund, no Paddle adjustment, nothing to notice.
+ *
+ * Exported rather than inlined at the checkout branch because the dashboard's
+ * pre-contractual disclosure must be decided by this same predicate — promising a trial
+ * that checkout then bills is the failure that costs a second withdrawal right.
+ */
+const isTrialAvailable = (existing: Subscription | undefined): boolean =>
+  premiumTrialEnabled && !existing;
+
+/**
+ * The Paddle price a checkout should use, and whether it carries the trial. The only
+ * place that choice is made.
+ */
+const resolveCheckoutPrice = (
+  interval: 'month' | 'year',
+  existing: Subscription | undefined
+): { priceId: string; trial: boolean } => {
+  const trial = isTrialAvailable(existing);
+  const yearly = interval === 'year';
+
+  if (trial) {
+    return {
+      priceId: yearly ? env.PADDLE_PRICE_ID_YEARLY_TRIAL : env.PADDLE_PRICE_ID_MONTHLY_TRIAL,
+      trial: true,
+    };
+  }
+  return {
+    priceId: yearly ? env.PADDLE_PRICE_ID_YEARLY : env.PADDLE_PRICE_ID_MONTHLY,
+    trial: false,
+  };
+};
 
 /**
  * Structural shape shared by the Paddle API Subscription entity and the
@@ -27,7 +65,13 @@ export type PaddleSubscriptionState = {
   customData: unknown;
 };
 
-/** Row values derived from a Paddle subscription state */
+/**
+ * Row values derived from a Paddle subscription state.
+ *
+ * Closed on purpose — never widen it to the table's insert type. Every write below is a
+ * partial `set()` over these keys, which is what keeps `lastRefundAt` (ours, not Paddle's)
+ * alive across a re-subscribe. A row spread here erases the guild's refund history.
+ */
 type PaddleSubscriptionValues = {
   guildId: string;
   paddleSubscriptionId: string;
@@ -270,10 +314,111 @@ const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
   }
 };
 
+/**
+ * Structural shape shared by the Paddle API Adjustment entity and the webhook
+ * AdjustmentNotification — the two carry identical fields.
+ */
+export type PaddleAdjustmentState = {
+  id: string;
+  action: string;
+  type: string;
+  status: string;
+  subscriptionId: string | null;
+  customerId: string;
+  createdAt: string;
+  payoutTotals: { retainedFee: string; currencyCode: string } | null;
+};
+
+/**
+ * Whether an adjustment means "this guild got its money back".
+ *
+ * `approved` only — adjustments open as `pending_approval` and review can end `rejected`,
+ * which moves no money. Refunds must be `full`; a partial is goodwill or proration, not a
+ * contract unwound. A later `chargeback_reverse` deliberately does not undo the record.
+ */
+const isRecordableRefund = (adjustment: PaddleAdjustmentState): boolean =>
+  adjustment.status === 'approved' &&
+  (adjustment.action === 'chargeback' ||
+    (adjustment.action === 'refund' && adjustment.type === 'full'));
+
+/**
+ * Records an approved refund or chargeback against the guild's subscription row. The only
+ * writer of `lastRefundAt` — subscription events must never touch it (see
+ * {@link PaddleSubscriptionValues}).
+ *
+ * Anchored on the adjustment's `createdAt` so `adjustment.created` and the later `updated`
+ * that approves it converge on one instant, and monotonic so an out-of-order delivery
+ * cannot overwrite a newer refund.
+ *
+ * Resolved to exactly one row before writing. `subscriptionId` is nullable on the entity, so
+ * there is a customer fallback — but `paddleCustomerId` is legitimately NOT unique (one buyer
+ * paying for two servers is one Paddle customer with two rows), and a set-based update would
+ * stamp a refund onto guilds that never had one. An unattributable refund is logged, never
+ * spread.
+ */
+const recordRefund = async (adjustment: PaddleAdjustmentState): Promise<void> => {
+  const occurredAt = new Date(adjustment.createdAt);
+
+  try {
+    const candidates = adjustment.subscriptionId
+      ? await db
+          .select()
+          .from(subscription)
+          .where(eq(subscription.paddleSubscriptionId, adjustment.subscriptionId))
+          .limit(2)
+      : await db
+          .select()
+          .from(subscription)
+          .where(eq(subscription.paddleCustomerId, adjustment.customerId))
+          .limit(2);
+
+    // Ambiguous (or absent) is not recorded at all — see the note above on
+    // `paddleCustomerId` not being unique.
+    const [target, ambiguous] = candidates;
+    if (!target || ambiguous) {
+      logger.warn(
+        `Paddle adjustment ${adjustment.id} (${adjustment.action}) matched ${candidates.length} subscription rows, not recording (subscription ${adjustment.subscriptionId ?? 'none'}, customer ${adjustment.customerId})`
+      );
+      return;
+    }
+
+    const [row] = await db
+      .update(subscription)
+      .set({ lastRefundAt: occurredAt })
+      .where(
+        and(
+          eq(subscription.id, target.id),
+          or(isNull(subscription.lastRefundAt), lt(subscription.lastRefundAt, occurredAt))
+        )
+      )
+      .returning();
+
+    if (!row) {
+      logger.debug(
+        `Paddle adjustment ${adjustment.id} skipped: a newer refund is already recorded for guild ${target.guildId}`
+      );
+      return;
+    }
+
+    // Retained fee is logged because it is the only place the real figure surfaces:
+    // Paddle keeps its processing fee on a refund and publishes no rate card for it.
+    logger.info(
+      `Refund recorded for guild ${row.guildId}: ${adjustment.action} ${adjustment.id} at ${occurredAt.toISOString()} (retained fee ${adjustment.payoutTotals?.retainedFee ?? 'unknown'} ${adjustment.payoutTotals?.currencyCode ?? ''})`
+    );
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to record refund against subscription');
+  }
+};
+
 export const Subscriptions = {
   getByGuildId,
   getByPaddleSubscriptionId,
   applyPaddleSubscription,
   isEntitled,
   getRevokedWithBotPresent,
+  isRecordableRefund,
+  recordRefund,
+  isTrialAvailable,
+  resolveCheckoutPrice,
 };

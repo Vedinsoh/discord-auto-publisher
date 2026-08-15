@@ -88,7 +88,7 @@ export function WithdrawalPanel({
         <h3 className="text-white text-lg mb-1">Right of withdrawal</h3>
         <p className="text-slate-400 text-sm">
           You can withdraw from this contract within 14 days of it being concluded, without giving a
-          reason, and get a full refund.{' '}
+          reason. Any payment you have made is refunded in full.{' '}
           {withdrawal.windowEndsAt && (
             <>
               Your period ends on{' '}
@@ -160,11 +160,15 @@ export function WithdrawalPanel({
                 </p>
               </div>
 
-              {/* čl. 84 — full refund, and 14 days is the statutory outer limit. */}
+              {/* čl. 84 — full refund, and 14 days is the statutory outer limit. Conditional
+                  because the window sits inside the free trial, where nothing has been
+                  charged: "the full amount you paid" is $0 there, true but reading as a
+                  promise of money. The no-deduction statement is the part the statute cares
+                  about and it stays either way. */}
               <p className="text-slate-400 text-sm">
-                You get back the full amount you paid, with nothing deducted for the time you have
-                used the service. Paddle, our merchant of record, refunds it to the payment method
-                you used, within 14 days.
+                Any payment you have made comes back in full, with nothing deducted for the time you
+                have used the service. Paddle, our merchant of record, refunds it to the payment
+                method you used, within 14 days.
               </p>
 
               <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
@@ -230,10 +234,7 @@ function WithdrawalReceipt({ result }: { result: WithdrawalResult }) {
             ? `Your confirmation of receipt has been sent to ${result.notificationAddress}. Keep it — it is your record.`
             : `We could not send your confirmation to ${result.notificationAddress} yet. We are retrying, and it does not affect your withdrawal.`}
         </p>
-        <p className="text-slate-300">
-          {refundSentence(result.refundStatus)} Refunds are issued by Paddle, the merchant of
-          record, to the payment method you used.
-        </p>
+        <p className="text-slate-300">{refundSentence(result.refundStatus)}</p>
         <p className="text-slate-400">
           If the Premium bot had replaced the free bot in this server, invite the free bot back to
           resume publishing — Discord does not let a bot add itself. Your channels and rules are
@@ -244,10 +245,21 @@ function WithdrawalReceipt({ result }: { result: WithdrawalResult }) {
   );
 }
 
-/** Paddle's `approved` means the money is moving; anything else does not. */
+/**
+ * Paddle's `approved` means the money is moving; anything else does not. `'none'` is the
+ * trial case and carries no Paddle sentence — naming the merchant of record and the payment
+ * method reads as "money is coming back" when nothing was ever charged.
+ */
 function refundSentence(status: string | null): string {
-  if (status === 'approved') return 'Your refund has been issued.';
-  if (status === 'pending_approval') return 'Your refund has been raised and is being processed.';
-  if (status === null) return 'We are arranging your refund.';
-  return 'Your refund has been raised.';
+  const paidBy =
+    ' Refunds are issued by Paddle, the merchant of record, to the payment method you used.';
+  if (status === 'none') {
+    return 'No payment was taken during your free trial, so there is nothing to refund.';
+  }
+  if (status === 'approved') return `Your refund has been issued.${paidBy}`;
+  if (status === 'pending_approval') {
+    return `Your refund has been raised and is being processed.${paidBy}`;
+  }
+  if (status === null) return `We are arranging your refund.${paidBy}`;
+  return `Your refund has been raised.${paidBy}`;
 }

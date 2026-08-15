@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePaddle } from '@/lib/paddle';
-import { formatUsd, PREMIUM_PRICE_MONTHLY_USD, PREMIUM_PRICE_YEARLY_USD } from '@/lib/pricing';
 
 /**
  * Paddle default payment link host. Every customer-facing Paddle link (abandoned
@@ -58,18 +57,7 @@ function CheckoutInner() {
   // transaction's server-set custom_data.
   const guildName = searchParams.get('g');
   const guildIcon = searchParams.get('icon');
-  // Same deal: orientation for the page behind the overlay, set only by the
-  // in-app upgrade path. The authoritative line items, tax and grand total live
-  // in the overlay itself — this is never the disclosure of record.
-  const plan = searchParams.get('plan');
   const [genericSuccess, setGenericSuccess] = useState(false);
-
-  const planLine =
-    plan === 'month'
-      ? `Premium · ${formatUsd(PREMIUM_PRICE_MONTHLY_USD)} per month`
-      : plan === 'year'
-        ? `Premium · ${formatUsd(PREMIUM_PRICE_YEARLY_USD)} per year`
-        : null;
 
   const onCompleted = useCallback(
     (event: PaddleEventData) => {
@@ -167,7 +155,11 @@ function CheckoutInner() {
             </div>
           </div>
         )}
-        {planLine && <p className="mt-4 text-sm text-slate-400">{planLine}</p>}
+        {/* No price or plan line here, deliberately. Anything this page could state comes
+            from the query string, which the customer can edit — and a page behind the
+            overlay quoting a different price than the overlay is worse than saying nothing.
+            The overlay owns the line items, tax, totals and renewal terms, and is what the
+            buyer actually agrees to. */}
         <Button
           onClick={openCheckout}
           disabled={!paddle}

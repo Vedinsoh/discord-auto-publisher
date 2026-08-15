@@ -153,7 +153,11 @@ export interface WithdrawalResult {
   notificationAddress: string;
   /** False = ack email did not leave (retry sweep owns it); UI must not claim it was sent. */
   acknowledged: boolean;
-  /** Paddle adjustment status; null = no refund raised, `pending_approval` = not yet paid. */
+  /**
+   * Paddle adjustment status; `'none'` when there was no payment to return (a withdrawal
+   * inside the free trial), null when raising it failed. Never collapse the two: one means
+   * nothing was owed, the other that something is owed and did not happen.
+   */
   refundStatus: string | null;
 }
 
@@ -165,6 +169,14 @@ export interface GuildDashboardData {
   premiumPending: boolean;
   /** Max enabled channels for the guild's managing edition; 0 = unlimited */
   channelLimit: number;
+  /**
+   * Whether an upgrade started now would carry the 14-day free trial: the guild has never
+   * held a subscription (one trial per guild, ever) AND both trial prices are configured.
+   * Server-decided by the same predicate the checkout route picks the price with — never
+   * re-derive it client-side. Every trial claim in the UI is gated on this, because a claim
+   * the checkout then contradicts creates a second 14-day withdrawal right over a real charge.
+   */
+  trialAvailable: boolean;
   channels: GuildChannel[];
   subscription: SubscriptionData | null;
 }

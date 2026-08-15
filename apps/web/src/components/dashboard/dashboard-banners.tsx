@@ -137,7 +137,10 @@ export function DashboardBanners() {
  *     waiting for the webhook to write the subscription row. No CTA — the
  *     premium-invite banner it hands off to owns the "invite the bot" action.
  *   - `gaveUp`: the 60s ceiling passed with no activation → calm manual-refresh
- *     fallback (amber, not red — payment succeeded, nothing is broken).
+ *     fallback (amber, not red — checkout succeeded, nothing is broken).
+ *
+ * None of the three may claim a payment was taken: a trial checkout completes at $0.00,
+ * so "payment received" is false for every trial signup.
  *   - `confirmed`: activated but neither invite nor pending applies (rare
  *     re-subscribe with the premium bot already present + healthy) → a one-time
  *     positive confirmation so the flow never ends on a silent empty state.
@@ -169,7 +172,7 @@ function CheckoutActivationBanner({ variant }: { variant: 'activating' | 'gaveUp
       <div className="flex items-start gap-4">
         <Loader2 className="w-6 h-6 text-blue-400 shrink-0 mt-1 animate-spin" />
         <div className="flex-1">
-          <h3 className="text-white text-lg mb-1">Payment received — activating Premium</h3>
+          <h3 className="text-white text-lg mb-1">Checkout complete! Activating Premium</h3>
           <p className="text-slate-300 text-sm">
             We&apos;re setting up your Premium subscription. This usually takes a few seconds — the
             page will update automatically.
@@ -181,9 +184,9 @@ function CheckoutActivationBanner({ variant }: { variant: 'activating' | 'gaveUp
 }
 
 /**
- * Shown once activation exceeds the 60s poll ceiling. Amber (not red): the
- * payment went through, so this is a "hang tight" state, not an outage. The
- * Refresh button is a single soft `router.refresh()` — the poller has stopped.
+ * Shown once activation exceeds the 60s poll ceiling. Amber (not red): checkout
+ * succeeded, so this is a "hang tight" state, not an outage. The Refresh button is
+ * a single soft `router.refresh()` — the poller has stopped.
  */
 function CheckoutActivationFallback() {
   const router = useRouter();
@@ -196,7 +199,7 @@ function CheckoutActivationFallback() {
         <div className="flex-1">
           <h3 className="text-white text-lg mb-1">Still activating your Premium</h3>
           <p className="text-slate-300 text-sm mb-4">
-            Your payment went through, but activation is taking longer than usual — it can
+            Your checkout went through, but activation is taking longer than usual — it can
             occasionally take a few minutes. Try refreshing below, and if Premium still doesn&apos;t
             appear, reach out and we&apos;ll sort it out right away.
           </p>

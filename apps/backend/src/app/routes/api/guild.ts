@@ -1,5 +1,5 @@
 import type { Edition, WithdrawalState } from '@ap/api-types';
-import { env, isPublicInstance } from '@ap/config';
+import { isPublicInstance } from '@ap/config';
 import type { Subscription } from '@ap/database';
 import {
   type APIResponse,
@@ -287,6 +287,9 @@ export const GuildApi: Router = (() => {
           migrated,
           premiumPending,
           channelLimit: Services.Editions.channelLimitFor(managingEdition),
+          // The fact the pre-contractual trial disclosure is built from, so it comes from
+          // the checkout's own predicate rather than being re-derived client-side.
+          trialAvailable: Services.Subscriptions.isTrialAvailable(sub),
           channels,
           subscription: sub
             ? {
@@ -608,16 +611,6 @@ export const GuildApi: Router = (() => {
           return;
         }
 
-        const priceId = interval === 'year' ? env.PADDLE_PRICE_YEARLY : env.PADDLE_PRICE_MONTHLY;
-
-        if (!priceId) {
-          res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
-            status: StatusCodes.SERVICE_UNAVAILABLE,
-            message: 'Checkout is not configured',
-          } as APIResponse);
-          return;
-        }
-
         try {
           // Gate: a guild must be migrated (allowlist model) before it can buy
           // Premium — Premium's value (per-channel filters/control) lives on
@@ -639,6 +632,19 @@ export const GuildApi: Router = (() => {
             res.status(StatusCodes.CONFLICT).json({
               status: StatusCodes.CONFLICT,
               message: 'Guild already has an active subscription',
+            } as APIResponse);
+            return;
+          }
+
+          // Trial vs plain price. Resolved here rather than before the try block because it
+          // needs `existing` — the row the entitlement guard above already read, so the
+          // branch costs no extra query.
+          const { priceId } = Services.Subscriptions.resolveCheckoutPrice(interval, existing);
+
+          if (!priceId) {
+            res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
+              status: StatusCodes.SERVICE_UNAVAILABLE,
+              message: 'Checkout is not configured',
             } as APIResponse);
             return;
           }

@@ -41,6 +41,7 @@ CREATE TABLE "subscription" (
 	"scheduled_change_at" timestamp with time zone,
 	"canceled_at" timestamp with time zone,
 	"last_event_at" timestamp with time zone NOT NULL,
+	"last_refund_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "subscription_guild_id_unique" UNIQUE("guild_id"),

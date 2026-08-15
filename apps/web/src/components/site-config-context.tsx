@@ -17,6 +17,8 @@ const SiteConfigContext = createContext<SiteConfig>({
   freeBotId: '',
   premiumBotId: '',
   legacySunsetDate: '',
+  paddleClientToken: '',
+  paddleEnvironment: 'sandbox',
 });
 
 export function SiteConfigProvider({
