@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import {
   ChannelLimitCta,
@@ -31,7 +31,7 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SegmentedControl, type SegmentedOption } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/ui/skeleton';
-import { createCheckout, getSubscription } from '@/lib/api/actions';
+import { createCheckout } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
 import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
@@ -44,6 +44,7 @@ import {
   PREMIUM_YEARLY_SAVINGS_PERCENT,
   PREMIUM_YEARLY_SAVINGS_USD,
 } from '@/lib/pricing';
+import { useSubscriptionDetail } from '@/lib/use-subscription-detail';
 
 interface SubscriptionPanelProps {
   guildId: string;
@@ -84,32 +85,6 @@ const intervalLabels: Record<string, string> = {
   year: 'Yearly',
 };
 
-/**
- * Portal URLs, co-admin username, withdrawal state. Fetched above the entitled/free
- * branch because the withdrawal control renders for non-entitled statuses too.
- */
-function useSubscriptionDetail(guildId: string, enabled: boolean) {
-  const [detail, setDetail] = useState<SubscriptionDetail | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    if (!enabled) return;
-    let cancelled = false;
-    getSubscription(guildId)
-      .then(result => {
-        if (!cancelled) setDetail(result);
-      })
-      .catch(() => {
-        if (!cancelled) setFailed(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [guildId, enabled]);
-
-  return { detail, failed };
-}
-
 export function SubscriptionPanel({ guildId, guildName, subscription }: SubscriptionPanelProps) {
   // Narrowed rather than a boolean flag so the entitled branch keeps a non-null
   // subscription without an assertion.
@@ -121,6 +96,8 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
       ? subscription
       : null;
 
+  // Above the entitled/free branch: the withdrawal control renders for non-entitled
+  // statuses too.
   const { detail, failed } = useSubscriptionDetail(guildId, !!subscription);
   const withdrawal = detail?.withdrawal ?? null;
 

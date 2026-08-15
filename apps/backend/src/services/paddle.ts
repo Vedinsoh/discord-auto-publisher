@@ -1,5 +1,6 @@
 import { env } from '@ap/config';
 import {
+  ApiError,
   Environment,
   type EventEntity,
   Paddle,
@@ -150,15 +151,29 @@ const refundTransaction = async (params: {
  * button is Paddle's portal link and ends at period close instead. Returns the updated
  * subscription so the caller applies it through the same `applyPaddleSubscription` →
  * `enforceTransition` path; the `subscription.canceled` webhook still arrives, no-op.
+ *
+ * Already-cancelled is a success: withdrawal availability ignores `status`, so a day-3
+ * canceller reaches this with the contract already over. Never skip the call on our own
+ * stored `status` instead — a stale row saying cancelled while Paddle still bills would
+ * leave a withdrawn consumer paying.
  */
 const cancelSubscriptionImmediately = async (
   paddleSubscriptionId: string
 ): Promise<PaddleSubscription> => {
-  const updated = await ensurePaddle().subscriptions.cancel(paddleSubscriptionId, {
-    effectiveFrom: 'immediately',
-  });
-  logger.info(`Cancelled Paddle subscription ${paddleSubscriptionId} immediately (withdrawal)`);
-  return updated;
+  try {
+    const updated = await ensurePaddle().subscriptions.cancel(paddleSubscriptionId, {
+      effectiveFrom: 'immediately',
+    });
+    logger.info(`Cancelled Paddle subscription ${paddleSubscriptionId} immediately (withdrawal)`);
+    return updated;
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.code !== 'subscription_update_when_canceled') {
+      throw error;
+    }
+
+    logger.info(`Paddle subscription ${paddleSubscriptionId} was already cancelled`);
+    return ensurePaddle().subscriptions.get(paddleSubscriptionId);
+  }
 };
 
 /**
