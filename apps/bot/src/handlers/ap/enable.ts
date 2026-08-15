@@ -86,6 +86,21 @@ export async function chatInputEnable(
           .json()
           .then(body => (body as { code?: string })?.code)
           .catch(() => undefined);
+        // Reachable despite `channel_types` on the option — that only restricts
+        // the picker, so the backend re-checks server-side.
+        if (code === 'NOT_ANNOUNCEMENT_CHANNEL') {
+          const typeContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent(
+              `${emojis.crossmark} <#${channel.id}> isn't an announcement channel. Change its type in Discord's channel settings, then try again.`
+            )
+          );
+
+          return interaction.editReply({
+            flags: [MessageFlags.IsComponentsV2],
+            components: [typeContainer],
+          });
+        }
+
         const entitledButNotServing =
           code === 'LIMIT_PREMIUM_INVITE' || code === 'LIMIT_PREMIUM_PENDING';
 

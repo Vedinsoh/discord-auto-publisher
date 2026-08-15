@@ -1,9 +1,15 @@
 import type { Edition } from '@ap/api-types';
 import { env, isPublicInstance } from '@ap/config';
-import { createTtlCache } from '@ap/utils';
+import { createTtlCache, sortBySidebarOrder } from '@ap/utils';
 import { DiscordAPIError, REST } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
-import { type APIUser, RESTJSONErrorCodes, Routes } from 'discord-api-types/v10';
+import {
+  type APIChannel,
+  type APIUser,
+  ChannelType,
+  RESTJSONErrorCodes,
+  Routes,
+} from 'discord-api-types/v10';
 import { logger } from 'utils/logger.js';
 
 // A self-hosted instance runs a single bot, which registers as `premium`
@@ -94,6 +100,35 @@ const cachedGet = async <T>(edition: Edition, route: `/${string}`): Promise<T> =
     }
     throw error;
   }
+};
+
+/**
+ * The one definition of "announcement channel of this guild" — read by both the
+ * dashboard's candidate list and the registration guards in `Channels.add` /
+ * `Guilds.migrate`, so a channel can never be registrable but unlistable.
+ *
+ * Sorted because Discord's REST list is unordered.
+ */
+const getAnnouncementChannels = async (
+  edition: Edition,
+  guildId: Snowflake
+): Promise<APIChannel[]> => {
+  const channels = await cachedGet<APIChannel[]>(edition, Routes.guildChannels(guildId));
+
+  const categoryPositions = new Map<string, number>();
+  for (const c of channels) {
+    if (c.type === ChannelType.GuildCategory) categoryPositions.set(c.id, c.position ?? 0);
+  }
+
+  return sortBySidebarOrder(
+    channels.filter(c => c.type === ChannelType.GuildAnnouncement),
+    c => ({
+      id: c.id,
+      position: 'position' in c ? (c.position ?? 0) : 0,
+      parentId: ('parent_id' in c ? c.parent_id : null) ?? null,
+    }),
+    categoryPositions
+  );
 };
 
 /**
@@ -221,6 +256,7 @@ const getUsername = async (userId: string): Promise<string | null> => {
 export const Discord = {
   restFor,
   cachedGet,
+  getAnnouncementChannels,
   evictGuildChannels,
   evictGuildRoles,
   hasToken,

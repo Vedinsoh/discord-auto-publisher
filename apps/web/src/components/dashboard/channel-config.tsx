@@ -186,6 +186,15 @@ export function ChannelConfig({
           router.refresh();
           return;
         }
+        // Demoted since this list rendered — a stale list, not a cap hit. Must
+        // precede the cap branch below, which treats any code as a limit reason.
+        if (result.code === 'NOT_ANNOUNCEMENT_CHANNEL') {
+          toast.error('That is no longer an announcement channel', {
+            description: 'Its type changed in Discord. Refreshing the channel list.',
+          });
+          router.refresh();
+          return;
+        }
         // Cap hit: show the reason-appropriate upsell instead of a hard failure.
         // Prefer the backend's code; fall back to the client mirror if absent.
         // enable only ever fails with a channel-limit code (or none).

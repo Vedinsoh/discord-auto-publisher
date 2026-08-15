@@ -417,6 +417,23 @@ const migrate = async (guildId: Snowflake, channelIds: Snowflake[]): Promise<voi
       throw createHttpError('Guild is already migrated', StatusCodes.CONFLICT);
     }
 
+    // The other path that writes channel rows; same guard and reasoning as
+    // `Channels.add`.
+    if (channelIds.length > 0) {
+      const edition = await Editions.getManagingEdition(guildId);
+      const announcementIds = new Set(
+        (await Discord.getAnnouncementChannels(edition, guildId)).map(c => c.id)
+      );
+
+      if (channelIds.some(id => !announcementIds.has(id))) {
+        throw createHttpError(
+          'All channels must be announcement channels of this guild',
+          StatusCodes.BAD_REQUEST,
+          'NOT_ANNOUNCEMENT_CHANNEL'
+        );
+      }
+    }
+
     const { limit, reason } = await Editions.resolveChannelLimit(guildId);
     if (limit !== 0 && channelIds.length > limit) {
       throw createHttpError(

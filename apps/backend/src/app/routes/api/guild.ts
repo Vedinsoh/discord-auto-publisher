@@ -9,16 +9,9 @@ import {
   sendErrorResponse,
   validateRequest,
 } from '@ap/express';
-import { sortBySidebarOrder } from '@ap/utils';
 import type { SetChannelFilters } from '@ap/validations';
 import { DiscordAPIError, HTTPError } from '@discordjs/rest';
-import {
-  type APIChannel,
-  type APIGuild,
-  type APIRole,
-  ChannelType,
-  Routes,
-} from 'discord-api-types/v10';
+import { type APIGuild, type APIRole, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
@@ -67,34 +60,6 @@ const requireOwnedServingChannel = async (guildId: string, channelId: string): P
   if (record.pausedAt) {
     throw createHttpError('Channel is not enabled', StatusCodes.CONFLICT);
   }
-};
-
-/**
- * Announcement channels of a guild, in Discord sidebar order (shared
- * {@link sortBySidebarOrder}), fetched through an edition's proxy. Discord's
- * REST list is unordered. Category positions are read from the full list before
- * it is filtered down.
- */
-const fetchAnnouncementChannels = async (
-  edition: Edition,
-  guildId: string
-): Promise<APIChannel[]> => {
-  const channels = await Discord.cachedGet<APIChannel[]>(edition, Routes.guildChannels(guildId));
-
-  const categoryPositions = new Map<string, number>();
-  for (const c of channels) {
-    if (c.type === ChannelType.GuildCategory) categoryPositions.set(c.id, c.position ?? 0);
-  }
-
-  return sortBySidebarOrder(
-    channels.filter(c => c.type === ChannelType.GuildAnnouncement),
-    c => ({
-      id: c.id,
-      position: 'position' in c ? (c.position ?? 0) : 0,
-      parentId: ('parent_id' in c ? c.parent_id : null) ?? null,
-    }),
-    categoryPositions
-  );
 };
 
 /**
@@ -229,7 +194,7 @@ export const GuildApi: Router = (() => {
 
       const [channelRecords, announcementChannels, guildRow, premiumPending] = await Promise.all([
         Services.Guilds.getChannelRecords(guildId),
-        fetchAnnouncementChannels(managingEdition, guildId),
+        Discord.getAnnouncementChannels(managingEdition, guildId),
         Services.Guilds.find(guildId),
         Services.Handover.isPending(guildId),
       ]);
@@ -347,26 +312,13 @@ export const GuildApi: Router = (() => {
 
   /**
    * PUT /api/guild/:guildId/channel/:channelId
-   * Enable channel for auto-publishing. Validates the channel is an
-   * announcement channel of THIS guild — the bot hot path trusts the
-   * channel-level cache, so a cross-guild channelId would force-publish
-   * someone else's channel.
+   * Enable channel for auto-publishing. Channel type, guild ownership and the
+   * cap are all enforced in `Channels.add`.
    */
   router.put('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
     const { guildId, channelId } = req.params;
 
     try {
-      const managingEdition = await Services.Editions.getManagingEdition(guildId);
-      const announcementChannels = await fetchAnnouncementChannels(managingEdition, guildId);
-
-      if (!announcementChannels.some(c => c.id === channelId)) {
-        res.status(StatusCodes.BAD_REQUEST).json({
-          status: StatusCodes.BAD_REQUEST,
-          message: 'Channel is not an announcement channel of this guild',
-        } as APIResponse);
-        return;
-      }
-
       await Services.Channels.add(guildId, channelId);
 
       res.status(StatusCodes.OK).json({
@@ -480,23 +432,8 @@ export const GuildApi: Router = (() => {
     const { channelIds } = req.body as { channelIds: string[] };
 
     try {
-      const uniqueChannelIds = [...new Set(channelIds)];
-
-      const managingEdition = await Services.Editions.getManagingEdition(guildId);
-      const announcementChannels = await fetchAnnouncementChannels(managingEdition, guildId);
-      const announcementIds = new Set(announcementChannels.map(c => c.id));
-      const invalid = uniqueChannelIds.filter(id => !announcementIds.has(id));
-
-      if (invalid.length > 0) {
-        res.status(StatusCodes.BAD_REQUEST).json({
-          status: StatusCodes.BAD_REQUEST,
-          message: 'All channels must be announcement channels of this guild',
-        } as APIResponse);
-        return;
-      }
-
-      // Already-migrated and channel-limit rejections are enforced in the service
-      await Services.Guilds.migrate(guildId, uniqueChannelIds);
+      // Channel type, already-migrated and cap rejections all come from the service
+      await Services.Guilds.migrate(guildId, [...new Set(channelIds)]);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,

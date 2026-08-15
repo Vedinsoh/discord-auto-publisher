@@ -6,6 +6,7 @@ import { type CreateFilter, type Filter, FilterMatchMode } from '@ap/validations
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
+import { Discord } from 'services/discord.js';
 import { Editions } from 'services/editions.js';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
@@ -199,11 +200,44 @@ const get = async (channelId: Snowflake) => {
 };
 
 /**
+ * Guards in the service, not the route: `PUT /channel/:channelId` (the bot's
+ * `/ap enable`) is Docker-internal with no auth and takes `guildId` from the
+ * body, and `channel_types` on the slash-command option only restricts the
+ * picker — Discord does not document it as a server-side guarantee.
+ *
+ * Not redundant with the hot path's own type re-check: a forged row still
+ * migrates a legacy guild off auto-publish and burns a free-cap slot, and a
+ * foreign channelId would be force-published, since `Channel.isEnabled` is
+ * keyed on channelId alone.
+ *
+ * Throws (never admits) when Discord is unreachable.
+ */
+const assertAnnouncementChannelOfGuild = async (
+  guildId: Snowflake,
+  channelId: Snowflake
+): Promise<void> => {
+  const edition = await Editions.getManagingEdition(guildId);
+  const announcementChannels = await Discord.getAnnouncementChannels(edition, guildId);
+
+  if (!announcementChannels.some(c => c.id === channelId)) {
+    throw createHttpError(
+      'Channel is not an announcement channel of this guild',
+      StatusCodes.BAD_REQUEST,
+      'NOT_ANNOUNCEMENT_CHANNEL'
+    );
+  }
+};
+
+/**
  * Add channel to channel DB & cache
  * @param guildId ID of the guild
  * @param channelId ID of the channel
  */
 const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
+  // Before the cap read, so ids the caller has no claim to can't probe a
+  // guild's channel count.
+  await assertAnnouncementChannelOfGuild(guildId, channelId);
+
   // The limit counts SERVING channels only (paused rows are retained but not
   // served, ADR 0009), so both "register new" and "unpause existing" go through
   // the same cap gate.
