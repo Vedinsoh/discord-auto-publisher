@@ -18,6 +18,8 @@
 
 - **Blocked cache** — negative TTL'd record marking a channel as un-crosspostable (401/403). Cleared by the bot via `DELETE /internal/blocked/:id` on permission updates.
 
+- **Onboarding boost** — a newly-joined guild's first 10 successful publishes are enqueued at queue priority `BOOSTED` instead of `NORMAL`. Budget is `boost:{guildId}` in Redis DB 3; key presence *is* the boost state. Seeded by the bot from `guildCreate` via `POST /internal/boost/:id`, consumed by the queue worker on a boosted success. Every `queue.add` must pass an explicit priority — BullMQ serves un-prioritized jobs first, so one untagged enqueue starves the whole boosted tier. See [ADR 0004](./docs/adr/0004-onboarding-boost-queue-priority.md).
+
 ## Internal Proxy modules
 
 - **Gateway** — owns the `REST` instance, the `rejectOnRateLimit` predicate, REST event listeners, the invalid-requests tracker, and the passthrough Express route. Pure rate-limit-sync concern.
@@ -30,6 +32,8 @@ The Crosspost module calls `Gateway.rest.post(...)` directly (in-process functio
 
 - **Single process.** The v7 three-tier split (`bot → crosspost-worker → proxy`) was speculative and untested in production. The proven shape is one process — the Proxy's only reason to exist is shared rate-limit state, which doesn't benefit from another network hop.
 
-- **Explicit RPC bot↔proxy for crossposts.** Bot calls `POST /crosspost/:channelId/:messageId` (empty body) instead of letting the Proxy intercept Discord-shaped URLs. Keeps the async-queue semantics visible at the call site.
+- **Explicit RPC bot↔proxy for crossposts.** Bot calls `POST /crosspost/:guildId/:channelId/:messageId` (empty body) instead of letting the Proxy intercept Discord-shaped URLs. Keeps the async-queue semantics visible at the call site. `guildId` exists only to resolve the onboarding-boost tier, and comes from the `NewsChannel` rather than the nullable `message.guildId`.
+
+- **Redis ownership stays in the Proxy.** The bot has no Redis client. Anything it needs to write goes through an internal Proxy route (`/internal/blocked/:id`, `/internal/boost/:id`).
 
 - **Invalid-requests in-memory.** Relies on single-replica deployment. Multi-replica deployment requires moving this back to Redis.

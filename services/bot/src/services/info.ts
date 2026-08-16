@@ -18,7 +18,10 @@ const get = async () => {
       };
     };
     queue: {
+      /** Untagged depth; MUST stay 0 now that every enqueue carries a priority */
       waiting?: number;
+      /** Where all depth lives — read this, not `waiting` */
+      prioritized?: number;
       active?: number;
       delayed?: number;
       failed?: number;
@@ -26,6 +29,7 @@ const get = async () => {
     };
     sublimitCount: number;
     blockedCount: number;
+    boostedCount: number;
   };
 };
 

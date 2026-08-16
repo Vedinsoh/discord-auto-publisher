@@ -1,4 +1,4 @@
-import { type Message, MessageFlags, type NewsChannel } from 'discord.js';
+import { type Message, MessageFlags, type NewsChannel, type Snowflake } from 'discord.js';
 import urlRegex from 'url-regex-safe';
 import { Data } from '#data';
 import { Services } from '#services';
@@ -36,7 +36,7 @@ const handle = async (message: Message, channel: NewsChannel) => {
 
   // If message has no text content, crosspost immediately
   if (!message.content) {
-    return push(message);
+    return push(message, channel.guildId);
   }
 
   // Defer crossposting if the message has a URL but no embeds
@@ -46,15 +46,17 @@ const handle = async (message: Message, channel: NewsChannel) => {
     await sleep(secToMs(5));
   }
 
-  return push(message);
+  return push(message, channel.guildId);
 };
 
-const push = async (message: ReceivedMessage) => {
+// guildId comes from the NewsChannel, not `message.guildId`: `ReceivedMessage` may be
+// partial, where guildId is nullable.
+const push = async (message: ReceivedMessage, guildId: Snowflake) => {
   try {
-    return await Data.API.Proxy.enqueueCrosspost(message.channel.id, message.id);
+    return await Data.API.Proxy.enqueueCrosspost(guildId, message.channel.id, message.id);
   } catch (error) {
     logger.warn(
-      { event: 'crosspost.push_failed', channelId: message.channel.id, messageId: message.id, err: error },
+      { event: 'crosspost.push_failed', guildId, channelId: message.channel.id, messageId: message.id, err: error },
       'Failed to enqueue crosspost on proxy',
     );
     return;

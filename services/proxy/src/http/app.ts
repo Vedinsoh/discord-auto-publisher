@@ -1,5 +1,5 @@
 import express, { type Express } from 'express';
-import type { BlockedCache, SublimitCounter } from '../crosspost/caches.js';
+import type { BlockedCache, BoostBudget, SublimitCounter } from '../crosspost/caches.js';
 import type { CrosspostQueueModule } from '../crosspost/queue.js';
 import type { Gateway } from '../gateway/index.js';
 import { logger } from '../logger.js';
@@ -10,6 +10,7 @@ export const createApp = (deps: {
   gateway: Gateway;
   crosspost: CrosspostQueueModule;
   caches: { blocked: BlockedCache; sublimit: SublimitCounter };
+  boostBudget: BoostBudget;
 }): Express => {
   const app = express();
   app.disable('x-powered-by');

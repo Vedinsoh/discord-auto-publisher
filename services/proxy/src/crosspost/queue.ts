@@ -4,24 +4,44 @@ import { Routes, type Snowflake } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import IORedis, { type Redis } from 'ioredis';
 import { logger } from '../logger.js';
-import type { BlockedCache, SublimitCounter } from './caches.js';
+import type { BlockedCache, BoostBudget, SublimitCounter } from './caches.js';
 import { type CrosspostOutcome, classify } from './classifier.js';
 import type { Gate } from './gate.js';
+import type { LatencyReporter } from './latency.js';
 
 const QUEUE_NAME = 'crosspost';
 const QUEUE_DB = 0;
 const QUEUE_HIGH_WATER = 10_000;
 const RATE_LIMIT_RETRY_CAP_MS = 5 * 60 * 1_000;
 const INVALID_REQUESTS_DELAY_MS = 60_000;
-const CHANNEL_ID_PATTERN = /^\d{17,19}$/;
+const SNOWFLAKE_PATTERN = /^\d{17,19}$/;
+
+/**
+ * Queue tiers. Lower is higher priority; BullMQ's valid range is 1..2_097_152.
+ *
+ * INVARIANT: every `queue.add` MUST pass an explicit priority. BullMQ serves
+ * un-prioritized jobs BEFORE prioritized ones — `fetchNextJob.lua` RPOPLPUSHes from
+ * the `wait` list and only falls back to the prioritized sorted set when `wait` is
+ * empty. So leaving any job untagged (priority 0 = "no priority") would starve the
+ * boosted tier behind a backlog that at peak never drains, making the boost strictly
+ * worse than plain FIFO. See ADR 0004.
+ */
+const PRIORITY = { BOOSTED: 1, NORMAL: 10 } as const;
 
 export type CrosspostJobData = {
+  guildId: Snowflake;
   channelId: Snowflake;
   messageId: Snowflake;
 };
 
 export type CrosspostQueueStats = {
+  /**
+   * Untagged depth. MUST stay 0 — a non-zero value means some `queue.add` lost its
+   * explicit priority and is starving the boosted tier (see PRIORITY).
+   */
   waiting: number;
+  /** Where all depth lives now that every job carries a priority */
+  prioritized: number;
   active: number;
   delayed: number;
   failed: number;
@@ -39,6 +59,8 @@ export const createCrosspostQueue = (deps: {
   rest: REST;
   gate: Gate;
   caches: { blocked: BlockedCache; sublimit: SublimitCounter };
+  boostBudget: BoostBudget;
+  latency: LatencyReporter;
   redisUri: string;
   concurrency: number;
 }): CrosspostQueueModule => {
@@ -101,6 +123,13 @@ export const createCrosspostQueue = (deps: {
     try {
       await deps.rest.post(Routes.channelMessageCrosspost(channelId, messageId));
       await deps.caches.sublimit.increment(channelId);
+      const boosted = job.opts.priority === PRIORITY.BOOSTED;
+      // Gated on the job's OWN priority, not on a fresh budget read: an unconditional
+      // DECR would mint a negative key for every guild in the system.
+      if (boosted) await deps.boostBudget.consume(job.data.guildId);
+      // `attemptsStarted` is bumped by `prepareJobForProcessing.lua` on every pickup,
+      // so > 1 means this job bounced (rate limit or 5xx) rather than merely queued.
+      deps.latency.record(boosted ? 'boosted' : 'normal', Date.now() - job.timestamp, job.attemptsStarted > 1);
       logger.debug({ event: 'crosspost.success', channelId, messageId });
     } catch (error) {
       const outcome = classify(error);
@@ -117,9 +146,13 @@ export const createCrosspostQueue = (deps: {
   worker.on('error', (err) => logger.error({ event: 'worker.error', err }));
 
   const router = express.Router();
-  router.post('/crosspost/:channelId/:messageId', async (req, res) => {
-    const { channelId, messageId } = req.params;
-    if (!CHANNEL_ID_PATTERN.test(channelId) || !CHANNEL_ID_PATTERN.test(messageId)) {
+  router.post('/crosspost/:guildId/:channelId/:messageId', async (req, res) => {
+    const { guildId, channelId, messageId } = req.params;
+    if (
+      !SNOWFLAKE_PATTERN.test(guildId) ||
+      !SNOWFLAKE_PATTERN.test(channelId) ||
+      !SNOWFLAKE_PATTERN.test(messageId)
+    ) {
       res.status(400).end();
       return;
     }
@@ -136,25 +169,55 @@ export const createCrosspostQueue = (deps: {
       return;
     }
 
-    const waiting = await queue.getWaitingCount();
-    if (waiting >= QUEUE_HIGH_WATER) {
-      logger.warn({ event: 'crosspost.rejected.queue_overloaded', channelId, messageId, waiting });
+    // Both states, never `getWaitingCount()`: BullMQ's 'waiting' expands to `wait` +
+    // `paused` (`sanitizeJobTypes`) and never covers `prioritized`, so once every job
+    // carries a priority a waiting-only read is permanently 0 and this shed can never
+    // fire — removing the only bound on queue growth. One round trip either way.
+    const counts = await queue.getJobCounts('waiting', 'prioritized');
+    const waiting = counts.waiting ?? 0;
+    const prioritized = counts.prioritized ?? 0;
+    const depth = waiting + prioritized;
+    if (depth >= QUEUE_HIGH_WATER) {
+      logger.warn({ event: 'crosspost.rejected.queue_overloaded', channelId, messageId, waiting, prioritized });
       res.setHeader('Retry-After', '30').status(503).end();
       return;
     }
 
-    await queue.add('crosspost', { channelId, messageId }, { jobId: `${channelId}-${messageId}` });
+    const priority = (await deps.boostBudget.isBoosted(guildId)) ? PRIORITY.BOOSTED : PRIORITY.NORMAL;
+
+    await queue.add('crosspost', { guildId, channelId, messageId }, { jobId: `${channelId}-${messageId}`, priority });
+
+    // Boosted enqueues log at `info` so the feature is measurable in prod (bounded: 10
+    // per new guild). The normal tier stays at `debug` — an info line per message would
+    // be thousands an hour at peak.
+    if (priority === PRIORITY.BOOSTED) {
+      logger.info({ event: 'crosspost.enqueued.boosted', guildId, channelId, messageId, priority });
+    } else {
+      logger.debug({ event: 'crosspost.enqueued', guildId, channelId, messageId, priority });
+    }
+
     res.status(202).end();
   });
 
   const internalRouter = express.Router();
   internalRouter.delete('/internal/blocked/:channelId', async (req, res) => {
     const { channelId } = req.params;
-    if (!CHANNEL_ID_PATTERN.test(channelId)) {
+    if (!SNOWFLAKE_PATTERN.test(channelId)) {
       res.status(400).end();
       return;
     }
     await deps.caches.blocked.clear(channelId);
+    res.status(204).end();
+  });
+
+  internalRouter.post('/internal/boost/:guildId', async (req, res) => {
+    const { guildId } = req.params;
+    if (!SNOWFLAKE_PATTERN.test(guildId)) {
+      res.status(400).end();
+      return;
+    }
+    await deps.boostBudget.seed(guildId);
+    logger.info({ event: 'boost.seeded', guildId });
     res.status(204).end();
   });
 
@@ -165,11 +228,16 @@ export const createCrosspostQueue = (deps: {
       await worker.close();
       await queue.close();
       await connection.quit();
+      deps.latency.stop();
     },
     stats: async () => {
-      const counts = await queue.getJobCounts('waiting', 'active', 'delayed', 'failed', 'completed');
+      // `waiting` and `prioritized` stay SEPARATE here (unlike the shed above) so the
+      // PRIORITY invariant is a watchable number in prod: waiting != 0 means some
+      // `queue.add` lost its explicit priority.
+      const counts = await queue.getJobCounts('waiting', 'prioritized', 'active', 'delayed', 'failed', 'completed');
       return {
         waiting: counts.waiting ?? 0,
+        prioritized: counts.prioritized ?? 0,
         active: counts.active ?? 0,
         delayed: counts.delayed ?? 0,
         failed: counts.failed ?? 0,
