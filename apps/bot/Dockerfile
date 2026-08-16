@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM oven/bun:1.2.22-alpine AS base
 
 # Stage 1: Install and Build
@@ -7,12 +8,17 @@ RUN apk update && apk add --no-cache g++ make python3 linux-headers
 WORKDIR /app
 
 # Copy workspace configuration and package files
+# Manifests only, so edits under packages/*/src reuse the cached install layer.
+# `--parents` keeps the directory structure and needs frontend 1.20+, which is
+# what the pinned syntax line guarantees.
 COPY package.json bun.lock turbo.json ./
-COPY packages/ ./packages/
-COPY apps/bot/package.json ./apps/bot/package.json
+COPY --parents packages/*/package.json apps/bot/package.json ./
 
 # Install all dependencies (including dev dependencies for build)
-RUN bun install
+# Cache mount persists downloads across builds; BUN_INSTALL_CACHE_DIR is
+# per-command to stay build-only and survive a USER change.
+RUN --mount=type=cache,target=/bun-cache,sharing=locked \
+    BUN_INSTALL_CACHE_DIR=/bun-cache bun install
 
 # Copy source code
 COPY . .

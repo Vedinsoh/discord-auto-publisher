@@ -1,14 +1,17 @@
+# Patterns match the whole context-relative path, so `**/` is what reaches
+# nested directories — apps/web/.next (479MB), nested node_modules, packages/*/dist.
+
 # Dependencies
-node_modules
+**/node_modules
 npm-debug.log
 yarn-error.log
 
 # Build outputs
-dist/
-build/
-.next/
-.turbo/
-*.tsbuildinfo
+**/dist/
+**/build/
+**/.next/
+**/.turbo/
+**/*.tsbuildinfo
 
 # Environment files
 .env
@@ -17,25 +20,25 @@ build/
 .env.development
 
 # Logs
-logs/
-*.log
+**/logs/
+**/*.log
 
 # IDE and editors
-.vscode/
-.idea/
-*.swp
-*.swo
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
 
 # OS files
-.DS_Store
-Thumbs.db
+**/.DS_Store
+**/Thumbs.db
 
 # Temporary files
-tmp/
-temp/
-.tmp/
-*.tmp
-*.temp
+**/tmp/
+**/temp/
+**/.tmp/
+**/*.tmp
+**/*.temp
 
 # Git
 .git/
@@ -43,7 +46,7 @@ temp/
 
 # Documentation. Note `*.md` deliberately does NOT match the dashboard's `.mdx`
 # route files (legal pages) — those must reach the web build.
-*.md
+**/*.md
 CHANGELOG.md
 LICENSE
 
@@ -52,16 +55,19 @@ LICENSE
 .gitlab-ci.yml
 
 # Docker related
-Dockerfile
-Dockerfile.dev
-docker-compose*.yml
+**/Dockerfile
+**/Dockerfile.dev
+**/docker-compose*.yml
 .dockerignore
 
 # Test coverage
-coverage/
+**/coverage/
 
 # Development scripts (not needed in containers)
 scripts/
+
+# Scraped documentation cache
+.firecrawl/
 
 # Supabase
 supabase/.branches
