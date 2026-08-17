@@ -75,14 +75,17 @@ export const retention = {
   /**
    * A submitted statutory withdrawal (ZZP čl. 81.a) — the čl. 64 evidence, so it
    * keeps the accounting clock. Enforced by `deleteExpiredWithdrawals`; never merge
-   * with {@link withdrawalEmailAddress}, whose lifetime is shorter.
+   * with {@link withdrawalIdentifiers}, whose lifetime is shorter.
    */
   withdrawalRecords: '11 years from the end of the business year it falls in',
 
   /**
-   * The address given to receive a statutory withdrawal confirmation. Shorter than the
-   * record it sits on — holding it is only needed until that confirmation is sent
-   * (Zakon o računovodstvu čl. 8 st. 3 t. 2). Erased by `eraseExpiredNotificationAddresses`.
+   * The two identifiers on a withdrawal record: the address given to receive the
+   * statutory confirmation, and the subscriber's Discord user ID. Both shorter than the
+   * record they sit on — the address because holding it is only needed until that
+   * confirmation is sent (Zakon o računovodstvu čl. 8 st. 3 t. 2), the id because it
+   * must match {@link subscriberIdentifier} rather than outlive it on another table.
+   * Erased together by `eraseExpiredWithdrawalIdentifiers`.
    */
-  withdrawalEmailAddress: '24 months after the withdrawal is confirmed',
+  withdrawalIdentifiers: '24 months after the withdrawal is confirmed',
 } as const;

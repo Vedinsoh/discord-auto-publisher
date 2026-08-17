@@ -35,13 +35,13 @@ const whatsNew = [
     icon: Filter,
     title: 'Premium, if you want more',
     description:
-      'Premium adds unlimited channels, extra features and near-instant publishes running on dedicated capacity.',
+      'Premium adds unlimited channels, message filters, and its own dedicated publishing capacity.',
   },
   {
     icon: ShieldCheck,
     title: 'More reliable publishing',
     description:
-      "Publishing was fully rebuilt to handle Discord's limits gracefully, so your messages don't get dropped.",
+      "Messages no longer go missing when Discord is busy, instead they wait their turn and then publish. The only limit left is Discord's own cap on how often a channel can publish.",
   },
 ];
 

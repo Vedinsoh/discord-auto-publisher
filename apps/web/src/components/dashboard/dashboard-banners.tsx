@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
 import { links } from '@/lib/constants';
-import { FREE_CHANNEL_LIMIT } from '@/lib/plans';
 import { useActivationPoll } from '@/lib/use-activation-poll';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
@@ -278,6 +277,8 @@ function PausedChannelsBanner({
   pausedCount: number;
   onDismiss: () => void;
 }) {
+  const { freeChannelLimit } = useSiteConfig();
+
   return (
     <Card className="bg-yellow-500/10 border-yellow-500/30 p-6 relative">
       <button
@@ -295,8 +296,8 @@ function PausedChannelsBanner({
             {pausedCount} channel{pausedCount !== 1 ? 's are' : ' is'} paused
           </h3>
           <p className="text-slate-300 text-sm mb-4">
-            This server is over the free limit of {FREE_CHANNEL_LIMIT} channels. Their setup is
-            saved and returns if you upgrade to Premium.
+            This server is over the free limit of {freeChannelLimit} channels. Their setup is saved
+            and returns if you upgrade to Premium.
           </p>
           <div className="flex items-center gap-4">
             {/* Names the destination, not the outcome: the Subscription page

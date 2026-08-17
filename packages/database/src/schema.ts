@@ -38,10 +38,9 @@ export const guildRelations = relations(guild, ({ many }) => ({
   botPresences: many(botPresence),
 }));
 
-// Per-edition bot membership ("bot presence" domain term; unrelated to Discord
-// user presence). Row with leftAt = NULL means "this edition's bot is in the guild".
-// Kick/leave sets leftAt (guild config preserved for re-invite); reconciliation
-// purges the guild once no edition has an active presence for 30 days.
+// Per-edition bot membership; unrelated to Discord user presence. leftAt is a soft
+// delete so config survives a re-invite — reconciliation purges the guild once no
+// edition has an active presence for 30 days.
 export const botPresence = pgTable(
   'bot_presence',
   {
@@ -70,14 +69,11 @@ export const channel = pgTable(
       .notNull()
       .references(() => guild.guildId, { onDelete: 'cascade' }),
     filters: jsonb('filters').$type<ChannelFilter[]>().default([]).notNull(),
-    // How this channel's conditions combine (any = OR, all = AND). Default 'all':
-    // the common intent is "publish only messages that satisfy every condition".
+    // any = OR, all = AND.
     filterMode: text('filter_mode').default('all').notNull(),
-    // NULL = serving. Set by the system trim when a guild drops to free-managed
-    // over its 3-channel limit: the row + config are retained but the channel is
-    // absent from the Channels allowlist and excluded from the limit count.
-    // Reactivated (set back to NULL) when the managing edition becomes premium.
-    // Only ever written by the trim — never by a user/bot toggle (ADR 0009).
+    // Set by the system trim when a guild drops to free-managed over its channel
+    // limit: config is retained but the channel leaves the allowlist and the limit
+    // count. Only ever written by the trim, never by a user toggle (ADR 0009).
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -92,36 +88,29 @@ export const channelRelations = relations(channel, ({ one }) => ({
   guild: one(guild, { fields: [channel.guildId], references: [guild.guildId] }),
 }));
 
-// No FK to guild: a subscription outlives the guild row (bot kick/guild delete
-// must never cancel billing — the subscriber cancels via dashboard/portal).
+// No FK to guild: a subscription outlives the guild row, so a bot kick can never
+// cancel billing.
 export const subscription = pgTable('subscription', {
-  // Surrogate PK kept deliberately: two candidate keys (guild_id, paddle_subscription_id).
-  // A natural PK on guild_id would bake in "one subscription row per guild forever"
-  // and block a future history model (row per Paddle subscription).
+  // Surrogate PK over the two candidate keys, so a future row-per-Paddle-subscription
+  // history model stays open.
   id: uuid('id').primaryKey().defaultRandom(),
   guildId: text('guild_id').unique().notNull(),
   paddleSubscriptionId: text('paddle_subscription_id').unique().notNull(),
   paddleCustomerId: text('paddle_customer_id').notNull(),
-  // Nullable on purpose: retention erases this id 24 months after the subscription
-  // ends while the Paddle ids and dates stay for the accounting window, so NULL means
-  // "retained row, subscriber identity already erased" — not missing data. Enforced by
-  // the backend's services/retention.ts.
+  // NULL = retained row whose subscriber identity retention already erased at 24
+  // months (services/retention.ts), not missing data.
   subscriberDiscordUserId: text('subscriber_discord_user_id'),
   status: text('status').notNull(),
   paddlePriceId: text('paddle_price_id'),
   billingInterval: text('billing_interval'),
-  // Paddle `started_at` — contract conclusion. Fixed for the contract's life; a
-  // renewal moves currentPeriodStartsAt, never this.
+  // Paddle `started_at` — contract conclusion, fixed for the contract's life.
   startedAt: timestamp('started_at', { withTimezone: true }),
-  // Anchor of the statutory 14-day withdrawal window (ZZP čl. 79 st. 5). Sticky
-  // across renewals — C-565/22 (Sofatutor): a renewal concludes no new contract —
-  // and re-stamped only on a price/interval change. ⚠️ Never anchor on
-  // currentPeriodStartsAt: it advances every renewal and on proration, which would
-  // grant a fresh 14-day full-refund right every billing period.
+  // Anchor of the statutory 14-day withdrawal window. Sticky across renewals
+  // (C-565/22 Sofatutor), re-stamped only on a price/interval change. ⚠️ Anchoring on
+  // currentPeriodStartsAt instead would grant a fresh full-refund right every period.
   withdrawalPeriodStartsAt: timestamp('withdrawal_period_starts_at', { withTimezone: true }),
-  // Paddle `current_billing_period.starts_at` — advances every renewal. Pro-rating
-  // only, never eligibility. ⚠️ Never derive it by subtracting the interval from
-  // currentPeriodEndsAt; proration and plan changes break that arithmetic.
+  // Pro-rating only, never eligibility. ⚠️ Never derive by subtracting the interval
+  // from currentPeriodEndsAt; proration and plan changes break that arithmetic.
   currentPeriodStartsAt: timestamp('current_period_starts_at', { withTimezone: true }),
   currentPeriodEndsAt: timestamp('current_period_ends_at', { withTimezone: true }),
   scheduledChangeAction: text('scheduled_change_action'),
@@ -129,18 +118,15 @@ export const subscription = pgTable('subscription', {
   canceledAt: timestamp('canceled_at', { withTimezone: true }),
   // Paddle's updated_at for the applied state — rejects out-of-order webhook deliveries
   lastEventAt: timestamp('last_event_at', { withTimezone: true }).notNull(),
-  // Newest approved refund or chargeback against any subscription this guild has held, from
-  // any path: our own withdrawal function, or a refund Paddle issues under its own buyer
-  // terms (which never touches the `withdrawal` table).
+  // Newest approved refund or chargeback against any subscription this guild has held,
+  // including refunds Paddle issues under its own buyer terms (which never touch the
+  // `withdrawal` table). Nothing reads it yet, on purpose — it collects evidence for a
+  // possible repeat refund-and-rebuy policy. Not dead code.
   //
-  // Nothing reads it yet, on purpose — it collects evidence so a policy on repeat
-  // refund-and-rebuy can be built on real data if the pattern appears. Not dead code.
-  //
-  // The only column here that is not mirrored Paddle state, so the only one that must
-  // SURVIVE a re-subscribe — the opposite of withdrawalPeriodStartsAt above, which must not
-  // be inherited. It survives only because every Paddle-derived write is a partial update
-  // over PaddleSubscriptionValues (services/subscriptions.ts), which omits this column; an
-  // upsert or a row spread erases it at the moment it becomes interesting.
+  // ⚠️ The only column here that is not mirrored Paddle state, so the only one that must
+  // survive a re-subscribe. It survives only because every Paddle-derived write is a
+  // partial update over PaddleSubscriptionValues, which omits it; an upsert or a row
+  // spread erases it at the moment it becomes interesting.
   lastRefundAt: timestamp('last_refund_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -150,9 +136,8 @@ export const subscription = pgTable('subscription', {
 });
 
 /**
- * One row per submitted statutory withdrawal (ZZP čl. 81.a / CRD Art 11a) — the
- * čl. 64 evidence of what the consumer was shown and when. No FK to guild or
- * subscription: the record has to outlive both.
+ * One row per submitted statutory withdrawal (ZZP čl. 81.a / CRD Art 11a) — the čl. 64
+ * evidence. No FK to guild or subscription: the record has to outlive both.
  */
 export const withdrawal = pgTable(
   'withdrawal',
@@ -160,32 +145,30 @@ export const withdrawal = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     guildId: text('guild_id').notNull(),
     paddleSubscriptionId: text('paddle_subscription_id').notNull(),
-    // The transaction the refund was raised against, once known.
     paddleTransactionId: text('paddle_transaction_id'),
-    // Stored as presented, not as references: the evidence must show what the
-    // consumer saw and confirmed, which is a different claim from what the live
-    // rows say now.
+    // Stored as presented rather than as references: the evidence must show what the
+    // consumer saw and confirmed, not what the live rows say now.
     consumerName: text('consumer_name').notNull(),
     contractReference: text('contract_reference').notNull(),
-    // The only field the consumer fills in (st. 3 t. 3), and the only email address
-    // this architecture holds. Nullable on purpose: NULL means "retained row,
-    // address already erased". It does not ride the row's 11-year clock — collecting
-    // it is an obligation discharged by sending — and erasure additionally requires
-    // acknowledgedAt (see services/retention.ts).
+    // Immutable counterpart to the username in consumerName, which is both changeable
+    // and reclaimable by someone else. Kept out of the statement text so it can be
+    // erased at 24 months without mangling the evidence — the same clock the id keeps
+    // on `subscription`.
+    subscriberDiscordUserId: text('subscriber_discord_user_id'),
+    // The only field the consumer fills in (st. 3 t. 3). NULL = retained row whose
+    // address was erased at 24 months; the obligation is discharged by sending, so it
+    // never rides the 11-year clock. Erasure also requires acknowledgedAt.
     notificationAddress: text('notification_address'),
-    // st. 7 — timeliness is decided by submission. Stamped by the service, not
-    // defaulted, so the intent survives a schema edit.
+    // st. 7 — timeliness is decided by submission.
     submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull(),
     // ⚠️ Necessarily equal to submittedAt: one sending event, one insert. Two columns
-    // because they answer two questions — st. 7 timeliness reads submittedAt, while
-    // `confirmedAt IS NOT NULL` is what "a withdrawal happened" means to retention
-    // and the retry sweep. Never reintroduce a row where this is NULL.
+    // because `confirmedAt IS NOT NULL` is what "a withdrawal happened" means to
+    // retention and the retry sweep. Never reintroduce a row where this is NULL.
     confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
     // st. 6 — set only once the acknowledgement actually left. NULL after a confirm
     // means a statutory duty is outstanding; the sender retries and alerts.
     acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
-    // Paddle adjustment `status:id`, or a failure reason. Requested is not approved —
-    // outside auto-approval the adjustment goes to manual review.
+    // Paddle adjustment `status:id`, or a failure reason. Requested is not approved.
     refundOutcome: text('refund_outcome'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -196,10 +179,9 @@ export const withdrawal = pgTable(
   table => [
     index('withdrawal_guild_id_idx').on(table.guildId),
     index('withdrawal_subscription_id_idx').on(table.paddleSubscriptionId),
-    // One contract, one withdrawal — the double-confirm guard. The route's
-    // pre-check is not atomic with the insert and the effects include a refund, so
-    // two concurrent confirms would otherwise raise two Paddle adjustments. Scoped
-    // to the subscription, not the guild, so a re-subscribe gets its own row.
+    // Double-confirm guard: the route's pre-check is not atomic with the insert and
+    // the effects include a refund. Scoped to the subscription, not the guild, so a
+    // re-subscribe gets its own row.
     uniqueIndex('withdrawal_confirmed_subscription_unique')
       .on(table.paddleSubscriptionId)
       .where(sql`${table.confirmedAt} is not null`),

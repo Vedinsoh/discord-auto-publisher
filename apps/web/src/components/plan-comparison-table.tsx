@@ -1,15 +1,16 @@
 import { Check, Crown, Minus } from 'lucide-react';
-import { PLAN_COMPARISON, type PlanValue } from '@/lib/plans';
+import { type PlanValue, planComparison } from '@/lib/plans';
 
 interface PlanComparisonTableProps {
   className?: string;
+  freeChannelLimit: number;
 }
 
 /**
  * The row-aligned free-vs-premium comparison, shared verbatim by the marketing
  * section and the dashboard's free subscription state — the two surfaces used to
  * hold independent flat lists that could (and did) disagree in length, order and
- * wording. Rows come from PLAN_COMPARISON; callers own the surrounding chrome
+ * wording. Rows come from `planComparison`; callers own the surrounding chrome
  * (card, section heading, CTA) and nothing else.
  *
  * A real <table> rather than a grid of divs: the value cells are ticks and
@@ -22,7 +23,7 @@ interface PlanComparisonTableProps {
  * out of vertical alignment. The surrounding surface says which plan is yours;
  * the table only has to say what the plans are.
  */
-export function PlanComparisonTable({ className }: PlanComparisonTableProps) {
+export function PlanComparisonTable({ className, freeChannelLimit }: PlanComparisonTableProps) {
   return (
     <table className={`w-full border-collapse text-left ${className ?? ''}`}>
       <thead>
@@ -45,7 +46,7 @@ export function PlanComparisonTable({ className }: PlanComparisonTableProps) {
         </tr>
       </thead>
       <tbody>
-        {PLAN_COMPARISON.map(row => (
+        {planComparison(freeChannelLimit).map(row => (
           <tr key={row.label} className="border-b border-slate-800/60 align-top last:border-0">
             <th scope="row" className="py-3 pr-3 font-normal">
               <span className="block text-sm text-slate-200">{row.label}</span>

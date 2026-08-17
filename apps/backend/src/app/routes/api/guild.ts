@@ -84,7 +84,7 @@ const fetchGuildName = async (guildId: string): Promise<string | null> => {
 const requireWithdrawableSubscription = async (
   guildId: string,
   userId: string | undefined
-): Promise<Subscription> => {
+): Promise<{ sub: Subscription; subscriberDiscordUserId: string }> => {
   const sub = await Services.Subscriptions.getByGuildId(guildId);
 
   if (!sub) {
@@ -103,7 +103,9 @@ const requireWithdrawableSubscription = async (
     );
   }
 
-  return sub;
+  // Returned rather than re-read from `sub`: the check above is what proves it is set,
+  // and the withdrawal record stores it.
+  return { sub, subscriberDiscordUserId: userId };
 };
 
 /**
@@ -623,7 +625,10 @@ export const GuildApi: Router = (() => {
         const { notificationAddress } = req.body;
 
         try {
-          const sub = await requireWithdrawableSubscription(guildId, req.discordUser?.id);
+          const { sub, subscriberDiscordUserId } = await requireWithdrawableSubscription(
+            guildId,
+            req.discordUser?.id
+          );
 
           const existing = await Services.Withdrawals.findLatest(sub.paddleSubscriptionId);
           if (existing?.confirmedAt) {
@@ -645,6 +650,7 @@ export const GuildApi: Router = (() => {
           const record = await Services.Withdrawals.record({
             sub,
             consumerName: req.discordUser?.username ?? sub.subscriberDiscordUserId ?? 'Unknown',
+            subscriberDiscordUserId,
             guildName: await fetchGuildName(guildId),
             notificationAddress,
           });

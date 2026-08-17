@@ -16,6 +16,8 @@ const SiteConfigContext = createContext<SiteConfig>({
   isPublicInstance: false,
   freeBotId: '',
   premiumBotId: '',
+  freeChannelLimit: 0,
+  filtersPerChannel: 0,
   legacySunsetDate: '',
   paddleClientToken: '',
   paddleEnvironment: 'sandbox',

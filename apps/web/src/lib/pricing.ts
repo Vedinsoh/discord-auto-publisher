@@ -1,18 +1,19 @@
 /**
- * Display prices for the premium plan.
- * Must match the Paddle catalog prices behind PADDLE_PRICE_ID_MONTHLY / PADDLE_PRICE_ID_YEARLY —
- * Paddle is what actually charges; these are for display only.
+ * Display only — Paddle charges from the prices behind PADDLE_PRICE_ID_MONTHLY /
+ * PADDLE_PRICE_ID_YEARLY, which are tax-inclusive so one figure is truthful in every
+ * VAT jurisdiction.
+ *
+ * Change the amount on the existing Paddle price. Minting a new price id and swapping
+ * the env var makes `isPlanChange` re-stamp every subscriber's
+ * withdrawalPeriodStartsAt, handing them all a fresh 14-day full-refund right.
  */
 export const PREMIUM_PRICE_MONTHLY_USD = 4.99;
 export const PREMIUM_PRICE_YEARLY_USD = 49.99;
 
 /**
- * Trial length, for display only — the real value is `trial_period` on the two Paddle trial
- * prices, and Paddle decides when the first charge falls. Change it there and here together.
- *
- * It is 14 so the statutory withdrawal window closes before the first payment: the window
- * runs 14 days from contract conclusion, which for a trial subscription is the day the trial
- * starts. Both end together.
+ * Display only; the real value is `trial_period` on the Paddle trial prices. Must stay
+ * 14 so the statutory withdrawal window closes before the first charge — both run from
+ * the day the trial starts.
  */
 export const PREMIUM_TRIAL_DAYS = 14;
 

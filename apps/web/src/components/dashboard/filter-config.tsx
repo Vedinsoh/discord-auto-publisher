@@ -14,9 +14,8 @@ import {
   DEFAULT_MATCH_MODE,
   filterValueError,
   MATCH_MODE_OPTIONS,
-  MAX_FILTERS_PER_CHANNEL,
 } from '@/components/dashboard/filter-meta';
-import { useIsPublicInstance } from '@/components/site-config-context';
+import { useIsPublicInstance, useSiteConfig } from '@/components/site-config-context';
 import {
   Accordion,
   AccordionContent,
@@ -83,6 +82,7 @@ function ChannelRuleEditor({
   rolesById: Record<string, GuildRole>;
 }) {
   const router = useRouter();
+  const { filtersPerChannel } = useSiteConfig();
   const [baseline, setBaseline] = useState<{
     matchMode: FilterMatchMode;
     conditions: FilterInput[];
@@ -131,7 +131,7 @@ function ChannelRuleEditor({
     }
     if (signInOnAuthExpired(result.status)) return;
     if (result.code === 'FILTER_LIMIT') {
-      toast.error(`Up to ${MAX_FILTERS_PER_CHANNEL} conditions per channel`);
+      toast.error(`Up to ${filtersPerChannel} conditions per channel`);
       return;
     }
     if (result.code === 'PREMIUM_INACTIVE') {
@@ -147,8 +147,8 @@ function ChannelRuleEditor({
   };
 
   const addCondition = () => {
-    if (conditions.length >= MAX_FILTERS_PER_CHANNEL) {
-      toast.error(`Up to ${MAX_FILTERS_PER_CHANNEL} conditions per channel`);
+    if (conditions.length >= filtersPerChannel) {
+      toast.error(`Up to ${filtersPerChannel} conditions per channel`);
       return;
     }
     setConditions(previous => [...previous, { type: 'keyword', negate: false, values: [] }]);
@@ -338,7 +338,7 @@ export function FilterManager({
                   className={cn(
                     'overflow-hidden rounded-xl border transition-colors',
                     conditionCount > 0
-                      ? 'border-blue-500/20 bg-blue-500/[0.04] hover:border-blue-500/40 data-[state=open]:border-blue-500/40'
+                      ? 'border-blue-500/20 bg-blue-500/4 hover:border-blue-500/40 data-[state=open]:border-blue-500/40'
                       : 'border-slate-800 bg-slate-900/50 hover:border-slate-700 data-[state=open]:border-slate-700'
                   )}
                 >

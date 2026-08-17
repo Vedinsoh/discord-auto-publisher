@@ -209,7 +209,7 @@ export const assertRequiredEnv = (): void => {
 const EDITION: Edition = isPublicInstance ? (env.APP_EDITION as Edition) : 'premium';
 const IS_PREMIUM = EDITION === 'premium';
 
-/** Mirrors the backend's `FREE_CHANNEL_LIMIT` (`services/editions.ts`), the enforcing authority. */
+/** The free plan's channel cap. Every other app reads it from here. */
 const FREE_CHANNELS_PER_GUILD = 3;
 
 /**

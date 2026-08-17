@@ -1,6 +1,7 @@
 import type { FilterMatchMode, FilterType } from '@ap/validations';
 
-export type { FilterMatchMode, FilterType } from '@ap/validations';
+/** Re-exported so the web can depend on @ap/api-types alone. */
+export type { FilterMatchMode, FilterType };
 
 /** App edition identifier */
 export type Edition = 'free' | 'premium';

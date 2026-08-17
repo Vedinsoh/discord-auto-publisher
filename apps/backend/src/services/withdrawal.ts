@@ -181,6 +181,7 @@ const findLatest = async (paddleSubscriptionId: string): Promise<Withdrawal | un
 const record = async (params: {
   sub: Subscription;
   consumerName: string;
+  subscriberDiscordUserId: string;
   guildName: string | null;
   notificationAddress: string;
 }): Promise<Withdrawal | undefined> => {
@@ -194,6 +195,9 @@ const record = async (params: {
       guildId: sub.guildId,
       paddleSubscriptionId: sub.paddleSubscriptionId,
       ...statement,
+      // Column, not statement text — see the schema comment. It anchors the record to an
+      // account when the username has since changed hands.
+      subscriberDiscordUserId: params.subscriberDiscordUserId,
       notificationAddress,
       submittedAt: now,
       confirmedAt: now,

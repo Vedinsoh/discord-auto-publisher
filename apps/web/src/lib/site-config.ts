@@ -9,6 +9,17 @@ export type SiteConfig = {
   /** Public instance only — empty when self-hosted (there is no second bot). */
   premiumBotId: string;
   /**
+   * The free plan's channel cap from `@ap/config`. Rides this context because the
+   * components that render it are client components and `@ap/config` is server-only.
+   * Display copy only — a live per-guild count is `data.channelLimit`.
+   */
+  freeChannelLimit: number;
+  /**
+   * Per-channel condition cap from `@ap/config`. Rides this context for the same
+   * reason as `freeChannelLimit`: the rule editor is a client component.
+   */
+  filtersPerChannel: number;
+  /**
    * MIGRATION: legacy sunset date (`YYYY-MM-DD`, UTC) from `@ap/config`, which
    * the bot reads directly. Rides this context because every surface rendering
    * it is a client component. Removed with the legacy UX at sunset.
@@ -39,6 +50,8 @@ export function getSiteConfig(): SiteConfig {
     isPublicInstance,
     freeBotId: isPublicInstance ? env.DISCORD_FREE_BOT_ID : env.DISCORD_CLIENT_ID,
     premiumBotId: isPublicInstance ? env.DISCORD_PREMIUM_BOT_ID : '',
+    freeChannelLimit: config.limits.freeChannelsPerGuild,
+    filtersPerChannel: config.limits.filtersPerChannel,
     legacySunsetDate: config.legacySunsetDate,
     paddleClientToken: isPublicInstance ? env.PADDLE_CLIENT_TOKEN : '',
     paddleEnvironment: env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',

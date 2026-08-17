@@ -1,13 +1,11 @@
 import type { ChannelLimitReason, Edition } from '@ap/api-types';
-import { isPublicInstance } from '@ap/config';
+import { config, isPublicInstance } from '@ap/config';
 import { botPresence, db } from '@ap/database';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, count, eq, inArray, isNull } from 'drizzle-orm';
 import { ChannelPausing } from './channels/pausing.js';
 import { Handover } from './handover.js';
 import { isEntitledStatus, Subscriptions } from './subscriptions.js';
-
-const FREE_CHANNEL_LIMIT = 3;
 
 /**
  * Editions this deployment actually runs a bot for.
@@ -71,13 +69,13 @@ const getManagingEdition = async (guildId: Snowflake): Promise<Edition> => {
 
 /** Max enabled channels for an edition; 0 = unlimited */
 const channelLimitFor = (edition: Edition): number =>
-  edition === 'premium' ? 0 : FREE_CHANNEL_LIMIT;
+  edition === 'premium' ? 0 : config.limits.freeChannelsPerGuild;
 
 /**
  * Resolves a guild's channel cap plus the reason to surface if it's hit.
  * The cap is keyed on the managing edition (the bot actually publishing) — the
- * free bot never serves more than {@link FREE_CHANNEL_LIMIT} channels, even for
- * an entitled guild whose premium bot hasn't taken over yet. `reason` is only
+ * free bot never serves more than the free cap, even for an entitled guild whose
+ * premium bot hasn't taken over yet. `reason` is only
  * meaningful when `limit !== 0` and directs the user to the right resolution:
  * buy Premium (`LIMIT_FREE`), invite the premium bot (`LIMIT_PREMIUM_INVITE`),
  * or grant it permissions to finish the handover (`LIMIT_PREMIUM_PENDING`).

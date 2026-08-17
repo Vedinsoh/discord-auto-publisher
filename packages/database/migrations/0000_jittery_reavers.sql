@@ -55,6 +55,7 @@ CREATE TABLE "withdrawal" (
 	"paddle_transaction_id" text,
 	"consumer_name" text NOT NULL,
 	"contract_reference" text NOT NULL,
+	"subscriber_discord_user_id" text,
 	"notification_address" text,
 	"submitted_at" timestamp with time zone NOT NULL,
 	"confirmed_at" timestamp with time zone,

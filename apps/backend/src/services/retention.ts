@@ -1,5 +1,5 @@
 import { db, subscription, withdrawal } from '@ap/database';
-import { and, count, eq, isNotNull, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, isNotNull, or, type SQL, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { guardMassAction } from 'utils/massActionGuard.js';
 
@@ -68,7 +68,7 @@ const applyRetention = async (now: Date = new Date()): Promise<void> => {
 
   await eraseExpiredSubscriberIds(now, population);
   await deleteExpiredAccountingRows(now, population);
-  await eraseExpiredNotificationAddresses(now);
+  await eraseExpiredWithdrawalIdentifiers(now);
   await deleteExpiredWithdrawals(now);
 };
 
@@ -144,19 +144,30 @@ const deleteExpiredAccountingRows = async (now: Date, population: number): Promi
 };
 
 /**
- * Erases the consumer's email address at 24 months (the subscriber-id clock): the
- * Art 6(1)(c) obligation is DISCHARGED by sending, so the 11-year accounting floor does
- * not carry it. Never extend this to `acknowledgedAt` — it proves the st. 6 duty. The
- * mailbox's own Sent copy is out of reach here and needs a separate purge.
+ * Erases the two identifiers on a withdrawal row at 24 months (the subscriber-id clock),
+ * leaving the statement itself on the 11-year accounting clock.
+ *
+ * The address, because the Art 6(1)(c) obligation is DISCHARGED by sending, so the
+ * 11-year accounting floor does not carry it. Never extend this to `acknowledgedAt` — it
+ * proves the st. 6 duty. The mailbox's own Sent copy is out of reach here and needs a
+ * separate purge.
+ *
+ * The subscriber's Discord user id, because the same id on `subscription` is erased on
+ * this clock for the same reason (not an accounting record — Paddle is the buyer in our
+ * books), and holding a copy for 11 years on a neighbouring table would make that
+ * promise false. It rides the address's `acknowledgedAt` guard rather than its own
+ * predicate: the two are written in one insert and cleared in one update, so they cannot
+ * diverge, and an outstanding acknowledgement holding the id a while longer is the
+ * conservative direction.
  */
-const eraseExpiredNotificationAddresses = async (now: Date): Promise<void> => {
+const eraseExpiredWithdrawalIdentifiers = async (now: Date): Promise<void> => {
   const cutoff = subscriberIdCutoff(now);
   const due = and(
     isNotNull(withdrawal.confirmedAt),
     // ⚠️ NULL `acknowledgedAt` on a confirmed row = st. 6 duty still outstanding, owned
     // by the retry cron; erasing the address would make it undischargeable forever.
     isNotNull(withdrawal.acknowledgedAt),
-    isNotNull(withdrawal.notificationAddress),
+    or(isNotNull(withdrawal.notificationAddress), isNotNull(withdrawal.subscriberDiscordUserId)),
     sql`${withdrawal.confirmedAt} <= ${cutoff.toISOString()}::timestamptz`
   );
 
@@ -170,7 +181,7 @@ const eraseExpiredNotificationAddresses = async (now: Date): Promise<void> => {
 
     const allowed = guardMassAction({
       key: 'retention-withdrawal-address-erasure-cap',
-      action: 'erase withdrawal notification addresses',
+      action: 'erase withdrawal notification addresses and subscriber ids',
       count: pending,
       population,
       context:
@@ -180,22 +191,23 @@ const eraseExpiredNotificationAddresses = async (now: Date): Promise<void> => {
 
     const erased = await db
       .update(withdrawal)
-      .set({ notificationAddress: null })
+      .set({ notificationAddress: null, subscriberDiscordUserId: null })
       .where(due)
       .returning({ id: withdrawal.id });
 
     logger.info(
-      `Retention: erased notification address on ${erased.length} withdrawal record(s) confirmed before ${cutoff.toISOString()} (${SUBSCRIBER_ID_RETENTION_MONTHS} months)`
+      `Retention: erased notification address and subscriber id on ${erased.length} withdrawal record(s) confirmed before ${cutoff.toISOString()} (${SUBSCRIBER_ID_RETENTION_MONTHS} months)`
     );
   } catch (error) {
-    logger.error(error, 'Retention: withdrawal address erasure failed');
+    logger.error(error, 'Retention: withdrawal identifier erasure failed');
   }
 };
 
 /**
  * Withdrawal records (ZZP čl. 81.a) on the accounting clock — they are the čl. 64
  * evidence. Anchored on `submittedAt`, the only date on the row that is always set.
- * The address goes much earlier: {@link eraseExpiredNotificationAddresses}.
+ * The address and the subscriber id go much earlier:
+ * {@link eraseExpiredWithdrawalIdentifiers}.
  */
 const deleteExpiredWithdrawals = async (now: Date): Promise<void> => {
   const cutoff = accountingCutoff(now);

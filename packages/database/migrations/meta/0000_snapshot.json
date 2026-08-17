@@ -1,5 +1,5 @@
 {
-  "id": "9d2a2058-2fdd-4112-9ae5-a9f2b41d5797",
+  "id": "ab43941e-38c6-43c8-bf20-c61b48033651",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -366,6 +366,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "subscriber_discord_user_id": {
+          "name": "subscriber_discord_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "notification_address": {
           "name": "notification_address",

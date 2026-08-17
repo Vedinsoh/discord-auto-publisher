@@ -65,13 +65,6 @@ export function isNoOpKeyword(value: string): boolean {
 }
 
 /**
- * Per-channel condition cap. Deliberately not surfaced in the UI (no badge or
- * limit copy) — the builder blocks adding past it with a toast, and the backend
- * enforces it too. Mirrors config.limits.filtersPerChannel.
- */
-export const MAX_FILTERS_PER_CHANNEL = 50;
-
-/**
  * Per-type value caps. Hand-mirrors `MAX_VALUES` in `@ap/validations`, which is the
  * authority — keep the two in step.
  *
