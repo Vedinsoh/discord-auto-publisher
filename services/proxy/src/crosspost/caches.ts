@@ -13,6 +13,19 @@ const BOOST_KEY_PREFIX = 'boost';
 const BOOST_PUBLISHES = 10;
 const BOOST_TTL_SEC = 90 * 24 * 60 * 60;
 
+/**
+ * One round trip, because DECR-then-DEL is not safe as two: DECR on an already-expired
+ * key RECREATES it at -1 with no TTL, and a connection lost before the DEL would leave
+ * that key behind forever. No EXISTS guard needed — the DEL below cleans up the same
+ * key DECR may have just minted. DECR leaves the seed TTL untouched, so the 90-day
+ * safety window runs from the join and does not slide with usage.
+ */
+const BOOST_CONSUME_SCRIPT = `
+local remaining = redis.call('DECR', KEYS[1])
+if remaining <= 0 then redis.call('DEL', KEYS[1]) end
+return remaining
+`;
+
 const withTimeout = async <T>(
   promise: Promise<T>,
   fallback: T,
@@ -157,10 +170,7 @@ export const createBoostBudget = (redis: RedisClient): BoostBudget => {
     },
     consume: async (guildId) => {
       try {
-        // DECR leaves the seed TTL untouched, so the 90-day safety window runs from
-        // the join and does not slide with usage.
-        const remaining = await redis.decr(key(guildId));
-        if (remaining <= 0) await redis.del(key(guildId));
+        await redis.eval(BOOST_CONSUME_SCRIPT, { keys: [key(guildId)] });
       } catch (error) {
         logger.warn({ event: 'redis.write_failed', op: 'boost.consume', guildId, err: error });
       }

@@ -76,11 +76,22 @@ export const createCrosspostQueue = (deps: {
     },
   });
 
+  const isBoosted = (job: Job<CrosspostJobData>) => job.opts.priority === PRIORITY.BOOSTED;
+
+  // Gated on the job's OWN priority, not on a fresh budget read: an unconditional
+  // DECR would mint a negative key for every guild in the system.
+  const consumeBoost = async (job: Job<CrosspostJobData>): Promise<void> => {
+    if (isBoosted(job)) await deps.boostBudget.consume(job.data.guildId);
+  };
+
   const reactToOutcome = async (outcome: CrosspostOutcome, job: Job<CrosspostJobData>): Promise<void> => {
     const { channelId, messageId } = job.data;
     switch (outcome.kind) {
       case 'already_done':
         await deps.caches.sublimit.increment(channelId);
+        // The crosspost exists, so the guild got the benefit and it must cost a publish.
+        // Free `already_done`s would leave the budget full for the whole 90-day TTL.
+        await consumeBoost(job);
         logger.debug({ event: 'crosspost.already', channelId, messageId });
         return;
       case 'blocked':
@@ -123,13 +134,10 @@ export const createCrosspostQueue = (deps: {
     try {
       await deps.rest.post(Routes.channelMessageCrosspost(channelId, messageId));
       await deps.caches.sublimit.increment(channelId);
-      const boosted = job.opts.priority === PRIORITY.BOOSTED;
-      // Gated on the job's OWN priority, not on a fresh budget read: an unconditional
-      // DECR would mint a negative key for every guild in the system.
-      if (boosted) await deps.boostBudget.consume(job.data.guildId);
+      await consumeBoost(job);
       // `attemptsStarted` is bumped by `prepareJobForProcessing.lua` on every pickup,
       // so > 1 means this job bounced (rate limit or 5xx) rather than merely queued.
-      deps.latency.record(boosted ? 'boosted' : 'normal', Date.now() - job.timestamp, job.attemptsStarted > 1);
+      deps.latency.record(isBoosted(job) ? 'boosted' : 'normal', Date.now() - job.timestamp, job.attemptsStarted > 1);
       logger.debug({ event: 'crosspost.success', channelId, messageId });
     } catch (error) {
       const outcome = classify(error);
