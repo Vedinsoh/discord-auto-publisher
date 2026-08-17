@@ -723,6 +723,20 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
                   .
                 </label>
               </div>
+              {/* ZZP čl. 60 st. 9's Croatian notice, linked from the surface the
+                  "before the consumer is bound" duty actually attaches to.
+                  Deliberately OUTSIDE the label: that sentence is simultaneously
+                  the Paddle seller-policy acceptance disclosure and must not be
+                  re-worded. */}
+              <Link
+                href="/refunds#obavijest-na-hrvatskom-jeziku"
+                target="_blank"
+                hrefLang="hr"
+                lang="hr"
+                className="mt-2 ml-8 block text-slate-500 text-xs hover:underline"
+              >
+                hrvatski
+              </Link>
             </div>
           )}
 

@@ -49,6 +49,16 @@ export const learnWhatIsChanging = new ButtonBuilder()
   .setURL(links.migration)
   .setStyle(ButtonStyle.Link);
 
+export const terms = new ButtonBuilder()
+  .setLabel('Terms of Service')
+  .setURL(links.terms)
+  .setStyle(ButtonStyle.Link);
+
+export const privacy = new ButtonBuilder()
+  .setLabel('Privacy Policy')
+  .setURL(links.privacy)
+  .setStyle(ButtonStyle.Link);
+
 export const Buttons = {
   website,
   getPremium,
@@ -57,4 +67,6 @@ export const Buttons = {
   dashboard,
   migrateNow,
   learnWhatIsChanging,
+  terms,
+  privacy,
 };

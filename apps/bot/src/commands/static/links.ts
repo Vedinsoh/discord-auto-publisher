@@ -1,7 +1,7 @@
 import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
-import { ContainerBuilder, MessageFlags } from 'discord.js';
+import { ActionRowBuilder, type ButtonBuilder, ContainerBuilder, MessageFlags } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
@@ -62,6 +62,14 @@ export class LinksCommand extends Command {
           .setButtonAccessory(Buttons.website)
       );
     }
+
+    // The bot is the only surface that linked neither document. Both are
+    // deployment-relative, so a self-hosted copy points at its operator's own.
+    replyContainer
+      .addSeparatorComponents(separator => separator)
+      .addActionRowComponents(
+        new ActionRowBuilder<ButtonBuilder>().addComponents(Buttons.terms, Buttons.privacy)
+      );
 
     return interaction.reply({
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],

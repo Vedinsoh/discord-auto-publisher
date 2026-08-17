@@ -56,7 +56,12 @@ export const PLAN_COMPARISON: readonly PlanComparisonRow[] = [
   },
   {
     label: 'Auto-publishing',
-    detail: 'Every message in an enabled channel, published to followers',
+    // "within Discord's limits" is load-bearing, not a hedge: the proxy gate drops
+    // anything past 10 crossposts/hour/channel, and this row renders on the upgrade
+    // screen above the checkout button — čl. 60 st. 2 makes what it says part of the
+    // contract. "Every message" stays because it is what contrasts this row with the
+    // filters row below it.
+    detail: "Every message in an enabled channel, published to followers within Discord's limits",
     free: 'Basic',
     premium: 'Near-instant',
   },

@@ -32,10 +32,10 @@ const faqs: { question: string; answer: ReactNode }[] = [
       <>
         It automatically publishes messages posted in your{' '}
         <InlineLink href={ANNOUNCEMENT_CHANNELS_HELP}>announcement channels</InlineLink> — the same
-        as pressing the publish button yourself — so every message reaches the servers that follow
-        your channel. It is especially handy for messages from other bots or webhooks that you would
-        otherwise have to publish by hand. Note: Auto Publisher never creates messages; it only
-        publishes ones already posted by you, another bot, or a webhook.
+        as pressing the publish button yourself — so your announcements reach the servers that
+        follow your channel. It is especially handy for messages from other bots or webhooks that
+        you would otherwise have to publish by hand. Note: Auto Publisher never creates messages; it
+        only publishes ones already posted by you, another bot, or a webhook.
       </>
     ),
   },
@@ -65,7 +65,9 @@ const faqs: { question: string; answer: ReactNode }[] = [
     answer: (
       <>
         That is a hard limit set by Discord, not by us — even a person cannot publish more than 10
-        messages per channel per hour. There is no way around it.
+        messages per channel per hour. There is no way around it. Anything posted past that limit in
+        the same hour is not published, so a channel carrying a busy feed will not have all of it
+        crossposted.
       </>
     ),
   },

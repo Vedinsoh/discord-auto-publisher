@@ -263,7 +263,9 @@ const acknowledge = async (record: Withdrawal): Promise<boolean> => {
     logger.error(error, `Withdrawal ${record.id}: acknowledgement send failed`);
     alerter.send(`withdrawal-ack-failed:${record.id}`, {
       title: 'Withdrawal acknowledgement not sent',
-      description: `Withdrawal \`${record.id}\` (guild ${record.guildId}) was confirmed but the statutory acknowledgement to \`${record.notificationAddress}\` failed. ZZP čl. 81.a st. 6 requires it without delay. The retry sweep will keep trying; check SMTP.`,
+      // No address here — alerts go to a Discord webhook, which would make Discord a
+      // recipient of the consumer's email address. The withdrawal id resolves it.
+      description: `Withdrawal \`${record.id}\` (guild ${record.guildId}) was confirmed but the statutory acknowledgement failed to send. ZZP čl. 81.a st. 6 requires it without delay. The retry sweep will keep trying; check SMTP.`,
     });
     return false;
   }

@@ -37,6 +37,13 @@ export const links = {
    * page is part of the web app, so a self-hosted copy serves its own.
    */
   migration: `${BASE}/migration`,
+  /**
+   * Deployment-relative for the same reason `migration` is — a self-hosted copy
+   * serves its own pages, and its operator's terms are not ours. The bot is the
+   * surface most users meet the product on, so it links them from `/links`.
+   */
+  terms: `${BASE}/terms`,
+  privacy: `${BASE}/privacy`,
   premiumPage: `${WEBSITE}/premium`,
   projectHostname: HOSTNAME,
   supportGuildInvite: 'https://discord.gg/xcEeJkdQX8',
@@ -109,8 +116,10 @@ export const emojiNames: Record<keyof typeof emojis, string> = {
 
 export const notes = {
   rateLimit: 'Discord allows up to 10 messages to be published per hour per channel.',
+  // No "every message will be published" — the proxy gate drops on Discord's
+  // 10/hour/channel sublimit, so the absolute was false on both editions.
   publishDelayFree:
-    "Messages may be delayed during busy periods to respect Discord's rate limits — but every message will be published. Upgrade to Premium for faster publishing.",
+    "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium for faster publishing.",
   publishDelayPremium:
     'Messages are published almost instantly — Premium runs on dedicated capacity, so delays stay rare even at peak times.',
   permissionsExtendedDisable:

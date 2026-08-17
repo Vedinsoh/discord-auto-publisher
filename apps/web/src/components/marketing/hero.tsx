@@ -49,8 +49,8 @@ export function Hero() {
             transition={{ duration: 0.2, delay: 0.4 }}
             className="mb-10 max-w-2xl text-lg text-slate-300 sm:text-xl lg:mx-0 mx-auto"
           >
-            Auto Publisher watches your announcement channels and instantly publishes every message,
-            so your community never misses an update. No manual clicks, ever.
+            Auto Publisher watches your announcement channels and publishes your messages
+            automatically, so your community never misses an update. No manual clicks, ever.
           </motion.p>
 
           {/* CTAs */}

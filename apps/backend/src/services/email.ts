@@ -58,7 +58,10 @@ const send = async (message: { to: string; subject: string; text: string }): Pro
     throw new Error(`SMTP rejected recipient(s): ${info.rejected.join(', ')}`);
   }
 
-  logger.info(`Sent email to ${message.to} (${info.messageId})`);
+  // Never log the recipient: the only mail this stack sends is the withdrawal
+  // acknowledgement, so the address is a consumer's and the host log is not a
+  // disclosed recipient of it. The message id is enough to trace a send.
+  logger.info(`Sent email (${info.messageId})`);
 };
 
 export const Email = {
