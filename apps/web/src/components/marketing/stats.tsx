@@ -22,7 +22,7 @@ export function Stats() {
       >
         Trusted by{' '}
         <span className="bg-linear-to-r from-white to-blue-300 bg-clip-text font-semibold text-transparent">
-          {formatNumberFull(values.activeServers)}+
+          {formatNumberFull(values.activeServers)}
         </span>{' '}
         servers
       </motion.p>

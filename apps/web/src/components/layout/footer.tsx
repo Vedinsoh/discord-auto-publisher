@@ -1,8 +1,9 @@
 import { isPublicInstance } from '@ap/config';
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
-import { links } from '@/lib/constants';
+import { links, values } from '@/lib/constants';
 import { legalDocuments } from '@/lib/legal/documents';
+import { formatNumberFull } from '@/lib/utils';
 import { Logo } from './logo';
 
 const quickLinks = [
@@ -36,8 +37,10 @@ export function Footer() {
               <span className="text-white text-base font-semibold">Auto Publisher</span>
             </Link>
             <p className="text-slate-400 max-w-sm">
-              The most reliable Discord bot for automatically publishing announcement channel
-              messages. Trusted by thousands of servers worldwide.
+              The Discord bot for automatically publishing announcement channel messages.
+              {/* Install count describes the public bot, not a self-hosted copy of it. */}
+              {isPublicInstance &&
+                ` Trusted by ${formatNumberFull(values.activeServers)} servers worldwide.`}
             </p>
           </div>
 
