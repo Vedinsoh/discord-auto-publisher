@@ -21,9 +21,8 @@ export interface PlanComparisonRow {
 }
 
 /**
- * The publishing row is a claim about contention, not configuration: both editions run
- * the same pipeline, and only the free proxy's global limiter and egress IP are shared
- * across guilds. Nothing in apps/proxy distinguishes them, so don't "correct" it there.
+ * čl. 60 st. 2 makes the publishing row a contract term. It holds because each edition
+ * runs its own proxy instance and queue, so premium never queues behind free.
  */
 export const planComparison = (freeChannelLimit: number): readonly PlanComparisonRow[] => [
   {

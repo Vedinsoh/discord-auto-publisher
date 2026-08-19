@@ -11,9 +11,9 @@ export const legalDocuments = [
 ] as const;
 
 /**
- * Effective dates, kept here rather than inside each .mdx file so the pre-publish
- * checklist has one place to audit and so no document can silently ship claiming
- * an effective date that predates its own text.
+ * Effective dates, kept here rather than inside each .mdx file so there is one place to
+ * audit and so no document can silently ship claiming an effective date that predates
+ * its own text.
  *
  * PRE-PUBLISH: every value must be a real date before these pages go live.
  * `null` renders as an explicit draft marker rather than a plausible-looking date.

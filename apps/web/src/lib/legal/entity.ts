@@ -70,34 +70,3 @@ export const entity = {
 
 /** Satisfies the ZTD cl. 21(2) joint-use rule. Never render `englishShort` alone. */
 export const entityNameWithTranslation = `${entity.name.short} (${entity.name.englishShort})`;
-
-const TOKEN_PATTERN = /\{\{[A-Z_]+\}\}/;
-
-/**
- * Every still-unsupplied field, as dotted paths; [] when fully specified. Consumed by
- * the pre-publish checklist so a `{{TOKEN}}` cannot reach a published page.
- */
-export function unresolvedEntityFields(): string[] {
-  const unresolved: string[] = [];
-
-  const walk = (value: unknown, path: string): void => {
-    if (typeof value === 'string') {
-      if (TOKEN_PATTERN.test(value)) unresolved.push(path);
-      return;
-    }
-    if (Array.isArray(value)) {
-      value.forEach((item, index) => {
-        walk(item, `${path}[${index}]`);
-      });
-      return;
-    }
-    if (value && typeof value === 'object') {
-      for (const [key, nested] of Object.entries(value)) {
-        walk(nested, path ? `${path}.${key}` : key);
-      }
-    }
-  };
-
-  walk(entity, '');
-  return unresolved;
-}
