@@ -21,8 +21,9 @@ import express from 'express';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
-// Fail fast with a named variable rather than an opaque Discord auth error later
-assertRequiredEnv();
+// Fail fast with a named variable rather than an opaque Discord auth error later.
+// Asserts the dashboard scope on the web app's behalf — see `assertRequiredEnv`.
+assertRequiredEnv({ billing: true, dashboard: true });
 
 // Create the Express app
 const app = express();

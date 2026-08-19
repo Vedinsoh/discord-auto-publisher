@@ -55,8 +55,8 @@ const faqs: { question: string; answer: ReactNode }[] = [
     answer: (
       <>
         During busy periods Auto Publisher paces out publishing to stay within Discord&apos;s rate
-        limits so it never gets blocked. This is normal — even instant publishes take a moment to
-        reach every following server, depending on how many follow your channel.
+        limits. This is normal — even instant publishes take a moment to reach every following
+        server, depending on how many follow your channel.
       </>
     ),
   },

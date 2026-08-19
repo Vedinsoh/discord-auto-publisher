@@ -92,3 +92,31 @@ services:
       - LOGGER_LEVEL=info
     logging: *prod-logging
     deploy: *bot-resources
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      # Server-side only; the browser never calls the backend directly.
+      - BACKEND_URL=http://backend:8080
+      - NODE_ENV=production
+    ports:
+      - 127.0.0.1:3100:3100
+    networks:
+      - ap-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    logging: *prod-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'

@@ -50,7 +50,8 @@ export function Hero() {
             className="mb-10 max-w-2xl text-lg text-slate-300 sm:text-xl lg:mx-0 mx-auto"
           >
             Auto Publisher watches your announcement channels and publishes your messages
-            automatically, so your community never misses an update. No manual clicks, ever.
+            automatically, so your announcements reach your followers on their own. No manual
+            clicks, ever.
           </motion.p>
 
           {/* CTAs */}

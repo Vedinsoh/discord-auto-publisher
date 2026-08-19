@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: 'Auto Publisher | Automate Your Discord Announcements Easily',
   applicationName: 'Auto Publisher',
   description:
-    'Auto Publisher automatically publishes messages in your announcement channels, ensuring your community never misses important updates. Trusted by 17,000+ Discord servers.',
+    'Auto Publisher automatically publishes messages in your announcement channels, ensuring they reach your followers automatically. Trusted by 17,000+ Discord servers.',
   keywords: ['Discord', 'bot', 'announcements', 'auto publish', 'Discord bot'],
   authors: [{ name: 'acehox' }],
 };

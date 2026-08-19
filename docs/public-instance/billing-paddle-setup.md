@@ -165,11 +165,11 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
 
 ### Webhook ingress
 
-Paddle must reach the premium backend over public HTTPS. The prod compose exposes no ports, so put a TLS-terminating reverse proxy (Caddy/nginx/Cloudflare Tunnel) in front that forwards **only** `POST /webhooks/paddle` to `backend:8080` (e.g. `https://api.auto-publisher.gg/webhooks/paddle`). Signature verification rejects anything unsigned, but there is no reason to expose the rest of the internal API.
+Paddle must reach the backend over public HTTPS. The prod compose publishes nothing off-box — only loopback mappings for Redis and the dashboard — so put a TLS-terminating reverse proxy (Caddy/nginx/Cloudflare Tunnel) in front that forwards **only** `POST /webhooks/paddle` to `backend:8080` (e.g. `https://api.auto-publisher.gg/webhooks/paddle`). Signature verification rejects anything unsigned, but there is no reason to expose the rest of the internal API.
 
 ### Environment
 
-In `.env.production` (premium instance):
+In `.env` at the repo root — the only file the prod compose reads (`env_file: ../../.env`):
 
 ```
 PADDLE_ENVIRONMENT = "production"

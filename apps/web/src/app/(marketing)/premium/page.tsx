@@ -33,7 +33,8 @@ export default function PremiumPage() {
 
       <div className="text-center mt-8">
         <p className="text-slate-500 text-sm">
-          Trusted by {formatNumberFull(values.activeServers)} servers · Secure payment via Paddle
+          Trusted by {formatNumberFull(values.activeServers)} servers using Auto Publisher · Secure
+          payment via Paddle
         </p>
       </div>
     </section>

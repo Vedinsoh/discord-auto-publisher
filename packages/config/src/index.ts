@@ -172,27 +172,87 @@ export const premiumTrialEnabled =
   isPublicInstance && !!env.PADDLE_PRICE_ID_MONTHLY_TRIAL && !!env.PADDLE_PRICE_ID_YEARLY_TRIAL;
 
 /**
- * Assert the variables this deployment mode actually needs.
+ * Scoped rather than global: a bot or proxy that refused to boot over an unconfigured
+ * checkout would stop publishing for a reason unrelated to publishing.
+ */
+type EnvScope = {
+  billing?: boolean;
+  dashboard?: boolean;
+};
+
+const SCOPED_KEYS = {
+  billing: [
+    'PADDLE_API_KEY',
+    'PADDLE_WEBHOOK_SECRET',
+    'PADDLE_PRICE_ID_MONTHLY',
+    'PADDLE_PRICE_ID_YEARLY',
+    // Required here but not self-host: the withdrawal acknowledgement is a statutory
+    // duty (ZZP čl. 81.a st. 6), and unset credentials fail at send time, not at deploy.
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+  ],
+  dashboard: [
+    'AUTH_SECRET',
+    'DISCORD_CLIENT_ID',
+    'DISCORD_CLIENT_SECRET',
+    'DISCORD_FREE_BOT_ID',
+    'DISCORD_PREMIUM_BOT_ID',
+    'PADDLE_CLIENT_TOKEN',
+  ],
+} as const satisfies Record<keyof EnvScope, readonly string[]>;
+
+/**
+ * Assert the variables this deployment mode and this process actually need.
  *
  * Called explicitly from each long-running process rather than at module
  * import: `next build` evaluates server modules, and the web image is built
  * before any env file exists, so an import-time throw would break the build
- * for a token the web app never even reads.
+ * for a token the web app never even reads. The dashboard never calls this at all —
+ * `getSiteConfig()` runs during prerender — so the backend asserts the `dashboard`
+ * scope on its behalf, both reading one env file.
  *
  * Deliberately no "you set a variable this mode ignores" errors — each mode
  * reads only its own keys, so a stray leftover is inert. That also lets a
  * maintainer flip `DEPLOYMENT_MODE` on an existing env file to exercise the
  * self-host path without maintaining a second one.
  */
-export const assertRequiredEnv = (): void => {
-  const missing = isPublicInstance
-    ? (['DISCORD_BOT_TOKEN_FREE', 'DISCORD_BOT_TOKEN_PREMIUM'] as const).filter(key => !env[key])
-    : (['DISCORD_BOT_TOKEN'] as const).filter(key => !env[key]);
+export const assertRequiredEnv = (scope: EnvScope = {}): void => {
+  const required: string[] = isPublicInstance
+    ? ['DISCORD_BOT_TOKEN_FREE', 'DISCORD_BOT_TOKEN_PREMIUM']
+    : ['DISCORD_BOT_TOKEN'];
 
-  if (missing.length === 0) return;
+  if (isPublicInstance) {
+    if (scope.billing) required.push(...SCOPED_KEYS.billing);
+    if (scope.dashboard) required.push(...SCOPED_KEYS.dashboard);
+  }
+
+  const missing = required.filter(key => !env[key as keyof typeof env]);
+  const problems = missing.length
+    ? [`Missing required environment variable(s): ${missing.join(', ')}.`]
+    : [];
+
+  if (isPublicInstance && scope.billing) {
+    // Raw `process.env`, not `env`: the `sandbox` default makes an unset variable
+    // indistinguishable from a deliberate one.
+    if (!process.env.PADDLE_ENVIRONMENT) {
+      problems.push(
+        'PADDLE_ENVIRONMENT must be set explicitly on a public instance (sandbox|production) — ' +
+          'it silently defaults to sandbox, which would bill nobody while appearing to work.'
+      );
+    }
+
+    const trialIds = [env.PADDLE_PRICE_ID_MONTHLY_TRIAL, env.PADDLE_PRICE_ID_YEARLY_TRIAL];
+    if (trialIds.some(Boolean) && !trialIds.every(Boolean)) {
+      problems.push(
+        'PADDLE_PRICE_ID_MONTHLY_TRIAL and PADDLE_PRICE_ID_YEARLY_TRIAL must both be set or both be empty.'
+      );
+    }
+  }
+
+  if (problems.length === 0) return;
 
   throw new Error(
-    `Missing required environment variable(s) for DEPLOYMENT_MODE="${env.DEPLOYMENT_MODE}": ${missing.join(', ')}. ` +
+    `Invalid environment for DEPLOYMENT_MODE="${env.DEPLOYMENT_MODE}": ${problems.join(' ')} ` +
       (isPublicInstance ? 'See docs/public-instance/.env.example.' : 'See docs/self-hosting.md.')
   );
 };
