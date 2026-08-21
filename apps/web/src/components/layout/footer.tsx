@@ -37,10 +37,10 @@ export function Footer() {
               <span className="text-white text-base font-semibold">Auto Publisher</span>
             </Link>
             <p className="text-slate-400 max-w-sm">
-              The Discord bot for automatically publishing announcement channel messages.
+              The most trusted Discord bot for automatically publishing announcement channel
+              messages.
               {/* Install count describes the public bot, not a self-hosted copy of it. */}
-              {isPublicInstance &&
-                ` Trusted by ${formatNumberFull(values.activeServers)} servers worldwide.`}
+              {isPublicInstance && `${formatNumberFull(values.activeServers)} servers worldwide.`}
             </p>
           </div>
 
